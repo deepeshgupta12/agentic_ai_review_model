@@ -20,12 +20,12 @@ It prints every check and saves the output to `logs/step-01/checks-<UTC time>.lo
 | UC-01 | Register the five projects | Every project row validates, or the failing project and field are named; no extra projects | 13 |
 | UC-02 | Slugs and search forms | D19 convention: slugs, search forms (Hindi kept intact), full and short RERA IDs compare equal | 9 |
 | UC-03 | Connector matrix | Every connector is `access_pending` with a credential location and go-live demonstration; `live` needs recorded proof | 10 |
-| UC-04 | Source policies | Policies exist for every connector family; rights are consistent; sources without an agreement stay blocked | 8 |
+| UC-04 | Source policies | Policies exist for every connector family; rights are consistent; sources without an agreement stay blocked; an accepted policy records who approved it | 9 |
 | UC-05 | Operating defaults | Defaults stay proposed until a named person accepts them; open items have no value | 6 |
 | UC-06 | Decision register and secrets | DECISIONS.md registry matches the JSON; no secret in seed data; `.env` is ignored | 6 |
 | UC-07 | Command line | Exit code 0 on the real files, 1 on bad input; JSON output | 4 |
 
-Total: 56 tests in [scripts/tests/test_validate_inputs.py](../../scripts/tests/test_validate_inputs.py).
+Total: 57 tests in [scripts/tests/test_validate_inputs.py](../../scripts/tests/test_validate_inputs.py).
 
 ## Negative checks (in the script)
 
@@ -40,7 +40,7 @@ Total: 56 tests in [scripts/tests/test_validate_inputs.py](../../scripts/tests/t
 ## Individual commands
 
 ```bash
-# All 56 use-case tests
+# All use-case tests
 python3 -m unittest discover -s scripts/tests -v
 
 # Validator on the real files, with the registration preview
@@ -72,6 +72,7 @@ One warning is expected: the search name `parq` is a single word, so Step 04 use
 |---|---|---|---|---|
 | 2026-09-25 06:21 | `f0932cb` | `bash scripts/run_step01_checks.sh` | ALL CHECKS OK: 56/56 tests; validator PASS with the expected warning; N1–N5 fail as expected; hygiene OK | [checks-20260925T062111Z.log](checks-20260925T062111Z.log) |
 | 2026-09-25 06:21 | `f0932cb` | Mutation check (six validator rules disabled one at a time on a scratch copy) | Each disabled rule is caught by the tests written for it | [mutation-check-20260925T062128Z.log](mutation-check-20260925T062128Z.log) |
+| 2026-09-25 07:05 | `90a8c8b` | `bash scripts/run_step01_checks.sh` after recording approvals A–E | ALL CHECKS OK: 57/57 tests; validator PASS with the expected warning; N1–N5 fail as expected; hygiene OK | [checks-20260925T070509Z.log](checks-20260925T070509Z.log) |
 
 No live integration was run: no credentials are configured, and Step 01 does not call any source.
 
@@ -82,16 +83,16 @@ No live integration was run: no credentials are configured, and Step 01 does not
 - [x] Initial source policies exist as seed data for every platform family in the matrix (UC-04).
 - [x] No extra project inputs or separate product release introduced (UC-01; single release in the acceptance definitions).
 - [x] PROGRESS.md records changed paths, decisions, evidence, unresolved dependencies and the next action.
-- [ ] Product owner approves the proposed items below (D18 gate). Step 01 is marked complete only after this.
+- [x] Product owner approved items A–E on 25 Sep 2026 (D18 gate).
 
-## Approvals requested
+## Approvals (granted 25 Sep 2026)
 
-| # | Item | Where | Proposed |
+| # | Item | Where | Approved |
 |---|---|---|---|
 | A | Mandatory sources for the demo (I04) | [seed/connectors.json](../../seed/connectors.json), [DECISIONS.md](../../DECISIONS.md#connector-registry) | Anthropic, Brave, YouTube, and one of Firecrawl/Playwright; the rest optional |
 | B | Initial source policies (I06) | [seed/source_policies.json](../../seed/source_policies.json) | Web pages: collect and analyse, paraphrase with link, no quotes, 90 days. YouTube: API only, 30 days. HARERA: registry facts may be quoted, 365 days. Reddit, X, Meta, Quora, LinkedIn, listening provider and video transcripts: blocked until access or a decision exists |
 | C | Operating defaults (I07, I08, I10, I14) | [seed/operating_defaults.json](../../seed/operating_defaults.json) | English/Hindi/Hinglish in, en-IN out; daily + manual refresh; 90-day lookback; IST display; opinion "recurring" at 3 independent sources; stale warning at 30 days; withdrawal removed from the page within 60 minutes; public page `noindex` |
 | D | Slug and ID convention (D19) | [DECISIONS.md](../../DECISIONS.md) | `name-locality-city`, generated once and kept stable |
-| E | Release acceptance definitions (I11) | [DECISIONS.md](../../DECISIONS.md#release-acceptance-definitions-proposed-step-01) | Targets from docs/07 |
+| E | Release acceptance definitions (I11) | [DECISIONS.md](../../DECISIONS.md#release-acceptance-definitions) | Targets from docs/07 |
 
-Still open, and needed later rather than for Step 02: transcript route (I05, Step 06), seeded users (I09, Step 03), correction owner (I10), demo machine (I12, Step 13), moderator capacity (I11), alternate names (I01).
+Deferred at the product owner's request, to be asked at the step that needs them: seeded users and roles (I09, Step 03), alternate names (I01, Step 04), transcript route (I05, Step 06), moderator capacity (I11, Step 09), correction owner (I10, before Step 11), demo machine (I12, Step 13).
