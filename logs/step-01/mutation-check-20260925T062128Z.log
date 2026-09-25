@@ -1,0 +1,36 @@
+Step 01 mutation check: each validator rule below is disabled on a scratch copy of the repo;
+the suite must then fail, and the failing tests must be the ones written for that rule.
+date (UTC): 2026-09-25T06:21:28Z
+commit:     f0932cb
+
+== rule disabled: if policy\["ai_processing_allowed"\] and not policy\["collection_allowed"\]:
+FAIL: test_ai_processing_requires_collection (test_validate_inputs.UC04SourcePolicies)
+Ran 56 tests in 0.262s
+FAILED (failures=1)
+
+== rule disabled: if len\(projects\) != EXPECTED_PROJECT_COUNT:
+FAIL: test_fewer_than_five_projects_rejected (test_validate_inputs.UC01ProjectRegistration)
+FAIL: test_more_than_five_projects_rejected (test_validate_inputs.UC01ProjectRegistration)
+Ran 56 tests in 0.160s
+FAILED (failures=2)
+
+== rule disabled: elif status == "live":
+FAIL: test_live_without_recorded_demonstration_rejected (test_validate_inputs.UC03ConnectorMatrix)
+Ran 56 tests in 0.171s
+FAILED (failures=1)
+
+== rule disabled: return text\[len\(RERA_FULL_PREFIX\):\] if text.startswith\(RERA_FULL_PREFIX\) else text
+FAIL: test_same_rera_in_full_and_short_form_is_a_duplicate (test_validate_inputs.UC01ProjectRegistration)
+FAIL: test_full_and_short_rera_forms_compare_equal (test_validate_inputs.UC02SlugAndSearchConventions)
+Ran 56 tests in 0.168s
+FAILED (failures=2)
+
+== rule disabled: if SECRET_LIKE.search\(text\)\]
+FAIL: test_secret_like_value_detected (test_validate_inputs.UC06RegisterAndSecrets)
+Ran 56 tests in 0.159s
+FAILED (failures=1)
+
+== rule disabled: if generic is not None and
+FAIL: test_generic_web_route_excludes_hosts_owned_by_other_families (test_validate_inputs.UC04SourcePolicies)
+Ran 56 tests in 0.158s
+FAILED (failures=1)

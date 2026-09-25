@@ -1,0 +1,409 @@
+Step 01 checks
+date (UTC): 2026-09-25T06:21:11Z
+commit:     f0932cb
+python:     Python 3.10.11
+
+=== UC-01..UC-07 automated suite (56 tests) ===
+$ python3 -m unittest discover -s scripts/tests -v
+test_duplicate_project_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_duplicate_client_id_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_fewer_than_five_projects_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_generic_single_word_name_is_flagged (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_missing_required_field_is_reported (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_more_than_five_projects_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_optional_fields_may_be_absent (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_placeholder_is_reported_with_project_and_field (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_rera_as_plain_string_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_same_rera_in_full_and_short_form_is_a_duplicate (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_supplied_file_has_five_valid_projects (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_unknown_field_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_user_spellings_are_kept_and_search_forms_are_separate (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_full_and_short_rera_forms_compare_equal (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_long_slug_is_cut_at_a_word_boundary (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_non_latin_only_name_gives_empty_slug_error (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_search_form_keeps_devanagari_marks (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_search_form_lowercases_and_strips_punctuation (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_slug_folds_accents_and_punctuation (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_slug_is_deterministic (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_slugs_for_the_five_projects (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_unknown_rera_format_is_a_warning_not_an_error (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_acquisition_order_follows_the_plan (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_every_source_has_credential_plan_and_demonstration (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_every_source_is_access_pending (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_live_with_recorded_demonstration_accepted (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_live_without_recorded_demonstration_rejected (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_lowercase_env_name_rejected (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_matrix_validates (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_missing_credential_reason_rejected (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_one_of_group_needs_two_members (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_unknown_policy_family_rejected (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_ai_processing_requires_collection (test_validate_inputs.UC04SourcePolicies) ... ok
+test_collection_requires_retention (test_validate_inputs.UC04SourcePolicies) ... ok
+test_derived_publication_requires_attribution (test_validate_inputs.UC04SourcePolicies) ... ok
+test_every_connector_family_has_a_policy (test_validate_inputs.UC04SourcePolicies) ... ok
+test_families_without_an_agreement_are_blocked (test_validate_inputs.UC04SourcePolicies) ... ok
+test_generic_web_route_excludes_hosts_owned_by_other_families (test_validate_inputs.UC04SourcePolicies) ... ok
+test_policies_validate (test_validate_inputs.UC04SourcePolicies) ... ok
+test_quotation_requires_derived_publication (test_validate_inputs.UC04SourcePolicies) ... ok
+test_accepting_without_owner_rejected (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_defaults_validate (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_missing_required_item_rejected (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_nothing_is_accepted_without_owner_record (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_open_item_with_value_rejected (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_roles_match_the_api_contract (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_env_file_is_gitignored (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_missing_registry_row_detected (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_registry_matches_the_matrix (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_secret_like_value_detected (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_seed_files_contain_no_secrets (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_status_drift_detected (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_fails_on_a_placeholder_file (test_validate_inputs.UC07CommandLine) ... ok
+test_fails_on_invalid_json (test_validate_inputs.UC07CommandLine) ... ok
+test_json_output (test_validate_inputs.UC07CommandLine) ... ok
+test_passes_on_repository_files (test_validate_inputs.UC07CommandLine) ... ok
+
+----------------------------------------------------------------------
+Ran 56 tests in 0.219s
+
+OK
+--> OK (exit 0, expected 0)
+
+=== Validator on the repository files ===
+$ python3 scripts/validate_inputs.py
+Step 01 input validation
+========================
+
+Projects (contracts/five-project-input-template.json)
+  1. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana | dlf privana south | dlf privana west | dlf privana north
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         GGM/772/504/2023/116, GGM/819/551/2024/46, GGM/954/686/2025/57
+     Client id:        1170
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+  5. M3M Antalya Hills
+     slug:         m3m-antalya-hills-sector-79-gurgaon
+     search names: m3m antalya hills | m3m antalya hills phase 1 | m3m antalya hills phase ii | m3m antalya hills 3 | commercial 01 in m3m antalya hills phase i
+     place:        sector 79, new gurgaon, gurgaon
+     developer:    m3m
+     RERA:         GGM/650/382/2022/125, GGM/833/565/2024/60, GGM/844/576/2024/71, GGM/867/599/2024/94
+     Client id:        201749
+
+Connectors + model providers: 11 (11 access_pending)
+Source policies: 10 (10 proposed)
+Operating defaults: 13 (3 open, 10 proposed)
+
+Warnings (1):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+
+Result: PASS (0 errors, 1 warnings)
+--> OK (exit 0, expected 0)
+
+=== Validator JSON summary ===
+$ json_summary
+pass {"projects": 5, "connectors": {"total": 11, "by_status": {"access_pending": 11}}, "policies": {"total": 10, "by_status": {"proposed": 10}}, "defaults": {"total": 13, "by_status": {"open": 3, "proposed": 10}}}
+--> OK (exit 0, expected 0)
+
+=== N1: placeholder in a required field must fail ===
+$ python3 scripts/validate_inputs.py --projects /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.HAq7D2wptE/n1.json
+Step 01 input validation
+========================
+
+Projects (/var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.HAq7D2wptE/n1.json)
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+  5. M3M Antalya Hills
+     slug:         m3m-antalya-hills-sector-79-gurgaon
+     search names: m3m antalya hills | m3m antalya hills phase 1 | m3m antalya hills phase ii | m3m antalya hills 3 | commercial 01 in m3m antalya hills phase i
+     place:        sector 79, new gurgaon, gurgaon
+     developer:    m3m
+     RERA:         GGM/650/382/2022/125, GGM/833/565/2024/60, GGM/844/576/2024/71, GGM/867/599/2024/94
+     Client id:        201749
+
+Connectors + model providers: 11 (11 access_pending)
+Source policies: 10 (10 proposed)
+Operating defaults: 13 (3 open, 10 proposed)
+
+Warnings (1):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+
+Errors (1):
+  - projects[0] (DLF Privana): field 'locality' is still a placeholder: '<Locality>'
+
+Result: FAIL (1 errors, 1 warnings)
+--> OK (exit 1, expected 1)
+
+=== N2: connector marked live without a recorded demonstration must fail ===
+$ python3 scripts/validate_inputs.py --connectors /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.HAq7D2wptE/n2.json
+Step 01 input validation
+========================
+
+Projects (contracts/five-project-input-template.json)
+  1. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana | dlf privana south | dlf privana west | dlf privana north
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         GGM/772/504/2023/116, GGM/819/551/2024/46, GGM/954/686/2025/57
+     Client id:        1170
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+  5. M3M Antalya Hills
+     slug:         m3m-antalya-hills-sector-79-gurgaon
+     search names: m3m antalya hills | m3m antalya hills phase 1 | m3m antalya hills phase ii | m3m antalya hills 3 | commercial 01 in m3m antalya hills phase i
+     place:        sector 79, new gurgaon, gurgaon
+     developer:    m3m
+     RERA:         GGM/650/382/2022/125, GGM/833/565/2024/60, GGM/844/576/2024/71, GGM/867/599/2024/94
+     Client id:        201749
+
+Connectors + model providers: 11 (10 access_pending, 1 live)
+Source policies: 10 (10 proposed)
+Operating defaults: 13 (3 open, 10 proposed)
+
+Warnings (1):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+
+Errors (2):
+  - connector 'brave_search': 'live' requires last_verified (date) and verification_ref (recorded demonstration)
+  - DECISIONS.md registry: row for `brave_search` does not show status 'live'
+
+Result: FAIL (2 errors, 1 warnings)
+--> OK (exit 1, expected 1)
+
+=== N3: AI processing switched on for a blocked source must fail ===
+$ python3 scripts/validate_inputs.py --policies /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.HAq7D2wptE/n3.json
+Step 01 input validation
+========================
+
+Projects (contracts/five-project-input-template.json)
+  1. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana | dlf privana south | dlf privana west | dlf privana north
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         GGM/772/504/2023/116, GGM/819/551/2024/46, GGM/954/686/2025/57
+     Client id:        1170
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+  5. M3M Antalya Hills
+     slug:         m3m-antalya-hills-sector-79-gurgaon
+     search names: m3m antalya hills | m3m antalya hills phase 1 | m3m antalya hills phase ii | m3m antalya hills 3 | commercial 01 in m3m antalya hills phase i
+     place:        sector 79, new gurgaon, gurgaon
+     developer:    m3m
+     RERA:         GGM/650/382/2022/125, GGM/833/565/2024/60, GGM/844/576/2024/71, GGM/867/599/2024/94
+     Client id:        201749
+
+Connectors + model providers: 11 (11 access_pending)
+Source policies: 10 (10 proposed)
+Operating defaults: 13 (3 open, 10 proposed)
+
+Warnings (1):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+
+Errors (1):
+  - policy 'reddit': AI processing allowed without collection
+
+Result: FAIL (1 errors, 1 warnings)
+--> OK (exit 1, expected 1)
+
+=== N4: secret-like value in seed data must fail ===
+$ python3 scripts/validate_inputs.py --connectors /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.HAq7D2wptE/n4.json
+Step 01 input validation
+========================
+
+Projects (contracts/five-project-input-template.json)
+  1. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana | dlf privana south | dlf privana west | dlf privana north
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         GGM/772/504/2023/116, GGM/819/551/2024/46, GGM/954/686/2025/57
+     Client id:        1170
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+  5. M3M Antalya Hills
+     slug:         m3m-antalya-hills-sector-79-gurgaon
+     search names: m3m antalya hills | m3m antalya hills phase 1 | m3m antalya hills phase ii | m3m antalya hills 3 | commercial 01 in m3m antalya hills phase i
+     place:        sector 79, new gurgaon, gurgaon
+     developer:    m3m
+     RERA:         GGM/650/382/2022/125, GGM/833/565/2024/60, GGM/844/576/2024/71, GGM/867/599/2024/94
+     Client id:        201749
+
+Connectors + model providers: 11 (11 access_pending)
+Source policies: 10 (10 proposed)
+Operating defaults: 13 (3 open, 10 proposed)
+
+Warnings (1):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+
+Errors (1):
+  - /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.HAq7D2wptE/n4.json: contains a secret-like value
+
+Result: FAIL (1 errors, 1 warnings)
+--> OK (exit 1, expected 1)
+
+=== N5: duplicate project must fail ===
+$ python3 scripts/validate_inputs.py --projects /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.HAq7D2wptE/n5.json
+Step 01 input validation
+========================
+
+Projects (/var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.HAq7D2wptE/n5.json)
+  1. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana | dlf privana south | dlf privana west | dlf privana north
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         GGM/772/504/2023/116, GGM/819/551/2024/46, GGM/954/686/2025/57
+     Client id:        1170
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+  5. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         -
+     Client id:        -
+
+Connectors + model providers: 11 (11 access_pending)
+Source policies: 10 (10 proposed)
+Operating defaults: 13 (3 open, 10 proposed)
+
+Warnings (2):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+  - projects[4] (DLF Privana): same name and city as projects[0] (DLF Privana); confirm these are different projects
+
+Errors (1):
+  - projects[4] (DLF Privana): slug 'dlf-privana-sector-76-gurgaon' duplicates projects[0] (DLF Privana) (probable duplicate project)
+
+Result: FAIL (1 errors, 2 warnings)
+--> OK (exit 1, expected 1)
+
+=== Hygiene: no .env or .DS_Store in git ===
+$ no_env_or_ds_store_tracked
+no .env or .DS_Store tracked
+--> OK (exit 0, expected 0)
+
+=== Hygiene: GitHub repo is private, default branch main ===
+$ repo_is_private_on_main
+PRIVATE main
+--> OK (exit 0, expected 0)
+
+ALL CHECKS OK
+log: logs/step-01/checks-20260925T062111Z.log
