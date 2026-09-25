@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "updated": "2026-09-25",
+  "note": "Editorial and operating defaults (Step 01.3). Proposed values stay provisional until the product owner accepts them; an accepted item records accepted_on and accepted_by. Open items have no value yet. Loaded into configuration at Step 03.",
+  "items": {
+    "input_languages": {
+      "value": ["en", "hi", "hi-Latn"],
+      "status": "proposed",
+      "ref": "I07",
+      "note": "English, Hindi and Hinglish (romanised Hindi)"
+    },
+    "output_locale": { "value": "en-IN", "status": "proposed", "ref": "I07" },
+    "refresh_cadence": {
+      "value": "daily_incremental_and_manual",
+      "status": "proposed",
+      "ref": "I08"
+    },
+    "discovery_lookback_days": { "value": 90, "status": "proposed", "ref": "I08" },
+    "display_timezone": {
+      "value": "Asia/Kolkata",
+      "status": "proposed",
+      "ref": "I08",
+      "note": "Stored in UTC; shown in IST"
+    },
+    "roles": {
+      "value": ["admin", "researcher", "moderator", "publisher", "analyst"],
+      "status": "proposed",
+      "ref": "I09",
+      "note": "One person may hold several roles"
+    },
+    "seeded_users": {
+      "value": [],
+      "status": "open",
+      "ref": "I09",
+      "note": "Names, emails and role assignments to come from the product owner"
+    },
+    "recurring_opinion_threshold": {
+      "value": 3,
+      "status": "proposed",
+      "ref": "docs/08",
+      "note": "Independent origin clusters before an opinion is described as recurring; not a fact check"
+    },
+    "freshness_warning_days": {
+      "value": 30,
+      "status": "proposed",
+      "ref": "docs/05",
+      "note": "Console warns when the active revision is older than this and newer eligible evidence exists"
+    },
+    "withdrawal_serving_sla_minutes": {
+      "value": 60,
+      "status": "proposed",
+      "ref": "I10",
+      "note": "From confirmed withdrawal to serving gate disabled and page revalidated"
+    },
+    "correction_owner": {
+      "value": null,
+      "status": "open",
+      "ref": "I10",
+      "note": "Named person who owns public correction requests"
+    },
+    "public_page_indexing": { "value": "noindex", "status": "proposed", "ref": "I14" },
+    "demo_environment": {
+      "value": null,
+      "status": "open",
+      "ref": "I12",
+      "note": "Developer machine or shared VM for the Docker Compose demo"
+    }
+  }
+}
