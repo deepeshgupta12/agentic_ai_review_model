@@ -1,7 +1,7 @@
 {
   "version": 1,
   "updated": "2026-09-25",
-  "note": "Initial source-policy set (Step 01.4, I06). Conservative defaults: a family that needs an agreement we do not have is blocked. These are engineering defaults, not legal advice; the product owner reviews each against current platform terms. Loaded into ai_source_policies by a seed script at Step 03; code never hard-codes them.",
+  "note": "Initial source-policy set (Step 01.4, I06), accepted by the product owner on 2026-09-25. Conservative defaults: a family that needs an agreement we do not have is blocked. These are engineering defaults, not legal advice; each new host or platform is still checked against its current terms. A change is a new policy_version. Loaded into ai_source_policies by a seed script at Step 03; code never hard-codes them.",
   "policies": [
     {
       "family": "web_public_pages",
@@ -23,8 +23,10 @@
         "Publish paraphrased, attributed findings with a link; no verbatim quotes"
       ],
       "basis": "docs/06 scraping policy. Each host's terms are reviewed when it is added to the allow-list.",
-      "status": "proposed",
-      "review_owner": "Product owner"
+      "status": "accepted",
+      "review_owner": "Product owner",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
       "family": "youtube",
@@ -42,8 +44,10 @@
         "Titles, descriptions and metadata never count as spoken-content evidence"
       ],
       "basis": "Conservative 30-day retention pending review of the YouTube API Services terms.",
-      "status": "proposed",
-      "review_owner": "Product owner"
+      "status": "accepted",
+      "review_owner": "Product owner",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
       "family": "spoken_video_content",
@@ -57,8 +61,10 @@
       "hosts": [],
       "conditions": [],
       "basis": "No acquisition route decided (I05). Blocked until the product owner records one.",
-      "status": "proposed",
-      "review_owner": "Product owner"
+      "status": "accepted",
+      "review_owner": "Product owner",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
       "family": "official_records",
@@ -75,8 +81,10 @@
         "Quote only registry facts (IDs, dates, registered names, status) together with the record date"
       ],
       "basis": "Public regulatory records used as dated primary evidence.",
-      "status": "proposed",
-      "review_owner": "Product owner"
+      "status": "accepted",
+      "review_owner": "Product owner",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
       "family": "reddit",
@@ -90,8 +98,10 @@
       "hosts": ["reddit.com"],
       "conditions": [],
       "basis": "Needs approved API access covering analysis and derived use (docs/06). Blocked until obtained.",
-      "status": "proposed",
-      "review_owner": "Product owner"
+      "status": "accepted",
+      "review_owner": "Product owner",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
       "family": "x",
@@ -105,8 +115,10 @@
       "hosts": ["x.com", "twitter.com"],
       "conditions": [],
       "basis": "Needs an entitled X API tier or listening contract. Blocked until obtained.",
-      "status": "proposed",
-      "review_owner": "Product owner"
+      "status": "accepted",
+      "review_owner": "Product owner",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
       "family": "meta",
@@ -120,8 +132,10 @@
       "hosts": ["facebook.com", "instagram.com"],
       "conditions": [],
       "basis": "Needs an approved Meta app or listening contract. Blocked until obtained.",
-      "status": "proposed",
-      "review_owner": "Product owner"
+      "status": "accepted",
+      "review_owner": "Product owner",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
       "family": "quora",
@@ -135,8 +149,10 @@
       "hosts": ["quora.com"],
       "conditions": [],
       "basis": "No licensed feed; terms review required before any collection.",
-      "status": "proposed",
-      "review_owner": "Product owner"
+      "status": "accepted",
+      "review_owner": "Product owner",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
       "family": "linkedin",
@@ -150,8 +166,10 @@
       "hosts": ["linkedin.com"],
       "conditions": [],
       "basis": "Content is mostly behind login; no collection without a partner agreement.",
-      "status": "proposed",
-      "review_owner": "Product owner"
+      "status": "accepted",
+      "review_owner": "Product owner",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
       "family": "listening_provider",
@@ -165,8 +183,10 @@
       "hosts": [],
       "conditions": [],
       "basis": "Rights come from the provider contract; set when a provider is contracted.",
-      "status": "proposed",
-      "review_owner": "Product owner"
+      "status": "accepted",
+      "review_owner": "Product owner",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     }
   ]
 }

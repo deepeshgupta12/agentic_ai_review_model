@@ -335,6 +335,10 @@ def validate_policies(data: Any) -> tuple[list[str], list[str], dict[str, dict[s
                 flags_ok = False
         if policy.get("status") not in POLICY_STATUSES:
             errors.append(f"{label}: status must be one of {sorted(POLICY_STATUSES)}")
+        elif policy["status"] == "accepted" and not (
+            _is_iso_date(policy.get("accepted_on")) and _is_text(policy.get("accepted_by"))
+        ):
+            errors.append(f"{label}: accepted policies need accepted_on (date) and accepted_by")
         for field in ("basis", "review_owner"):
             if not _is_text(policy.get(field)):
                 errors.append(f"{label}: '{field}' must be non-empty text")

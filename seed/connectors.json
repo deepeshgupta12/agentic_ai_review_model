@@ -1,7 +1,7 @@
 {
   "version": 1,
   "updated": "2026-09-25",
-  "note": "Connector matrix and credential plan (Step 01, docs/06). Every source starts access_pending and becomes live only after a real credential is configured and the demonstration below has been run and recorded in PROGRESS.md. expected_capabilities are what we plan to use, not demonstrated facts: true = expected, false = not used, null = unknown until demonstrated. demo_requirement values are the proposed answer to I04.",
+  "note": "Connector matrix and credential plan (Step 01, docs/06). Every source starts access_pending and becomes live only after a real credential is configured and the demonstration below has been run and recorded in PROGRESS.md. expected_capabilities are what we plan to use, not demonstrated facts: true = expected, false = not used, null = unknown until demonstrated. demo_requirement values answer I04 and were accepted by the product owner on 2026-09-25.",
   "credential_location": ".env at the repository root for local runs (never committed); GitHub Actions secrets for CI. Only variable names are recorded here.",
   "model_providers": [
     {

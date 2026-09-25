@@ -286,6 +286,13 @@ class UC04SourcePolicies(unittest.TestCase):
         errors, _, _ = vi.validate_policies(self.data)
         assert_error(self, errors, "official_records", "positive retention_days")
 
+    def test_accepting_a_policy_without_owner_rejected(self):
+        policy = self.policy("youtube")
+        policy["status"] = "accepted"
+        policy.pop("accepted_by", None)
+        errors, _, _ = vi.validate_policies(self.data)
+        assert_error(self, errors, "youtube", "accepted_on (date) and accepted_by")
+
 
 class UC05OperatingDefaults(unittest.TestCase):
     """UC-05: defaults are provisional until accepted by a named person."""
@@ -304,7 +311,9 @@ class UC05OperatingDefaults(unittest.TestCase):
                     self.assertTrue(item.get("accepted_by") and item.get("accepted_on"))
 
     def test_accepting_without_owner_rejected(self):
-        self.data["items"]["output_locale"]["status"] = "accepted"
+        item = self.data["items"]["output_locale"]
+        item["status"] = "accepted"
+        item.pop("accepted_by", None)
         errors, _ = vi.validate_defaults(self.data)
         assert_error(self, errors, "output_locale", "accepted_on")
 

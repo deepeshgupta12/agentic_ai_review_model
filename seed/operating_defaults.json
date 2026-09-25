@@ -1,69 +1,100 @@
 {
   "version": 1,
   "updated": "2026-09-25",
-  "note": "Editorial and operating defaults (Step 01.3). Proposed values stay provisional until the product owner accepts them; an accepted item records accepted_on and accepted_by. Open items have no value yet. Loaded into configuration at Step 03.",
+  "note": "Editorial and operating defaults (Step 01.3). An accepted item records accepted_on and accepted_by. Proposed items are not yet approved; open items have no value yet and are asked for at the step that needs them. Loaded into configuration at Step 03.",
   "items": {
     "input_languages": {
       "value": ["en", "hi", "hi-Latn"],
-      "status": "proposed",
+      "status": "accepted",
       "ref": "I07",
-      "note": "English, Hindi and Hinglish (romanised Hindi)"
+      "note": "English, Hindi and Hinglish (romanised Hindi)",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
-    "output_locale": { "value": "en-IN", "status": "proposed", "ref": "I07" },
+    "output_locale": {
+      "value": "en-IN",
+      "status": "accepted",
+      "ref": "I07",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
+    },
     "refresh_cadence": {
       "value": "daily_incremental_and_manual",
-      "status": "proposed",
-      "ref": "I08"
+      "status": "accepted",
+      "ref": "I08",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
-    "discovery_lookback_days": { "value": 90, "status": "proposed", "ref": "I08" },
+    "discovery_lookback_days": {
+      "value": 90,
+      "status": "accepted",
+      "ref": "I08",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
+    },
     "display_timezone": {
       "value": "Asia/Kolkata",
-      "status": "proposed",
+      "status": "accepted",
       "ref": "I08",
-      "note": "Stored in UTC; shown in IST"
+      "note": "Stored in UTC; shown in IST",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     "roles": {
       "value": ["admin", "researcher", "moderator", "publisher", "analyst"],
       "status": "proposed",
       "ref": "I09",
-      "note": "One person may hold several roles"
+      "note": "One person may hold several roles. Confirm together with seeded users at Step 03"
     },
     "seeded_users": {
       "value": [],
       "status": "open",
       "ref": "I09",
-      "note": "Names, emails and role assignments to come from the product owner"
+      "note": "Ask the product owner at Step 03: names, emails and role assignments"
     },
     "recurring_opinion_threshold": {
       "value": 3,
-      "status": "proposed",
+      "status": "accepted",
       "ref": "docs/08",
-      "note": "Independent origin clusters before an opinion is described as recurring; not a fact check"
+      "note": "Independent origin clusters before an opinion is described as recurring; not a fact check",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     "freshness_warning_days": {
       "value": 30,
-      "status": "proposed",
+      "status": "accepted",
       "ref": "docs/05",
-      "note": "Console warns when the active revision is older than this and newer eligible evidence exists"
+      "note": "Console warns when the active revision is older than this and newer eligible evidence exists",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     "withdrawal_serving_sla_minutes": {
       "value": 60,
-      "status": "proposed",
+      "status": "accepted",
       "ref": "I10",
-      "note": "From confirmed withdrawal to serving gate disabled and page revalidated"
+      "note": "From confirmed withdrawal to serving gate disabled and page revalidated",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     "correction_owner": {
       "value": null,
       "status": "open",
       "ref": "I10",
-      "note": "Named person who owns public correction requests"
+      "note": "Ask the product owner before Step 11: named person who owns public correction requests"
     },
-    "public_page_indexing": { "value": "noindex", "status": "proposed", "ref": "I14" },
+    "public_page_indexing": {
+      "value": "noindex",
+      "status": "accepted",
+      "ref": "I14",
+      "note": "For the POC. Revisit before the page is used for SEO/AEO",
+      "accepted_on": "2026-09-25",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
+    },
     "demo_environment": {
       "value": null,
       "status": "open",
       "ref": "I12",
-      "note": "Developer machine or shared VM for the Docker Compose demo"
+      "note": "Ask the product owner at Step 13: developer machine or shared VM for the Docker Compose demo"
     }
   }
 }
