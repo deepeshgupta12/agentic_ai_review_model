@@ -1,0 +1,33 @@
+# Secrets: never commit. Only .env.example is tracked (Step 03).
+.env
+.env.*
+!.env.example
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / web
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# Media, model weights and caches (Step 03 extends as needed)
+media_cache/
+model_cache/
+*.bin
+*.safetensors

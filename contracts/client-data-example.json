@@ -1,0 +1,386 @@
+{
+  "schema_version": "1.0.0",
+  "sample_is_synthetic": true,
+  "project": {
+    "id": "project_demo_001",
+    "client_id": "SY_SYNTHETIC_001",
+    "name": "Example Residences — Fictional",
+    "developer": "Example Developer — Fictional",
+    "city": "Example City",
+    "locality": "Example Locality",
+    "micromarket": "Example Micromarket",
+    "phase": "Phase A",
+    "alternate_names": [
+      "Example Residences Phase A"
+    ],
+    "rera_references": [],
+    "page_url": "https://example.com/synthetic-project-page",
+    "input_languages": [
+      "en",
+      "hi",
+      "hi-Latn"
+    ],
+    "output_locale": "en-IN",
+    "refresh_hours": 24,
+    "discovery_lookback_days": 90
+  },
+  "source_policies": [
+    {
+      "id": "policy_synthetic_only",
+      "basis": "Fictional test data only; grants no rights over real platform content.",
+      "collection_allowed": true,
+      "ai_processing_allowed": true,
+      "derived_publication_allowed": true,
+      "quotation_allowed": true,
+      "retain_until": "2026-12-31T00:00:00Z",
+      "attribution_required": true
+    },
+    {
+      "id": "policy_metadata_only",
+      "basis": "Fictional metadata-only entitlement; no spoken-content analysis rights.",
+      "collection_allowed": true,
+      "ai_processing_allowed": false,
+      "derived_publication_allowed": false,
+      "quotation_allowed": false,
+      "retain_until": "2026-12-31T00:00:00Z",
+      "attribution_required": true
+    }
+  ],
+  "sources": [
+    {
+      "id": "src_demo_1",
+      "revision": 1,
+      "project_id": "project_demo_001",
+      "platform": "synthetic_forum",
+      "native_id": "post_1",
+      "url": "https://example.com/synthetic-project-discussion/1",
+      "kind": "post",
+      "parent_source_id": null,
+      "origin_cluster_id": "origin_demo_1",
+      "published_at": "2026-09-20T09:00:00Z",
+      "collected_at": "2026-09-24T06:00:00Z",
+      "language": "en",
+      "source_role": "reviewer",
+      "original_text": "I visited the sample project. The living room layout felt spacious to me.",
+      "normalised_text": "I visited the sample project. The living room layout felt spacious to me.",
+      "content_sha256": "cf8128df39948170be1683d735ebebf9aed6641f8d39554f3913f3604e945afb",
+      "rights_policy_id": "policy_synthetic_only",
+      "capture_level": "full_content",
+      "deleted_at": null,
+      "project_match": {
+        "status": "human_confirmed",
+        "confidence": null,
+        "basis": "Synthetic fixture assigned to its fictional project."
+      },
+      "media": null
+    },
+    {
+      "id": "src_demo_2",
+      "revision": 1,
+      "project_id": "project_demo_001",
+      "platform": "synthetic_forum",
+      "native_id": "post_2",
+      "url": "https://example.com/synthetic-project-discussion/2",
+      "kind": "post",
+      "parent_source_id": null,
+      "origin_cluster_id": "origin_demo_2",
+      "published_at": "2026-09-20T09:00:00Z",
+      "collected_at": "2026-09-24T06:00:00Z",
+      "language": "en",
+      "source_role": "reviewer",
+      "original_text": "I visited the sample project on a weekday evening. The approach road was congested during that visit.",
+      "normalised_text": "I visited the sample project on a weekday evening. The approach road was congested during that visit.",
+      "content_sha256": "018d9e70c1abb911cb3027a8d7db2c8f74a6d606a1c3dc99875a8b91b307eb4c",
+      "rights_policy_id": "policy_synthetic_only",
+      "capture_level": "full_content",
+      "deleted_at": null,
+      "project_match": {
+        "status": "human_confirmed",
+        "confidence": null,
+        "basis": "Synthetic fixture assigned to its fictional project."
+      },
+      "media": null
+    },
+    {
+      "id": "src_demo_3",
+      "revision": 1,
+      "project_id": "project_demo_001",
+      "platform": "synthetic_video_platform",
+      "native_id": "video_3",
+      "url": "https://example.com/synthetic-project-video/3",
+      "kind": "video",
+      "parent_source_id": null,
+      "origin_cluster_id": "origin_demo_3",
+      "published_at": "2026-09-21T09:00:00Z",
+      "collected_at": "2026-09-24T06:00:00Z",
+      "language": "hi",
+      "source_role": "unknown",
+      "original_text": null,
+      "normalised_text": null,
+      "content_sha256": "bb5a3cec9a73d328e6bf2752e65ecee6afcca24a7e6142155f663c517d528f3f",
+      "rights_policy_id": "policy_metadata_only",
+      "capture_level": "metadata_only",
+      "deleted_at": null,
+      "project_match": {
+        "status": "needs_review",
+        "confidence": null,
+        "basis": "Title match only; spoken content has not been analysed."
+      },
+      "media": {
+        "format": "unknown",
+        "format_basis": "No authoritative format indicator available.",
+        "transcript_status": "access_pending",
+        "analysis_status": "metadata_only",
+        "analysis_unavailable_reason": "No authorised transcript or media file is available in this synthetic example."
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "ev_demo_1",
+      "source_id": "src_demo_1",
+      "source_revision": 1,
+      "excerpt": "I visited the sample project. The living room layout felt spacious to me.",
+      "context": "Full synthetic post; no omitted text.",
+      "anchor": {
+        "type": "text",
+        "start_char": 0,
+        "end_char": 73
+      },
+      "status": "valid"
+    },
+    {
+      "id": "ev_demo_2",
+      "source_id": "src_demo_2",
+      "source_revision": 1,
+      "excerpt": "I visited the sample project on a weekday evening. The approach road was congested during that visit.",
+      "context": "Full synthetic post; no omitted text.",
+      "anchor": {
+        "type": "text",
+        "start_char": 0,
+        "end_char": 101
+      },
+      "status": "valid"
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim_demo_1",
+      "project_id": "project_demo_001",
+      "aspect": "layout",
+      "statement": "One visitor described the living room layout as spacious.",
+      "polarity": "positive",
+      "claim_type": "reported_opinion",
+      "supporting_evidence_ids": [
+        "ev_demo_1"
+      ],
+      "contradicting_evidence_ids": [],
+      "verification_status": "attributed_opinion",
+      "verification_note": "Accurately attributes one synthetic post; does not independently verify the underlying condition.",
+      "independent_origin_count": 1,
+      "confidence": null,
+      "confidence_basis": "No calibrated probability is assigned to this synthetic example.",
+      "review_due_at": "2026-10-24T06:00:00Z"
+    },
+    {
+      "id": "claim_demo_2",
+      "project_id": "project_demo_001",
+      "aspect": "connectivity",
+      "statement": "One visitor reported approach-road congestion during a weekday-evening visit.",
+      "polarity": "negative",
+      "claim_type": "reported_opinion",
+      "supporting_evidence_ids": [
+        "ev_demo_2"
+      ],
+      "contradicting_evidence_ids": [],
+      "verification_status": "attributed_opinion",
+      "verification_note": "Accurately attributes one synthetic post; does not independently verify the underlying condition.",
+      "independent_origin_count": 1,
+      "confidence": null,
+      "confidence_basis": "No calibrated probability is assigned to this synthetic example.",
+      "review_due_at": "2026-10-24T06:00:00Z"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding_demo_1",
+      "revision": 1,
+      "project_id": "project_demo_001",
+      "kind": "pro",
+      "text": "One visitor described the living room layout as spacious.",
+      "claim_ids": [
+        "claim_demo_1"
+      ],
+      "caveat": "Single attributed observation; not a recurring community finding.",
+      "recurring_opinion": false,
+      "moderation_status": "approved"
+    },
+    {
+      "id": "finding_demo_2",
+      "revision": 1,
+      "project_id": "project_demo_001",
+      "kind": "con",
+      "text": "One visitor reported approach-road congestion during a weekday-evening visit.",
+      "claim_ids": [
+        "claim_demo_2"
+      ],
+      "caveat": "Single attributed observation; not a recurring community finding.",
+      "recurring_opinion": false,
+      "moderation_status": "approved"
+    }
+  ],
+  "content_revision": {
+    "id": "revision_demo_1",
+    "project_id": "project_demo_001",
+    "revision": 1,
+    "status": "final_review",
+    "locale": "en-IN",
+    "created_at": "2026-09-24T06:40:00Z",
+    "content_sha256": "53420492502d0cd8ed9670c83155214b00c3f8c51cbb16861df57c5e350775ea",
+    "payload": {
+      "module_title": "What visitors discussed about the sample project",
+      "summary": {
+        "text": "Two individual visitor posts mention a spacious living room layout and approach-road congestion during one evening visit.",
+        "finding_ids": [
+          "finding_demo_1",
+          "finding_demo_2"
+        ],
+        "claim_ids": [
+          "claim_demo_1",
+          "claim_demo_2"
+        ]
+      },
+      "pros": [
+        {
+          "text": "One visitor described the living room layout as spacious.",
+          "finding_ids": [
+            "finding_demo_1"
+          ],
+          "claim_ids": [
+            "claim_demo_1"
+          ]
+        }
+      ],
+      "cons": [
+        {
+          "text": "One visitor reported approach-road congestion during a weekday-evening visit.",
+          "finding_ids": [
+            "finding_demo_2"
+          ],
+          "claim_ids": [
+            "claim_demo_2"
+          ]
+        }
+      ],
+      "questions": [
+        {
+          "question": "What did the collected posts say about road access?",
+          "answer": {
+            "text": "One visitor reported congestion during a weekday-evening visit. This single report does not establish typical traffic conditions.",
+            "finding_ids": [
+              "finding_demo_2"
+            ],
+            "claim_ids": [
+              "claim_demo_2"
+            ]
+          }
+        }
+      ],
+      "source_urls": [
+        "https://example.com/synthetic-project-discussion/1",
+        "https://example.com/synthetic-project-discussion/2"
+      ],
+      "coverage_note": "Synthetic demonstration based on two fictional posts. A discovered video has not been analysed and supports no findings.",
+      "evidence_window_start": "2026-09-01T00:00:00Z",
+      "evidence_window_end": "2026-09-24T06:00:00Z",
+      "last_reviewed_at": null
+    }
+  },
+  "review_decisions": [
+    {
+      "id": "decision_demo_1",
+      "target_type": "finding",
+      "target_id": "finding_demo_1",
+      "target_revision": 1,
+      "content_sha256": null,
+      "status": "approved",
+      "reviewer_id": "synthetic_moderator",
+      "reviewed_at": "2026-09-24T06:30:00Z",
+      "reason": "Fixture decision approves the attribution and preserves the single-source caveat."
+    },
+    {
+      "id": "decision_demo_2",
+      "target_type": "finding",
+      "target_id": "finding_demo_2",
+      "target_revision": 1,
+      "content_sha256": null,
+      "status": "approved",
+      "reviewer_id": "synthetic_moderator",
+      "reviewed_at": "2026-09-24T06:30:00Z",
+      "reason": "Fixture decision approves the attribution and preserves the single-source caveat."
+    },
+    {
+      "id": "decision_demo_final",
+      "target_type": "content_revision",
+      "target_id": "revision_demo_1",
+      "target_revision": 1,
+      "content_sha256": "53420492502d0cd8ed9670c83155214b00c3f8c51cbb16861df57c5e350775ea",
+      "status": "pending",
+      "reviewer_id": null,
+      "reviewed_at": null,
+      "reason": null
+    }
+  ],
+  "publication": {
+    "project_id": "project_demo_001",
+    "content_revision_id": "revision_demo_1",
+    "content_sha256": "53420492502d0cd8ed9670c83155214b00c3f8c51cbb16861df57c5e350775ea",
+    "idempotency_key": "project_demo_001:revision_demo_1",
+    "status": "blocked_pending_approval",
+    "active_revision_id": null,
+    "published_at": null,
+    "previous_publication_id": null
+  },
+  "agent_tasks": [
+    {
+      "id": "task_demo_editorial",
+      "run_id": "run_demo_1",
+      "project_id": "project_demo_001",
+      "agent_name": "seo_aeo_editorial",
+      "status": "completed",
+      "input_refs": [
+        "finding_demo_1",
+        "finding_demo_2"
+      ],
+      "output_refs": [
+        "revision_demo_1"
+      ],
+      "prompt_version": "editorial.1.0",
+      "schema_version": "1.0.0",
+      "requested_model": "gpt-6-sol",
+      "returned_model": null,
+      "max_tool_steps": 5,
+      "attempt": 1,
+      "input_tokens": null,
+      "output_tokens": null,
+      "estimated_cost_usd": null,
+      "error": null
+    }
+  ],
+  "coverage": [
+    {
+      "platform": "synthetic_forum",
+      "collection_status": "complete_for_query",
+      "capture_level": "full_content",
+      "note": "Fixture contains two posts; query completion does not imply complete platform coverage.",
+      "last_successful_sync": "2026-09-24T06:00:00Z"
+    },
+    {
+      "platform": "synthetic_video_platform",
+      "collection_status": "partial",
+      "capture_level": "metadata_only",
+      "note": "Video discovery only; transcript access is pending.",
+      "last_successful_sync": "2026-09-24T06:00:00Z"
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+{
+ "title": "the client coding handoff",
+ "version": "1.1",
+ "date": "2026-09-25",
+ "entrypoint": "MASTER.md",
+ "step_count": 14,
+ "implementation_status": "not_started",
+ "architecture": "standalone: own MongoDB (Compose single-node replica set), own catalogue, Next.js console + public page, FastAPI/LangGraph backend, Claude API",
+ "files": [
+  {
+   "path": "AGENTS.md",
+   "bytes": 3707,
+   "sha256": "fa02b9de4d5016babeda45de9512b4cd461985eae10e7f5762c94419a4e68b38"
+  },
+  {
+   "path": "CHANGELOG.md",
+   "bytes": 2192,
+   "sha256": "eecca551c17023c405b7e53a08431d9a2ee825385776038524637d6deb5557bf"
+  },
+  {
+   "path": "CLAUDE.md",
+   "bytes": 367,
+   "sha256": "30787e1d19e20a86d4cd6243176d6ff81563bbc47beb6fcc71429286b508e34a"
+  },
+  {
+   "path": "DECISIONS.md",
+   "bytes": 6395,
+   "sha256": "74bdd481f4aeb17205cb353966987247351b60bb8215a8d8d22c9820c4583e99"
+  },
+  {
+   "path": "MASTER.md",
+   "bytes": 13644,
+   "sha256": "233fb17efe8e036a239df009676b4105114dec54705897c109f1ad4acfd766ba"
+  },
+  {
+   "path": "PROGRESS.md",
+   "bytes": 3566,
+   "sha256": "93851a7a1cb1f62ded74fc5adabfbde66e9c60da4778229421ca3a6d0b0bf18e"
+  },
+  {
+   "path": "README.md",
+   "bytes": 2762,
+   "sha256": "0ecfe9d7fcd73bcd76221d15dc6fa3be43438e1f26fb00394ab5866835f2a3d9"
+  },
+  {
+   "path": "contracts/five-project-input-template.json",
+   "bytes": 1673,
+   "sha256": "1236b0e59f3f3e9173504df901e90d6a84f84f3a206c092a1e5b0c3c85eca4d0"
+  },
+  {
+   "path": "contracts/client-data-contract.schema.json",
+   "bytes": 30310,
+   "sha256": "55c91cb9023e111e03eb9fe16040dce43a3a460314392c194ea9a763e9b8bc0a"
+  },
+  {
+   "path": "contracts/client-data-example.json",
+   "bytes": 13099,
+   "sha256": "386b371808def60baece4fb7de31bfa0833bcf2d95b9b023151aec5b0a1c4bfd"
+  },
+  {
+   "path": "docs/01-architecture-and-stack.md",
+   "bytes": 7957,
+   "sha256": "6b8922b664892c2c43cefa599e8b0fb3d7fd83038cdeb2fbcb0886dcb5db6d84"
+  },
+  {
+   "path": "docs/02-database-and-contracts.md",
+   "bytes": 8607,
+   "sha256": "f574549dd6ba473c5a6da317edfce043a6e16b42c6ea51432de31e56872f2f95"
+  },
+  {
+   "path": "docs/03-api-and-cms-contracts.md",
+   "bytes": 7096,
+   "sha256": "39e984da07d9183a051ffc051d54a0931b400abc108fbe3cbe866ced58ad58f3"
+  },
+  {
+   "path": "docs/04-agent-contracts.md",
+   "bytes": 7357,
+   "sha256": "0d4916dec0c32e369c1e214c2523237c9ce4cdf81652f052936a06f9280b9329"
+  },
+  {
+   "path": "docs/05-workflow-and-publication.md",
+   "bytes": 8324,
+   "sha256": "d10b44ac63674c26fd6aa4ec90ca5904a76a50b97e8ea08ca545f28db64591eb"
+  },
+  {
+   "path": "docs/06-source-integrations.md",
+   "bytes": 6693,
+   "sha256": "f5ce487f15680b0d656fcaa4d0c7b61a1996fe025ba1e85d428a0b15fa70ba00"
+  },
+  {
+   "path": "docs/07-validation-and-release.md",
+   "bytes": 5602,
+   "sha256": "a999dc1d3936684d84032d4cb36258b0ffa07a80002e3c93b85dcd697c65c250"
+  },
+  {
+   "path": "docs/08-editorial-and-ui.md",
+   "bytes": 5735,
+   "sha256": "a272e5a07dd6702aa0e2773caa5558aab73f6794d42cde691e4518cf292f771b"
+  },
+  {
+   "path": "reference/original-master-plan.md",
+   "bytes": 54592,
+   "sha256": "705298ef5e2ebb7c89b1cab5a03fd974c4000c118ffeb56a84814156b25860cf"
+  },
+  {
+   "path": "steps/01-requirements-and-access.md",
+   "bytes": 5885,
+   "sha256": "85275a21965e04664b62253f4e741cf4a7db6ddd9499926911995495dbbf75b8"
+  },
+  {
+   "path": "steps/02-ux-architecture-and-contracts.md",
+   "bytes": 6371,
+   "sha256": "af84e1918c768f326fc0933d1ac9f5536856c7443ffa5bbda95a35dbdc3ca87a"
+  },
+  {
+   "path": "steps/03-foundation-and-mongodb.md",
+   "bytes": 7201,
+   "sha256": "70132b69ec5b352ee7e90065f8ad96f901a63bb33cfd0aaf622b6f41bfa71593"
+  },
+  {
+   "path": "steps/04-project-identity.md",
+   "bytes": 6023,
+   "sha256": "ca13ee7edc9457f6d334cfc2d2b7a6c9b62e41de01377063a2fefa70a3f7d2b8"
+  },
+  {
+   "path": "steps/05-text-and-social-connectors.md",
+   "bytes": 6076,
+   "sha256": "0a9799ea17712dd589135c66270c352e7cdc0125a981549aad18d97574679716"
+  },
+  {
+   "path": "steps/06-video-and-language-processing.md",
+   "bytes": 6237,
+   "sha256": "97f2d1a72c32b9dbdddc4e9521359c24a91a2f599528fb04a1c93607a9616cc4"
+  },
+  {
+   "path": "steps/07-evidence-and-retrieval.md",
+   "bytes": 6453,
+   "sha256": "d2d7569f41904979ae0d258b06c4c0d9d795a9648f58670aadcbdb3ba73f36f6"
+  },
+  {
+   "path": "steps/08-agents-and-master-workflow.md",
+   "bytes": 6787,
+   "sha256": "cadeb5a837cac2c2b9c8c28c5ac911555e8889d0cb74c3bef5e28892fab59580"
+  },
+  {
+   "path": "steps/09-cms-moderation.md",
+   "bytes": 5255,
+   "sha256": "d0d60ca70c741d63319d5d6b0be6013e146e5d98d0933d431180f9793a83a5c9"
+  },
+  {
+   "path": "steps/10-seo-aeo-and-editorial-qa.md",
+   "bytes": 6070,
+   "sha256": "26faa52fc7b2419240468fc6476297268f5fed1ff12ae732884ff6ec945c05c4"
+  },
+  {
+   "path": "steps/11-publishing-and-recovery.md",
+   "bytes": 5889,
+   "sha256": "3ae912ab5b434ffade1476b450f9f653dfc17889062c7ecf24d7ce9ebcaa8752"
+  },
+  {
+   "path": "steps/12-evaluation-security-and-capacity.md",
+   "bytes": 7237,
+   "sha256": "e2dde31811c17520e3d244eb78792a49495a63dd2e807189e3f392ae39516b0c"
+  },
+  {
+   "path": "steps/13-operations-and-freshness.md",
+   "bytes": 6420,
+   "sha256": "32aed56d0c3ff8c3196cd2e827bd2776b07b720f4961747df5aa2f50dc484f73"
+  },
+  {
+   "path": "steps/14-single-release-and-handover.md",
+   "bytes": 7671,
+   "sha256": "c8f954e1a59d441cdf487820ed1c06583ec8df9d433ea535501785d2701371fb"
+  }
+ ]
+}

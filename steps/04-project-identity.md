@@ -1,0 +1,116 @@
+# Step 04: Project catalogue and identity resolution
+
+**Release:** 1.0, complete five-project POC. **Initial status:** not started.
+
+Map supplied project identities to MongoDB and associate discussion segments with the correct project and phase before they can support findings.
+
+## Prerequisites
+
+[Step 02: UX, architecture and contracts](02-ux-architecture-and-contracts.md), [Step 03: Engineering foundation and MongoDB setup](03-foundation-and-mongodb.md)
+
+Read [MASTER.md](../MASTER.md), the relevant entries in [DECISIONS.md](../DECISIONS.md), and these specifications:
+
+- [Database and contracts](../docs/02-database-and-contracts.md)
+- [API and console contracts](../docs/03-api-and-cms-contracts.md)
+- [Agent contracts](../docs/04-agent-contracts.md)
+- [Validation and release](../docs/07-validation-and-release.md)
+
+Numbered order is the default solo-coding order. Independent fixtures/contracts may be prepared earlier, but a blocked live integration cannot be marked complete. This step is an internal work package, not a separate product release.
+
+## Original requirements covered
+
+4.1 Build import/synchronisation with stable the client IDs.
+
+4.2 Store user-supplied city, locality, alternate names and optional micromarket in the catalogue and search configuration; use optional developer, phase and RERA fields from the input file when present.
+
+4.3 Build query expansion and negative-keyword controls.
+
+4.4 Implement deterministic candidate scoring and AI handling for ambiguous cases.
+
+4.5 Add moderator correction and split/merge association workflows.
+
+4.6 Evaluate wrong-project matches on similarly named projects and mixed-project videos.
+
+4.7 (Added 25 Sep 2026, D17) Identify alternate names of each project and its phases from collected sources and propose them for review; approved names feed search and matching.
+
+Deliverables: searchable project registry, validated matching pipeline and reviewed alternate-name discovery.
+
+## Detailed implementation
+
+### 04.1 Implement import and reconciliation
+
+Validate the input records (name, alternate names, locality, city required; micromarket and enrichment optional), generate stable project IDs and slugs, upsert the `projects` catalogue idempotently, and store search aliases and refresh/language settings in `ai_project_configs`. Agents never write to `projects`.
+
+### 04.2 Build search identity
+
+Normalise spelling, transliteration and locality/micromarket tokens while preserving originals. Use optional developer/phase/RERA data from the input file when available; absence must not become a new required user field.
+
+### 04.3 Generate bounded queries
+
+Build name/alias plus locality/city combinations, languages and negative keywords. Deduplicate query variants and cap discovery cost. Version query rules for reproducibility.
+
+### 04.4 Match candidate segments
+
+Use deterministic signals first and an explicitly bounded identity agent for ambiguity. Track project/phase, match rationale and accept/reject/review status. Calibrate thresholds on labels; do not expose self-assessed scores as probability of truth.
+
+### 04.5 Handle multi-project material
+
+Create project-source-segment associations. Keep relevant spans separate in comparison articles/videos. Do not duplicate a global source revision to satisfy several project links.
+
+### 04.6 Support corrections
+
+Expose moderator match corrections and split/merge association operations with reason and version checks. Remapping previously used evidence triggers dependency invalidation and re-review.
+
+### 04.7 Discover alternate and phase names
+
+Seed approved aliases from the input file's `alternate_names` and the RERA registered names (D16). Extend A01 to emit alias proposals as specified in the agent contracts: alias as written, normalised form, target project or phase, type and evidence spans. Implement in backend code the strong-identifier check, deduplication, independent-origin count and collision check against the other catalogue projects and generic terms. Store proposals in `ai_alias_proposals`; expose the list and decision endpoints; approval writes to `ai_project_configs` with an expected version. Record the matching alias in every match rationale, and route associations to review when their alias is revoked.
+
+### 04.8 Evaluate identity behavior
+
+Measure auto-accept precision, recall, ambiguity and wrong-phase rate on held-out examples. Measure alias-proposal precision against labelled alias mentions. Keep uncertain cases out of downstream factual synthesis.
+
+## Required deliverables
+
+- Project import/config APIs and idempotent catalogue seeding.
+- Query builder, matching service/agent interface and correction endpoints.
+- Alias proposal service, collision check, `ai_alias_proposals` storage and review endpoints.
+- Versioned identity evaluation cases and result report.
+
+Use the logical code boundaries from the architecture specification and map them to actual repository paths. Update implementation schemas, API types, fixtures and documentation together when a contract changes.
+
+## Acceptance checks
+
+- [ ] Same name in different cities is rejected or routed to review.
+- [ ] A comparison video can link to two projects through distinct segments without source duplication.
+- [ ] Absent micromarket/developer/RERA fields do not block valid onboarding.
+- [ ] An identity correction invalidates dependent findings and final approval.
+- [ ] Auto-accept precision is measured against the agreed target; sparse labels are disclosed.
+- [ ] An alias proposal without a cited span showing a strong identifier is rejected by the backend, even when the model output is valid JSON.
+- [ ] A proposed alias affects no query or match until approved; one that collides with another project or is generic can only be approved as context-required.
+- [ ] Revoking an approved alias sends the associations it produced back to review.
+- [ ] Relevant repository checks were actually run and their results recorded.
+- [ ] [PROGRESS.md](../PROGRESS.md) records changed paths, decisions, evidence, unresolved dependencies and the next action.
+
+## Missing access or information
+
+If real project names are still missing, implement with clearly fictional records and keep the real-registration gate open. A fuzzy name match alone must not be converted into a confirmed project.
+
+Alias discovery is built and tested on fixtures in this step; live proposals start once Step 05 collection returns real sources.
+
+## Coding prompt
+
+```text
+Implement Step 04 from steps/04-project-identity.md in the actual project repository.
+Read MASTER.md, PROGRESS.md, this step and its linked relevant specifications.
+Inspect the current repository state and preserve its conventions. Build the work described,
+not just another plan. Use the implementation schemas and enforce the backend invariants.
+Keep one complete release, the standalone architecture (own MongoDB, own console and
+public page, Claude API only) and no cloud provisioning. Do not invent project data, platform access or passing test results.
+If a dependency is missing, complete independent work and record the precise blocked gate.
+Run the meaningful checks for changed behavior, resolve failures, and update PROGRESS.md
+with changed paths, actual results, decisions, blockers and the next executable action.
+```
+
+## Completion and handoff
+
+Mark this step complete only when its deliverables and applicable acceptance checks have evidence. Use `blocked` or `in_progress` when required integration is outstanding; record fixture success separately from live acceptance. Next: [Step 05: Text and social collection](05-text-and-social-connectors.md)

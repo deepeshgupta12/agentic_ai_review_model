@@ -1,0 +1,116 @@
+{
+  "instructions": "Replace the placeholders with the five POC projects. project_name, locality and city are required; alternate_names may be empty; micromarket, developer, phase, rera_ids, reference_url and client_ref are optional. The backend seeds its own project catalogue from this file and generates project IDs. rera_ids lists each RERA registration as {id, registered_name}, with IDs kept in the format supplied; a township or multi-phase project stays one POC project and its registrations identify the phases (DECISIONS.md D16). client_ref preserves the the client export row (IDs and status) as an external reference only; it is not evidence and is not published. Mapping from the export (DECISIONS.md D15): SublocationName -> locality, Locationname -> micromarket, Cityname -> city.",
+  "schema_version": "1.1",
+  "projects": [
+    {
+      "project_name": "DLF Privana",
+      "alternate_names": [],
+      "locality": "Sector 76",
+      "city": "Gurgaon",
+      "micromarket": "New Gurgaon",
+      "developer": "DLF",
+      "phase": null,
+      "rera_ids": [
+        { "id": "RC/REP/HARERA/GGM/772/504/2023/116", "registered_name": "DLF Privana South" },
+        { "id": "RC/REP/HARERA/GGM/819/551/2024/46", "registered_name": "DLF Privana West" },
+        { "id": "RC/REP/HARERA/GGM/954/686/2025/57", "registered_name": "DLF Privana North" }
+      ],
+      "reference_url": null,
+      "client_ref": {
+        "project_id": "1170",
+        "city_id": "1",
+        "location_id": "266",
+        "sublocation_id": "92",
+        "status": "Ready to Move",
+        "supplied_on": "2026-09-25"
+      }
+    },
+    {
+      "project_name": "Conscient Parq",
+      "alternate_names": [],
+      "locality": "Sector 80",
+      "city": "Gurgaon",
+      "micromarket": "New Gurgaon",
+      "developer": "Conscient",
+      "phase": null,
+      "rera_ids": [
+        { "id": "GGM/818/550/2024/45", "registered_name": "Parq" }
+      ],
+      "reference_url": null,
+      "client_ref": {
+        "project_id": "247842",
+        "city_id": "1",
+        "location_id": "266",
+        "sublocation_id": "97",
+        "status": "Under Construction",
+        "supplied_on": "2026-09-25"
+      }
+    },
+    {
+      "project_name": "Sobha Crescent",
+      "alternate_names": [],
+      "locality": "Sector 63A",
+      "city": "Gurgaon",
+      "micromarket": "Golf Course Extension",
+      "developer": "Sobha",
+      "phase": null,
+      "rera_ids": [
+        { "id": "GGM/1054/786/2026/26", "registered_name": "Sobha Crescent Phase - 1" }
+      ],
+      "reference_url": null,
+      "client_ref": {
+        "project_id": "343921",
+        "city_id": "1",
+        "location_id": "5",
+        "sublocation_id": "470",
+        "status": "New Launch",
+        "supplied_on": "2026-09-25"
+      }
+    },
+    {
+      "project_name": "M3M Forestia West",
+      "alternate_names": [],
+      "locality": "Manesar Sector 9",
+      "city": "Gurgaon",
+      "micromarket": "Manesar",
+      "developer": "M3M",
+      "phase": null,
+      "rera_ids": [
+        { "id": "GGM/1030/762/2026/02", "registered_name": "M3M Forestia West I" }
+      ],
+      "reference_url": null,
+      "client_ref": {
+        "project_id": "342510",
+        "city_id": "1",
+        "location_id": "337",
+        "sublocation_id": "8569",
+        "status": "New Launch",
+        "supplied_on": "2026-09-25"
+      }
+    },
+    {
+      "project_name": "M3M Antalya Hills",
+      "alternate_names": [],
+      "locality": "Sector 79",
+      "city": "Gurgaon",
+      "micromarket": "New Gurgaon",
+      "developer": "M3M",
+      "phase": null,
+      "rera_ids": [
+        { "id": "GGM/650/382/2022/125", "registered_name": "M3M Antalya Hills Phase 1" },
+        { "id": "GGM/833/565/2024/60", "registered_name": "M3M Antalya Hills Phase II" },
+        { "id": "GGM/844/576/2024/71", "registered_name": "M3M Antalya Hills 3" },
+        { "id": "GGM/867/599/2024/94", "registered_name": "Commercial-01 In M3M Antalya Hills Phase-I" }
+      ],
+      "reference_url": null,
+      "client_ref": {
+        "project_id": "201749",
+        "city_id": "1",
+        "location_id": "266",
+        "sublocation_id": "95",
+        "status": "Partially Ready To Move",
+        "supplied_on": "2026-09-25"
+      }
+    }
+  ]
+}
