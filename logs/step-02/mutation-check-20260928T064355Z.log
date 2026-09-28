@@ -1,0 +1,45 @@
+Step 02 mutation check for D27/D28: each rule below is disabled in scripts/contract_tools.py on a scratch copy;
+the suite must then fail, and the failing tests must be the ones written for that rule.
+date (UTC): 2026-09-28T06:43:55Z
+commit:     fb6cf66
+
+== rule disabled: return \["occupancy_before_possession"\]
+FAIL: test_whole_checker_passes (test_contracts.UC15DocsAndSeedAlignment)
+FAIL: test_content_rules_pass (test_contracts.UC16StatusAndSourceReviews)
+FAIL: test_lived_here_before_possession_is_flagged (test_contracts.UC16StatusAndSourceReviews)
+FAIL: test_post_date_decides_the_status (test_contracts.UC16StatusAndSourceReviews)
+Ran 68 tests in 1.790s
+FAILED (failures=4)
+
+== rule disabled: if _words\(text\) != _words\(original\):
+FAIL: test_whole_checker_passes (test_contracts.UC15DocsAndSeedAlignment)
+FAIL: test_content_rules_pass (test_contracts.UC16StatusAndSourceReviews)
+FAIL: test_review_must_keep_the_authors_words (test_contracts.UC16StatusAndSourceReviews)
+Ran 68 tests in 1.744s
+FAILED (failures=3)
+
+== rule disabled: if set\(rules\["review_text"\]\["forbidden_characters"\]\) & set\(text\):
+FAIL: test_whole_checker_passes (test_contracts.UC15DocsAndSeedAlignment)
+FAIL: test_content_rules_pass (test_contracts.UC16StatusAndSourceReviews)
+FAIL: test_review_text_has_no_dashes (test_contracts.UC16StatusAndSourceReviews)
+Ran 68 tests in 1.688s
+FAILED (failures=3)
+
+== rule disabled: return \{"blocking": found, "advice": \[\]\}
+FAIL: test_whole_checker_passes (test_contracts.UC15DocsAndSeedAlignment)
+FAIL: test_content_rules_pass (test_contracts.UC16StatusAndSourceReviews)
+FAIL: test_resident_wording_blocked_before_possession (test_contracts.UC16StatusAndSourceReviews)
+Ran 68 tests in 1.571s
+FAILED (failures=3)
+
+== rule disabled: return on_date is None or record\["as_of"\] <= on_date
+FAIL: test_whole_checker_passes (test_contracts.UC15DocsAndSeedAlignment)
+FAIL: test_content_rules_pass (test_contracts.UC16StatusAndSourceReviews)
+FAIL: test_post_date_decides_the_status (test_contracts.UC16StatusAndSourceReviews)
+Ran 68 tests in 1.608s
+FAILED (failures=3)
+
+== rule disabled: if \(support_\["review"\]\["id"\], support_\["review"\]\["revision"\]\) not in set\(reviews\):
+FAIL: test_page_review_missing_from_manifest_detected (test_contracts.UC16StatusAndSourceReviews)
+Ran 68 tests in 1.585s
+FAILED (failures=1)

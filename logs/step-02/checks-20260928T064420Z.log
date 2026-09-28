@@ -1,0 +1,292 @@
+Step 02 checks
+date (UTC): 2026-09-28T06:44:20Z
+commit:     88685f6
+python:     Python 3.10.11 (.venv)
+node:       v25.9.0
+
+=== Step 01 regression: validator ===
+$ python3 scripts/validate_inputs.py
+Step 01 input validation
+========================
+
+Projects (contracts/five-project-input-template.json)
+  1. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana | dlf privana south | dlf privana west | dlf privana north
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         GGM/772/504/2023/116, GGM/819/551/2024/46, GGM/954/686/2025/57
+     Client id:        1170
+     status:       ready_to_move
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+     status:       under_construction
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+     status:       new_launch
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+     status:       new_launch
+  5. M3M Antalya Hills
+     slug:         m3m-antalya-hills-sector-79-gurgaon
+     search names: m3m antalya hills | m3m antalya hills phase 1 | m3m antalya hills phase ii | m3m antalya hills 3 | commercial 01 in m3m antalya hills phase i
+     place:        sector 79, new gurgaon, gurgaon
+     developer:    m3m
+     RERA:         GGM/650/382/2022/125, GGM/833/565/2024/60, GGM/844/576/2024/71, GGM/867/599/2024/94
+     Client id:        201749
+     status:       partially_ready
+
+Connectors + model providers: 11 (11 access_pending)
+Source policies: 10 (10 accepted)
+Operating defaults: 14 (10 accepted, 3 open, 1 proposed)
+
+Warnings (1):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+
+Result: PASS (0 errors, 1 warnings)
+--> OK (exit 0, expected 0)
+
+=== Step 01 regression: its tests (standard library) ===
+$ python3 -m unittest discover -s scripts/tests -p test_validate_inputs.py
+...........................................................
+----------------------------------------------------------------------
+Ran 59 tests in 0.186s
+
+OK
+--> OK (exit 0, expected 0)
+
+=== UC-01..UC-15: full use-case suite ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python -m unittest discover -s scripts/tests -v
+test_dead_end_state_detected (test_contracts.UC08VocabularyAndStateMachines) ... ok
+test_inline_copy_of_a_status_enum_detected (test_contracts.UC08VocabularyAndStateMachines) ... ok
+test_model_is_never_an_actor (test_contracts.UC08VocabularyAndStateMachines) ... ok
+test_new_status_enum_without_machine_detected (test_contracts.UC08VocabularyAndStateMachines) ... ok
+test_schema_files_are_valid_and_refs_resolve (test_contracts.UC08VocabularyAndStateMachines) ... ok
+test_state_machines_and_vocabulary_pass (test_contracts.UC08VocabularyAndStateMachines) ... ok
+test_terminal_state_with_exit_detected (test_contracts.UC08VocabularyAndStateMachines) ... ok
+test_unreachable_state_detected (test_contracts.UC08VocabularyAndStateMachines) ... ok
+test_broken_state_chain_detected (test_contracts.UC09ApiAndJourneys) ... ok
+test_every_required_journey_is_covered (test_contracts.UC09ApiAndJourneys) ... ok
+test_illegal_transition_detected (test_contracts.UC09ApiAndJourneys) ... ok
+test_journeys_pass (test_contracts.UC09ApiAndJourneys) ... ok
+test_missing_coverage_detected (test_contracts.UC09ApiAndJourneys) ... ok
+test_openapi_security_and_roles (test_contracts.UC09ApiAndJourneys) ... ok
+test_request_bodies_never_carry_actor_identity (test_contracts.UC09ApiAndJourneys) ... ok
+test_role_not_allowed_detected (test_contracts.UC09ApiAndJourneys) ... ok
+test_route_table_and_openapi_pass (test_contracts.UC09ApiAndJourneys) ... ok
+test_route_with_unknown_schema_detected (test_contracts.UC09ApiAndJourneys) ... ok
+test_separation_of_duties (test_contracts.UC09ApiAndJourneys) ... ok
+test_acceptance_cases_are_covered (test_contracts.UC10Fixtures) ... ok
+test_every_fixture_is_labelled_synthetic (test_contracts.UC10Fixtures) ... ok
+test_fixtures_are_current_and_behave (test_contracts.UC10Fixtures) ... ok
+test_fixtures_never_describe_registered_projects (test_contracts.UC10Fixtures) ... ok
+test_real_input_file_matches_its_schema (test_contracts.UC10Fixtures) ... ok
+test_anchor_vectors_pass (test_contracts.UC11HashingAndAnchors) ... ok
+test_hash_vectors_pass (test_contracts.UC11HashingAndAnchors) ... ok
+test_javascript_agrees (test_contracts.UC11HashingAndAnchors) ... ok
+test_key_order_in_memory_does_not_change_the_hash (test_contracts.UC11HashingAndAnchors) ... ok
+test_key_order_is_utf16_not_code_point (test_contracts.UC11HashingAndAnchors) ... ok
+test_offset_inside_a_surrogate_pair_rejected (test_contracts.UC11HashingAndAnchors) ... ok
+test_one_character_edit_changes_the_hash (test_contracts.UC11HashingAndAnchors) ... ok
+test_unsafe_values_are_rejected (test_contracts.UC11HashingAndAnchors) ... ok
+test_approval_by_non_person_rejected (test_contracts.UC12ApprovalAndPublicRead) ... ok
+test_edit_as_new_revision_loses_approval (test_contracts.UC12ApprovalAndPublicRead) ... ok
+test_exact_approval_authorises (test_contracts.UC12ApprovalAndPublicRead) ... ok
+test_public_read_ignores_newer_draft (test_contracts.UC12ApprovalAndPublicRead) ... ok
+test_public_read_serves_nothing_when_disabled (test_contracts.UC12ApprovalAndPublicRead) ... ok
+test_rule_vectors_pass (test_contracts.UC12ApprovalAndPublicRead) ... ok
+test_silent_edit_under_same_revision_detected (test_contracts.UC12ApprovalAndPublicRead) ... ok
+test_agent_outputs_pass (test_contracts.UC13AgentOutputs) ... ok
+test_bundle_is_self_contained (test_contracts.UC13AgentOutputs) ... ok
+test_bundle_validates_like_the_original (test_contracts.UC13AgentOutputs) ... ok
+test_models_cannot_report_failed (test_contracts.UC13AgentOutputs) ... ok
+test_recursive_schema_detected (test_contracts.UC13AgentOutputs) ... ok
+test_unsupported_features_detected (test_contracts.UC13AgentOutputs) ... ok
+test_insufficient_evidence_has_no_content (test_contracts.UC14TruthAndPublicationRules) ... ok
+test_only_people_decide (test_contracts.UC14TruthAndPublicationRules) ... ok
+test_policy_rights_chain_exhaustive (test_contracts.UC14TruthAndPublicationRules) ... ok
+test_repetition_does_not_verify (test_contracts.UC14TruthAndPublicationRules) ... ok
+test_serving_fails_closed_during_invalidation (test_contracts.UC14TruthAndPublicationRules) ... ok
+test_docs_pass (test_contracts.UC15DocsAndSeedAlignment) ... ok
+test_seed_alignment_passes (test_contracts.UC15DocsAndSeedAlignment) ... ok
+test_whole_checker_passes (test_contracts.UC15DocsAndSeedAlignment) ... ok
+test_buyer_perspective_is_not_flagged (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_content_rules_pass (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_every_registered_project_status_maps (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_flagged_review_cannot_be_approved (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_lived_here_before_possession_is_flagged (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_model_cannot_paraphrase_a_review (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_page_review_missing_from_manifest_detected (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_page_review_with_dash_detected (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_page_reviews_are_credited_without_links (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_post_date_decides_the_status (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_ready_phase_clears_the_flag_but_unnamed_phase_does_not (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_resident_wording_blocked_before_possession (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_review_comes_from_one_source (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_review_must_keep_the_authors_words (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_review_text_has_no_dashes (test_contracts.UC16StatusAndSourceReviews) ... ok
+test_duplicate_project_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_duplicate_client_id_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_export_status_labels_map_to_construction_status (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_fewer_than_five_projects_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_generic_single_word_name_is_flagged (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_missing_required_field_is_reported (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_more_than_five_projects_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_optional_fields_may_be_absent (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_placeholder_is_reported_with_project_and_field (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_rera_as_plain_string_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_same_rera_in_full_and_short_form_is_a_duplicate (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_supplied_file_has_five_valid_projects (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_unknown_field_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_unknown_status_label_rejected (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_user_spellings_are_kept_and_search_forms_are_separate (test_validate_inputs.UC01ProjectRegistration) ... ok
+test_full_and_short_rera_forms_compare_equal (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_long_slug_is_cut_at_a_word_boundary (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_non_latin_only_name_gives_empty_slug_error (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_search_form_keeps_devanagari_marks (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_search_form_lowercases_and_strips_punctuation (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_slug_folds_accents_and_punctuation (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_slug_is_deterministic (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_slugs_for_the_five_projects (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_unknown_rera_format_is_a_warning_not_an_error (test_validate_inputs.UC02SlugAndSearchConventions) ... ok
+test_acquisition_order_follows_the_plan (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_every_source_has_credential_plan_and_demonstration (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_every_source_is_access_pending (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_live_with_recorded_demonstration_accepted (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_live_without_recorded_demonstration_rejected (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_lowercase_env_name_rejected (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_matrix_validates (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_missing_credential_reason_rejected (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_one_of_group_needs_two_members (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_unknown_policy_family_rejected (test_validate_inputs.UC03ConnectorMatrix) ... ok
+test_accepting_a_policy_without_owner_rejected (test_validate_inputs.UC04SourcePolicies) ... ok
+test_ai_processing_requires_collection (test_validate_inputs.UC04SourcePolicies) ... ok
+test_collection_requires_retention (test_validate_inputs.UC04SourcePolicies) ... ok
+test_derived_publication_requires_attribution (test_validate_inputs.UC04SourcePolicies) ... ok
+test_every_connector_family_has_a_policy (test_validate_inputs.UC04SourcePolicies) ... ok
+test_families_without_an_agreement_are_blocked (test_validate_inputs.UC04SourcePolicies) ... ok
+test_generic_web_route_excludes_hosts_owned_by_other_families (test_validate_inputs.UC04SourcePolicies) ... ok
+test_policies_validate (test_validate_inputs.UC04SourcePolicies) ... ok
+test_quotation_requires_derived_publication (test_validate_inputs.UC04SourcePolicies) ... ok
+test_accepting_without_owner_rejected (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_defaults_validate (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_missing_required_item_rejected (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_nothing_is_accepted_without_owner_record (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_open_item_with_value_rejected (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_roles_match_the_api_contract (test_validate_inputs.UC05OperatingDefaults) ... ok
+test_env_file_is_gitignored (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_missing_registry_row_detected (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_registry_matches_the_matrix (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_secret_like_value_detected (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_seed_files_contain_no_secrets (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_status_drift_detected (test_validate_inputs.UC06RegisterAndSecrets) ... ok
+test_fails_on_a_placeholder_file (test_validate_inputs.UC07CommandLine) ... ok
+test_fails_on_invalid_json (test_validate_inputs.UC07CommandLine) ... ok
+test_json_output (test_validate_inputs.UC07CommandLine) ... ok
+test_passes_on_repository_files (test_validate_inputs.UC07CommandLine) ... ok
+
+----------------------------------------------------------------------
+Ran 127 tests in 1.872s
+
+OK
+--> OK (exit 0, expected 0)
+
+=== Contract checker (all sections) ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/check_contracts.py
+Step 02 contract checks
+=======================
+9 schema files, 217 definitions, 50 operations, 14 state machines, 19 journeys, 110 fixture cases
+
+  PASS      Schema files are valid and every $ref resolves
+  PASS      Status vocabulary and state machines
+  PASS      Route table and generated OpenAPI
+  PASS      Journeys: actors, operations and state paths
+  PASS      Agent outputs fit Claude structured outputs
+  PASS      Fixtures: valid pass, invalid fail for the stated reason
+  PASS      Canonical hashing (D23)
+  PASS      Text anchors, code points and UTF-16 (D24)
+  PASS      Approval and public-read rules
+  PASS      Construction status and first-person source reviews (D27, D28)
+  PASS      Step 01 seed data uses the contract vocabulary
+  PASS      Docs: journeys doc current, screen references valid
+  PASS      JavaScript cross-check (Node)
+
+Result: PASS (13/13 sections passed)
+--> OK (exit 0, expected 0)
+
+=== OpenAPI matches the route table ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/build_openapi.py --check
+openapi.json is up to date
+--> OK (exit 0, expected 0)
+
+=== Fixtures match their generator ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/build_fixtures.py --check
+fixtures are up to date
+--> OK (exit 0, expected 0)
+
+=== JavaScript agrees on hashes and offsets ===
+$ node scripts/jcs_check.mjs
+{
+  "node": "v25.9.0",
+  "checked": 15,
+  "problems": []
+}
+--> OK (exit 0, expected 0)
+
+=== N1: an analyst publishing in a journey must fail ===
+$ in_copy /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.D3fsRSjF47/n1 /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/check_contracts.py
+            - J08 step 2: role 'analyst' may not call publish
+--> OK (failed as expected, exit 1)
+
+=== N2: an approved payload edited without a new hash must fail ===
+$ in_copy /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.D3fsRSjF47/n2 /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/check_contracts.py
+            - content.json:content_revision_approved: payload_sha256 does not match the payload
+--> OK (failed as expected, exit 1)
+
+=== N3: a keyword Claude structured outputs reject must fail ===
+$ in_copy /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.D3fsRSjF47/n3 /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/check_contracts.py
+            - A01_project_identity (IdentityResult): $.segments[].rationale: keyword 'minLength' is not supported
+--> OK (failed as expected, exit 1)
+
+=== N4: an unreachable status must fail ===
+$ in_copy /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.D3fsRSjF47/n4 /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/check_contracts.py
+            - machine 'publication_operation': state 'rolled_back' is unreachable from ['queued']
+--> OK (failed as expected, exit 1)
+
+=== N5: a route change without regenerating OpenAPI must fail ===
+$ in_copy /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.D3fsRSjF47/n5 /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/check_contracts.py
+            - openapi.json is out of date: run python3 scripts/build_openapi.py
+--> OK (failed as expected, exit 1)
+
+=== N6: JavaScript must catch a hash that Python got wrong ===
+$ in_copy /var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.D3fsRSjF47/n6 node scripts/jcs_check.mjs
+    "hashing key_order_utf16: sha256 differs from Python"
+--> OK (failed as expected, exit 1)
+
+=== Hygiene: no .env, .DS_Store or .venv in git ===
+$ no_tracked_secrets_or_env
+no .env, .DS_Store or .venv tracked
+--> OK (exit 0, expected 0)
+
+=== Hygiene: GitHub repo is private, default branch main ===
+$ repo_is_private_on_main
+PRIVATE main
+--> OK (exit 0, expected 0)
+
+ALL CHECKS OK
+log: logs/step-02/checks-20260928T064420Z.log
