@@ -101,7 +101,7 @@ echo "python:     $("$PY" --version 2>&1) (.venv)"
 echo "node:       $(node --version 2>/dev/null || echo 'not installed')"
 
 expect "Step 01 regression: validator" 0 python3 scripts/validate_inputs.py
-expect "Step 01 regression: its 57 tests (standard library)" 0 python3 -m unittest discover -s scripts/tests -p 'test_validate_inputs.py'
+expect "Step 01 regression: its tests (standard library)" 0 python3 -m unittest discover -s scripts/tests -p 'test_validate_inputs.py'
 expect "UC-01..UC-15: full use-case suite" 0 "$PY" -m unittest discover -s scripts/tests -v
 expect "Contract checker (all sections)" 0 "$PY" scripts/check_contracts.py
 expect "OpenAPI matches the route table" 0 "$PY" scripts/build_openapi.py --check
