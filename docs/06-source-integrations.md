@@ -37,7 +37,7 @@ Scraping is permitted for the POC within these rules, enforced in code and recor
 2. Respect `robots.txt` and platform terms for the fetch; record the policy basis in `ai_source_policies` before storage or AI use. A fetching tool does not confer data rights.
 3. Allow-listed hosts only, with SSRF protection, redirect limits, size/type caps and a per-host concurrency/rate cap. Identify the client honestly in the user agent.
 4. Store the minimum author metadata; do not build cross-platform profiles or infer identities.
-5. Quotation and derived publication follow the source policy; where quotation is not allowed, publish only paraphrased, attributed findings with a link.
+5. Quotation and derived publication follow the source policy; where quotation is not allowed, publish only paraphrased, attributed findings with a link. Version 2 of the web and YouTube policies (product owner, 28 Sep 2026, D28) allows first-person reviews in the author's words with a credit line naming platform and date; no public link is required.
 6. Any acquisition route outside these rules (for example downloading third-party media) is not implemented unless the product owner records a decision in DECISIONS.md that accepts the terms-of-service risk; the code must not hard-code such a route.
 
 ## Common connector interface

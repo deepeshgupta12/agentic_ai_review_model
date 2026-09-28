@@ -1,10 +1,14 @@
 {
   "version": 1,
-  "updated": "2026-09-25",
+  "updated": "2026-09-28",
   "note": "Editorial and operating defaults (Step 01.3). An accepted item records accepted_on and accepted_by. Proposed items are not yet approved; open items have no value yet and are asked for at the step that needs them. Loaded into configuration at Step 03.",
   "items": {
     "input_languages": {
-      "value": ["en", "hi", "hi-Latn"],
+      "value": [
+        "en",
+        "hi",
+        "hi-Latn"
+      ],
       "status": "accepted",
       "ref": "I07",
       "note": "English, Hindi and Hinglish (romanised Hindi)",
@@ -41,7 +45,13 @@
       "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     "roles": {
-      "value": ["admin", "researcher", "moderator", "publisher", "analyst"],
+      "value": [
+        "admin",
+        "researcher",
+        "moderator",
+        "publisher",
+        "analyst"
+      ],
       "status": "proposed",
       "ref": "I09",
       "note": "One person may hold several roles. Confirm together with seeded users at Step 03"
@@ -95,6 +105,14 @@
       "status": "open",
       "ref": "I12",
       "note": "Ask the product owner at Step 13: developer machine or shared VM for the Docker Compose demo"
+    },
+    "show_review_source_links": {
+      "value": false,
+      "status": "accepted",
+      "ref": "D28",
+      "note": "Review credit lines name the platform and date without a public link; links stay internal for moderators and withdrawal",
+      "accepted_on": "2026-09-28",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     }
   }
 }

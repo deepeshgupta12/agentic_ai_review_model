@@ -26,6 +26,7 @@
     "EvaluationId": { "type": "string", "pattern": "^evl_[0-9A-HJKMNP-TV-Z]{26}$" },
     "AliasProposalId": { "type": "string", "pattern": "^als_[0-9A-HJKMNP-TV-Z]{26}$" },
     "CorrectionId": { "type": "string", "pattern": "^cor_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "ReviewExcerptId": { "type": "string", "pattern": "^rex_[0-9A-HJKMNP-TV-Z]{26}$" },
     "ConnectorId": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
     "PolicyFamily": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
     "Slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 80 },
@@ -335,6 +336,35 @@
       ]
     },
     "ClaimType": { "enum": ["fact", "opinion", "promotion", "allegation"] },
+    "ConstructionStatus": {
+      "description": "Project or phase status (D27). Decides whether first-hand living experience is possible; see content_rules.json.",
+      "enum": ["new_launch", "under_construction", "partially_ready", "ready_to_move"]
+    },
+    "ClaimPerspective": {
+      "description": "Whose experience a claim reports. resident_experience means first-hand living in the project.",
+      "enum": [
+        "resident_experience",
+        "owner_awaiting_possession",
+        "site_visit",
+        "prospective_buyer",
+        "broker_or_developer",
+        "third_party_report",
+        "official_record",
+        "unknown"
+      ]
+    },
+    "ConsistencyFlag": {
+      "description": "Set by the backend, never by a model. A flagged claim or review is kept out of content until a moderator resolves it (D27).",
+      "enum": ["occupancy_before_possession", "status_unknown"]
+    },
+    "ReviewRendering": {
+      "description": "How a source review is shown (D28). verbatim: the author's words; punctuation_normalised: only punctuation and spacing changed (e.g. dashes to commas); shortened: whole sentences left out, the rest verbatim; translated: Hindi or Hinglish rendered in English with the meaning kept.",
+      "enum": ["verbatim", "punctuation_normalised", "shortened", "translated"]
+    },
+    "SpeakerLabel": {
+      "description": "Who the credit line names, derived from the review's perspective and source kind; never a username.",
+      "enum": ["a_buyer", "a_resident", "an_owner_awaiting_possession", "a_site_visitor", "a_prospective_buyer", "a_viewer", "a_video_creator"]
+    },
     "Polarity": { "enum": ["positive", "negative", "neutral", "mixed"] },
     "VerificationStatus": { "enum": ["unverified", "verified", "contradicted", "disputed", "not_applicable"] },
     "FindingKind": { "enum": ["pro", "con", "neutral"] },
@@ -351,11 +381,12 @@
         "A07_findings_synthesiser",
         "A08_seo_aeo_editor",
         "A09_editorial_qa",
-        "A10_freshness_reviewer"
+        "A10_freshness_reviewer",
+        "A11_review_curator"
       ]
     },
     "AgentOutcome": { "enum": ["completed", "insufficient_evidence", "needs_review", "failed"] },
-    "DecisionTargetType": { "enum": ["finding", "content_revision", "project_source_link", "alias_proposal", "correction"] },
+    "DecisionTargetType": { "enum": ["finding", "review_excerpt", "content_revision", "project_source_link", "alias_proposal", "correction"] },
     "DecisionAction": {
       "enum": ["approve", "reject", "changes_requested", "accept", "split", "remap", "revoke", "resolve", "dismiss"]
     }

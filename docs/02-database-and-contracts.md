@@ -31,7 +31,8 @@ Version these changes as a new contract revision, update fixtures and adapters, 
 |---|---|---|
 | `projects` | Generated project ID and unique slug; name, alternate names, locality, city, optional micromarket/developer/phase/RERA/reference URL; `client_id` reserved and nullable for later integration | Import/seed service |
 | `users` | Unique email/username; password hash, roles, active flag | Seed script / admin API |
-| `ai_project_configs` | Unique project ID; approved search aliases (text, target project/phase, standalone or context-required, origin: input file, RERA registered name or approved proposal), languages, refresh and source settings | Configuration API |
+| `ai_project_configs` | Unique project ID; approved search aliases (text, target project/phase, standalone or context-required, origin: input file, RERA registered name or approved proposal), construction status per project and phase with source and date (D27), languages, refresh and source settings | Configuration API |
+| `ai_review_excerpts` | Unique `(project_id, id, revision)`; one source revision, its evidence spans, original words, rendering, displayed text, perspective, polarity, consistency flags and review status (D28) | Review curation service / review API |
 | `ai_alias_proposals` | Unique `(project_id, normalised_alias)`; alias as written, target project/phase, alias type, evidence refs, independent-origin count, collision result, status (proposed/approved/rejected/revoked) and decision reference | Identity service (proposals) / configuration API (decisions) |
 | `ai_sources` | Unique `(platform, native_id, revision)`; source identity, dates, hash, policy version and permitted payload reference | Ingestion service |
 | `ai_project_source_links` | Unique `(project_id, source_id, source_revision, segment_key)`; match status and rationale | Identity service / moderator |

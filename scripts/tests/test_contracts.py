@@ -401,5 +401,90 @@ class UC15DocsAndSeedAlignment(unittest.TestCase):
         self.assertEqual(failed, [])
 
 
+class UC16StatusAndSourceReviews(unittest.TestCase):
+    """UC-16: evidence and reviews agree with construction status; reviews are one real author's words (D27, D28)."""
+
+    def setUp(self):
+        self.rules = ct.content_rules()
+        self.config = fixture("catalogue.json", "project_config")
+        self.under_construction = [{"status": "under_construction", "applies_to": {"kind": "project", "rera_id": None}, "basis": "client_export", "as_of": "2026-09-25", "note": None}]
+
+    def test_content_rules_pass(self):
+        self.assertEqual(cc.check_content_rules(C), [])
+
+    def test_every_registered_project_status_maps(self):
+        for project in ct.load_json(ROOT / "contracts" / "five-project-input-template.json")["projects"]:
+            with self.subTest(project=project["project_name"]):
+                self.assertIsNotNone(ct.status_from_export_label(project["client_ref"]["status"], self.rules))
+
+    def test_lived_here_before_possession_is_flagged(self):
+        self.assertEqual(ct.consistency_flags("resident_experience", self.under_construction), ["occupancy_before_possession"])
+
+    def test_buyer_perspective_is_not_flagged(self):
+        self.assertEqual(ct.consistency_flags("owner_awaiting_possession", self.under_construction), [])
+
+    def test_ready_phase_clears_the_flag_but_unnamed_phase_does_not(self):
+        records = self.config["construction_status"]
+        phase = records[1]["applies_to"]["rera_id"]
+        self.assertEqual(ct.consistency_flags("resident_experience", records, phase), [])
+        self.assertEqual(ct.consistency_flags("resident_experience", records, None), ["status_unknown"])
+
+    def test_post_date_decides_the_status(self):
+        history = [
+            dict(self.under_construction[0], as_of="2025-01-01"),
+            dict(self.under_construction[0], status="ready_to_move", as_of="2026-06-01"),
+        ]
+        self.assertEqual(ct.consistency_flags("resident_experience", history, on_date="2025-12-31"), ["occupancy_before_possession"])
+        self.assertEqual(ct.consistency_flags("resident_experience", history, on_date="2026-06-02"), [])
+
+    def test_resident_wording_blocked_before_possession(self):
+        self.assertEqual(ct.wording_issues("Residents like the park.", "new_launch")["blocking"], ["residents"])
+        self.assertEqual(ct.wording_issues("Buyers like the park.", "new_launch"), {"blocking": [], "advice": []})
+
+    def test_review_must_keep_the_authors_words(self):
+        review = fixture("evidence.json", "review_post_normalised")
+        self.assertEqual(ct.rendering_problems(review["original_text"], review["text"], review["rendering"]), [])
+        changed = review["text"].replace("six months", "a few weeks")
+        assert_problem(self, ct.rendering_problems(review["original_text"], changed, review["rendering"]), "words differ")
+
+    def test_review_text_has_no_dashes(self):
+        review = fixture("evidence.json", "review_post_normalised")
+        assert_problem(self, ct.rendering_problems(review["original_text"], review["original_text"], "verbatim"), "dash or hyphen")
+
+    def test_review_comes_from_one_source(self):
+        review = fixture("evidence.json", "review_post_normalised")
+        review["source"] = [review["source"], {"id": "src_01JB0000000000000000000002", "revision": 1}]
+        self.assertTrue(C.errors(review, "evidence.schema.json#/$defs/ReviewExcerpt"))
+
+    def test_flagged_review_cannot_be_approved(self):
+        review = fixture("evidence.json", "review_flagged_pending")
+        review["review_status"] = "approved"
+        assert_problem(self, C.errors(review, "evidence.schema.json#/$defs/ReviewExcerpt"), "expected to be empty")
+
+    def test_model_cannot_paraphrase_a_review(self):
+        output = fixture("agents.json", "review_candidates")
+        output["reviews"][0]["rendering"] = "paraphrase"
+        assert_problem(self, C.errors(output, "agents.schema.json#/$defs/ReviewCandidates"), "'paraphrase' is not one of")
+
+    def test_page_reviews_are_credited_without_links(self):
+        payload = fixture("content.json", "content_revision_approved")["payload"]
+        self.assertTrue(payload["reviews"])
+        self.assertEqual({r["polarity"] for r in payload["reviews"]} >= {"negative"}, True)
+        for review in payload["reviews"]:
+            with self.subTest(review=review["support"]["review"]["id"]):
+                self.assertIsNone(review["source_url"])
+                self.assertTrue(review["credit"]["platform"])
+
+    def test_page_review_missing_from_manifest_detected(self):
+        revision = fixture("content.json", "content_revision_approved")
+        revision["manifest"]["reviews"] = revision["manifest"]["reviews"][1:]
+        assert_problem(self, ct.manifest_problems(revision), "missing from the manifest")
+
+    def test_page_review_with_dash_detected(self):
+        revision = fixture("content.json", "content_revision_approved")
+        revision["payload"]["reviews"][0]["text"] += " — really"
+        assert_problem(self, ct.manifest_problems(revision), "dash or hyphen")
+
+
 if __name__ == "__main__":
     unittest.main()

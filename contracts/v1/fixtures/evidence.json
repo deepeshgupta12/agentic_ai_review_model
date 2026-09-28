@@ -20,13 +20,13 @@
           "kind": "text",
           "representation": "original",
           "unit": "codepoint",
-          "start": 8,
-          "end": 44,
-          "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b"
+          "start": 0,
+          "end": 111,
+          "excerpt_sha256": "sha256:f08ddadd90d3469bbba35326bbd54d68efdfbbb86c5cd0ca2114e24855f6aa8b"
         },
         "context_anchor": null,
-        "excerpt_text": "Possession was delayed by six months",
-        "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b",
+        "excerpt_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+        "excerpt_sha256": "sha256:f08ddadd90d3469bbba35326bbd54d68efdfbbb86c5cd0ca2114e24855f6aa8b",
         "language": "en",
         "modality": "text",
         "translation_of": null,
@@ -36,7 +36,7 @@
         },
         "policy": {
           "family": "web_public_pages",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "active",
         "created_at": "2026-09-22T10:00:00Z"
@@ -78,7 +78,7 @@
         },
         "policy": {
           "family": "youtube",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "active",
         "created_at": "2026-09-22T10:00:00Z"
@@ -106,13 +106,13 @@
           "kind": "text",
           "representation": "original",
           "unit": "codepoint",
-          "start": 8,
-          "end": 44,
-          "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b"
+          "start": 0,
+          "end": 111,
+          "excerpt_sha256": "sha256:f08ddadd90d3469bbba35326bbd54d68efdfbbb86c5cd0ca2114e24855f6aa8b"
         },
         "context_anchor": null,
-        "excerpt_text": "Possession was delayed by six months",
-        "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b",
+        "excerpt_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+        "excerpt_sha256": "sha256:f08ddadd90d3469bbba35326bbd54d68efdfbbb86c5cd0ca2114e24855f6aa8b",
         "language": "en",
         "modality": "metadata",
         "translation_of": null,
@@ -122,7 +122,7 @@
         },
         "policy": {
           "family": "web_public_pages",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "active",
         "created_at": "2026-09-22T10:00:00Z"
@@ -148,9 +148,9 @@
           "kind": "text",
           "representation": "original",
           "unit": "codepoint",
-          "start": 8,
-          "end": 44,
-          "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b"
+          "start": 0,
+          "end": 111,
+          "excerpt_sha256": "sha256:f08ddadd90d3469bbba35326bbd54d68efdfbbb86c5cd0ca2114e24855f6aa8b"
         },
         "context_anchor": null,
         "excerpt_text": "possession mein thoda delay hua",
@@ -164,7 +164,7 @@
         },
         "policy": {
           "family": "youtube",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "active",
         "created_at": "2026-09-22T10:00:00Z"
@@ -191,13 +191,13 @@
           "kind": "text",
           "representation": "original",
           "unit": "codepoint",
-          "start": 8,
-          "end": 44,
-          "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b"
+          "start": 0,
+          "end": 111,
+          "excerpt_sha256": "sha256:f08ddadd90d3469bbba35326bbd54d68efdfbbb86c5cd0ca2114e24855f6aa8b"
         },
         "context_anchor": null,
         "excerpt_text": null,
-        "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b",
+        "excerpt_sha256": "sha256:f08ddadd90d3469bbba35326bbd54d68efdfbbb86c5cd0ca2114e24855f6aa8b",
         "language": "en",
         "modality": "text",
         "translation_of": null,
@@ -207,7 +207,7 @@
         },
         "policy": {
           "family": "web_public_pages",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "withdrawn",
         "created_at": "2026-09-22T10:00:00Z"
@@ -235,13 +235,13 @@
           "kind": "text",
           "representation": "original",
           "unit": "codepoint",
-          "start": 8,
-          "end": 44,
-          "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b"
+          "start": 0,
+          "end": 111,
+          "excerpt_sha256": "sha256:f08ddadd90d3469bbba35326bbd54d68efdfbbb86c5cd0ca2114e24855f6aa8b"
         },
         "context_anchor": null,
-        "excerpt_text": "Possession was delayed by six months",
-        "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b",
+        "excerpt_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+        "excerpt_sha256": "sha256:f08ddadd90d3469bbba35326bbd54d68efdfbbb86c5cd0ca2114e24855f6aa8b",
         "language": "en",
         "modality": "text",
         "translation_of": null,
@@ -251,7 +251,7 @@
         },
         "policy": {
           "family": "web_public_pages",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "withdrawn",
         "created_at": "2026-09-22T10:00:00Z"
@@ -273,7 +273,9 @@
         "aspect_label": null,
         "claim_type": "opinion",
         "polarity": "negative",
-        "statement": "Residents report that possession was delayed",
+        "perspective": "owner_awaiting_possession",
+        "consistency_flags": [],
+        "statement": "Buyers report that possession was delayed",
         "observation_time": {
           "status": "unknown",
           "value": null,
@@ -327,6 +329,8 @@
         "aspect_label": null,
         "claim_type": "fact",
         "polarity": "neutral",
+        "perspective": "official_record",
+        "consistency_flags": [],
         "statement": "The registered completion date is 31 December 2027",
         "observation_time": {
           "status": "known",
@@ -381,6 +385,8 @@
         "aspect_label": null,
         "claim_type": "fact",
         "polarity": "neutral",
+        "perspective": "official_record",
+        "consistency_flags": [],
         "statement": "The registered completion date is 31 December 2027",
         "observation_time": {
           "status": "known",
@@ -430,7 +436,9 @@
         "aspect_label": null,
         "claim_type": "opinion",
         "polarity": "negative",
-        "statement": "Residents report that possession was delayed",
+        "perspective": "owner_awaiting_possession",
+        "consistency_flags": [],
+        "statement": "Buyers report that possession was delayed",
         "observation_time": {
           "status": "unknown",
           "value": null,
@@ -492,7 +500,9 @@
         "aspect_label": null,
         "claim_type": "opinion",
         "polarity": "negative",
-        "statement": "Residents report that possession was delayed",
+        "perspective": "owner_awaiting_possession",
+        "consistency_flags": [],
+        "statement": "Buyers report that possession was delayed",
         "observation_time": {
           "status": "unknown",
           "value": null,
@@ -544,7 +554,7 @@
         "project_id": "prj_01JB0000000000000000000001",
         "kind": "con",
         "aspect": "possession",
-        "wording": "Several residents report that possession was delayed",
+        "wording": "Several buyers report that possession was delayed",
         "attribution": "reported_opinion",
         "claims": [
           {
@@ -653,6 +663,742 @@
           }
         },
         "created_at": "2026-09-23T10:00:00Z"
+      }
+    },
+    {
+      "name": "claim_resident_flagged",
+      "schema": "evidence.schema.json#/$defs/Claim",
+      "expect": "valid",
+      "tags": [
+        "status_consistency"
+      ],
+      "why": "A 'lived here' claim with no identified ready phase is flagged, not used",
+      "instance": {
+        "id": "clm_01JB0000000000000000000003",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "aspect": "maintenance",
+        "aspect_label": null,
+        "claim_type": "opinion",
+        "polarity": "positive",
+        "perspective": "resident_experience",
+        "consistency_flags": [
+          "status_unknown"
+        ],
+        "statement": "The author says they have lived in the project for a year and praises maintenance",
+        "observation_time": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "supporting_evidence": [
+          {
+            "id": "evd_01JB0000000000000000000006",
+            "revision": 1
+          }
+        ],
+        "contradicting_evidence": [],
+        "verification": {
+          "status": "not_applicable",
+          "primary_records": [],
+          "checked_at": null,
+          "reason": null
+        },
+        "origin_clusters": [
+          "cls_01JB0000000000000000000009"
+        ],
+        "independent_origin_count": 1,
+        "confidence": {
+          "value": null,
+          "calibration_ref": null
+        },
+        "created_by_task": "tsk_01JB0000000000000000000005",
+        "created_at": "2026-09-23T10:00:00Z"
+      }
+    },
+    {
+      "name": "source_comment",
+      "schema": "sources.schema.json#/$defs/SourceRevision",
+      "expect": "valid",
+      "tags": [
+        "video_reviews"
+      ],
+      "why": "A YouTube comment is its own text source under its video",
+      "instance": {
+        "id": "src_01JB0000000000000000000005",
+        "revision": 1,
+        "connector_id": "youtube_data_api",
+        "native_id": "comment-xyz",
+        "canonical_url": "https://video.example.invalid/watch?v=abc&lc=xyz",
+        "source_kind": "comment",
+        "parent": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "title": null,
+        "author": {
+          "display_name": null,
+          "role": "prospective_buyer",
+          "role_basis": "self_described"
+        },
+        "publication_date": {
+          "status": "known",
+          "value": "2026-09-15T10:00:00Z",
+          "precision": "day",
+          "basis": "platform_metadata"
+        },
+        "collected_at": "2026-09-22T10:00:00Z",
+        "language": "hi-Latn",
+        "capture_level": "full_content",
+        "content_sha256": "sha256:ac3b78e0c4a010d79c0eb228d69bc1efe0c03bb155d32860010bc3b435451c86",
+        "payload_ref": {
+          "store": "payload_store",
+          "key": "src/5/1"
+        },
+        "policy": {
+          "family": "youtube",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "media": null,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "evidence_comment",
+      "schema": "evidence.schema.json#/$defs/Evidence",
+      "expect": "valid",
+      "tags": [],
+      "why": "A Hinglish comment kept in its original words",
+      "instance": {
+        "id": "evd_01JB0000000000000000000005",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000005",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000005",
+        "anchor": {
+          "kind": "text",
+          "representation": "original",
+          "unit": "codepoint",
+          "start": 0,
+          "end": 93,
+          "excerpt_sha256": "sha256:84268d7732167a1f5c79cf68d35d25a87e988ac59ebb3eec5a5adae4f6e6fa3e"
+        },
+        "context_anchor": null,
+        "excerpt_text": "Site visit kiya tha pichle mahine. Construction bahut slow hai, do saal mein kuch nahi badla.",
+        "excerpt_sha256": "sha256:84268d7732167a1f5c79cf68d35d25a87e988ac59ebb3eec5a5adae4f6e6fa3e",
+        "language": "hi-Latn",
+        "modality": "text",
+        "translation_of": null,
+        "origin_cluster": {
+          "id": "cls_01JB0000000000000000000008",
+          "version": 1
+        },
+        "policy": {
+          "family": "youtube",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "review_post_normalised",
+      "schema": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "expect": "valid",
+      "tags": [
+        "source_reviews"
+      ],
+      "why": "A buyer's post with only a dash changed to a comma",
+      "instance": {
+        "id": "rex_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000003",
+        "evidence": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "source_kind": "forum_thread",
+        "perspective": "owner_awaiting_possession",
+        "speaker_label": "an_owner_awaiting_possession",
+        "polarity": "mixed",
+        "aspects": [
+          "layout",
+          "possession"
+        ],
+        "original_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+        "original_language": "en",
+        "rendering": "punctuation_normalised",
+        "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+        "published": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "timestamp_ms": null,
+        "consistency_flags": [],
+        "review_status": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000011",
+          "actor": null
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-24T10:00:00Z"
+      }
+    },
+    {
+      "name": "review_comment_translated",
+      "schema": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "expect": "valid",
+      "tags": [
+        "source_reviews",
+        "video_reviews"
+      ],
+      "why": "A Hinglish YouTube comment translated, revision 2 after a moderator fix",
+      "instance": {
+        "id": "rex_01JB0000000000000000000002",
+        "revision": 2,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000005",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000005",
+        "evidence": [
+          {
+            "id": "evd_01JB0000000000000000000005",
+            "revision": 1
+          }
+        ],
+        "source_kind": "comment",
+        "perspective": "site_visit",
+        "speaker_label": "a_site_visitor",
+        "polarity": "negative",
+        "aspects": [
+          "construction_progress"
+        ],
+        "original_text": "Site visit kiya tha pichle mahine. Construction bahut slow hai, do saal mein kuch nahi badla.",
+        "original_language": "hi-Latn",
+        "rendering": "translated",
+        "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+        "published": {
+          "status": "known",
+          "value": "2026-09-15T10:00:00Z",
+          "precision": "day",
+          "basis": "platform_metadata"
+        },
+        "timestamp_ms": null,
+        "consistency_flags": [],
+        "review_status": "approved",
+        "supersedes": {
+          "id": "rex_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "created_by": {
+          "kind": "moderator",
+          "task_id": null,
+          "actor": {
+            "kind": "user",
+            "user_id": "usr_01JB0000000000000000000001",
+            "role": "moderator"
+          }
+        },
+        "policy": {
+          "family": "youtube",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-24T10:00:00Z"
+      }
+    },
+    {
+      "name": "review_video_spoken",
+      "schema": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "expect": "valid",
+      "tags": [
+        "source_reviews",
+        "video_reviews"
+      ],
+      "why": "A spoken review from an authorised transcript, with its timestamp",
+      "instance": {
+        "id": "rex_01JB0000000000000000000004",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000001",
+        "evidence": [
+          {
+            "id": "evd_01JB0000000000000000000002",
+            "revision": 1
+          }
+        ],
+        "source_kind": "video",
+        "perspective": "third_party_report",
+        "speaker_label": "a_video_creator",
+        "polarity": "negative",
+        "aspects": [
+          "possession"
+        ],
+        "original_text": "possession mein thoda delay hua",
+        "original_language": "hi-Latn",
+        "rendering": "translated",
+        "text": "Possession has been delayed a little.",
+        "published": {
+          "status": "known",
+          "value": "2026-09-10T10:00:00Z",
+          "precision": "day",
+          "basis": "platform_metadata"
+        },
+        "timestamp_ms": 12000,
+        "consistency_flags": [],
+        "review_status": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000011",
+          "actor": null
+        },
+        "policy": {
+          "family": "youtube",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-24T10:00:00Z"
+      }
+    },
+    {
+      "name": "review_flagged_pending",
+      "schema": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "expect": "valid",
+      "tags": [
+        "source_reviews",
+        "status_consistency"
+      ],
+      "why": "A 'lived here' post in a partly ready project with no phase named waits for a moderator",
+      "instance": {
+        "id": "rex_01JB0000000000000000000003",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000006",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000006",
+        "evidence": [
+          {
+            "id": "evd_01JB0000000000000000000006",
+            "revision": 1
+          }
+        ],
+        "source_kind": "forum_post",
+        "perspective": "resident_experience",
+        "speaker_label": "a_resident",
+        "polarity": "positive",
+        "aspects": [
+          "maintenance"
+        ],
+        "original_text": "I have been living here for a year and the maintenance is excellent.",
+        "original_language": "en",
+        "rendering": "verbatim",
+        "text": "I have been living here for a year and the maintenance is excellent.",
+        "published": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "timestamp_ms": null,
+        "consistency_flags": [
+          "status_unknown"
+        ],
+        "review_status": "pending",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000011",
+          "actor": null
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-24T10:00:00Z"
+      }
+    },
+    {
+      "name": "review_flagged_approved",
+      "schema": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "expect": "invalid",
+      "tags": [
+        "status_consistency"
+      ],
+      "why": "A flagged review cannot be approved (D27)",
+      "error_contains": "is expected to be empty",
+      "instance": {
+        "id": "rex_01JB0000000000000000000003",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000006",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000006",
+        "evidence": [
+          {
+            "id": "evd_01JB0000000000000000000006",
+            "revision": 1
+          }
+        ],
+        "source_kind": "forum_post",
+        "perspective": "resident_experience",
+        "speaker_label": "a_resident",
+        "polarity": "positive",
+        "aspects": [
+          "maintenance"
+        ],
+        "original_text": "I have been living here for a year and the maintenance is excellent.",
+        "original_language": "en",
+        "rendering": "verbatim",
+        "text": "I have been living here for a year and the maintenance is excellent.",
+        "published": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "timestamp_ms": null,
+        "consistency_flags": [
+          "status_unknown"
+        ],
+        "review_status": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000011",
+          "actor": null
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-24T10:00:00Z"
+      }
+    },
+    {
+      "name": "review_english_marked_translated",
+      "schema": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "expect": "invalid",
+      "tags": [
+        "source_reviews"
+      ],
+      "why": "Only non-English originals are translated",
+      "error_contains": "should not be valid",
+      "instance": {
+        "id": "rex_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000003",
+        "evidence": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "source_kind": "forum_thread",
+        "perspective": "owner_awaiting_possession",
+        "speaker_label": "an_owner_awaiting_possession",
+        "polarity": "mixed",
+        "aspects": [
+          "layout",
+          "possession"
+        ],
+        "original_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+        "original_language": "en",
+        "rendering": "translated",
+        "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+        "published": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "timestamp_ms": null,
+        "consistency_flags": [],
+        "review_status": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000011",
+          "actor": null
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-24T10:00:00Z"
+      }
+    },
+    {
+      "name": "review_withdrawn_keeps_words",
+      "schema": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "expect": "invalid",
+      "tags": [
+        "withdrawal"
+      ],
+      "why": "A withdrawn source's words are erased from its review",
+      "error_contains": "is not of type 'null'",
+      "instance": {
+        "id": "rex_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000003",
+        "evidence": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "source_kind": "forum_thread",
+        "perspective": "owner_awaiting_possession",
+        "speaker_label": "an_owner_awaiting_possession",
+        "polarity": "mixed",
+        "aspects": [
+          "layout",
+          "possession"
+        ],
+        "original_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+        "original_language": "en",
+        "rendering": "punctuation_normalised",
+        "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+        "published": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "timestamp_ms": null,
+        "consistency_flags": [],
+        "review_status": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000011",
+          "actor": null
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 2
+        },
+        "lifecycle": "withdrawn",
+        "created_at": "2026-09-24T10:00:00Z"
+      }
+    },
+    {
+      "name": "review_neutral",
+      "schema": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "expect": "invalid",
+      "tags": [
+        "source_reviews"
+      ],
+      "why": "Reviews are positive, negative or mixed",
+      "error_contains": "should not be valid",
+      "instance": {
+        "id": "rex_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000003",
+        "evidence": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "source_kind": "forum_thread",
+        "perspective": "owner_awaiting_possession",
+        "speaker_label": "an_owner_awaiting_possession",
+        "polarity": "neutral",
+        "aspects": [
+          "layout",
+          "possession"
+        ],
+        "original_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+        "original_language": "en",
+        "rendering": "punctuation_normalised",
+        "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+        "published": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "timestamp_ms": null,
+        "consistency_flags": [],
+        "review_status": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000011",
+          "actor": null
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-24T10:00:00Z"
+      }
+    },
+    {
+      "name": "review_from_search_result",
+      "schema": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "expect": "invalid",
+      "tags": [
+        "source_reviews"
+      ],
+      "why": "A search snippet is not anyone's review",
+      "error_contains": "'search_result' is not one of",
+      "instance": {
+        "id": "rex_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000003",
+        "evidence": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "source_kind": "search_result",
+        "perspective": "owner_awaiting_possession",
+        "speaker_label": "an_owner_awaiting_possession",
+        "polarity": "mixed",
+        "aspects": [
+          "layout",
+          "possession"
+        ],
+        "original_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+        "original_language": "en",
+        "rendering": "punctuation_normalised",
+        "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+        "published": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "timestamp_ms": null,
+        "consistency_flags": [],
+        "review_status": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000011",
+          "actor": null
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-24T10:00:00Z"
+      }
+    },
+    {
+      "name": "review_video_without_timestamp",
+      "schema": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "expect": "invalid",
+      "tags": [
+        "video_reviews"
+      ],
+      "why": "A spoken review points to its moment in the video",
+      "error_contains": "None is not of type 'integer'",
+      "instance": {
+        "id": "rex_01JB0000000000000000000004",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000001",
+        "evidence": [
+          {
+            "id": "evd_01JB0000000000000000000002",
+            "revision": 1
+          }
+        ],
+        "source_kind": "video",
+        "perspective": "third_party_report",
+        "speaker_label": "a_video_creator",
+        "polarity": "negative",
+        "aspects": [
+          "possession"
+        ],
+        "original_text": "possession mein thoda delay hua",
+        "original_language": "hi-Latn",
+        "rendering": "translated",
+        "text": "Possession has been delayed a little.",
+        "published": {
+          "status": "known",
+          "value": "2026-09-10T10:00:00Z",
+          "precision": "day",
+          "basis": "platform_metadata"
+        },
+        "timestamp_ms": null,
+        "consistency_flags": [],
+        "review_status": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000011",
+          "actor": null
+        },
+        "policy": {
+          "family": "youtube",
+          "policy_version": 2
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-24T10:00:00Z"
       }
     }
   ]

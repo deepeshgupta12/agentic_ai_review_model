@@ -1466,6 +1466,218 @@
         }
       }
     },
+    "/v1/projects/{project_id}/review-excerpts": {
+      "get": {
+        "operationId": "listReviewExcerpts",
+        "summary": "First-person reviews from real posts, comments and videos, with original words, evidence and checks (D28)",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "name": "review_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/FindingReviewStatus"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ReviewExcerptPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewExcerptPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/review-excerpts/{excerpt_id}/revisions": {
+      "post": {
+        "operationId": "reviseReviewExcerpt",
+        "summary": "Choose different spans of the same source or fix a translation, as a new revision; no free-text rewrite",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "excerpt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ReviewExcerptId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewExcerptRevisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "ReviewExcerpt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewExcerpt"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/review-excerpts/{excerpt_id}/decisions": {
+      "post": {
+        "operationId": "decideReviewExcerpt",
+        "summary": "Approve, reject or request changes on an exact review revision; flagged reviews cannot be approved",
+        "tags": [
+          "reviews"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "excerpt_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ReviewExcerptId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewExcerptDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ReviewDecision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDecision"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
     "/v1/projects/{project_id}/content-revisions": {
       "post": {
         "operationId": "createContentRevision",
@@ -3208,6 +3420,18 @@
       },
       "ReviewDecision": {
         "$ref": "content.schema.json#/$defs/ReviewDecision"
+      },
+      "ReviewExcerpt": {
+        "$ref": "evidence.schema.json#/$defs/ReviewExcerpt"
+      },
+      "ReviewExcerptDecisionRequest": {
+        "$ref": "api.schema.json#/$defs/ReviewExcerptDecisionRequest"
+      },
+      "ReviewExcerptPage": {
+        "$ref": "api.schema.json#/$defs/ReviewExcerptPage"
+      },
+      "ReviewExcerptRevisionRequest": {
+        "$ref": "api.schema.json#/$defs/ReviewExcerptRevisionRequest"
       },
       "RollbackRequest": {
         "$ref": "api.schema.json#/$defs/RollbackRequest"

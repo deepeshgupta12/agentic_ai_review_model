@@ -123,6 +123,8 @@
         "aspect_label",
         "claim_type",
         "polarity",
+        "perspective",
+        "consistency_flags",
         "statement",
         "observation_time",
         "supporting_evidence",
@@ -142,6 +144,13 @@
         "aspect_label": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
         "claim_type": { "$ref": "common.schema.json#/$defs/ClaimType" },
         "polarity": { "$ref": "common.schema.json#/$defs/Polarity" },
+        "perspective": { "$ref": "common.schema.json#/$defs/ClaimPerspective" },
+        "consistency_flags": {
+          "description": "Computed by the backend from perspective and construction status (D27); a flagged claim never reaches a finding until resolved.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "common.schema.json#/$defs/ConsistencyFlag" }
+        },
         "statement": { "type": "string", "minLength": 1 },
         "observation_time": { "$ref": "common.schema.json#/$defs/DatedValue" },
         "supporting_evidence": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" } },
@@ -237,7 +246,136 @@
       "x-invariants": [
         "attribution=verified_fact requires every referenced claim revision to have verification.status=verified",
         "every referenced claim revision belongs to the same project_id",
-        "a single independent origin keeps attribution=reported_opinion"
+        "a single independent origin keeps attribution=reported_opinion",
+        "no referenced claim revision has consistency_flags (D27)"
+      ]
+    },
+    "ReviewExcerpt": {
+      "description": "A first-person review taken from one real post, comment or video by one person (D28). Never merged with another source, never adds anything the author did not say. Shown with a credit to its platform and date; a moderator approves each revision.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "project_id",
+        "source",
+        "link_id",
+        "evidence",
+        "source_kind",
+        "perspective",
+        "speaker_label",
+        "polarity",
+        "aspects",
+        "original_text",
+        "original_language",
+        "rendering",
+        "text",
+        "published",
+        "timestamp_ms",
+        "consistency_flags",
+        "review_status",
+        "supersedes",
+        "created_by",
+        "policy",
+        "lifecycle",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/ReviewExcerptId" },
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "source": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" },
+        "link_id": { "$ref": "common.schema.json#/$defs/SourceLinkId" },
+        "evidence": {
+          "description": "Spans of this one source revision that the review shows, in order.",
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" }
+        },
+        "source_kind": { "enum": ["forum_post", "forum_thread", "blog_post", "comment", "video", "short"] },
+        "perspective": { "$ref": "common.schema.json#/$defs/ClaimPerspective" },
+        "speaker_label": { "$ref": "common.schema.json#/$defs/SpeakerLabel" },
+        "polarity": { "allOf": [{ "$ref": "common.schema.json#/$defs/Polarity" }, { "not": { "const": "neutral" } }] },
+        "aspects": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "common.schema.json#/$defs/Aspect" } },
+        "original_text": {
+          "description": "The author's own words from the cited spans. Erasable: null after withdrawal, deletion or expiry.",
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        },
+        "original_language": { "$ref": "common.schema.json#/$defs/LanguageTag" },
+        "rendering": { "$ref": "common.schema.json#/$defs/ReviewRendering" },
+        "text": {
+          "description": "What the page shows, in the first person as the author wrote. Checked against original_text by the backend unless translated.",
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        },
+        "published": { "$ref": "common.schema.json#/$defs/DatedValue" },
+        "timestamp_ms": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "consistency_flags": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "common.schema.json#/$defs/ConsistencyFlag" }
+        },
+        "review_status": { "$ref": "common.schema.json#/$defs/FindingReviewStatus" },
+        "supersedes": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "revision"],
+              "properties": {
+                "id": { "$ref": "common.schema.json#/$defs/ReviewExcerptId" },
+                "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "created_by": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "task_id", "actor"],
+          "properties": {
+            "kind": { "enum": ["agent", "moderator"] },
+            "task_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/TaskId" }, { "type": "null" }] },
+            "actor": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Actor" }, { "type": "null" }] }
+          }
+        },
+        "policy": { "$ref": "common.schema.json#/$defs/PolicyRef" },
+        "lifecycle": { "$ref": "common.schema.json#/$defs/RecordLifecycle" },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "description": "A flagged review cannot be approved (D27).",
+          "if": { "properties": { "review_status": { "const": "approved" } } },
+          "then": { "properties": { "consistency_flags": { "maxItems": 0 } } }
+        },
+        {
+          "description": "Only non-English originals are translated.",
+          "if": { "properties": { "rendering": { "const": "translated" } } },
+          "then": { "properties": { "original_language": { "not": { "const": "en" } } } }
+        },
+        {
+          "description": "Spoken reviews point to the moment in the video.",
+          "if": { "properties": { "source_kind": { "enum": ["video", "short"] } } },
+          "then": { "properties": { "timestamp_ms": { "type": "integer" } } },
+          "else": { "properties": { "timestamp_ms": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "lifecycle": { "enum": ["deleted", "withdrawn", "expired"] } } },
+          "then": { "properties": { "original_text": { "type": "null" }, "text": { "type": "null" } } },
+          "else": { "properties": { "original_text": { "type": "string" }, "text": { "type": "string" } } }
+        },
+        {
+          "if": { "properties": { "revision": { "const": 1 } } },
+          "then": { "properties": { "supersedes": { "type": "null" } } },
+          "else": { "properties": { "supersedes": { "type": "object" } } }
+        }
+      ],
+      "x-invariants": [
+        "every evidence ref belongs to source (one source revision, one author)",
+        "unless rendering=translated, text keeps the words of original_text in order; punctuation_normalised changes punctuation only; shortened leaves out whole sentences only",
+        "consistency_flags are recomputed from perspective and construction status whenever either changes",
+        "the source policy for this review allows quotation"
       ]
     }
   }

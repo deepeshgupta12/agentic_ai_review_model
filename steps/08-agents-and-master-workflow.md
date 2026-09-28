@@ -45,7 +45,7 @@ Extend the Step 03 Anthropic gateway: configured model roles (D10), JSON-schema 
 
 ### 08.2 Implement specialist wrappers
 
-Create versioned prompts, input/output schemas and tool allowlists for A01–A10. Reuse identity/media/retrieval services already built. Keep A00 state coordination deterministic and tools restricted by role.
+Create versioned prompts, input/output schemas and tool allowlists for A01–A11. Reuse identity/media/retrieval services already built. Keep A00 state coordination deterministic and tools restricted by role.
 
 ### 08.3 Extract and verify claims
 

@@ -48,6 +48,7 @@ All roles. Data: `op:listProjects`, `op:getOpsSummary`. One row per project: nam
 Read: all roles. Edit: researcher. Data: `op:getProject`, `op:listAliasProposals`. Actions: `op:updateProjectConfig` (languages, refresh, enabled sources, negative keywords, at the expected version).
 
 - Shows the input fields as supplied (name, alternate names, locality, city, micromarket, developer, RERA registrations with registered names), the generated slug and the the client reference.
+- **Construction status** (D27) for the project and each phase: status, where it came from (export, RERA registry, developer page, moderator) and its date. Researchers add or update records through `op:updateProjectConfig`; a partly ready project prompts for per-phase status, because "lived here" posts can only be judged against the right phase.
 - **Approved aliases** with origin (input file, RERA name, approved proposal) and mode (standalone or context-required).
 - **Alias proposals** (D17): each shows the alias, target (project or phase), the cited evidence excerpt with the strong identifier highlighted, independent-origin count and the collision result. Researchers and moderators approve (choosing standalone or context-required), reject or revoke with `op:decideAliasProposal`. A colliding or generic alias only offers context-required.
 
@@ -72,6 +73,15 @@ Read: all roles. Data: `op:listMedia`, `op:getSourceRevision`. One row per video
 Read: all roles. Decide and edit: moderator. Data: `op:listFindings`, with evidence opened through `op:getSourceRevision`. Each finding shows kind (pro, con, neutral), aspect, wording, attribution (reported opinion or verified fact), exact claims, supporting and contradicting evidence side by side, independent-origin count (labelled as spread, not proof) and eligibility.
 
 Actions: `op:decideFinding` (approve, reject with reason, request changes with reason) on the exact revision shown; `op:reviseFinding` edits as a new revision, and earlier decisions are then labelled superseded. Negative findings use the same controls as positive ones. Pros and cons may be unequal or empty.
+
+### Reviews — `/console/projects/[projectId]/reviews`
+
+Read: all roles. Decide and revise: moderator. Data: `op:listReviewExcerpts` (filter by status). These are first-person reviews taken from real posts, YouTube comments and videos, positive and negative (D28).
+
+- Each review shows the text as it will appear, the author's original words beside it (with the Hindi or Hinglish original for translations), the credit line (who, platform, date, video timestamp), the source link for moderators only, the backend's rendering check ("matches original", "needs moderator" for translations, or "mismatch") and any consistency flag.
+- **One review, one source.** A review always comes from one post, comment or video by one person; the screen offers no way to merge sources or type new words.
+- Actions: `op:decideReviewExcerpt` (approve, reject with a reason, request changes with a reason) on the exact revision shown; `op:reviseReviewExcerpt` picks different spans of the same source or fixes a translation, as a new revision. Approve is disabled while a review is flagged (for example "lived here" in a project or phase not yet handed over) or its rendering check says "mismatch".
+- Approved reviews appear as choices when generating page content (`op:createContentRevision`).
 
 ### Content editor — `/console/projects/[projectId]/content`
 
@@ -110,10 +120,11 @@ Server-rendered. At render time it calls `op:getPublicInsights`, which returns o
 2. Attribution line, for example "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team." The module is never presented as user reviews and shows no star ratings or scores.
 3. Overview.
 4. Advantages and considerations, as separate lists that may be unequal or empty, each item with its caveat.
-5. Buyer questions with short answers.
-6. Sources: title, platform, date or "date unknown", and video timestamp links. External links use `rel="nofollow ugc noopener"`.
-7. Coverage note (what was and was not covered).
-8. "Report a correction" link opening a short form that posts to `op:submitCorrection` (message, optional contact, hidden honeypot field; rate-limited).
+5. **What buyers are saying**: approved first-person reviews, positive and negative, each in the author's own words (translated where needed) with a credit line under it, for example "From an owner awaiting possession on Example forum, date unknown" or "From a site visitor's comment on YouTube, 15 Sep 2026 (translated from Hinglish)". A spoken review names the video moment. The section is introduced as posts from people on other sites, selected and checked by the client; reviews are never presented as written on the client and carry no star ratings. No public link is shown (`show_review_source_links` is off, D28).
+6. Buyer questions with short answers.
+7. Sources behind the findings: title, platform, date or "date unknown", and video timestamp links. External links use `rel="nofollow ugc noopener"`.
+8. Coverage note (what was and was not covered).
+9. "Report a correction" link opening a short form that posts to `op:submitCorrection` (message, optional contact, hidden honeypot field; rate-limited).
 
 **Delivery markers.** The module root carries `data-insights-state="active"`, `data-insights-revision="<revision id>"` and `data-insights-hash="<payload sha256>"`. With nothing active it renders a short empty state with `data-insights-state="empty"` and no revision attributes, and the rest of the page stays usable. The publication worker verifies delivery by reading these attributes (docs/03, docs/05).
 

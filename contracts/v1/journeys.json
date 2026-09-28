@@ -23,7 +23,9 @@
     "unpublish",
     "cancellation",
     "stale_approval_rejected",
-    "recovery"
+    "recovery",
+    "status_consistency",
+    "source_reviews"
   ],
   "journeys": [
     {
@@ -541,6 +543,85 @@
           ]
         },
         { "actor": "analyst", "operation": "getRun", "does": "Sees one completed run with no duplicate records" }
+      ]
+    },
+    {
+      "id": "J18",
+      "title": "A 'lived here' post about a project nobody can live in yet goes to review",
+      "covers": ["status_consistency"],
+      "steps": [
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "A post says the author has lived in the project for a year, but the project is under construction; the claim is flagged occupancy_before_possession and the match goes to review instead of being accepted",
+          "transitions": [{ "machine": "source_link", "instance": "lnk7", "from": null, "to": "needs_review" }]
+        },
+        { "actor": "moderator", "operation": "getSourceRevision", "does": "Reads the post: it names Phase 1, which the RERA registry shows as ready to move" },
+        {
+          "actor": "moderator",
+          "operation": "decideSourceLink",
+          "does": "Accepts the match with the phase set to Phase 1; the flag clears because that phase is ready",
+          "transitions": [{ "machine": "source_link", "instance": "lnk7", "from": "needs_review", "to": "accepted" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Another post claims years of living in a new-launch project with no ready phase; it is flagged the same way",
+          "transitions": [{ "machine": "source_link", "instance": "lnk8", "from": null, "to": "needs_review" }]
+        },
+        {
+          "actor": "moderator",
+          "operation": "decideSourceLink",
+          "does": "Rejects it as not credible for this project, with a reason; it never reaches findings, reviews or the page",
+          "transitions": [{ "machine": "source_link", "instance": "lnk8", "from": "needs_review", "to": "rejected" }]
+        },
+        { "actor": "researcher", "operation": "updateProjectConfig", "does": "Records Phase 1's ready-to-move status from the registry, with its date, so later posts about Phase 1 are judged correctly" }
+      ]
+    },
+    {
+      "id": "J19",
+      "title": "First-person reviews from real posts and videos, positive and negative",
+      "covers": ["source_reviews"],
+      "steps": [
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "A11 proposes a buyer's forum post (dashes turned into commas), a YouTube comment in Hinglish (translated) and a post claiming residence in the under-construction project; the last one is flagged",
+          "transitions": [
+            { "machine": "review_excerpt", "instance": "rex1", "from": null, "to": "pending" },
+            { "machine": "review_excerpt", "instance": "rex2r1", "from": null, "to": "pending" },
+            { "machine": "review_excerpt", "instance": "rex3", "from": null, "to": "pending" }
+          ]
+        },
+        { "actor": "moderator", "operation": "listReviewExcerpts", "does": "Sees each review beside the original words, the credit line, the rendering check and any flag" },
+        {
+          "actor": "moderator",
+          "operation": "decideReviewExcerpt",
+          "does": "Approves the forum post review; the backend confirmed the words match the original",
+          "transitions": [{ "machine": "review_excerpt", "instance": "rex1", "from": "pending", "to": "approved" }]
+        },
+        {
+          "actor": "moderator",
+          "operation": "reviseReviewExcerpt",
+          "does": "Corrects one word in the translation of the YouTube comment; this creates revision 2",
+          "transitions": [
+            { "machine": "review_excerpt", "instance": "rex2r1", "from": "pending", "to": "superseded" },
+            { "machine": "review_excerpt", "instance": "rex2r2", "from": null, "to": "pending" }
+          ]
+        },
+        {
+          "actor": "moderator",
+          "operation": "decideReviewExcerpt",
+          "does": "Approves the corrected translation (negative review about construction speed)",
+          "transitions": [{ "machine": "review_excerpt", "instance": "rex2r2", "from": "pending", "to": "approved" }]
+        },
+        {
+          "actor": "moderator",
+          "operation": "decideReviewExcerpt",
+          "does": "Rejects the flagged review with a reason; approval is refused while the flag stands",
+          "transitions": [{ "machine": "review_excerpt", "instance": "rex3", "from": "pending", "to": "rejected" }]
+        },
+        { "actor": "moderator", "operation": "createContentRevision", "does": "Generates page content with the approved findings and the two approved reviews, one positive and one negative, each with its credit line" }
       ]
     }
   ]

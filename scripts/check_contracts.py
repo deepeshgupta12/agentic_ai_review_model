@@ -179,6 +179,52 @@ def check_rules(c: ct.Contracts) -> list[str]:
     return problems
 
 
+def check_content_rules(c: ct.Contracts) -> list[str]:
+    """Construction-status consistency (D27) and first-person source reviews (D28)."""
+    problems: list[str] = []
+    rules = ct.content_rules()
+    statuses = set(c.enum("common.schema.json#/$defs/ConstructionStatus"))
+    perspectives = set(c.enum("common.schema.json#/$defs/ClaimPerspective"))
+    if set(rules["occupancy_possible"]) != statuses:
+        problems.append("content_rules occupancy_possible must cover exactly the ConstructionStatus values")
+    if set(rules["wording"]["preferred_terms"]) != statuses:
+        problems.append("content_rules preferred_terms must cover exactly the ConstructionStatus values")
+    if not set(rules["export_labels"].values()) <= statuses:
+        problems.append("content_rules export_labels map to unknown statuses")
+    if not set(rules["occupancy_perspectives"]) <= perspectives:
+        problems.append("content_rules occupancy_perspectives must be ClaimPerspective values")
+    for project in ct.load_json(ROOT / "contracts" / "five-project-input-template.json")["projects"]:
+        label = (project.get("client_ref") or {}).get("status")
+        if label and ct.status_from_export_label(label, rules) is None:
+            problems.append(f"{project['project_name']}: export status '{label}' has no construction status mapping")
+
+    vectors = ct.load_json(ct.FIXTURES / "rules.json")
+    for item in vectors["status_consistency"]:
+        flags = ct.consistency_flags(item["perspective"], item["records"], item["phase_rera_id"], item["on_date"], rules)
+        if flags != item["flags"]:
+            problems.append(f"status_consistency {item['name']}: expected {item['flags']}, got {flags}")
+    for item in vectors["status_wording"]:
+        issues = ct.wording_issues(item["text"], item["status"], rules)
+        if issues != {"blocking": item["blocking"], "advice": item["advice"]}:
+            problems.append(f"status_wording {item['name']}: got {issues}")
+    for item in vectors["review_rendering"]:
+        found = ct.rendering_problems(item["original"], item["text"], item["rendering"], rules)
+        if bool(found) != bool(item["problems_contain"]) or any(not any(f in p for p in found) for f in item["problems_contain"]):
+            problems.append(f"review_rendering {item['name']}: expected {item['problems_contain']}, got {found}")
+        if ct.rendering_check(item["original"], item["text"], item["rendering"]) != item["check"]:
+            problems.append(f"review_rendering {item['name']}: check should be {item['check']}")
+
+    for file_name, item in fixture_cases():
+        if item["expect"] != "valid" or not item["schema"].endswith("/ReviewExcerpt"):
+            continue
+        review = item["instance"]
+        if review["text"] is None:
+            continue
+        found = ct.rendering_problems(review["original_text"], review["text"], review["rendering"], rules)
+        problems += [f"{file_name}:{item['name']}: {p}" for p in found]
+    return problems
+
+
 def check_seed(c: ct.Contracts) -> list[str]:
     """Step 01 data uses the same vocabulary as the contracts; the real input file matches its schema."""
     problems: list[str] = []
@@ -194,9 +240,15 @@ def check_seed(c: ct.Contracts) -> list[str]:
     for policy in ct.load_json(ROOT / "seed" / "source_policies.json")["policies"]:
         if not family_pattern.match(policy["family"]):
             problems.append(f"seed policy family {policy['family']} does not match PolicyFamily")
-    roles = ct.load_json(ROOT / "seed" / "operating_defaults.json")["items"]["roles"]["value"]
-    if sorted(roles) != sorted(c.enum("common.schema.json#/$defs/Role")):
+    defaults = ct.load_json(ROOT / "seed" / "operating_defaults.json")["items"]
+    if sorted(defaults["roles"]["value"]) != sorted(c.enum("common.schema.json#/$defs/Role")):
         problems.append("seed roles differ from the Role enum")
+    if not isinstance(defaults.get("show_review_source_links", {}).get("value"), bool):
+        problems.append("seed default show_review_source_links must be true or false (D28)")
+    policies = {p["family"]: p for p in ct.load_json(ROOT / "seed" / "source_policies.json")["policies"]}
+    for family in ("web_public_pages", "youtube"):
+        if not policies[family]["quotation_allowed"]:
+            problems.append(f"seed policy {family}: reviews quote authors' words, so quotation must be allowed (D28)")
     input_file = ct.load_json(ROOT / "contracts" / "five-project-input-template.json")
     problems += [f"project input file: {e}" for e in c.errors(input_file, "catalogue.schema.json#/$defs/ProjectInputFile")]
     return problems
@@ -244,6 +296,7 @@ SECTIONS: list[tuple[str, Callable[[ct.Contracts], list[str]]]] = [
     ("Canonical hashing (D23)", check_hashing),
     ("Text anchors, code points and UTF-16 (D24)", check_anchors),
     ("Approval and public-read rules", check_rules),
+    ("Construction status and first-person source reviews (D27, D28)", check_content_rules),
     ("Step 01 seed data uses the contract vocabulary", check_seed),
     ("Docs: journeys doc current, screen references valid", check_docs),
     ("JavaScript cross-check (Node)", check_cross_language),

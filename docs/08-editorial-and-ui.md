@@ -34,6 +34,8 @@ Show empty, loading, access-pending, partial, error, stale and forbidden states 
 - Verify possession dates, prices, approvals and serious allegations against appropriate current primary evidence and route unresolved cases to editorial escalation.
 - No aggregate ratings from scraped sentiment, fabricated resident counts, investment promises or invented quotes. Do not imply the sample represents all buyers.
 - Every substantive output block carries exact finding/claim references. Preserve caveats through shortening, translation and manual editing.
+- Wording follows construction status (D27): before possession write "prospective buyers" or "owners awaiting possession", never "residents" or "living here"; in a partly ready project name the phase.
+- First-person reviews (D28) are one real author's words with a credit line (who, platform, date). Show positive and negative ones; do not choose only one side. No dashes or hyphens in displayed review text; no merged, invented or model-paraphrased reviews.
 - Q&A questions may be generated from supported topics; answers cannot add new facts. Do not claim these are actual searched user questions without search-query evidence.
 
 ## SEO/AEO implementation

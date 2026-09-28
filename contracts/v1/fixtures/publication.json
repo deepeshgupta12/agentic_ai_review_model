@@ -33,15 +33,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -67,15 +67,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -106,15 +106,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -143,8 +143,8 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": null,
@@ -169,8 +169,8 @@
         "target": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db"
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd"
         },
         "expected_state_version": 7,
         "idempotency_key": "publish-rev1-0001",
@@ -191,7 +191,7 @@
         "verification": {
           "verified_at": "2026-09-24T14:00:00Z",
           "rendered_revision_id": "rev_01JB0000000000000000000001",
-          "rendered_payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7"
+          "rendered_payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b"
         },
         "error": null,
         "rolled_back_by": null,
@@ -255,8 +255,8 @@
         "target": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db"
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd"
         },
         "expected_state_version": 7,
         "idempotency_key": "publish-rev1-0001",
@@ -300,8 +300,8 @@
         "target": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db"
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd"
         },
         "expected_state_version": 7,
         "idempotency_key": "publish-rev1-0001",
@@ -322,7 +322,7 @@
         "verification": {
           "verified_at": "2026-09-24T14:00:00Z",
           "rendered_revision_id": "rev_01JB0000000000000000000001",
-          "rendered_payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7"
+          "rendered_payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b"
         },
         "error": null,
         "rolled_back_by": null,
@@ -345,8 +345,8 @@
         "target": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db"
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd"
         },
         "expected_state_version": 7,
         "idempotency_key": "publish-rev1-0001",
@@ -367,7 +367,7 @@
         "verification": {
           "verified_at": "2026-09-24T14:00:00Z",
           "rendered_revision_id": "rev_01JB0000000000000000000001",
-          "rendered_payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7"
+          "rendered_payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b"
         },
         "error": null,
         "rolled_back_by": null,

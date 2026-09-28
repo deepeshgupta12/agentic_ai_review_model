@@ -114,6 +114,18 @@ class UC01ProjectRegistration(unittest.TestCase):
         self.assertIn("m3m antalya hills phase ii", antalya["search_names"])
         self.assertEqual(self.data["projects"][4]["rera_ids"][1]["registered_name"], "M3M Antalya Hills Phase II")
 
+    def test_export_status_labels_map_to_construction_status(self):
+        _, _, registrations = vi.validate_projects(self.data)
+        self.assertEqual(
+            [r["construction_status"] for r in registrations],
+            ["ready_to_move", "under_construction", "new_launch", "new_launch", "partially_ready"],
+        )
+
+    def test_unknown_status_label_rejected(self):
+        self.data["projects"][2]["client_ref"]["status"] = "Coming Soon"
+        errors, _, _ = vi.validate_projects(self.data)
+        assert_error(self, errors, "projects[2] (Sobha Crescent)", "'Coming Soon' is not a known export status")
+
     def test_generic_single_word_name_is_flagged(self):
         _, warnings, _ = vi.validate_projects(self.data)
         self.assertTrue(any("'parq'" in w and "single word" in w for w in warnings), warnings)

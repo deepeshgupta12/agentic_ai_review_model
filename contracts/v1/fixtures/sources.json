@@ -10,10 +10,10 @@
       "instance": {
         "id": "pol_01JB0000000000000000000001",
         "family": "web_public_pages",
-        "policy_version": 1,
+        "policy_version": 2,
         "collection_allowed": true,
         "ai_processing_allowed": true,
-        "quotation_allowed": false,
+        "quotation_allowed": true,
         "derived_publication_allowed": true,
         "attribution_required": true,
         "retention_days": 90,
@@ -25,11 +25,11 @@
         "conditions": [
           "Public pages only"
         ],
-        "basis": "docs/06 scraping policy",
+        "basis": "docs/06 scraping policy; verbatim review quotes with a credit line (D28)",
         "status": "accepted",
         "effective_from": "2026-09-25T10:00:00Z",
         "expires_at": null,
-        "accepted_on": "2026-09-25",
+        "accepted_on": "2026-09-28",
         "accepted_by": "Product owner (fixture)"
       }
     },
@@ -45,10 +45,10 @@
       "instance": {
         "id": "pol_01JB0000000000000000000001",
         "family": "web_public_pages",
-        "policy_version": 1,
+        "policy_version": 2,
         "collection_allowed": false,
         "ai_processing_allowed": true,
-        "quotation_allowed": false,
+        "quotation_allowed": true,
         "derived_publication_allowed": true,
         "attribution_required": true,
         "retention_days": null,
@@ -60,11 +60,11 @@
         "conditions": [
           "Public pages only"
         ],
-        "basis": "docs/06 scraping policy",
+        "basis": "docs/06 scraping policy; verbatim review quotes with a credit line (D28)",
         "status": "accepted",
         "effective_from": "2026-09-25T10:00:00Z",
         "expires_at": null,
-        "accepted_on": "2026-09-25",
+        "accepted_on": "2026-09-28",
         "accepted_by": "Product owner (fixture)"
       }
     },
@@ -80,10 +80,10 @@
       "instance": {
         "id": "pol_01JB0000000000000000000001",
         "family": "web_public_pages",
-        "policy_version": 1,
+        "policy_version": 2,
         "collection_allowed": true,
         "ai_processing_allowed": true,
-        "quotation_allowed": false,
+        "quotation_allowed": true,
         "derived_publication_allowed": true,
         "attribution_required": true,
         "retention_days": 90,
@@ -95,11 +95,11 @@
         "conditions": [
           "Public pages only"
         ],
-        "basis": "docs/06 scraping policy",
+        "basis": "docs/06 scraping policy; verbatim review quotes with a credit line (D28)",
         "status": "accepted",
         "effective_from": "2026-09-25T10:00:00Z",
         "expires_at": null,
-        "accepted_on": "2026-09-25",
+        "accepted_on": "2026-09-28",
         "accepted_by": null
       }
     },
@@ -141,7 +141,7 @@
         },
         "policy": {
           "family": "web_public_pages",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "active",
         "media": null,
@@ -187,7 +187,7 @@
         },
         "policy": {
           "family": "web_public_pages",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "active",
         "media": null,
@@ -232,7 +232,7 @@
         },
         "policy": {
           "family": "youtube",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "active",
         "media": {
@@ -288,7 +288,7 @@
         },
         "policy": {
           "family": "youtube",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "active",
         "media": {
@@ -340,7 +340,7 @@
         "payload_ref": null,
         "policy": {
           "family": "web_public_pages",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "active",
         "media": null,
@@ -383,7 +383,7 @@
         "payload_ref": null,
         "policy": {
           "family": "web_public_pages",
-          "policy_version": 1
+          "policy_version": 2
         },
         "lifecycle": "active",
         "media": null,

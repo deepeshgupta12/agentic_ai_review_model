@@ -35,6 +35,8 @@ Every fixture is labelled synthetic (`sample_is_synthetic: true`), versioned fro
 11. Short name shared by an unrelated project (D17): "Parq" used for a different project.
 12. Residential vs commercial: a Commercial-01 shop review attached to the residential project.
 13. Hinglish numbers: prices and sizes such as "3 BHK ka rate 2.5 cr" extracted without unit errors.
+14. Living before possession (D27): a post claiming a year of residence in an under-construction or new-launch project is flagged, never used, and its match goes to review.
+15. Review faithfulness (D28): a review with one word changed, a word added, sources merged or a translation that changes the meaning is caught before approval.
 
 ## Labels
 

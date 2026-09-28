@@ -102,9 +102,10 @@
         "pending_review": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["findings", "links", "alias_proposals", "corrections"],
+          "required": ["findings", "review_excerpts", "links", "alias_proposals", "corrections"],
           "properties": {
             "findings": { "type": "integer", "minimum": 0 },
+            "review_excerpts": { "type": "integer", "minimum": 0 },
             "links": { "type": "integer", "minimum": 0 },
             "alias_proposals": { "type": "integer", "minimum": 0 },
             "corrections": { "type": "integer", "minimum": 0 }
@@ -154,7 +155,8 @@
         "negative_keywords": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "input_languages": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/LanguageTag" } },
         "refresh": { "$ref": "catalogue.schema.json#/$defs/ProjectConfig/properties/refresh" },
-        "sources": { "$ref": "catalogue.schema.json#/$defs/ProjectConfig/properties/sources" }
+        "sources": { "$ref": "catalogue.schema.json#/$defs/ProjectConfig/properties/sources" },
+        "construction_status": { "$ref": "catalogue.schema.json#/$defs/ProjectConfig/properties/construction_status" }
       }
     },
     "RunRequest": {
@@ -403,11 +405,16 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["mode", "locale", "findings"],
+          "required": ["mode", "locale", "findings", "reviews"],
           "properties": {
             "mode": { "const": "generate" },
             "locale": { "$ref": "common.schema.json#/$defs/Locale" },
-            "findings": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/FindingRef" } }
+            "findings": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/FindingRef" } },
+            "reviews": {
+              "description": "Approved review excerpts to show, positive and negative; may be empty.",
+              "type": "array",
+              "items": { "$ref": "#/$defs/ReviewExcerptRef" }
+            }
           }
         },
         {
@@ -431,6 +438,69 @@
           }
         }
       ]
+    },
+    "ReviewExcerptRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "revision"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/ReviewExcerptId" },
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" }
+      }
+    },
+    "ReviewExcerptView": {
+      "description": "A proposed or approved review with the original words and the evidence behind it, for moderators.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["review", "evidence", "source_url", "rendering_check", "decisions"],
+      "properties": {
+        "review": { "$ref": "evidence.schema.json#/$defs/ReviewExcerpt" },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/EvidenceView" } },
+        "source_url": { "$ref": "common.schema.json#/$defs/HttpUrl" },
+        "rendering_check": {
+          "description": "Backend comparison of text with original_text; translated reviews show 'needs_moderator'.",
+          "enum": ["matches_original", "needs_moderator", "mismatch"]
+        },
+        "decisions": { "type": "array", "items": { "$ref": "content.schema.json#/$defs/ReviewDecision" } }
+      }
+    },
+    "ReviewExcerptPage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items", "next_cursor"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/$defs/ReviewExcerptView" } },
+        "next_cursor": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      }
+    },
+    "ReviewExcerptDecisionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "action", "reason"],
+      "properties": {
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "action": { "enum": ["approve", "reject", "changes_requested"] },
+        "reason": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "action": { "enum": ["reject", "changes_requested"] } } },
+          "then": { "properties": { "reason": { "type": "string" } } }
+        }
+      ]
+    },
+    "ReviewExcerptRevisionRequest": {
+      "description": "Choose different spans of the same source or fix a translation. The words must still be the author's; there is no free-text rewrite.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base", "evidence", "rendering", "text", "reason"],
+      "properties": {
+        "base": { "$ref": "#/$defs/ReviewExcerptRef" },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" } },
+        "rendering": { "$ref": "common.schema.json#/$defs/ReviewRendering" },
+        "text": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
     },
     "ContentRevisionView": {
       "type": "object",

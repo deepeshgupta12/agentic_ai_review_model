@@ -13,7 +13,8 @@
     "A07_findings_synthesiser": "SynthesisResult",
     "A08_seo_aeo_editor": "EditorialDraft",
     "A09_editorial_qa": "QaReport",
-    "A10_freshness_reviewer": "ChangeReview"
+    "A10_freshness_reviewer": "ChangeReview",
+    "A11_review_curator": "ReviewCandidates"
   },
   "$defs": {
     "AgentTaskEnvelope": {
@@ -194,12 +195,13 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["aspect", "aspect_label", "claim_type", "polarity", "statement", "evidence_ids", "observation_date_status", "observation_date"],
+            "required": ["aspect", "aspect_label", "claim_type", "polarity", "perspective", "statement", "evidence_ids", "observation_date_status", "observation_date"],
             "properties": {
               "aspect": { "$ref": "common.schema.json#/$defs/Aspect" },
               "aspect_label": { "$ref": "#/$defs/NullableString" },
               "claim_type": { "$ref": "common.schema.json#/$defs/ClaimType" },
               "polarity": { "$ref": "common.schema.json#/$defs/Polarity" },
+              "perspective": { "$ref": "common.schema.json#/$defs/ClaimPerspective" },
               "statement": { "type": "string" },
               "evidence_ids": { "$ref": "#/$defs/IdList" },
               "observation_date_status": { "$ref": "common.schema.json#/$defs/DateStatus" },
@@ -318,7 +320,7 @@
             "additionalProperties": false,
             "required": ["block", "item_index", "severity", "category", "explanation", "claim_ids"],
             "properties": {
-              "block": { "enum": ["heading", "overview", "advantages", "considerations", "questions", "coverage_note", "metadata"] },
+              "block": { "enum": ["heading", "overview", "advantages", "considerations", "reviews", "questions", "coverage_note", "metadata"] },
               "item_index": { "anyOf": [{ "type": "integer" }, { "type": "null" }] },
               "severity": { "enum": ["blocking", "nonblocking"] },
               "category": {
@@ -333,11 +335,40 @@
                   "caveat_lost",
                   "overgeneralisation",
                   "source_imbalance",
+                  "status_inconsistent",
+                  "review_meaning_changed",
                   "other"
                 ]
               },
               "explanation": { "type": "string" },
               "claim_ids": { "$ref": "#/$defs/IdList" }
+            }
+          }
+        }
+      }
+    },
+    "ReviewCandidates": {
+      "description": "A11: proposes first-person reviews, each from one source revision by one author, positive and negative (D28). The model picks spans and renders them; it never merges sources or adds words. The backend checks the rendering against the original and the construction status before a moderator sees it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "reviews"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "evidence_ids", "perspective", "polarity", "aspects", "rendering", "text", "translation_note"],
+            "properties": {
+              "source_id": { "type": "string" },
+              "evidence_ids": { "$ref": "#/$defs/IdList" },
+              "perspective": { "$ref": "common.schema.json#/$defs/ClaimPerspective" },
+              "polarity": { "enum": ["positive", "negative", "mixed"] },
+              "aspects": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/Aspect" } },
+              "rendering": { "$ref": "common.schema.json#/$defs/ReviewRendering" },
+              "text": { "type": "string" },
+              "translation_note": { "$ref": "#/$defs/NullableString" }
             }
           }
         }

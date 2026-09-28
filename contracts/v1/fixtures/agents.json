@@ -73,6 +73,7 @@
             "aspect_label": null,
             "claim_type": "opinion",
             "polarity": "negative",
+            "perspective": "owner_awaiting_possession",
             "statement": "Possession was delayed",
             "evidence_ids": [
               "evd_01JB0000000000000000000001"
@@ -100,6 +101,7 @@
             "aspect_label": null,
             "claim_type": "opinion",
             "polarity": "negative",
+            "perspective": "owner_awaiting_possession",
             "statement": "Possession was delayed",
             "evidence_ids": [
               "evd_01JB0000000000000000000001"
@@ -128,6 +130,7 @@
             "aspect_label": null,
             "claim_type": "opinion",
             "polarity": "negative",
+            "perspective": "owner_awaiting_possession",
             "statement": "Possession was delayed",
             "evidence_ids": [
               "evd_01JB0000000000000000000001"
@@ -179,7 +182,7 @@
         "advantages": [],
         "considerations": [
           {
-            "text": "Several residents report delays.",
+            "text": "Several buyers report delays.",
             "caveat": "Not confirmed by the developer.",
             "finding_ids": [
               "fnd_01JB0000000000000000000001"
@@ -314,6 +317,100 @@
             "exclusions": [],
             "priority": "normal",
             "purpose": "identifier"
+          }
+        ]
+      }
+    },
+    {
+      "name": "review_candidates",
+      "schema": "agents.schema.json#/$defs/ReviewCandidates",
+      "expect": "valid",
+      "tags": [
+        "source_reviews"
+      ],
+      "why": "A11 proposes one review per source, positive and negative",
+      "instance": {
+        "outcome": "completed",
+        "reviews": [
+          {
+            "source_id": "src_01JB0000000000000000000001",
+            "evidence_ids": [
+              "evd_01JB0000000000000000000001"
+            ],
+            "perspective": "owner_awaiting_possession",
+            "polarity": "mixed",
+            "aspects": [
+              "layout",
+              "possession"
+            ],
+            "rendering": "punctuation_normalised",
+            "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+            "translation_note": null
+          },
+          {
+            "source_id": "src_01JB0000000000000000000005",
+            "evidence_ids": [
+              "evd_01JB0000000000000000000005"
+            ],
+            "perspective": "site_visit",
+            "polarity": "negative",
+            "aspects": [
+              "construction_progress"
+            ],
+            "rendering": "translated",
+            "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+            "translation_note": "Translated from Hinglish"
+          }
+        ]
+      }
+    },
+    {
+      "name": "review_candidates_paraphrase",
+      "schema": "agents.schema.json#/$defs/ReviewCandidates",
+      "expect": "invalid",
+      "tags": [
+        "source_reviews"
+      ],
+      "why": "The model cannot rewrite a review in its own words",
+      "error_contains": "'paraphrase' is not one of",
+      "instance": {
+        "outcome": "completed",
+        "reviews": [
+          {
+            "source_id": "src_01JB0000000000000000000001",
+            "evidence_ids": [
+              "evd_01JB0000000000000000000001"
+            ],
+            "perspective": "owner_awaiting_possession",
+            "polarity": "mixed",
+            "aspects": [
+              "possession"
+            ],
+            "rendering": "paraphrase",
+            "text": "Great project overall.",
+            "translation_note": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "qa_status_wording",
+      "schema": "agents.schema.json#/$defs/QaReport",
+      "expect": "valid",
+      "tags": [
+        "status_consistency"
+      ],
+      "why": "QA flags wording that does not fit the construction status",
+      "instance": {
+        "outcome": "completed",
+        "issues": [
+          {
+            "block": "considerations",
+            "item_index": 0,
+            "severity": "blocking",
+            "category": "status_inconsistent",
+            "explanation": "'Residents' used for an under-construction project",
+            "claim_ids": []
           }
         ]
       }

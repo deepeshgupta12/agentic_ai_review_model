@@ -1,52 +1,67 @@
 {
   "version": 1,
-  "updated": "2026-09-25",
-  "note": "Initial source-policy set (Step 01.4, I06), accepted by the product owner on 2026-09-25. Conservative defaults: a family that needs an agreement we do not have is blocked. These are engineering defaults, not legal advice; each new host or platform is still checked against its current terms. A change is a new policy_version. Loaded into ai_source_policies by a seed script at Step 03; code never hard-codes them.",
+  "updated": "2026-09-28",
+  "note": "Initial source-policy set (Step 01.4, I06), accepted by the product owner on 2026-09-25; web_public_pages and youtube moved to version 2 on 2026-09-28 (D28). Conservative defaults: a family that needs an agreement we do not have is blocked. These are engineering defaults, not legal advice; each new host or platform is still checked against its current terms. A change is a new policy_version. Loaded into ai_source_policies by a seed script at Step 03; code never hard-codes them.",
   "policies": [
     {
       "family": "web_public_pages",
-      "policy_version": 1,
+      "policy_version": 2,
       "collection_allowed": true,
       "ai_processing_allowed": true,
-      "quotation_allowed": false,
+      "quotation_allowed": true,
       "derived_publication_allowed": true,
       "attribution_required": true,
       "retention_days": 90,
       "hosts": [],
-      "excluded_hosts": ["youtube.com", "youtu.be", "haryanarera.gov.in", "reddit.com", "x.com", "twitter.com", "facebook.com", "instagram.com", "quora.com", "linkedin.com"],
+      "excluded_hosts": [
+        "youtube.com",
+        "youtu.be",
+        "haryanarera.gov.in",
+        "reddit.com",
+        "x.com",
+        "twitter.com",
+        "facebook.com",
+        "instagram.com",
+        "quora.com",
+        "linkedin.com"
+      ],
       "conditions": [
         "Public pages only; never bypass login, paywall, CAPTCHA, rate limits or private groups",
         "robots.txt checked for each fetch and the decision stored",
         "Allow-listed hosts only; a host is added by a recorded decision",
         "Excluded hosts are governed by their own family policy",
         "Minimum author metadata; no cross-platform profiles",
-        "Publish paraphrased, attributed findings with a link; no verbatim quotes"
+        "Reviews quote one author's words with a credit line (platform and date); findings stay paraphrased and attributed"
       ],
-      "basis": "docs/06 scraping policy. Each host's terms are reviewed when it is added to the allow-list.",
+      "basis": "docs/06 scraping policy. Version 2 (product owner, 28 Sep 2026, D28): reviews may quote the author's words with a credit line naming the platform and date; no link required. Each host's terms are still reviewed when it is added to the allow-list.",
       "status": "accepted",
       "review_owner": "Product owner",
-      "accepted_on": "2026-09-25",
+      "accepted_on": "2026-09-28",
       "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
       "family": "youtube",
-      "policy_version": 1,
+      "policy_version": 2,
       "collection_allowed": true,
       "ai_processing_allowed": true,
-      "quotation_allowed": false,
+      "quotation_allowed": true,
       "derived_publication_allowed": true,
       "attribution_required": true,
       "retention_days": 30,
-      "hosts": ["youtube.com", "youtu.be"],
+      "hosts": [
+        "youtube.com",
+        "youtu.be"
+      ],
       "conditions": [
         "Access through the YouTube Data API only; no downloading of video or audio",
         "Comments are separate sources attributed to the commenter, never to the creator",
-        "Titles, descriptions and metadata never count as spoken-content evidence"
+        "Titles, descriptions and metadata never count as spoken-content evidence",
+        "Quoted comments and spoken reviews are re-checked on refresh and withdrawn if removed"
       ],
-      "basis": "Conservative 30-day retention pending review of the YouTube API Services terms.",
+      "basis": "Conservative 30-day retention pending review of the YouTube API Services terms. Version 2 (product owner, 28 Sep 2026, D28): comments and authorised spoken content may be quoted as reviews with a credit line; published quotes are re-checked on every refresh and withdrawn if the comment or video is removed.",
       "status": "accepted",
       "review_owner": "Product owner",
-      "accepted_on": "2026-09-25",
+      "accepted_on": "2026-09-28",
       "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     {
@@ -75,7 +90,9 @@
       "derived_publication_allowed": true,
       "attribution_required": true,
       "retention_days": 365,
-      "hosts": ["haryanarera.gov.in"],
+      "hosts": [
+        "haryanarera.gov.in"
+      ],
       "conditions": [
         "robots.txt and site terms checked before the first fetch",
         "Quote only registry facts (IDs, dates, registered names, status) together with the record date"
@@ -95,7 +112,9 @@
       "derived_publication_allowed": false,
       "attribution_required": true,
       "retention_days": null,
-      "hosts": ["reddit.com"],
+      "hosts": [
+        "reddit.com"
+      ],
       "conditions": [],
       "basis": "Needs approved API access covering analysis and derived use (docs/06). Blocked until obtained.",
       "status": "accepted",
@@ -112,7 +131,10 @@
       "derived_publication_allowed": false,
       "attribution_required": true,
       "retention_days": null,
-      "hosts": ["x.com", "twitter.com"],
+      "hosts": [
+        "x.com",
+        "twitter.com"
+      ],
       "conditions": [],
       "basis": "Needs an entitled X API tier or listening contract. Blocked until obtained.",
       "status": "accepted",
@@ -129,7 +151,10 @@
       "derived_publication_allowed": false,
       "attribution_required": true,
       "retention_days": null,
-      "hosts": ["facebook.com", "instagram.com"],
+      "hosts": [
+        "facebook.com",
+        "instagram.com"
+      ],
       "conditions": [],
       "basis": "Needs an approved Meta app or listening contract. Blocked until obtained.",
       "status": "accepted",
@@ -146,7 +171,9 @@
       "derived_publication_allowed": false,
       "attribution_required": true,
       "retention_days": null,
-      "hosts": ["quora.com"],
+      "hosts": [
+        "quora.com"
+      ],
       "conditions": [],
       "basis": "No licensed feed; terms review required before any collection.",
       "status": "accepted",
@@ -163,7 +190,9 @@
       "derived_publication_allowed": false,
       "attribution_required": true,
       "retention_days": null,
-      "hosts": ["linkedin.com"],
+      "hosts": [
+        "linkedin.com"
+      ],
       "conditions": [],
       "basis": "Content is mostly behind login; no collection without a partner agreement.",
       "status": "accepted",

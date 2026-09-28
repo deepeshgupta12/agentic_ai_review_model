@@ -66,6 +66,22 @@
         { "from": "rejected", "to": "superseded", "actors": ["moderator"], "trigger": "Moderator reworked a rejected finding as a new revision" }
       ]
     },
+    "review_excerpt": {
+      "enum": "common.schema.json#/$defs/FindingReviewStatus",
+      "record": "evidence.schema.json#/$defs/ReviewExcerpt",
+      "field": "review_status",
+      "initial": ["pending"],
+      "terminal": ["superseded"],
+      "transitions": [
+        { "from": "pending", "to": "approved", "actors": ["moderator"], "trigger": "Moderator approves this exact revision after reading the original; only when it has no consistency flag" },
+        { "from": "pending", "to": "rejected", "actors": ["moderator"], "trigger": "Moderator rejects with a reason (e.g. claims residence before possession)" },
+        { "from": "pending", "to": "changes_requested", "actors": ["moderator"], "trigger": "Moderator asks for other spans or a better translation" },
+        { "from": "pending", "to": "superseded", "actors": ["moderator", "system"], "trigger": "A newer revision was created before review" },
+        { "from": "changes_requested", "to": "superseded", "actors": ["moderator", "system"], "trigger": "The change was made as a new revision" },
+        { "from": "approved", "to": "superseded", "actors": ["moderator", "system"], "trigger": "A new revision, or the source was edited or withdrawn" },
+        { "from": "rejected", "to": "superseded", "actors": ["moderator"], "trigger": "Moderator reworked a rejected review as a new revision" }
+      ]
+    },
     "content_lifecycle": {
       "enum": "common.schema.json#/$defs/ContentLifecycle",
       "record": "content.schema.json#/$defs/ContentRevision",
@@ -251,6 +267,15 @@
         "contradicted": "A cited, dated primary record says otherwise.",
         "disputed": "Sources conflict and no primary record settles it; both sides stay visible.",
         "not_applicable": "Opinions and promotions are attributed, never verified."
+      }
+    },
+    "construction_status": {
+      "enum": "common.schema.json#/$defs/ConstructionStatus",
+      "meaning": {
+        "new_launch": "Launched for sale; nobody lives there. First-hand living experience is not possible.",
+        "under_construction": "Being built; owners are awaiting possession. First-hand living experience is not possible.",
+        "partially_ready": "Some phases handed over. Living experience is possible only for a ready phase, so the phase must be identified.",
+        "ready_to_move": "Handed over. Residents' experience is possible."
       }
     },
     "date": {

@@ -29,6 +29,7 @@ DEFAULT_PATHS = {
     "policies": ROOT / "seed" / "source_policies.json",
     "defaults": ROOT / "seed" / "operating_defaults.json",
     "decisions": ROOT / "DECISIONS.md",
+    "content_rules": ROOT / "contracts" / "v1" / "content_rules.json",
 }
 
 EXPECTED_PROJECT_COUNT = 5  # D01
@@ -150,8 +151,17 @@ def _project_label(index: int, project: Any) -> str:
 # --- Projects --------------------------------------------------------------------
 
 
-def validate_projects(data: Any) -> tuple[list[str], list[str], list[dict[str, Any]]]:
+def _default_export_labels() -> dict[str, str]:
+    try:
+        return json.loads(DEFAULT_PATHS["content_rules"].read_text(encoding="utf-8"))["export_labels"]
+    except (OSError, ValueError, KeyError):
+        return {}
+
+
+def validate_projects(data: Any, export_labels: dict[str, str] | None = None) -> tuple[list[str], list[str], list[dict[str, Any]]]:
     """Return (errors, warnings, registrations) for the five-project input file."""
+    if export_labels is None:
+        export_labels = _default_export_labels()
     errors: list[str] = []
     warnings: list[str] = []
     registrations: list[dict[str, Any]] = []
@@ -249,6 +259,12 @@ def validate_projects(data: Any) -> tuple[list[str], list[str], list[dict[str, A
                 for key in CLIENT_ID_FIELDS:
                     if key in sy_ref and not (isinstance(sy_ref[key], str) and DIGITS.match(sy_ref[key])):
                         errors.append(f"{label}: client_ref.{key} must be a string of digits")
+                status_label = sy_ref.get("status")
+                if isinstance(status_label, str) and export_labels and " ".join(status_label.casefold().split()) not in export_labels:
+                    errors.append(
+                        f"{label}: client_ref.status {status_label!r} is not a known export status "
+                        f"({', '.join(sorted(export_labels))}; contracts/v1/content_rules.json, D27)"
+                    )
                 if "supplied_on" in sy_ref and not _is_iso_date(sy_ref["supplied_on"]):
                     errors.append(f"{label}: client_ref.supplied_on must be an ISO date (YYYY-MM-DD)")
                 sy_id = sy_ref.get("project_id")
@@ -295,6 +311,9 @@ def validate_projects(data: Any) -> tuple[list[str], list[str], list[dict[str, A
                 "developer": normalise_text(project["developer"]) if _is_text(project.get("developer")) else None,
                 "rera_ids": rera_normalised,
                 "client_project_id": sy_ref.get("project_id") if isinstance(sy_ref, dict) else None,
+                "construction_status": export_labels.get(" ".join(str(sy_ref.get("status", "")).casefold().split()))
+                if isinstance(sy_ref, dict)
+                else None,
             }
         )
 
@@ -606,7 +625,9 @@ def run(paths: dict[str, Path]) -> dict[str, Any]:
     registrations: list[dict[str, Any]] = []
     policies: dict[str, dict[str, Any]] = {}
     if "projects" in data:
-        e, w, registrations = validate_projects(data["projects"])
+        rules = data.get("content_rules")
+        labels = rules.get("export_labels", {}) if isinstance(rules, dict) else {}
+        e, w, registrations = validate_projects(data["projects"], labels)
         errors += e
         warnings += w
     if "policies" in data:
@@ -676,6 +697,7 @@ def render_report(result: dict[str, Any]) -> str:
         out.append(f"     developer:    {reg['developer'] or '-'}")
         out.append(f"     RERA:         {', '.join(reg['rera_ids']) or '-'}")
         out.append(f"     Client id:        {reg['client_project_id'] or '-'}")
+        out.append(f"     status:       {reg['construction_status'] or '-'}")
     summary = result["summary"]
 
     def fmt(counts: dict[str, int]) -> str:

@@ -49,6 +49,10 @@ F_DELAY, F_DATE = uid("fnd", 1), uid("fnd", 2)
 R1, R2 = uid("rev", 1), uid("rev", 2)
 D_APPROVE, D_LINK = uid("dec", 1), uid("dec", 2)
 OP1, OP2 = uid("pub", 1), uid("pub", 2)
+S_COMMENT, S_OTHER_POST = uid("src", 5), uid("src", 6)
+L_COMMENT, L_OTHER_POST = uid("lnk", 5), uid("lnk", 6)
+E_COMMENT, E_OTHER_POST = uid("evd", 5), uid("evd", 6)
+REX_POST_ID, REX_COMMENT_ID, REX_FLAGGED_ID, REX_VIDEO_ID = uid("rex", 1), uid("rex", 2), uid("rex", 3), uid("rex", 4)
 RERA = "FIX/0001/0001/2026/01"
 
 MODERATOR = {"kind": "user", "user_id": uid("usr", 1), "role": "moderator"}
@@ -110,6 +114,10 @@ CONFIG = {
         {"text": "Fixture Towers Phase 1", "normalised": "fixture towers phase 1", "target": {"kind": "phase", "rera_id": RERA}, "mode": "standalone", "origin": "rera_registered_name", "proposal_id": None},
         {"text": "Towers", "normalised": "towers", "target": {"kind": "project", "rera_id": None}, "mode": "context_required", "origin": "approved_proposal", "proposal_id": uid("als", 2)},
     ],
+    "construction_status": [
+        {"status": "partially_ready", "applies_to": {"kind": "project", "rera_id": None}, "basis": "client_export", "as_of": "2026-09-25", "note": None},
+        {"status": "ready_to_move", "applies_to": {"kind": "phase", "rera_id": RERA}, "basis": "rera_registry", "as_of": "2026-09-20", "note": "Phase 1 handed over per the registry"},
+    ],
     "negative_keywords": ["Fixture Towers Otherville"],
     "input_languages": ["en", "hi", "hi-Latn"],
     "output_locale": "en-IN",
@@ -154,21 +162,21 @@ ALIAS_GENERIC_APPROVED = variant(
 POLICY_WEB = {
     "id": uid("pol", 1),
     "family": "web_public_pages",
-    "policy_version": 1,
+    "policy_version": 2,
     "collection_allowed": True,
     "ai_processing_allowed": True,
-    "quotation_allowed": False,
+    "quotation_allowed": True,
     "derived_publication_allowed": True,
     "attribution_required": True,
     "retention_days": 90,
     "hosts": [],
     "excluded_hosts": ["youtube.com", "reddit.com"],
     "conditions": ["Public pages only"],
-    "basis": "docs/06 scraping policy",
+    "basis": "docs/06 scraping policy; verbatim review quotes with a credit line (D28)",
     "status": "accepted",
     "effective_from": ts(25),
     "expires_at": None,
-    "accepted_on": "2026-09-25",
+    "accepted_on": "2026-09-28",
     "accepted_by": "Product owner (fixture)",
 }
 
@@ -188,7 +196,7 @@ SOURCE_FORUM = {
     "capture_level": "full_content",
     "content_sha256": fake_sha("forum-thread-123"),
     "payload_ref": {"store": "payload_store", "key": "src/1/1"},
-    "policy": {"family": "web_public_pages", "policy_version": 1},
+    "policy": {"family": "web_public_pages", "policy_version": 2},
     "lifecycle": "active",
     "media": None,
     "created_at": ts(22),
@@ -207,7 +215,7 @@ SOURCE_VIDEO = {
     "language": "hi-Latn",
     "content_sha256": fake_sha("video-abc"),
     "payload_ref": {"store": "media_store", "key": "media/abc"},
-    "policy": {"family": "youtube", "policy_version": 1},
+    "policy": {"family": "youtube", "policy_version": 2},
     "media": {
         "duration_ms": 600000,
         "format": "unknown",
@@ -277,8 +285,12 @@ LINK_VIDEO_P2 = link(L_VIDEO_P2, P2, S_VIDEO, "t:240000-600000", time_anchor(240
 LINK_FORUM = link(L_FORUM, P, S_FORUM, "whole", None, "accepted", "deterministic", uid("dec", 3))
 LINK_REGISTRY = link(L_REGISTRY, P, S_REGISTRY, "whole", None, "accepted", "deterministic", uid("dec", 4))
 
-FORUM_TEXT = "Update: Possession was delayed by six months for our tower."
-FORUM_EXCERPT = "Possession was delayed by six months"
+FORUM_TEXT = "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months."
+FORUM_EXCERPT = FORUM_TEXT
+FORUM_REVIEW_TEXT = "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months."
+COMMENT_TEXT = "Site visit kiya tha pichle mahine. Construction bahut slow hai, do saal mein kuch nahi badla."
+COMMENT_REVIEW_TEXT = "I visited the site last month. Construction is very slow, nothing has changed in two years."
+OTHER_POST_TEXT = "I have been living here for a year and the maintenance is excellent."
 
 
 def text_anchor(text: str, excerpt: str) -> dict[str, Any]:
@@ -307,7 +319,7 @@ EVIDENCE_FORUM = {
     "modality": "text",
     "translation_of": None,
     "origin_cluster": {"id": uid("cls", 1), "version": 1},
-    "policy": {"family": "web_public_pages", "policy_version": 1},
+    "policy": {"family": "web_public_pages", "policy_version": 2},
     "lifecycle": "active",
     "created_at": ts(22),
 }
@@ -323,7 +335,7 @@ EVIDENCE_SPEECH = {
     "language": "hi-Latn",
     "modality": "speech",
     "origin_cluster": {"id": uid("cls", 2), "version": 1},
-    "policy": {"family": "youtube", "policy_version": 1},
+    "policy": {"family": "youtube", "policy_version": 2},
 }
 
 REGISTRY_EXCERPT = "Proposed completion date: 31/12/2027"
@@ -347,7 +359,9 @@ CLAIM_OPINION = {
     "aspect_label": None,
     "claim_type": "opinion",
     "polarity": "negative",
-    "statement": "Residents report that possession was delayed",
+    "perspective": "owner_awaiting_possession",
+    "consistency_flags": [],
+    "statement": "Buyers report that possession was delayed",
     "observation_time": UNKNOWN_DATE,
     "supporting_evidence": [ref(E_FORUM), ref(E_SPEECH)],
     "contradicting_evidence": [],
@@ -364,6 +378,7 @@ CLAIM_FACT = {
     "id": C_FACT,
     "claim_type": "fact",
     "polarity": "neutral",
+    "perspective": "official_record",
     "statement": "The registered completion date is 31 December 2027",
     "observation_time": {"status": "known", "value": ts(1), "precision": "day", "basis": "registry_record"},
     "supporting_evidence": [ref(E_REGISTRY)],
@@ -383,7 +398,7 @@ FINDING_DELAY = {
     "project_id": P,
     "kind": "con",
     "aspect": "possession",
-    "wording": "Several residents report that possession was delayed",
+    "wording": "Several buyers report that possession was delayed",
     "attribution": "reported_opinion",
     "claims": [ref(C_OPINION)],
     "caveats": ["Reported in public posts; not confirmed by the developer"],
@@ -411,6 +426,146 @@ FINDING_DATE = {
 }
 
 
+SOURCE_COMMENT = {
+    **SOURCE_FORUM,
+    "id": S_COMMENT,
+    "connector_id": "youtube_data_api",
+    "native_id": "comment-xyz",
+    "canonical_url": "https://video.example.invalid/watch?v=abc&lc=xyz",
+    "source_kind": "comment",
+    "parent": ref(S_VIDEO),
+    "title": None,
+    "author": {"display_name": None, "role": "prospective_buyer", "role_basis": "self_described"},
+    "publication_date": {"status": "known", "value": ts(15), "precision": "day", "basis": "platform_metadata"},
+    "language": "hi-Latn",
+    "content_sha256": fake_sha("comment-xyz"),
+    "payload_ref": {"store": "payload_store", "key": "src/5/1"},
+    "policy": {"family": "youtube", "policy_version": 2},
+}
+LINK_COMMENT = link(L_COMMENT, P, S_COMMENT, "whole", None, "accepted", "deterministic", uid("dec", 5))
+EVIDENCE_COMMENT = {
+    **EVIDENCE_FORUM,
+    "id": E_COMMENT,
+    "source": ref(S_COMMENT),
+    "link_id": L_COMMENT,
+    "anchor": text_anchor(COMMENT_TEXT, COMMENT_TEXT),
+    "excerpt_text": COMMENT_TEXT,
+    "excerpt_sha256": "sha256:" + hashlib.sha256(COMMENT_TEXT.encode("utf-8")).hexdigest(),
+    "language": "hi-Latn",
+    "origin_cluster": {"id": uid("cls", 8), "version": 1},
+    "policy": {"family": "youtube", "policy_version": 2},
+}
+
+CLAIM_RESIDENT_FLAGGED = {
+    **CLAIM_OPINION,
+    "id": uid("clm", 3),
+    "aspect": "maintenance",
+    "polarity": "positive",
+    "perspective": "resident_experience",
+    "consistency_flags": ["status_unknown"],
+    "statement": "The author says they have lived in the project for a year and praises maintenance",
+    "supporting_evidence": [ref(E_OTHER_POST)],
+    "origin_clusters": [uid("cls", 9)],
+    "independent_origin_count": 1,
+}
+
+
+def review(
+    id_: str,
+    revision: int,
+    source: str,
+    link_id: str,
+    evidence: list[str],
+    source_kind: str,
+    perspective: str,
+    speaker: str,
+    polarity: str,
+    aspects: list[str],
+    original: str,
+    language: str,
+    rendering: str,
+    text: str,
+    published: dict[str, Any],
+    timestamp_ms: int | None,
+    flags: list[str],
+    status: str,
+    supersedes: Any,
+    created_by: dict[str, Any],
+    policy: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "id": id_,
+        "revision": revision,
+        "project_id": P,
+        "source": ref(source),
+        "link_id": link_id,
+        "evidence": [ref(e) for e in evidence],
+        "source_kind": source_kind,
+        "perspective": perspective,
+        "speaker_label": speaker,
+        "polarity": polarity,
+        "aspects": aspects,
+        "original_text": original,
+        "original_language": language,
+        "rendering": rendering,
+        "text": text,
+        "published": published,
+        "timestamp_ms": timestamp_ms,
+        "consistency_flags": flags,
+        "review_status": status,
+        "supersedes": supersedes,
+        "created_by": created_by,
+        "policy": policy,
+        "lifecycle": "active",
+        "created_at": ts(24),
+    }
+
+
+BY_AGENT = {"kind": "agent", "task_id": uid("tsk", 11), "actor": None}
+BY_MODERATOR = {"kind": "moderator", "task_id": None, "actor": MODERATOR}
+WEB2 = {"family": "web_public_pages", "policy_version": 2}
+YT2 = {"family": "youtube", "policy_version": 2}
+
+REVIEW_POST = review(
+    REX_POST_ID, 1, S_FORUM, L_FORUM, [E_FORUM], "forum_thread", "owner_awaiting_possession", "an_owner_awaiting_possession",
+    "mixed", ["layout", "possession"], FORUM_TEXT, "en", "punctuation_normalised", FORUM_REVIEW_TEXT, UNKNOWN_DATE, None, [],
+    "approved", None, BY_AGENT, WEB2,
+)
+REVIEW_COMMENT = review(
+    REX_COMMENT_ID, 2, S_COMMENT, L_COMMENT, [E_COMMENT], "comment", "site_visit", "a_site_visitor", "negative",
+    ["construction_progress"], COMMENT_TEXT, "hi-Latn", "translated", COMMENT_REVIEW_TEXT, SOURCE_COMMENT["publication_date"], None, [],
+    "approved", ref(REX_COMMENT_ID, 1), BY_MODERATOR, YT2,
+)
+REVIEW_VIDEO = review(
+    REX_VIDEO_ID, 1, S_VIDEO, L_VIDEO_P, [E_SPEECH], "video", "third_party_report", "a_video_creator", "negative",
+    ["possession"], "possession mein thoda delay hua", "hi-Latn", "translated", "Possession has been delayed a little.",
+    SOURCE_VIDEO["publication_date"], 12000, [], "approved", None, BY_AGENT, YT2,
+)
+REVIEW_FLAGGED = review(
+    REX_FLAGGED_ID, 1, S_OTHER_POST, L_OTHER_POST, [E_OTHER_POST], "forum_post", "resident_experience", "a_resident", "positive",
+    ["maintenance"], OTHER_POST_TEXT, "en", "verbatim", OTHER_POST_TEXT, UNKNOWN_DATE, None, ["status_unknown"],
+    "pending", None, BY_AGENT, WEB2,
+)
+
+
+def public_review(rex: dict[str, Any], platform: str, kind: str) -> dict[str, Any]:
+    return {
+        "text": rex["text"],
+        "polarity": rex["polarity"],
+        "aspects": rex["aspects"],
+        "credit": {
+            "speaker_label": rex["speaker_label"],
+            "platform": platform,
+            "kind": kind,
+            "published": rex["published"],
+            "timestamp_ms": rex["timestamp_ms"],
+            "translated_from": rex["original_language"] if rex["rendering"] == "translated" else None,
+        },
+        "source_url": None,
+        "support": {"review": ref(rex["id"], rex["revision"]), "source": rex["source"], "evidence": rex["evidence"]},
+    }
+
+
 def support(findings: list[dict[str, Any]], claims: list[dict[str, Any]]) -> dict[str, Any]:
     return {"findings": findings, "claims": claims}
 
@@ -428,10 +583,15 @@ PAYLOAD = {
     "advantages": [],
     "considerations": [
         {
-            "text": "Several residents report that possession was delayed.",
+            "text": "Several buyers report that possession was delayed.",
             "caveat": "Reported in public posts; not confirmed by the developer.",
             "support": support([ref(F_DELAY)], [ref(C_OPINION)]),
         }
+    ],
+    "reviews": [
+        public_review(REVIEW_POST, "Example forum", "post"),
+        public_review(REVIEW_COMMENT, "Example video site", "comment"),
+        public_review(REVIEW_VIDEO, "Example video site", "video"),
     ],
     "questions": [
         {
@@ -466,13 +626,14 @@ PAYLOAD = {
 MANIFEST = {
     "findings": [ref(F_DELAY), ref(F_DATE, 2)],
     "claims": [ref(C_OPINION), ref(C_FACT)],
-    "evidence": [ref(E_FORUM), ref(E_SPEECH), ref(E_REGISTRY)],
-    "sources": [ref(S_FORUM), ref(S_VIDEO), ref(S_REGISTRY)],
-    "links": sorted([L_VIDEO_P, L_FORUM, L_REGISTRY]),
+    "reviews": [ref(REX_POST_ID), ref(REX_COMMENT_ID, 2), ref(REX_VIDEO_ID)],
+    "evidence": [ref(E_FORUM), ref(E_SPEECH), ref(E_REGISTRY), ref(E_COMMENT)],
+    "sources": [ref(S_FORUM), ref(S_VIDEO), ref(S_REGISTRY), ref(S_COMMENT)],
+    "links": sorted([L_VIDEO_P, L_FORUM, L_REGISTRY, L_COMMENT]),
     "policies": [
         {"family": "official_records", "policy_version": 1},
-        {"family": "web_public_pages", "policy_version": 1},
-        {"family": "youtube", "policy_version": 1},
+        {"family": "web_public_pages", "policy_version": 2},
+        {"family": "youtube", "policy_version": 2},
     ],
     "eligibility_epoch": 3,
 }
@@ -497,7 +658,7 @@ def content_revision(id_: str, revision: int, payload: dict[str, Any], lifecycle
 
 
 REV1 = content_revision(R1, 1, PAYLOAD, "approved", None, {"kind": "agent", "task_id": uid("tsk", 8), "actor": None})
-PAYLOAD_EDITED = variant(PAYLOAD, lambda p: p["considerations"][0].update(text="Several residents report that possession was delayed by about six months."))
+PAYLOAD_EDITED = variant(PAYLOAD, lambda p: p["considerations"][0].update(text="Several buyers report that possession was delayed by about six months."))
 REV2 = content_revision(R2, 2, PAYLOAD_EDITED, "final_review", ref(R1), {"kind": "moderator", "task_id": None, "actor": MODERATOR})
 
 APPROVAL = {
@@ -707,6 +868,7 @@ CLAIMS_OUT = {
             "aspect_label": None,
             "claim_type": "opinion",
             "polarity": "negative",
+            "perspective": "owner_awaiting_possession",
             "statement": "Possession was delayed",
             "evidence_ids": [E_FORUM],
             "observation_date_status": "unknown",
@@ -762,6 +924,14 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
                 "Template placeholders are rejected",
                 [],
                 "does not match",
+            ),
+            case(
+                "config_unknown_construction_status",
+                cat + "ProjectConfig",
+                variant(CONFIG, lambda c: c["construction_status"][0].update(status="coming_soon")),
+                "Only the four construction statuses exist (D27)",
+                ["status_consistency"],
+                "'coming_soon' is not one of",
             ),
         ],
         "sources": [
@@ -915,6 +1085,61 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
                 "A later revision names the revision it replaces",
                 [],
                 "None is not of type 'object'",
+            ),
+            case("claim_resident_flagged", evd + "Claim", CLAIM_RESIDENT_FLAGGED, "A 'lived here' claim with no identified ready phase is flagged, not used", ["status_consistency"]),
+            case("source_comment", src + "SourceRevision", SOURCE_COMMENT, "A YouTube comment is its own text source under its video", ["video_reviews"]),
+            case("evidence_comment", evd + "Evidence", EVIDENCE_COMMENT, "A Hinglish comment kept in its original words"),
+            case("review_post_normalised", evd + "ReviewExcerpt", REVIEW_POST, "A buyer's post with only a dash changed to a comma", ["source_reviews"]),
+            case("review_comment_translated", evd + "ReviewExcerpt", REVIEW_COMMENT, "A Hinglish YouTube comment translated, revision 2 after a moderator fix", ["source_reviews", "video_reviews"]),
+            case("review_video_spoken", evd + "ReviewExcerpt", REVIEW_VIDEO, "A spoken review from an authorised transcript, with its timestamp", ["source_reviews", "video_reviews"]),
+            case("review_flagged_pending", evd + "ReviewExcerpt", REVIEW_FLAGGED, "A 'lived here' post in a partly ready project with no phase named waits for a moderator", ["source_reviews", "status_consistency"]),
+            case(
+                "review_flagged_approved",
+                evd + "ReviewExcerpt",
+                variant(REVIEW_FLAGGED, lambda r: r.update(review_status="approved")),
+                "A flagged review cannot be approved (D27)",
+                ["status_consistency"],
+                "is expected to be empty",
+            ),
+            case(
+                "review_english_marked_translated",
+                evd + "ReviewExcerpt",
+                variant(REVIEW_POST, lambda r: r.update(rendering="translated")),
+                "Only non-English originals are translated",
+                ["source_reviews"],
+                "should not be valid",
+            ),
+            case(
+                "review_withdrawn_keeps_words",
+                evd + "ReviewExcerpt",
+                variant(REVIEW_POST, lambda r: r.update(lifecycle="withdrawn")),
+                "A withdrawn source's words are erased from its review",
+                ["withdrawal"],
+                "is not of type 'null'",
+            ),
+            case(
+                "review_neutral",
+                evd + "ReviewExcerpt",
+                variant(REVIEW_POST, lambda r: r.update(polarity="neutral")),
+                "Reviews are positive, negative or mixed",
+                ["source_reviews"],
+                "should not be valid",
+            ),
+            case(
+                "review_from_search_result",
+                evd + "ReviewExcerpt",
+                variant(REVIEW_POST, lambda r: r.update(source_kind="search_result")),
+                "A search snippet is not anyone's review",
+                ["source_reviews"],
+                "'search_result' is not one of",
+            ),
+            case(
+                "review_video_without_timestamp",
+                evd + "ReviewExcerpt",
+                variant(REVIEW_VIDEO, lambda r: r.update(timestamp_ms=None)),
+                "A spoken review points to its moment in the video",
+                ["video_reviews"],
+                "None is not of type 'integer'",
             ),
         ],
         "content": [
@@ -1115,7 +1340,7 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
                     "heading": "What buyers discuss about Fixture Towers",
                     "overview": {"text": "Discussion mostly concerns possession timing.", "caveat": None, "finding_ids": [F_DELAY], "claim_ids": [C_OPINION]},
                     "advantages": [],
-                    "considerations": [{"text": "Several residents report delays.", "caveat": "Not confirmed by the developer.", "finding_ids": [F_DELAY], "claim_ids": [C_OPINION]}],
+                    "considerations": [{"text": "Several buyers report delays.", "caveat": "Not confirmed by the developer.", "finding_ids": [F_DELAY], "claim_ids": [C_OPINION]}],
                     "questions": [],
                     "coverage_note": "Based on 6 public discussions.",
                     "metadata": {"title": "Fixture Towers: what buyers discuss", "description": "Summary of public discussion."},
@@ -1172,6 +1397,66 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
                     ],
                 },
                 "Name and identifier queries",
+            ),
+            case(
+                "review_candidates",
+                agt + "ReviewCandidates",
+                {
+                    "outcome": "completed",
+                    "reviews": [
+                        {
+                            "source_id": S_FORUM,
+                            "evidence_ids": [E_FORUM],
+                            "perspective": "owner_awaiting_possession",
+                            "polarity": "mixed",
+                            "aspects": ["layout", "possession"],
+                            "rendering": "punctuation_normalised",
+                            "text": FORUM_REVIEW_TEXT,
+                            "translation_note": None,
+                        },
+                        {
+                            "source_id": S_COMMENT,
+                            "evidence_ids": [E_COMMENT],
+                            "perspective": "site_visit",
+                            "polarity": "negative",
+                            "aspects": ["construction_progress"],
+                            "rendering": "translated",
+                            "text": COMMENT_REVIEW_TEXT,
+                            "translation_note": "Translated from Hinglish",
+                        },
+                    ],
+                },
+                "A11 proposes one review per source, positive and negative",
+                ["source_reviews"],
+            ),
+            case(
+                "review_candidates_paraphrase",
+                agt + "ReviewCandidates",
+                {
+                    "outcome": "completed",
+                    "reviews": [
+                        {
+                            "source_id": S_FORUM,
+                            "evidence_ids": [E_FORUM],
+                            "perspective": "owner_awaiting_possession",
+                            "polarity": "mixed",
+                            "aspects": ["possession"],
+                            "rendering": "paraphrase",
+                            "text": "Great project overall.",
+                            "translation_note": None,
+                        }
+                    ],
+                },
+                "The model cannot rewrite a review in its own words",
+                ["source_reviews"],
+                "'paraphrase' is not one of",
+            ),
+            case(
+                "qa_status_wording",
+                agt + "QaReport",
+                {"outcome": "completed", "issues": [{"block": "considerations", "item_index": 0, "severity": "blocking", "category": "status_inconsistent", "explanation": "'Residents' used for an under-construction project", "claim_ids": []}]},
+                "QA flags wording that does not fit the construction status",
+                ["status_consistency"],
             ),
         ],
         "api": [
@@ -1235,10 +1520,32 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
             case(
                 "generate_without_findings",
                 api + "ContentRevisionRequest",
-                {"mode": "generate", "locale": "en-IN", "findings": []},
+                {"mode": "generate", "locale": "en-IN", "findings": [], "reviews": []},
                 "Generation needs selected approved findings",
                 [],
                 "should be non-empty",
+            ),
+            case(
+                "generate_with_reviews",
+                api + "ContentRevisionRequest",
+                {"mode": "generate", "locale": "en-IN", "findings": [ref(F_DELAY)], "reviews": [ref(REX_POST_ID), ref(REX_COMMENT_ID, 2)]},
+                "Generate content with approved findings and approved reviews",
+                ["source_reviews"],
+            ),
+            case(
+                "review_reject_without_reason",
+                api + "ReviewExcerptDecisionRequest",
+                {"revision": 1, "action": "reject", "reason": None},
+                "Rejecting a review needs a reason",
+                ["source_reviews"],
+                "None is not of type 'string'",
+            ),
+            case(
+                "review_revision_request",
+                api + "ReviewExcerptRevisionRequest",
+                {"base": ref(REX_COMMENT_ID), "evidence": [ref(E_COMMENT)], "rendering": "translated", "text": COMMENT_REVIEW_TEXT, "reason": "Fixed one word in the translation"},
+                "A moderator fixes a translation as a new revision",
+                ["source_reviews"],
             ),
             case(
                 "config_patch_empty",
@@ -1340,7 +1647,49 @@ def rule_vectors() -> dict[str, Any]:
         {"name": "unpublished_serves_nothing", "state": STATE_EMPTY, "revisions": [REV1], "serves": None},
         {"name": "pointer_hash_mismatch_serves_nothing", "state": mismatched_pointer, "revisions": [REV1], "serves": None},
     ]
-    return {"note": NOTE, "approval": approval, "public_read": public}
+    status_records = CONFIG["construction_status"]
+    under_construction = [{"status": "under_construction", "applies_to": {"kind": "project", "rera_id": None}, "basis": "client_export", "as_of": "2026-09-25", "note": None}]
+    history = [
+        {"status": "under_construction", "applies_to": {"kind": "project", "rera_id": None}, "basis": "client_export", "as_of": "2025-01-01", "note": None},
+        {"status": "ready_to_move", "applies_to": {"kind": "project", "rera_id": None}, "basis": "rera_registry", "as_of": "2026-06-01", "note": None},
+    ]
+    new_launch = [dict(under_construction[0], status="new_launch")]
+    status_consistency = [
+        {"name": "resident_in_under_construction_project", "records": under_construction, "perspective": "resident_experience", "phase_rera_id": None, "on_date": None, "flags": ["occupancy_before_possession"]},
+        {"name": "resident_in_ready_phase", "records": status_records, "perspective": "resident_experience", "phase_rera_id": RERA, "on_date": None, "flags": []},
+        {"name": "resident_phase_not_named_in_partly_ready_project", "records": status_records, "perspective": "resident_experience", "phase_rera_id": None, "on_date": None, "flags": ["status_unknown"]},
+        {"name": "owner_awaiting_possession_in_new_launch", "records": new_launch, "perspective": "owner_awaiting_possession", "phase_rera_id": None, "on_date": None, "flags": []},
+        {"name": "resident_with_no_status_record", "records": [], "perspective": "resident_experience", "phase_rera_id": None, "on_date": None, "flags": ["status_unknown"]},
+        {"name": "resident_post_dated_before_handover", "records": history, "perspective": "resident_experience", "phase_rera_id": None, "on_date": "2025-06-15", "flags": ["occupancy_before_possession"]},
+        {"name": "resident_post_dated_after_handover", "records": history, "perspective": "resident_experience", "phase_rera_id": None, "on_date": "2026-07-01", "flags": []},
+    ]
+    status_wording = [
+        {"name": "residents_under_construction", "status": "under_construction", "text": "Residents praise the clubhouse.", "blocking": ["residents"], "advice": []},
+        {"name": "buyers_under_construction", "status": "under_construction", "text": "Buyers expect the clubhouse by 2027.", "blocking": [], "advice": []},
+        {"name": "living_here_new_launch", "status": "new_launch", "text": "People living here like the park.", "blocking": ["living here"], "advice": []},
+        {"name": "residents_ready_to_move", "status": "ready_to_move", "text": "Residents praise the clubhouse.", "blocking": [], "advice": []},
+        {"name": "residents_partly_ready", "status": "partially_ready", "text": "Residents praise the clubhouse.", "blocking": [], "advice": ["residents"]},
+    ]
+    clubhouse = "The clubhouse is good. Parking is tight. Lifts work."
+    review_rendering = [
+        {"name": "dash_changed_to_comma", "original": FORUM_TEXT, "text": FORUM_REVIEW_TEXT, "rendering": "punctuation_normalised", "problems_contain": [], "check": "matches_original"},
+        {"name": "word_changed", "original": FORUM_TEXT, "text": FORUM_REVIEW_TEXT.replace("six", "eight"), "rendering": "punctuation_normalised", "problems_contain": ["words differ"], "check": "mismatch"},
+        {"name": "words_added", "original": FORUM_TEXT, "text": FORUM_REVIEW_TEXT.replace("in 2024.", "in 2024 and love it."), "rendering": "punctuation_normalised", "problems_contain": ["words differ"], "check": "mismatch"},
+        {"name": "verbatim_with_dash", "original": FORUM_TEXT, "text": FORUM_TEXT, "rendering": "verbatim", "problems_contain": ["dash or hyphen"], "check": "mismatch"},
+        {"name": "verbatim_exact", "original": OTHER_POST_TEXT, "text": OTHER_POST_TEXT, "rendering": "verbatim", "problems_contain": [], "check": "matches_original"},
+        {"name": "sentence_left_out", "original": clubhouse, "text": "The clubhouse is good. Lifts work.", "rendering": "shortened", "problems_contain": [], "check": "matches_original"},
+        {"name": "sentences_reordered", "original": clubhouse, "text": "Lifts work. The clubhouse is good.", "rendering": "shortened", "problems_contain": ["sentence"], "check": "mismatch"},
+        {"name": "sentence_edited", "original": clubhouse, "text": "The clubhouse is great. Lifts work.", "rendering": "shortened", "problems_contain": ["sentence"], "check": "mismatch"},
+        {"name": "translation_goes_to_moderator", "original": COMMENT_TEXT, "text": COMMENT_REVIEW_TEXT, "rendering": "translated", "problems_contain": [], "check": "needs_moderator"},
+    ]
+    return {
+        "note": NOTE,
+        "approval": approval,
+        "public_read": public,
+        "status_consistency": status_consistency,
+        "status_wording": status_wording,
+        "review_rendering": review_rendering,
+    }
 
 
 def render_all() -> dict[str, str]:

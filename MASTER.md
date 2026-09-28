@@ -74,7 +74,7 @@ Recommended de-risking checkpoint: after Step 08, run one project through one li
 | [Architecture and stack](docs/01-architecture-and-stack.md) | Repository layout, compatible stack, model provider, configuration. |
 | [Database and contracts](docs/02-database-and-contracts.md) | Collections, baseline JSON gaps, immutable references, indexes and lifecycle. |
 | [API and console contracts](docs/03-api-and-cms-contracts.md) | REST routes, authentication, roles, concurrency and page-renderer adapter. |
-| [Agent contracts](docs/04-agent-contracts.md) | Master coordinator and 10 specialists with tools, outputs, limits and evaluation. |
+| [Agent contracts](docs/04-agent-contracts.md) | Master coordinator and 11 specialists with tools, outputs, limits and evaluation. |
 | [Workflow and publication](docs/05-workflow-and-publication.md) | Jobs, leases, approval hashes, atomic publication, withdrawal and recovery. |
 | [Source integrations](docs/06-source-integrations.md) | Incremental access plan, connector contract, scraping policy, media permissions. |
 | [Validation and release](docs/07-validation-and-release.md) | Datasets, meaningful tests, numerical gates and full user acceptance. |

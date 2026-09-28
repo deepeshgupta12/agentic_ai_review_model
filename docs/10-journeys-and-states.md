@@ -196,6 +196,33 @@ Covers: recovery.
 | 2 | system | — | Another worker resumes from the last checkpoint; the old worker's late writes are rejected by the fencing token | execution_job[collect]: retry_wait → running; execution_job[collect]: running → completed |
 | 3 | analyst | `GET /v1/runs/{run_id}` (getRun) | Sees one completed run with no duplicate records | — |
 
+### J18: A 'lived here' post about a project nobody can live in yet goes to review
+
+Covers: status_consistency.
+
+| # | Actor | API call | What happens | State changes |
+|---|---|---|---|---|
+| 1 | system | — | A post says the author has lived in the project for a year, but the project is under construction; the claim is flagged occupancy_before_possession and the match goes to review instead of being accepted | source_link[lnk7]: new → needs_review |
+| 2 | moderator | `GET /v1/sources/{source_id}/revisions/{revision}` (getSourceRevision) | Reads the post: it names Phase 1, which the RERA registry shows as ready to move | — |
+| 3 | moderator | `POST /v1/project-source-links/{link_id}/decisions` (decideSourceLink) | Accepts the match with the phase set to Phase 1; the flag clears because that phase is ready | source_link[lnk7]: needs_review → accepted |
+| 4 | system | — | Another post claims years of living in a new-launch project with no ready phase; it is flagged the same way | source_link[lnk8]: new → needs_review |
+| 5 | moderator | `POST /v1/project-source-links/{link_id}/decisions` (decideSourceLink) | Rejects it as not credible for this project, with a reason; it never reaches findings, reviews or the page | source_link[lnk8]: needs_review → rejected |
+| 6 | researcher | `PATCH /v1/projects/{project_id}` (updateProjectConfig) | Records Phase 1's ready-to-move status from the registry, with its date, so later posts about Phase 1 are judged correctly | — |
+
+### J19: First-person reviews from real posts and videos, positive and negative
+
+Covers: source_reviews.
+
+| # | Actor | API call | What happens | State changes |
+|---|---|---|---|---|
+| 1 | system | — | A11 proposes a buyer's forum post (dashes turned into commas), a YouTube comment in Hinglish (translated) and a post claiming residence in the under-construction project; the last one is flagged | review_excerpt[rex1]: new → pending; review_excerpt[rex2r1]: new → pending; review_excerpt[rex3]: new → pending |
+| 2 | moderator | `GET /v1/projects/{project_id}/review-excerpts` (listReviewExcerpts) | Sees each review beside the original words, the credit line, the rendering check and any flag | — |
+| 3 | moderator | `POST /v1/review-excerpts/{excerpt_id}/decisions` (decideReviewExcerpt) | Approves the forum post review; the backend confirmed the words match the original | review_excerpt[rex1]: pending → approved |
+| 4 | moderator | `POST /v1/review-excerpts/{excerpt_id}/revisions` (reviseReviewExcerpt) | Corrects one word in the translation of the YouTube comment; this creates revision 2 | review_excerpt[rex2r1]: pending → superseded; review_excerpt[rex2r2]: new → pending |
+| 5 | moderator | `POST /v1/review-excerpts/{excerpt_id}/decisions` (decideReviewExcerpt) | Approves the corrected translation (negative review about construction speed) | review_excerpt[rex2r2]: pending → approved |
+| 6 | moderator | `POST /v1/review-excerpts/{excerpt_id}/decisions` (decideReviewExcerpt) | Rejects the flagged review with a reason; approval is refused while the flag stands | review_excerpt[rex3]: pending → rejected |
+| 7 | moderator | `POST /v1/projects/{project_id}/content-revisions` (createContentRevision) | Generates page content with the approved findings and the two approved reviews, one positive and one negative, each with its credit line | — |
+
 ## State machines
 
 ### execution_job
@@ -255,6 +282,20 @@ States (`FindingReviewStatus`), field `review_status` of `Finding`. Starts in `p
 | `changes_requested` | `superseded` | moderator, system | The requested change was made as a new revision |
 | `approved` | `superseded` | moderator, system | An edit or an evidence invalidation created a new revision needing review |
 | `rejected` | `superseded` | moderator | Moderator reworked a rejected finding as a new revision |
+
+### review_excerpt
+
+States (`FindingReviewStatus`), field `review_status` of `ReviewExcerpt`. Starts in `pending`; ends in `superseded`.
+
+| From | To | Who | Trigger |
+|---|---|---|---|
+| `pending` | `approved` | moderator | Moderator approves this exact revision after reading the original; only when it has no consistency flag |
+| `pending` | `rejected` | moderator | Moderator rejects with a reason (e.g. claims residence before possession) |
+| `pending` | `changes_requested` | moderator | Moderator asks for other spans or a better translation |
+| `pending` | `superseded` | moderator, system | A newer revision was created before review |
+| `changes_requested` | `superseded` | moderator, system | The change was made as a new revision |
+| `approved` | `superseded` | moderator, system | A new revision, or the source was edited or withdrawn |
+| `rejected` | `superseded` | moderator | Moderator reworked a rejected review as a new revision |
 
 ### content_lifecycle
 
@@ -422,6 +463,15 @@ States (`CorrectionStatus`), field `status` of `PublicCorrection`. Starts in `re
 | `contradicted` | A cited, dated primary record says otherwise. |
 | `disputed` | Sources conflict and no primary record settles it; both sides stay visible. |
 | `not_applicable` | Opinions and promotions are attributed, never verified. |
+
+### construction_status
+
+| Value | Meaning |
+|---|---|
+| `new_launch` | Launched for sale; nobody lives there. First-hand living experience is not possible. |
+| `under_construction` | Being built; owners are awaiting possession. First-hand living experience is not possible. |
+| `partially_ready` | Some phases handed over. Living experience is possible only for a ready phase, so the phase must be identified. |
+| `ready_to_move` | Handed over. Residents' experience is possible. |
 
 ### date
 

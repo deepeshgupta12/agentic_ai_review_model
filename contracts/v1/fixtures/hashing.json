@@ -94,7 +94,7 @@
         "advantages": [],
         "considerations": [
           {
-            "text": "Several residents report that possession was delayed.",
+            "text": "Several buyers report that possession was delayed.",
             "caveat": "Reported in public posts; not confirmed by the developer.",
             "support": {
               "findings": [
@@ -106,6 +106,120 @@
               "claims": [
                 {
                   "id": "clm_01JB0000000000000000000001",
+                  "revision": 1
+                }
+              ]
+            }
+          }
+        ],
+        "reviews": [
+          {
+            "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+            "polarity": "mixed",
+            "aspects": [
+              "layout",
+              "possession"
+            ],
+            "credit": {
+              "speaker_label": "an_owner_awaiting_possession",
+              "platform": "Example forum",
+              "kind": "post",
+              "published": {
+                "status": "unknown",
+                "value": null,
+                "precision": null,
+                "basis": null
+              },
+              "timestamp_ms": null,
+              "translated_from": null
+            },
+            "source_url": null,
+            "support": {
+              "review": {
+                "id": "rex_01JB0000000000000000000001",
+                "revision": 1
+              },
+              "source": {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              "evidence": [
+                {
+                  "id": "evd_01JB0000000000000000000001",
+                  "revision": 1
+                }
+              ]
+            }
+          },
+          {
+            "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+            "polarity": "negative",
+            "aspects": [
+              "construction_progress"
+            ],
+            "credit": {
+              "speaker_label": "a_site_visitor",
+              "platform": "Example video site",
+              "kind": "comment",
+              "published": {
+                "status": "known",
+                "value": "2026-09-15T10:00:00Z",
+                "precision": "day",
+                "basis": "platform_metadata"
+              },
+              "timestamp_ms": null,
+              "translated_from": "hi-Latn"
+            },
+            "source_url": null,
+            "support": {
+              "review": {
+                "id": "rex_01JB0000000000000000000002",
+                "revision": 2
+              },
+              "source": {
+                "id": "src_01JB0000000000000000000005",
+                "revision": 1
+              },
+              "evidence": [
+                {
+                  "id": "evd_01JB0000000000000000000005",
+                  "revision": 1
+                }
+              ]
+            }
+          },
+          {
+            "text": "Possession has been delayed a little.",
+            "polarity": "negative",
+            "aspects": [
+              "possession"
+            ],
+            "credit": {
+              "speaker_label": "a_video_creator",
+              "platform": "Example video site",
+              "kind": "video",
+              "published": {
+                "status": "known",
+                "value": "2026-09-10T10:00:00Z",
+                "precision": "day",
+                "basis": "platform_metadata"
+              },
+              "timestamp_ms": 12000,
+              "translated_from": "hi-Latn"
+            },
+            "source_url": null,
+            "support": {
+              "review": {
+                "id": "rex_01JB0000000000000000000004",
+                "revision": 1
+              },
+              "source": {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              "evidence": [
+                {
+                  "id": "evd_01JB0000000000000000000002",
                   "revision": 1
                 }
               ]
@@ -202,8 +316,8 @@
           }
         }
       },
-      "canonical": "{\"advantages\":[],\"attribution\":\"Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.\",\"considerations\":[{\"caveat\":\"Reported in public posts; not confirmed by the developer.\",\"support\":{\"claims\":[{\"id\":\"clm_01JB0000000000000000000001\",\"revision\":1}],\"findings\":[{\"id\":\"fnd_01JB0000000000000000000001\",\"revision\":1}]},\"text\":\"Several residents report that possession was delayed.\"}],\"coverage_note\":\"Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.\",\"evidence_window\":{\"from\":\"2026-06-27\",\"to\":\"2026-09-25\"},\"heading\":\"What buyers discuss about Fixture Towers\",\"json_ld\":{\"@context\":\"https://schema.org\",\"@type\":\"WebPage\",\"about\":{\"@type\":\"Place\",\"name\":\"Fixture Towers, Sector 0, Example City\"},\"dateModified\":\"2026-09-25\",\"name\":\"What buyers discuss about Fixture Towers\"},\"locale\":\"en-IN\",\"metadata\":{\"canonical_path\":\"/projects/fixture-towers-sector-0-example-city\",\"description\":\"Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.\",\"robots\":\"noindex\",\"title\":\"Fixture Towers: what buyers discuss\"},\"overview\":{\"support\":{\"claims\":[{\"id\":\"clm_01JB0000000000000000000001\",\"revision\":1},{\"id\":\"clm_01JB0000000000000000000002\",\"revision\":1}],\"findings\":[{\"id\":\"fnd_01JB0000000000000000000001\",\"revision\":1},{\"id\":\"fnd_01JB0000000000000000000002\",\"revision\":2}]},\"text\":\"Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.\"},\"payload_schema\":\"content-payload/1\",\"project\":{\"id\":\"prj_01JB0000000000000000000001\",\"name\":\"Fixture Towers\",\"slug\":\"fixture-towers-sector-0-example-city\"},\"questions\":[{\"answer\":\"The RERA registry lists 31 December 2027.\",\"question\":\"What is the registered completion date?\",\"support\":{\"claims\":[{\"id\":\"clm_01JB0000000000000000000002\",\"revision\":1}],\"findings\":[{\"id\":\"fnd_01JB0000000000000000000002\",\"revision\":2}]}}],\"reviewed_on\":\"2026-09-25\",\"sources\":[{\"platform\":\"Example forum\",\"published\":{\"basis\":null,\"precision\":null,\"status\":\"unknown\",\"value\":null},\"source\":{\"id\":\"src_01JB0000000000000000000001\",\"revision\":1},\"timestamp_ms\":null,\"title\":\"Fixture Towers possession?\",\"url\":\"https://forum.example.invalid/t/123\"},{\"platform\":\"Example video site\",\"published\":{\"basis\":\"platform_metadata\",\"precision\":\"day\",\"status\":\"known\",\"value\":\"2026-09-10T10:00:00Z\"},\"source\":{\"id\":\"src_01JB0000000000000000000002\",\"revision\":1},\"timestamp_ms\":12000,\"title\":\"Comparing Fixture Towers and Sample Greens\",\"url\":\"https://video.example.invalid/watch?v=abc\"},{\"platform\":\"RERA registry\",\"published\":{\"basis\":\"registry_record\",\"precision\":\"day\",\"status\":\"known\",\"value\":\"2026-09-01T10:00:00Z\"},\"source\":{\"id\":\"src_01JB0000000000000000000003\",\"revision\":1},\"timestamp_ms\":null,\"title\":\"Registry record\",\"url\":\"https://registry.example.invalid/project/FIX-0001\"}]}",
-      "sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7"
+      "canonical": "{\"advantages\":[],\"attribution\":\"Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.\",\"considerations\":[{\"caveat\":\"Reported in public posts; not confirmed by the developer.\",\"support\":{\"claims\":[{\"id\":\"clm_01JB0000000000000000000001\",\"revision\":1}],\"findings\":[{\"id\":\"fnd_01JB0000000000000000000001\",\"revision\":1}]},\"text\":\"Several buyers report that possession was delayed.\"}],\"coverage_note\":\"Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.\",\"evidence_window\":{\"from\":\"2026-06-27\",\"to\":\"2026-09-25\"},\"heading\":\"What buyers discuss about Fixture Towers\",\"json_ld\":{\"@context\":\"https://schema.org\",\"@type\":\"WebPage\",\"about\":{\"@type\":\"Place\",\"name\":\"Fixture Towers, Sector 0, Example City\"},\"dateModified\":\"2026-09-25\",\"name\":\"What buyers discuss about Fixture Towers\"},\"locale\":\"en-IN\",\"metadata\":{\"canonical_path\":\"/projects/fixture-towers-sector-0-example-city\",\"description\":\"Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.\",\"robots\":\"noindex\",\"title\":\"Fixture Towers: what buyers discuss\"},\"overview\":{\"support\":{\"claims\":[{\"id\":\"clm_01JB0000000000000000000001\",\"revision\":1},{\"id\":\"clm_01JB0000000000000000000002\",\"revision\":1}],\"findings\":[{\"id\":\"fnd_01JB0000000000000000000001\",\"revision\":1},{\"id\":\"fnd_01JB0000000000000000000002\",\"revision\":2}]},\"text\":\"Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.\"},\"payload_schema\":\"content-payload/1\",\"project\":{\"id\":\"prj_01JB0000000000000000000001\",\"name\":\"Fixture Towers\",\"slug\":\"fixture-towers-sector-0-example-city\"},\"questions\":[{\"answer\":\"The RERA registry lists 31 December 2027.\",\"question\":\"What is the registered completion date?\",\"support\":{\"claims\":[{\"id\":\"clm_01JB0000000000000000000002\",\"revision\":1}],\"findings\":[{\"id\":\"fnd_01JB0000000000000000000002\",\"revision\":2}]}}],\"reviewed_on\":\"2026-09-25\",\"reviews\":[{\"aspects\":[\"layout\",\"possession\"],\"credit\":{\"kind\":\"post\",\"platform\":\"Example forum\",\"published\":{\"basis\":null,\"precision\":null,\"status\":\"unknown\",\"value\":null},\"speaker_label\":\"an_owner_awaiting_possession\",\"timestamp_ms\":null,\"translated_from\":null},\"polarity\":\"mixed\",\"source_url\":null,\"support\":{\"evidence\":[{\"id\":\"evd_01JB0000000000000000000001\",\"revision\":1}],\"review\":{\"id\":\"rex_01JB0000000000000000000001\",\"revision\":1},\"source\":{\"id\":\"src_01JB0000000000000000000001\",\"revision\":1}},\"text\":\"I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.\"},{\"aspects\":[\"construction_progress\"],\"credit\":{\"kind\":\"comment\",\"platform\":\"Example video site\",\"published\":{\"basis\":\"platform_metadata\",\"precision\":\"day\",\"status\":\"known\",\"value\":\"2026-09-15T10:00:00Z\"},\"speaker_label\":\"a_site_visitor\",\"timestamp_ms\":null,\"translated_from\":\"hi-Latn\"},\"polarity\":\"negative\",\"source_url\":null,\"support\":{\"evidence\":[{\"id\":\"evd_01JB0000000000000000000005\",\"revision\":1}],\"review\":{\"id\":\"rex_01JB0000000000000000000002\",\"revision\":2},\"source\":{\"id\":\"src_01JB0000000000000000000005\",\"revision\":1}},\"text\":\"I visited the site last month. Construction is very slow, nothing has changed in two years.\"},{\"aspects\":[\"possession\"],\"credit\":{\"kind\":\"video\",\"platform\":\"Example video site\",\"published\":{\"basis\":\"platform_metadata\",\"precision\":\"day\",\"status\":\"known\",\"value\":\"2026-09-10T10:00:00Z\"},\"speaker_label\":\"a_video_creator\",\"timestamp_ms\":12000,\"translated_from\":\"hi-Latn\"},\"polarity\":\"negative\",\"source_url\":null,\"support\":{\"evidence\":[{\"id\":\"evd_01JB0000000000000000000002\",\"revision\":1}],\"review\":{\"id\":\"rex_01JB0000000000000000000004\",\"revision\":1},\"source\":{\"id\":\"src_01JB0000000000000000000002\",\"revision\":1}},\"text\":\"Possession has been delayed a little.\"}],\"sources\":[{\"platform\":\"Example forum\",\"published\":{\"basis\":null,\"precision\":null,\"status\":\"unknown\",\"value\":null},\"source\":{\"id\":\"src_01JB0000000000000000000001\",\"revision\":1},\"timestamp_ms\":null,\"title\":\"Fixture Towers possession?\",\"url\":\"https://forum.example.invalid/t/123\"},{\"platform\":\"Example video site\",\"published\":{\"basis\":\"platform_metadata\",\"precision\":\"day\",\"status\":\"known\",\"value\":\"2026-09-10T10:00:00Z\"},\"source\":{\"id\":\"src_01JB0000000000000000000002\",\"revision\":1},\"timestamp_ms\":12000,\"title\":\"Comparing Fixture Towers and Sample Greens\",\"url\":\"https://video.example.invalid/watch?v=abc\"},{\"platform\":\"RERA registry\",\"published\":{\"basis\":\"registry_record\",\"precision\":\"day\",\"status\":\"known\",\"value\":\"2026-09-01T10:00:00Z\"},\"source\":{\"id\":\"src_01JB0000000000000000000003\",\"revision\":1},\"timestamp_ms\":null,\"title\":\"Registry record\",\"url\":\"https://registry.example.invalid/project/FIX-0001\"}]}",
+      "sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b"
     }
   ],
   "rejects": [

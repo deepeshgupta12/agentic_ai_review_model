@@ -20,8 +20,8 @@
         "binding": {
           "project_id": "prj_01JB0000000000000000000001",
           "locale": "en-IN",
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "eligibility_epoch": 3,
           "expected_state_version": 7
         },
@@ -75,7 +75,7 @@
           "advantages": [],
           "considerations": [
             {
-              "text": "Several residents report that possession was delayed.",
+              "text": "Several buyers report that possession was delayed.",
               "caveat": "Reported in public posts; not confirmed by the developer.",
               "support": {
                 "findings": [
@@ -87,6 +87,120 @@
                 "claims": [
                   {
                     "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "reviews": [
+            {
+              "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+              "polarity": "mixed",
+              "aspects": [
+                "layout",
+                "possession"
+              ],
+              "credit": {
+                "speaker_label": "an_owner_awaiting_possession",
+                "platform": "Example forum",
+                "kind": "post",
+                "published": {
+                  "status": "unknown",
+                  "value": null,
+                  "precision": null,
+                  "basis": null
+                },
+                "timestamp_ms": null,
+                "translated_from": null
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            {
+              "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+              "polarity": "negative",
+              "aspects": [
+                "construction_progress"
+              ],
+              "credit": {
+                "speaker_label": "a_site_visitor",
+                "platform": "Example video site",
+                "kind": "comment",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-15T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": null,
+                "translated_from": "hi-Latn"
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000002",
+                  "revision": 2
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000005",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000005",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            {
+              "text": "Possession has been delayed a little.",
+              "polarity": "negative",
+              "aspects": [
+                "possession"
+              ],
+              "credit": {
+                "speaker_label": "a_video_creator",
+                "platform": "Example video site",
+                "kind": "video",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-10T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": 12000,
+                "translated_from": "hi-Latn"
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000004",
+                  "revision": 1
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000002",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000002",
                     "revision": 1
                   }
                 ]
@@ -183,7 +297,7 @@
             }
           }
         },
-        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
         "manifest": {
           "findings": [
             {
@@ -205,6 +319,20 @@
               "revision": 1
             }
           ],
+          "reviews": [
+            {
+              "id": "rex_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "rex_01JB0000000000000000000002",
+              "revision": 2
+            },
+            {
+              "id": "rex_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
           "evidence": [
             {
               "id": "evd_01JB0000000000000000000001",
@@ -216,6 +344,10 @@
             },
             {
               "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000005",
               "revision": 1
             }
           ],
@@ -231,12 +363,17 @@
             {
               "id": "src_01JB0000000000000000000003",
               "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000005",
+              "revision": 1
             }
           ],
           "links": [
             "lnk_01JB0000000000000000000001",
             "lnk_01JB0000000000000000000003",
-            "lnk_01JB0000000000000000000004"
+            "lnk_01JB0000000000000000000004",
+            "lnk_01JB0000000000000000000005"
           ],
           "policies": [
             {
@@ -245,16 +382,16 @@
             },
             {
               "family": "web_public_pages",
-              "policy_version": 1
+              "policy_version": 2
             },
             {
               "family": "youtube",
-              "policy_version": 1
+              "policy_version": 2
             }
           ],
           "eligibility_epoch": 3
         },
-        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
         "lifecycle": "approved",
         "supersedes": null,
         "created_by": {
@@ -277,15 +414,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -317,8 +454,8 @@
         "binding": {
           "project_id": "prj_01JB0000000000000000000001",
           "locale": "en-IN",
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "eligibility_epoch": 3,
           "expected_state_version": 7
         },
@@ -372,7 +509,7 @@
           "advantages": [],
           "considerations": [
             {
-              "text": "Several residents report that possession was delayed by about six months.",
+              "text": "Several buyers report that possession was delayed by about six months.",
               "caveat": "Reported in public posts; not confirmed by the developer.",
               "support": {
                 "findings": [
@@ -384,6 +521,120 @@
                 "claims": [
                   {
                     "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "reviews": [
+            {
+              "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+              "polarity": "mixed",
+              "aspects": [
+                "layout",
+                "possession"
+              ],
+              "credit": {
+                "speaker_label": "an_owner_awaiting_possession",
+                "platform": "Example forum",
+                "kind": "post",
+                "published": {
+                  "status": "unknown",
+                  "value": null,
+                  "precision": null,
+                  "basis": null
+                },
+                "timestamp_ms": null,
+                "translated_from": null
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            {
+              "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+              "polarity": "negative",
+              "aspects": [
+                "construction_progress"
+              ],
+              "credit": {
+                "speaker_label": "a_site_visitor",
+                "platform": "Example video site",
+                "kind": "comment",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-15T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": null,
+                "translated_from": "hi-Latn"
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000002",
+                  "revision": 2
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000005",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000005",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            {
+              "text": "Possession has been delayed a little.",
+              "polarity": "negative",
+              "aspects": [
+                "possession"
+              ],
+              "credit": {
+                "speaker_label": "a_video_creator",
+                "platform": "Example video site",
+                "kind": "video",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-10T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": 12000,
+                "translated_from": "hi-Latn"
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000004",
+                  "revision": 1
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000002",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000002",
                     "revision": 1
                   }
                 ]
@@ -480,7 +731,7 @@
             }
           }
         },
-        "payload_sha256": "sha256:ea9f17702ffc62443d72f7ce380f74bc9639c8ff7a12bc1b0dae87cca003df16",
+        "payload_sha256": "sha256:33033a39e525757bb9dc7fbd35bd75a4cebe78b6adee44680c8b3be3fb3dbc5f",
         "manifest": {
           "findings": [
             {
@@ -502,6 +753,20 @@
               "revision": 1
             }
           ],
+          "reviews": [
+            {
+              "id": "rex_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "rex_01JB0000000000000000000002",
+              "revision": 2
+            },
+            {
+              "id": "rex_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
           "evidence": [
             {
               "id": "evd_01JB0000000000000000000001",
@@ -513,6 +778,10 @@
             },
             {
               "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000005",
               "revision": 1
             }
           ],
@@ -528,12 +797,17 @@
             {
               "id": "src_01JB0000000000000000000003",
               "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000005",
+              "revision": 1
             }
           ],
           "links": [
             "lnk_01JB0000000000000000000001",
             "lnk_01JB0000000000000000000003",
-            "lnk_01JB0000000000000000000004"
+            "lnk_01JB0000000000000000000004",
+            "lnk_01JB0000000000000000000005"
           ],
           "policies": [
             {
@@ -542,16 +816,16 @@
             },
             {
               "family": "web_public_pages",
-              "policy_version": 1
+              "policy_version": 2
             },
             {
               "family": "youtube",
-              "policy_version": 1
+              "policy_version": 2
             }
           ],
           "eligibility_epoch": 3
         },
-        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
         "lifecycle": "approved",
         "supersedes": {
           "id": "rev_01JB0000000000000000000001",
@@ -581,15 +855,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -624,8 +898,8 @@
         "binding": {
           "project_id": "prj_01JB0000000000000000000001",
           "locale": "en-IN",
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "eligibility_epoch": 3,
           "expected_state_version": 7
         },
@@ -697,6 +971,120 @@
               }
             }
           ],
+          "reviews": [
+            {
+              "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+              "polarity": "mixed",
+              "aspects": [
+                "layout",
+                "possession"
+              ],
+              "credit": {
+                "speaker_label": "an_owner_awaiting_possession",
+                "platform": "Example forum",
+                "kind": "post",
+                "published": {
+                  "status": "unknown",
+                  "value": null,
+                  "precision": null,
+                  "basis": null
+                },
+                "timestamp_ms": null,
+                "translated_from": null
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            {
+              "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+              "polarity": "negative",
+              "aspects": [
+                "construction_progress"
+              ],
+              "credit": {
+                "speaker_label": "a_site_visitor",
+                "platform": "Example video site",
+                "kind": "comment",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-15T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": null,
+                "translated_from": "hi-Latn"
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000002",
+                  "revision": 2
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000005",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000005",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            {
+              "text": "Possession has been delayed a little.",
+              "polarity": "negative",
+              "aspects": [
+                "possession"
+              ],
+              "credit": {
+                "speaker_label": "a_video_creator",
+                "platform": "Example video site",
+                "kind": "video",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-10T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": 12000,
+                "translated_from": "hi-Latn"
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000004",
+                  "revision": 1
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000002",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
           "questions": [
             {
               "question": "What is the registered completion date?",
@@ -787,7 +1175,7 @@
             }
           }
         },
-        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
         "manifest": {
           "findings": [
             {
@@ -809,6 +1197,20 @@
               "revision": 1
             }
           ],
+          "reviews": [
+            {
+              "id": "rex_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "rex_01JB0000000000000000000002",
+              "revision": 2
+            },
+            {
+              "id": "rex_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
           "evidence": [
             {
               "id": "evd_01JB0000000000000000000001",
@@ -820,6 +1222,10 @@
             },
             {
               "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000005",
               "revision": 1
             }
           ],
@@ -835,12 +1241,17 @@
             {
               "id": "src_01JB0000000000000000000003",
               "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000005",
+              "revision": 1
             }
           ],
           "links": [
             "lnk_01JB0000000000000000000001",
             "lnk_01JB0000000000000000000003",
-            "lnk_01JB0000000000000000000004"
+            "lnk_01JB0000000000000000000004",
+            "lnk_01JB0000000000000000000005"
           ],
           "policies": [
             {
@@ -849,16 +1260,16 @@
             },
             {
               "family": "web_public_pages",
-              "policy_version": 1
+              "policy_version": 2
             },
             {
               "family": "youtube",
-              "policy_version": 1
+              "policy_version": 2
             }
           ],
           "eligibility_epoch": 3
         },
-        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
         "lifecycle": "approved",
         "supersedes": null,
         "created_by": {
@@ -881,15 +1292,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -923,8 +1334,8 @@
         "binding": {
           "project_id": "prj_01JB0000000000000000000001",
           "locale": "en-IN",
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "eligibility_epoch": 3,
           "expected_state_version": 7
         },
@@ -978,7 +1389,7 @@
           "advantages": [],
           "considerations": [
             {
-              "text": "Several residents report that possession was delayed.",
+              "text": "Several buyers report that possession was delayed.",
               "caveat": "Reported in public posts; not confirmed by the developer.",
               "support": {
                 "findings": [
@@ -990,6 +1401,120 @@
                 "claims": [
                   {
                     "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "reviews": [
+            {
+              "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+              "polarity": "mixed",
+              "aspects": [
+                "layout",
+                "possession"
+              ],
+              "credit": {
+                "speaker_label": "an_owner_awaiting_possession",
+                "platform": "Example forum",
+                "kind": "post",
+                "published": {
+                  "status": "unknown",
+                  "value": null,
+                  "precision": null,
+                  "basis": null
+                },
+                "timestamp_ms": null,
+                "translated_from": null
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            {
+              "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+              "polarity": "negative",
+              "aspects": [
+                "construction_progress"
+              ],
+              "credit": {
+                "speaker_label": "a_site_visitor",
+                "platform": "Example video site",
+                "kind": "comment",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-15T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": null,
+                "translated_from": "hi-Latn"
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000002",
+                  "revision": 2
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000005",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000005",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            {
+              "text": "Possession has been delayed a little.",
+              "polarity": "negative",
+              "aspects": [
+                "possession"
+              ],
+              "credit": {
+                "speaker_label": "a_video_creator",
+                "platform": "Example video site",
+                "kind": "video",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-10T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": 12000,
+                "translated_from": "hi-Latn"
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000004",
+                  "revision": 1
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000002",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000002",
                     "revision": 1
                   }
                 ]
@@ -1086,7 +1611,7 @@
             }
           }
         },
-        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
         "manifest": {
           "findings": [
             {
@@ -1108,6 +1633,20 @@
               "revision": 1
             }
           ],
+          "reviews": [
+            {
+              "id": "rex_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "rex_01JB0000000000000000000002",
+              "revision": 2
+            },
+            {
+              "id": "rex_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
           "evidence": [
             {
               "id": "evd_01JB0000000000000000000001",
@@ -1119,6 +1658,10 @@
             },
             {
               "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000005",
               "revision": 1
             }
           ],
@@ -1134,12 +1677,17 @@
             {
               "id": "src_01JB0000000000000000000003",
               "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000005",
+              "revision": 1
             }
           ],
           "links": [
             "lnk_01JB0000000000000000000001",
             "lnk_01JB0000000000000000000003",
-            "lnk_01JB0000000000000000000004"
+            "lnk_01JB0000000000000000000004",
+            "lnk_01JB0000000000000000000005"
           ],
           "policies": [
             {
@@ -1148,16 +1696,16 @@
             },
             {
               "family": "web_public_pages",
-              "policy_version": 1
+              "policy_version": 2
             },
             {
               "family": "youtube",
-              "policy_version": 1
+              "policy_version": 2
             }
           ],
           "eligibility_epoch": 3
         },
-        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
         "lifecycle": "approved",
         "supersedes": null,
         "created_by": {
@@ -1180,15 +1728,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -1222,8 +1770,8 @@
         "binding": {
           "project_id": "prj_01JB0000000000000000000001",
           "locale": "en-IN",
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "eligibility_epoch": 3,
           "expected_state_version": 7
         },
@@ -1277,7 +1825,7 @@
           "advantages": [],
           "considerations": [
             {
-              "text": "Several residents report that possession was delayed.",
+              "text": "Several buyers report that possession was delayed.",
               "caveat": "Reported in public posts; not confirmed by the developer.",
               "support": {
                 "findings": [
@@ -1289,6 +1837,120 @@
                 "claims": [
                   {
                     "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "reviews": [
+            {
+              "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+              "polarity": "mixed",
+              "aspects": [
+                "layout",
+                "possession"
+              ],
+              "credit": {
+                "speaker_label": "an_owner_awaiting_possession",
+                "platform": "Example forum",
+                "kind": "post",
+                "published": {
+                  "status": "unknown",
+                  "value": null,
+                  "precision": null,
+                  "basis": null
+                },
+                "timestamp_ms": null,
+                "translated_from": null
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            {
+              "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+              "polarity": "negative",
+              "aspects": [
+                "construction_progress"
+              ],
+              "credit": {
+                "speaker_label": "a_site_visitor",
+                "platform": "Example video site",
+                "kind": "comment",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-15T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": null,
+                "translated_from": "hi-Latn"
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000002",
+                  "revision": 2
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000005",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000005",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            {
+              "text": "Possession has been delayed a little.",
+              "polarity": "negative",
+              "aspects": [
+                "possession"
+              ],
+              "credit": {
+                "speaker_label": "a_video_creator",
+                "platform": "Example video site",
+                "kind": "video",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-10T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": 12000,
+                "translated_from": "hi-Latn"
+              },
+              "source_url": null,
+              "support": {
+                "review": {
+                  "id": "rex_01JB0000000000000000000004",
+                  "revision": 1
+                },
+                "source": {
+                  "id": "src_01JB0000000000000000000002",
+                  "revision": 1
+                },
+                "evidence": [
+                  {
+                    "id": "evd_01JB0000000000000000000002",
                     "revision": 1
                   }
                 ]
@@ -1385,7 +2047,7 @@
             }
           }
         },
-        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
         "manifest": {
           "findings": [
             {
@@ -1407,6 +2069,20 @@
               "revision": 1
             }
           ],
+          "reviews": [
+            {
+              "id": "rex_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "rex_01JB0000000000000000000002",
+              "revision": 2
+            },
+            {
+              "id": "rex_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
           "evidence": [
             {
               "id": "evd_01JB0000000000000000000001",
@@ -1418,6 +2094,10 @@
             },
             {
               "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000005",
               "revision": 1
             }
           ],
@@ -1433,12 +2113,17 @@
             {
               "id": "src_01JB0000000000000000000003",
               "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000005",
+              "revision": 1
             }
           ],
           "links": [
             "lnk_01JB0000000000000000000001",
             "lnk_01JB0000000000000000000003",
-            "lnk_01JB0000000000000000000004"
+            "lnk_01JB0000000000000000000004",
+            "lnk_01JB0000000000000000000005"
           ],
           "policies": [
             {
@@ -1447,16 +2132,16 @@
             },
             {
               "family": "web_public_pages",
-              "policy_version": 1
+              "policy_version": 2
             },
             {
               "family": "youtube",
-              "policy_version": 1
+              "policy_version": 2
             }
           ],
           "eligibility_epoch": 3
         },
-        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
         "lifecycle": "approved",
         "supersedes": null,
         "created_by": {
@@ -1479,15 +2164,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -1513,15 +2198,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -1578,7 +2263,7 @@
             "advantages": [],
             "considerations": [
               {
-                "text": "Several residents report that possession was delayed.",
+                "text": "Several buyers report that possession was delayed.",
                 "caveat": "Reported in public posts; not confirmed by the developer.",
                 "support": {
                   "findings": [
@@ -1590,6 +2275,120 @@
                   "claims": [
                     {
                       "id": "clm_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "reviews": [
+              {
+                "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+                "polarity": "mixed",
+                "aspects": [
+                  "layout",
+                  "possession"
+                ],
+                "credit": {
+                  "speaker_label": "an_owner_awaiting_possession",
+                  "platform": "Example forum",
+                  "kind": "post",
+                  "published": {
+                    "status": "unknown",
+                    "value": null,
+                    "precision": null,
+                    "basis": null
+                  },
+                  "timestamp_ms": null,
+                  "translated_from": null
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+                "polarity": "negative",
+                "aspects": [
+                  "construction_progress"
+                ],
+                "credit": {
+                  "speaker_label": "a_site_visitor",
+                  "platform": "Example video site",
+                  "kind": "comment",
+                  "published": {
+                    "status": "known",
+                    "value": "2026-09-15T10:00:00Z",
+                    "precision": "day",
+                    "basis": "platform_metadata"
+                  },
+                  "timestamp_ms": null,
+                  "translated_from": "hi-Latn"
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000002",
+                    "revision": 2
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000005",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000005",
+                      "revision": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "text": "Possession has been delayed a little.",
+                "polarity": "negative",
+                "aspects": [
+                  "possession"
+                ],
+                "credit": {
+                  "speaker_label": "a_video_creator",
+                  "platform": "Example video site",
+                  "kind": "video",
+                  "published": {
+                    "status": "known",
+                    "value": "2026-09-10T10:00:00Z",
+                    "precision": "day",
+                    "basis": "platform_metadata"
+                  },
+                  "timestamp_ms": 12000,
+                  "translated_from": "hi-Latn"
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000004",
+                    "revision": 1
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000002",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000002",
                       "revision": 1
                     }
                   ]
@@ -1686,7 +2485,7 @@
               }
             }
           },
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
           "manifest": {
             "findings": [
               {
@@ -1708,6 +2507,20 @@
                 "revision": 1
               }
             ],
+            "reviews": [
+              {
+                "id": "rex_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "rex_01JB0000000000000000000002",
+                "revision": 2
+              },
+              {
+                "id": "rex_01JB0000000000000000000004",
+                "revision": 1
+              }
+            ],
             "evidence": [
               {
                 "id": "evd_01JB0000000000000000000001",
@@ -1719,6 +2532,10 @@
               },
               {
                 "id": "evd_01JB0000000000000000000004",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000005",
                 "revision": 1
               }
             ],
@@ -1734,12 +2551,17 @@
               {
                 "id": "src_01JB0000000000000000000003",
                 "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000005",
+                "revision": 1
               }
             ],
             "links": [
               "lnk_01JB0000000000000000000001",
               "lnk_01JB0000000000000000000003",
-              "lnk_01JB0000000000000000000004"
+              "lnk_01JB0000000000000000000004",
+              "lnk_01JB0000000000000000000005"
             ],
             "policies": [
               {
@@ -1748,16 +2570,16 @@
               },
               {
                 "family": "web_public_pages",
-                "policy_version": 1
+                "policy_version": 2
               },
               {
                 "family": "youtube",
-                "policy_version": 1
+                "policy_version": 2
               }
             ],
             "eligibility_epoch": 3
           },
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "lifecycle": "approved",
           "supersedes": null,
           "created_by": {
@@ -1819,7 +2641,7 @@
             "advantages": [],
             "considerations": [
               {
-                "text": "Several residents report that possession was delayed by about six months.",
+                "text": "Several buyers report that possession was delayed by about six months.",
                 "caveat": "Reported in public posts; not confirmed by the developer.",
                 "support": {
                   "findings": [
@@ -1831,6 +2653,120 @@
                   "claims": [
                     {
                       "id": "clm_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "reviews": [
+              {
+                "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+                "polarity": "mixed",
+                "aspects": [
+                  "layout",
+                  "possession"
+                ],
+                "credit": {
+                  "speaker_label": "an_owner_awaiting_possession",
+                  "platform": "Example forum",
+                  "kind": "post",
+                  "published": {
+                    "status": "unknown",
+                    "value": null,
+                    "precision": null,
+                    "basis": null
+                  },
+                  "timestamp_ms": null,
+                  "translated_from": null
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+                "polarity": "negative",
+                "aspects": [
+                  "construction_progress"
+                ],
+                "credit": {
+                  "speaker_label": "a_site_visitor",
+                  "platform": "Example video site",
+                  "kind": "comment",
+                  "published": {
+                    "status": "known",
+                    "value": "2026-09-15T10:00:00Z",
+                    "precision": "day",
+                    "basis": "platform_metadata"
+                  },
+                  "timestamp_ms": null,
+                  "translated_from": "hi-Latn"
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000002",
+                    "revision": 2
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000005",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000005",
+                      "revision": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "text": "Possession has been delayed a little.",
+                "polarity": "negative",
+                "aspects": [
+                  "possession"
+                ],
+                "credit": {
+                  "speaker_label": "a_video_creator",
+                  "platform": "Example video site",
+                  "kind": "video",
+                  "published": {
+                    "status": "known",
+                    "value": "2026-09-10T10:00:00Z",
+                    "precision": "day",
+                    "basis": "platform_metadata"
+                  },
+                  "timestamp_ms": 12000,
+                  "translated_from": "hi-Latn"
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000004",
+                    "revision": 1
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000002",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000002",
                       "revision": 1
                     }
                   ]
@@ -1927,7 +2863,7 @@
               }
             }
           },
-          "payload_sha256": "sha256:ea9f17702ffc62443d72f7ce380f74bc9639c8ff7a12bc1b0dae87cca003df16",
+          "payload_sha256": "sha256:33033a39e525757bb9dc7fbd35bd75a4cebe78b6adee44680c8b3be3fb3dbc5f",
           "manifest": {
             "findings": [
               {
@@ -1949,6 +2885,20 @@
                 "revision": 1
               }
             ],
+            "reviews": [
+              {
+                "id": "rex_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "rex_01JB0000000000000000000002",
+                "revision": 2
+              },
+              {
+                "id": "rex_01JB0000000000000000000004",
+                "revision": 1
+              }
+            ],
             "evidence": [
               {
                 "id": "evd_01JB0000000000000000000001",
@@ -1960,6 +2910,10 @@
               },
               {
                 "id": "evd_01JB0000000000000000000004",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000005",
                 "revision": 1
               }
             ],
@@ -1975,12 +2929,17 @@
               {
                 "id": "src_01JB0000000000000000000003",
                 "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000005",
+                "revision": 1
               }
             ],
             "links": [
               "lnk_01JB0000000000000000000001",
               "lnk_01JB0000000000000000000003",
-              "lnk_01JB0000000000000000000004"
+              "lnk_01JB0000000000000000000004",
+              "lnk_01JB0000000000000000000005"
             ],
             "policies": [
               {
@@ -1989,16 +2948,16 @@
               },
               {
                 "family": "web_public_pages",
-                "policy_version": 1
+                "policy_version": 2
               },
               {
                 "family": "youtube",
-                "policy_version": 1
+                "policy_version": 2
               }
             ],
             "eligibility_epoch": 3
           },
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "lifecycle": "final_review",
           "supersedes": {
             "id": "rev_01JB0000000000000000000001",
@@ -2033,15 +2992,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -2102,7 +3061,7 @@
             "advantages": [],
             "considerations": [
               {
-                "text": "Several residents report that possession was delayed.",
+                "text": "Several buyers report that possession was delayed.",
                 "caveat": "Reported in public posts; not confirmed by the developer.",
                 "support": {
                   "findings": [
@@ -2114,6 +3073,120 @@
                   "claims": [
                     {
                       "id": "clm_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "reviews": [
+              {
+                "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+                "polarity": "mixed",
+                "aspects": [
+                  "layout",
+                  "possession"
+                ],
+                "credit": {
+                  "speaker_label": "an_owner_awaiting_possession",
+                  "platform": "Example forum",
+                  "kind": "post",
+                  "published": {
+                    "status": "unknown",
+                    "value": null,
+                    "precision": null,
+                    "basis": null
+                  },
+                  "timestamp_ms": null,
+                  "translated_from": null
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+                "polarity": "negative",
+                "aspects": [
+                  "construction_progress"
+                ],
+                "credit": {
+                  "speaker_label": "a_site_visitor",
+                  "platform": "Example video site",
+                  "kind": "comment",
+                  "published": {
+                    "status": "known",
+                    "value": "2026-09-15T10:00:00Z",
+                    "precision": "day",
+                    "basis": "platform_metadata"
+                  },
+                  "timestamp_ms": null,
+                  "translated_from": "hi-Latn"
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000002",
+                    "revision": 2
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000005",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000005",
+                      "revision": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "text": "Possession has been delayed a little.",
+                "polarity": "negative",
+                "aspects": [
+                  "possession"
+                ],
+                "credit": {
+                  "speaker_label": "a_video_creator",
+                  "platform": "Example video site",
+                  "kind": "video",
+                  "published": {
+                    "status": "known",
+                    "value": "2026-09-10T10:00:00Z",
+                    "precision": "day",
+                    "basis": "platform_metadata"
+                  },
+                  "timestamp_ms": 12000,
+                  "translated_from": "hi-Latn"
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000004",
+                    "revision": 1
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000002",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000002",
                       "revision": 1
                     }
                   ]
@@ -2210,7 +3283,7 @@
               }
             }
           },
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
           "manifest": {
             "findings": [
               {
@@ -2232,6 +3305,20 @@
                 "revision": 1
               }
             ],
+            "reviews": [
+              {
+                "id": "rex_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "rex_01JB0000000000000000000002",
+                "revision": 2
+              },
+              {
+                "id": "rex_01JB0000000000000000000004",
+                "revision": 1
+              }
+            ],
             "evidence": [
               {
                 "id": "evd_01JB0000000000000000000001",
@@ -2243,6 +3330,10 @@
               },
               {
                 "id": "evd_01JB0000000000000000000004",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000005",
                 "revision": 1
               }
             ],
@@ -2258,12 +3349,17 @@
               {
                 "id": "src_01JB0000000000000000000003",
                 "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000005",
+                "revision": 1
               }
             ],
             "links": [
               "lnk_01JB0000000000000000000001",
               "lnk_01JB0000000000000000000003",
-              "lnk_01JB0000000000000000000004"
+              "lnk_01JB0000000000000000000004",
+              "lnk_01JB0000000000000000000005"
             ],
             "policies": [
               {
@@ -2272,16 +3368,16 @@
               },
               {
                 "family": "web_public_pages",
-                "policy_version": 1
+                "policy_version": 2
               },
               {
                 "family": "youtube",
-                "policy_version": 1
+                "policy_version": 2
               }
             ],
             "eligibility_epoch": 3
           },
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "lifecycle": "approved",
           "supersedes": null,
           "created_by": {
@@ -2361,7 +3457,7 @@
             "advantages": [],
             "considerations": [
               {
-                "text": "Several residents report that possession was delayed.",
+                "text": "Several buyers report that possession was delayed.",
                 "caveat": "Reported in public posts; not confirmed by the developer.",
                 "support": {
                   "findings": [
@@ -2373,6 +3469,120 @@
                   "claims": [
                     {
                       "id": "clm_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "reviews": [
+              {
+                "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+                "polarity": "mixed",
+                "aspects": [
+                  "layout",
+                  "possession"
+                ],
+                "credit": {
+                  "speaker_label": "an_owner_awaiting_possession",
+                  "platform": "Example forum",
+                  "kind": "post",
+                  "published": {
+                    "status": "unknown",
+                    "value": null,
+                    "precision": null,
+                    "basis": null
+                  },
+                  "timestamp_ms": null,
+                  "translated_from": null
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+                "polarity": "negative",
+                "aspects": [
+                  "construction_progress"
+                ],
+                "credit": {
+                  "speaker_label": "a_site_visitor",
+                  "platform": "Example video site",
+                  "kind": "comment",
+                  "published": {
+                    "status": "known",
+                    "value": "2026-09-15T10:00:00Z",
+                    "precision": "day",
+                    "basis": "platform_metadata"
+                  },
+                  "timestamp_ms": null,
+                  "translated_from": "hi-Latn"
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000002",
+                    "revision": 2
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000005",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000005",
+                      "revision": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "text": "Possession has been delayed a little.",
+                "polarity": "negative",
+                "aspects": [
+                  "possession"
+                ],
+                "credit": {
+                  "speaker_label": "a_video_creator",
+                  "platform": "Example video site",
+                  "kind": "video",
+                  "published": {
+                    "status": "known",
+                    "value": "2026-09-10T10:00:00Z",
+                    "precision": "day",
+                    "basis": "platform_metadata"
+                  },
+                  "timestamp_ms": 12000,
+                  "translated_from": "hi-Latn"
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000004",
+                    "revision": 1
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000002",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000002",
                       "revision": 1
                     }
                   ]
@@ -2469,7 +3679,7 @@
               }
             }
           },
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
           "manifest": {
             "findings": [
               {
@@ -2491,6 +3701,20 @@
                 "revision": 1
               }
             ],
+            "reviews": [
+              {
+                "id": "rex_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "rex_01JB0000000000000000000002",
+                "revision": 2
+              },
+              {
+                "id": "rex_01JB0000000000000000000004",
+                "revision": 1
+              }
+            ],
             "evidence": [
               {
                 "id": "evd_01JB0000000000000000000001",
@@ -2502,6 +3726,10 @@
               },
               {
                 "id": "evd_01JB0000000000000000000004",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000005",
                 "revision": 1
               }
             ],
@@ -2517,12 +3745,17 @@
               {
                 "id": "src_01JB0000000000000000000003",
                 "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000005",
+                "revision": 1
               }
             ],
             "links": [
               "lnk_01JB0000000000000000000001",
               "lnk_01JB0000000000000000000003",
-              "lnk_01JB0000000000000000000004"
+              "lnk_01JB0000000000000000000004",
+              "lnk_01JB0000000000000000000005"
             ],
             "policies": [
               {
@@ -2531,16 +3764,16 @@
               },
               {
                 "family": "web_public_pages",
-                "policy_version": 1
+                "policy_version": 2
               },
               {
                 "family": "youtube",
-                "policy_version": 1
+                "policy_version": 2
               }
             ],
             "eligibility_epoch": 3
           },
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "lifecycle": "approved",
           "supersedes": null,
           "created_by": {
@@ -2568,15 +3801,15 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:ea9f17702ffc62443d72f7ce380f74bc9639c8ff7a12bc1b0dae87cca003df16",
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "payload_sha256": "sha256:33033a39e525757bb9dc7fbd35bd75a4cebe78b6adee44680c8b3be3fb3dbc5f",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
         },
@@ -2633,7 +3866,7 @@
             "advantages": [],
             "considerations": [
               {
-                "text": "Several residents report that possession was delayed.",
+                "text": "Several buyers report that possession was delayed.",
                 "caveat": "Reported in public posts; not confirmed by the developer.",
                 "support": {
                   "findings": [
@@ -2645,6 +3878,120 @@
                   "claims": [
                     {
                       "id": "clm_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "reviews": [
+              {
+                "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+                "polarity": "mixed",
+                "aspects": [
+                  "layout",
+                  "possession"
+                ],
+                "credit": {
+                  "speaker_label": "an_owner_awaiting_possession",
+                  "platform": "Example forum",
+                  "kind": "post",
+                  "published": {
+                    "status": "unknown",
+                    "value": null,
+                    "precision": null,
+                    "basis": null
+                  },
+                  "timestamp_ms": null,
+                  "translated_from": null
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+                "polarity": "negative",
+                "aspects": [
+                  "construction_progress"
+                ],
+                "credit": {
+                  "speaker_label": "a_site_visitor",
+                  "platform": "Example video site",
+                  "kind": "comment",
+                  "published": {
+                    "status": "known",
+                    "value": "2026-09-15T10:00:00Z",
+                    "precision": "day",
+                    "basis": "platform_metadata"
+                  },
+                  "timestamp_ms": null,
+                  "translated_from": "hi-Latn"
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000002",
+                    "revision": 2
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000005",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000005",
+                      "revision": 1
+                    }
+                  ]
+                }
+              },
+              {
+                "text": "Possession has been delayed a little.",
+                "polarity": "negative",
+                "aspects": [
+                  "possession"
+                ],
+                "credit": {
+                  "speaker_label": "a_video_creator",
+                  "platform": "Example video site",
+                  "kind": "video",
+                  "published": {
+                    "status": "known",
+                    "value": "2026-09-10T10:00:00Z",
+                    "precision": "day",
+                    "basis": "platform_metadata"
+                  },
+                  "timestamp_ms": 12000,
+                  "translated_from": "hi-Latn"
+                },
+                "source_url": null,
+                "support": {
+                  "review": {
+                    "id": "rex_01JB0000000000000000000004",
+                    "revision": 1
+                  },
+                  "source": {
+                    "id": "src_01JB0000000000000000000002",
+                    "revision": 1
+                  },
+                  "evidence": [
+                    {
+                      "id": "evd_01JB0000000000000000000002",
                       "revision": 1
                     }
                   ]
@@ -2741,7 +4088,7 @@
               }
             }
           },
-          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
           "manifest": {
             "findings": [
               {
@@ -2763,6 +4110,20 @@
                 "revision": 1
               }
             ],
+            "reviews": [
+              {
+                "id": "rex_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "rex_01JB0000000000000000000002",
+                "revision": 2
+              },
+              {
+                "id": "rex_01JB0000000000000000000004",
+                "revision": 1
+              }
+            ],
             "evidence": [
               {
                 "id": "evd_01JB0000000000000000000001",
@@ -2774,6 +4135,10 @@
               },
               {
                 "id": "evd_01JB0000000000000000000004",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000005",
                 "revision": 1
               }
             ],
@@ -2789,12 +4154,17 @@
               {
                 "id": "src_01JB0000000000000000000003",
                 "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000005",
+                "revision": 1
               }
             ],
             "links": [
               "lnk_01JB0000000000000000000001",
               "lnk_01JB0000000000000000000003",
-              "lnk_01JB0000000000000000000004"
+              "lnk_01JB0000000000000000000004",
+              "lnk_01JB0000000000000000000005"
             ],
             "policies": [
               {
@@ -2803,16 +4173,16 @@
               },
               {
                 "family": "web_public_pages",
-                "policy_version": 1
+                "policy_version": 2
               },
               {
                 "family": "youtube",
-                "policy_version": 1
+                "policy_version": 2
               }
             ],
             "eligibility_epoch": 3
           },
-          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "lifecycle": "approved",
           "supersedes": null,
           "created_by": {
@@ -2830,6 +4200,305 @@
         }
       ],
       "serves": null
+    }
+  ],
+  "status_consistency": [
+    {
+      "name": "resident_in_under_construction_project",
+      "records": [
+        {
+          "status": "under_construction",
+          "applies_to": {
+            "kind": "project",
+            "rera_id": null
+          },
+          "basis": "client_export",
+          "as_of": "2026-09-25",
+          "note": null
+        }
+      ],
+      "perspective": "resident_experience",
+      "phase_rera_id": null,
+      "on_date": null,
+      "flags": [
+        "occupancy_before_possession"
+      ]
+    },
+    {
+      "name": "resident_in_ready_phase",
+      "records": [
+        {
+          "status": "partially_ready",
+          "applies_to": {
+            "kind": "project",
+            "rera_id": null
+          },
+          "basis": "client_export",
+          "as_of": "2026-09-25",
+          "note": null
+        },
+        {
+          "status": "ready_to_move",
+          "applies_to": {
+            "kind": "phase",
+            "rera_id": "FIX/0001/0001/2026/01"
+          },
+          "basis": "rera_registry",
+          "as_of": "2026-09-20",
+          "note": "Phase 1 handed over per the registry"
+        }
+      ],
+      "perspective": "resident_experience",
+      "phase_rera_id": "FIX/0001/0001/2026/01",
+      "on_date": null,
+      "flags": []
+    },
+    {
+      "name": "resident_phase_not_named_in_partly_ready_project",
+      "records": [
+        {
+          "status": "partially_ready",
+          "applies_to": {
+            "kind": "project",
+            "rera_id": null
+          },
+          "basis": "client_export",
+          "as_of": "2026-09-25",
+          "note": null
+        },
+        {
+          "status": "ready_to_move",
+          "applies_to": {
+            "kind": "phase",
+            "rera_id": "FIX/0001/0001/2026/01"
+          },
+          "basis": "rera_registry",
+          "as_of": "2026-09-20",
+          "note": "Phase 1 handed over per the registry"
+        }
+      ],
+      "perspective": "resident_experience",
+      "phase_rera_id": null,
+      "on_date": null,
+      "flags": [
+        "status_unknown"
+      ]
+    },
+    {
+      "name": "owner_awaiting_possession_in_new_launch",
+      "records": [
+        {
+          "status": "new_launch",
+          "applies_to": {
+            "kind": "project",
+            "rera_id": null
+          },
+          "basis": "client_export",
+          "as_of": "2026-09-25",
+          "note": null
+        }
+      ],
+      "perspective": "owner_awaiting_possession",
+      "phase_rera_id": null,
+      "on_date": null,
+      "flags": []
+    },
+    {
+      "name": "resident_with_no_status_record",
+      "records": [],
+      "perspective": "resident_experience",
+      "phase_rera_id": null,
+      "on_date": null,
+      "flags": [
+        "status_unknown"
+      ]
+    },
+    {
+      "name": "resident_post_dated_before_handover",
+      "records": [
+        {
+          "status": "under_construction",
+          "applies_to": {
+            "kind": "project",
+            "rera_id": null
+          },
+          "basis": "client_export",
+          "as_of": "2025-01-01",
+          "note": null
+        },
+        {
+          "status": "ready_to_move",
+          "applies_to": {
+            "kind": "project",
+            "rera_id": null
+          },
+          "basis": "rera_registry",
+          "as_of": "2026-06-01",
+          "note": null
+        }
+      ],
+      "perspective": "resident_experience",
+      "phase_rera_id": null,
+      "on_date": "2025-06-15",
+      "flags": [
+        "occupancy_before_possession"
+      ]
+    },
+    {
+      "name": "resident_post_dated_after_handover",
+      "records": [
+        {
+          "status": "under_construction",
+          "applies_to": {
+            "kind": "project",
+            "rera_id": null
+          },
+          "basis": "client_export",
+          "as_of": "2025-01-01",
+          "note": null
+        },
+        {
+          "status": "ready_to_move",
+          "applies_to": {
+            "kind": "project",
+            "rera_id": null
+          },
+          "basis": "rera_registry",
+          "as_of": "2026-06-01",
+          "note": null
+        }
+      ],
+      "perspective": "resident_experience",
+      "phase_rera_id": null,
+      "on_date": "2026-07-01",
+      "flags": []
+    }
+  ],
+  "status_wording": [
+    {
+      "name": "residents_under_construction",
+      "status": "under_construction",
+      "text": "Residents praise the clubhouse.",
+      "blocking": [
+        "residents"
+      ],
+      "advice": []
+    },
+    {
+      "name": "buyers_under_construction",
+      "status": "under_construction",
+      "text": "Buyers expect the clubhouse by 2027.",
+      "blocking": [],
+      "advice": []
+    },
+    {
+      "name": "living_here_new_launch",
+      "status": "new_launch",
+      "text": "People living here like the park.",
+      "blocking": [
+        "living here"
+      ],
+      "advice": []
+    },
+    {
+      "name": "residents_ready_to_move",
+      "status": "ready_to_move",
+      "text": "Residents praise the clubhouse.",
+      "blocking": [],
+      "advice": []
+    },
+    {
+      "name": "residents_partly_ready",
+      "status": "partially_ready",
+      "text": "Residents praise the clubhouse.",
+      "blocking": [],
+      "advice": [
+        "residents"
+      ]
+    }
+  ],
+  "review_rendering": [
+    {
+      "name": "dash_changed_to_comma",
+      "original": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+      "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
+      "rendering": "punctuation_normalised",
+      "problems_contain": [],
+      "check": "matches_original"
+    },
+    {
+      "name": "word_changed",
+      "original": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+      "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by eight months.",
+      "rendering": "punctuation_normalised",
+      "problems_contain": [
+        "words differ"
+      ],
+      "check": "mismatch"
+    },
+    {
+      "name": "words_added",
+      "original": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+      "text": "I booked a 3 BHK here in 2024 and love it. The sample flat matched the brochure, but possession was delayed by six months.",
+      "rendering": "punctuation_normalised",
+      "problems_contain": [
+        "words differ"
+      ],
+      "check": "mismatch"
+    },
+    {
+      "name": "verbatim_with_dash",
+      "original": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+      "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
+      "rendering": "verbatim",
+      "problems_contain": [
+        "dash or hyphen"
+      ],
+      "check": "mismatch"
+    },
+    {
+      "name": "verbatim_exact",
+      "original": "I have been living here for a year and the maintenance is excellent.",
+      "text": "I have been living here for a year and the maintenance is excellent.",
+      "rendering": "verbatim",
+      "problems_contain": [],
+      "check": "matches_original"
+    },
+    {
+      "name": "sentence_left_out",
+      "original": "The clubhouse is good. Parking is tight. Lifts work.",
+      "text": "The clubhouse is good. Lifts work.",
+      "rendering": "shortened",
+      "problems_contain": [],
+      "check": "matches_original"
+    },
+    {
+      "name": "sentences_reordered",
+      "original": "The clubhouse is good. Parking is tight. Lifts work.",
+      "text": "Lifts work. The clubhouse is good.",
+      "rendering": "shortened",
+      "problems_contain": [
+        "sentence"
+      ],
+      "check": "mismatch"
+    },
+    {
+      "name": "sentence_edited",
+      "original": "The clubhouse is good. Parking is tight. Lifts work.",
+      "text": "The clubhouse is great. Lifts work.",
+      "rendering": "shortened",
+      "problems_contain": [
+        "sentence"
+      ],
+      "check": "mismatch"
+    },
+    {
+      "name": "translation_goes_to_moderator",
+      "original": "Site visit kiya tha pichle mahine. Construction bahut slow hai, do saal mein kuch nahi badla.",
+      "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
+      "rendering": "translated",
+      "problems_contain": [],
+      "check": "needs_moderator"
     }
   ]
 }

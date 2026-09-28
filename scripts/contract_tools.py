@@ -359,11 +359,136 @@ def manifest_problems(revision: dict[str, Any]) -> list[str]:
         for ref in block["support"]["claims"]:
             if (ref["id"], ref["revision"]) not in listed_claims:
                 problems.append(f"payload cites claim {ref['id']} r{ref['revision']} missing from the manifest")
+    reviews = [(r["id"], r["revision"]) for r in manifest["reviews"]]
+    if reviews != sorted(set(reviews)):
+        problems.append("manifest.reviews must be sorted by (id, revision) and unique")
+    listed_evidence = {(e["id"], e["revision"]) for e in manifest["evidence"]}
+    listed_sources = {(s["id"], s["revision"]) for s in manifest["sources"]}
+    forbidden = set(content_rules()["review_text"]["forbidden_characters"])
+    for review in payload["reviews"]:
+        support_ = review["support"]
+        if (support_["review"]["id"], support_["review"]["revision"]) not in set(reviews):
+            problems.append(f"payload shows review {support_['review']['id']} missing from the manifest")
+        if (support_["source"]["id"], support_["source"]["revision"]) not in listed_sources:
+            problems.append(f"review {support_['review']['id']} cites a source missing from the manifest")
+        for ref in support_["evidence"]:
+            if (ref["id"], ref["revision"]) not in listed_evidence:
+                problems.append(f"review {support_['review']['id']} cites evidence missing from the manifest")
+        if forbidden & set(review["text"]):
+            problems.append(f"review {support_['review']['id']} text contains a dash or hyphen")
     if payload["project"]["id"] != revision["project_id"]:
         problems.append("payload.project.id differs from project_id")
     if json_ld_has_ratings(payload["json_ld"]):
         problems.append("json_ld contains a rating or review entity")
     return problems
+
+
+# --- Construction status and source reviews (D27, D28) -----------------------------------
+
+
+def content_rules() -> dict[str, Any]:
+    return load_json(CONTRACTS / "content_rules.json")
+
+
+def status_from_export_label(label: str, rules: dict[str, Any] | None = None) -> str | None:
+    """Map an export label such as 'Partially Ready To Move' to a ConstructionStatus, or None if unknown."""
+    rules = rules or content_rules()
+    return rules["export_labels"].get(" ".join(label.casefold().split()))
+
+
+def applicable_status(records: list[dict[str, Any]], phase_rera_id: str | None = None, on_date: str | None = None) -> str | None:
+    """Latest status on or before on_date: the phase's own record if there is one, else the project's."""
+
+    def known_by(record: dict[str, Any]) -> bool:
+        return on_date is None or record["as_of"] <= on_date
+
+    if phase_rera_id:
+        phase = [
+            r for r in records
+            if r["applies_to"]["kind"] == "phase" and r["applies_to"]["rera_id"] == phase_rera_id and known_by(r)
+        ]
+        if phase:
+            return max(phase, key=lambda r: r["as_of"])["status"]
+    project = [r for r in records if r["applies_to"]["kind"] == "project" and known_by(r)]
+    return max(project, key=lambda r: r["as_of"])["status"] if project else None
+
+
+def consistency_flags(
+    perspective: str,
+    records: list[dict[str, Any]],
+    phase_rera_id: str | None = None,
+    on_date: str | None = None,
+    rules: dict[str, Any] | None = None,
+) -> list[str]:
+    """Flags for a claim or review: living experience where nobody can live yet, or where status cannot tell."""
+    rules = rules or content_rules()
+    if perspective not in rules["occupancy_perspectives"]:
+        return []
+    status = applicable_status(records, phase_rera_id, on_date)
+    if status is None:
+        return ["status_unknown"]
+    possible = rules["occupancy_possible"][status]
+    if possible == "no":
+        return ["occupancy_before_possession"]
+    if possible == "phase_dependent":
+        return ["status_unknown"]
+    return []
+
+
+def wording_issues(text: str, status: str | None, rules: dict[str, Any] | None = None) -> dict[str, list[str]]:
+    """Occupancy wording in the client's own page text: blocking before possession, advice when partially ready."""
+    rules = rules or content_rules()
+    found = [
+        term
+        for term in rules["wording"]["occupancy_terms"]
+        if re.search(rf"(?<!\w){re.escape(term)}(?!\w)", text, flags=re.IGNORECASE)
+    ]
+    possible = rules["occupancy_possible"].get(status) if status else None
+    if possible == "no":
+        return {"blocking": found, "advice": []}
+    if possible in ("phase_dependent", None):
+        return {"blocking": [], "advice": found}
+    return {"blocking": [], "advice": []}
+
+
+_WORD = re.compile(r"[^\W_]+")
+_SENTENCE_END = re.compile(r"(?<=[.!?।])\s+")
+
+
+def _words(text: str) -> list[str]:
+    return [w.casefold() for w in _WORD.findall(unicodedata.normalize("NFC", text))]
+
+
+def _sentences(text: str) -> list[list[str]]:
+    return [_words(s) for s in _SENTENCE_END.split(text.strip()) if _words(s)]
+
+
+def rendering_problems(original: str, text: str, rendering: str, rules: dict[str, Any] | None = None) -> list[str]:
+    """Is the displayed review still the author's own words? Translations are left to the moderator and A09."""
+    rules = rules or content_rules()
+    problems: list[str] = []
+    if set(rules["review_text"]["forbidden_characters"]) & set(text):
+        problems.append("displayed text contains a dash or hyphen")
+    if rendering == "verbatim":
+        if text != original:
+            problems.append("verbatim text differs from the original")
+    elif rendering == "punctuation_normalised":
+        if _words(text) != _words(original):
+            problems.append("words differ from the original; only punctuation may change")
+    elif rendering == "shortened":
+        remaining = iter(_sentences(original))
+        if not all(any(kept == sentence for sentence in remaining) for kept in _sentences(text)):
+            problems.append("a sentence is not in the original, or sentences were reordered or edited")
+    elif rendering != "translated":
+        problems.append(f"unknown rendering {rendering}")
+    return problems
+
+
+def rendering_check(original: str, text: str, rendering: str) -> str:
+    """Value shown to moderators (ReviewExcerptView.rendering_check)."""
+    if rendering_problems(original, text, rendering):
+        return "mismatch"
+    return "needs_moderator" if rendering == "translated" else "matches_original"
 
 
 def json_ld_has_ratings(node: Any) -> bool:

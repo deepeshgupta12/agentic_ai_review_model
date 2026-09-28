@@ -31,6 +31,10 @@
     { "operation_id": "reviseFinding", "method": "POST", "path": "/v1/findings/{finding_id}/revisions", "tag": "findings", "summary": "Edit a finding as a new revision", "access": "session", "roles": ["moderator"], "request": "api.schema.json#/$defs/FindingRevisionRequest", "responses": { "201": "evidence.schema.json#/$defs/Finding" }, "errors": [404, 409, 422] },
     { "operation_id": "decideFinding", "method": "POST", "path": "/v1/findings/{finding_id}/decisions", "tag": "findings", "summary": "Approve, reject or request changes on an exact finding revision", "access": "session", "roles": ["moderator"], "request": "api.schema.json#/$defs/FindingDecisionRequest", "responses": { "200": "content.schema.json#/$defs/ReviewDecision" }, "errors": [404, 409, 422] },
 
+    { "operation_id": "listReviewExcerpts", "method": "GET", "path": "/v1/projects/{project_id}/review-excerpts", "tag": "reviews", "summary": "First-person reviews from real posts, comments and videos, with original words, evidence and checks (D28)", "access": "session", "roles": "all", "query": ["review_status", "cursor", "limit"], "responses": { "200": "api.schema.json#/$defs/ReviewExcerptPage" }, "errors": [404] },
+    { "operation_id": "reviseReviewExcerpt", "method": "POST", "path": "/v1/review-excerpts/{excerpt_id}/revisions", "tag": "reviews", "summary": "Choose different spans of the same source or fix a translation, as a new revision; no free-text rewrite", "access": "session", "roles": ["moderator"], "request": "api.schema.json#/$defs/ReviewExcerptRevisionRequest", "responses": { "201": "evidence.schema.json#/$defs/ReviewExcerpt" }, "errors": [404, 409, 422] },
+    { "operation_id": "decideReviewExcerpt", "method": "POST", "path": "/v1/review-excerpts/{excerpt_id}/decisions", "tag": "reviews", "summary": "Approve, reject or request changes on an exact review revision; flagged reviews cannot be approved", "access": "session", "roles": ["moderator"], "request": "api.schema.json#/$defs/ReviewExcerptDecisionRequest", "responses": { "200": "content.schema.json#/$defs/ReviewDecision" }, "errors": [404, 409, 422] },
+
     { "operation_id": "createContentRevision", "method": "POST", "path": "/v1/projects/{project_id}/content-revisions", "tag": "content", "summary": "Generate from approved findings (202) or save a validated edit as a new revision (201)", "access": "session", "roles": ["moderator"], "idempotent": true, "request": "api.schema.json#/$defs/ContentRevisionRequest", "responses": { "201": "api.schema.json#/$defs/ContentRevisionView", "202": "api.schema.json#/$defs/Accepted" }, "errors": [404, 409, 422] },
     { "operation_id": "listContentRevisions", "method": "GET", "path": "/v1/projects/{project_id}/content-revisions", "tag": "content", "summary": "Content revision history", "access": "session", "roles": ["moderator", "publisher"], "query": ["lifecycle", "cursor", "limit"], "responses": { "200": "api.schema.json#/$defs/ContentRevisionPage" }, "errors": [404] },
     { "operation_id": "getContentRevision", "method": "GET", "path": "/v1/content-revisions/{revision_id}", "tag": "content", "summary": "Immutable payload, lineage, QA and private preview path", "access": "session", "roles": ["moderator", "publisher"], "responses": { "200": "api.schema.json#/$defs/ContentRevisionView" }, "errors": [404] },
@@ -97,6 +101,7 @@
     "slug": { "$ref": "common.schema.json#/$defs/Slug" },
     "provider": { "$ref": "common.schema.json#/$defs/ConnectorId" },
     "correction_id": { "$ref": "common.schema.json#/$defs/CorrectionId" },
+    "excerpt_id": { "$ref": "common.schema.json#/$defs/ReviewExcerptId" },
     "user_id": { "$ref": "common.schema.json#/$defs/UserId" }
   }
 }

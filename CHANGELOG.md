@@ -11,6 +11,8 @@
 - State lists extended on purpose: workflow `cancelled`; content `changes_requested` and `rejected`; finding review `superseded` (docs/05).
 - API grows from the docs/03 table to 47 operations, adding what the console screens need (docs/09).
 - Canonical hashing and text anchors fixed (D23, D24); design direction proposed (D25).
+- Construction-status consistency for evidence, reviews and page wording (D27).
+- First-person reviews from real posts, comments and videos, credited to platform and date, as a core output; new agent A11; web and YouTube policies at version 2 (D28). API now 50 operations.
 
 ## 1.1 — 25 September 2026
 

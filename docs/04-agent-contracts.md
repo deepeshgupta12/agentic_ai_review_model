@@ -14,7 +14,7 @@ Provider refusals, incomplete responses and malformed output are explicit paths.
 
 ## Specialist definitions
 
-Output schemas for A01–A10 are in [contracts/v1/agents.schema.json](../contracts/v1/agents.schema.json), within the Claude structured-output subset. A00 is deterministic and has no model output. JSON-LD is built by the backend from the visible content, never by A08.
+Output schemas for A01–A11 are in [contracts/v1/agents.schema.json](../contracts/v1/agents.schema.json), within the Claude structured-output subset. A00 is deterministic and has no model output. JSON-LD is built by the backend from the visible content, never by A08.
 
 | ID / component | Inputs | Allowed tools | Required output and boundary |
 |---|---|---|---|
@@ -23,12 +23,13 @@ Output schemas for A01–A10 are in [contracts/v1/agents.schema.json](../contrac
 | A02 Discovery planner | Identity, approved aliases, RERA IDs, languages and entitlement matrix | Approved query templates and source catalogue | Bounded queries with platform, window, locale, exclusions and priority, including identifier queries (RERA ID, developer + sector) so unknown names can surface; never uses unapproved alias proposals; collectors execute pagination |
 | A03 Video understanding | Authorised aligned transcript/frames plus metadata | Read permitted segments/frames | Timestamped observations, modality, speaker and uncertainty; metadata-only is never spoken evidence |
 | A04 Language/context | Original text or transcript, parent context | Approved language/translation service | Normalised text, language, translation alignment, negation/uncertainty flags; preserve names, units and original |
-| A05 Claim extractor | Matched eligible evidence spans | Read supplied evidence only | Atomic aspect claims, evidence IDs, polarity, observation time and proposed type; no unsupported external facts |
+| A05 Claim extractor | Matched eligible evidence spans | Read supplied evidence only | Atomic aspect claims, evidence IDs, polarity, perspective (whose experience: resident, owner awaiting possession, site visitor, buyer and so on), observation time and proposed type; no unsupported external facts |
 | A06 Evidence verifier | Claims, supporting/contradicting retrieval and trusted records | Project-filtered evidence and allowlisted primary records | Verification status, dated authority, conflicts and reason; classify reported opinion separately from verified fact |
 | A07 Findings synthesiser | Eligible verified/attributed claims and origin clusters | Read claims and source mixture | Pros/cons/neutral with exact refs, caveats and insufficiency; do not force equal counts or consensus |
 | A08 SEO/AEO editor | Moderator-approved finding revisions, page context, style contract | Read approved facts and permitted page context | Structured summary/pros/cons/Q&A and metadata proposals with claim mapping; no new factual content |
 | A09 Editorial QA | Final draft, approved findings and evidence manifest | Read and compare provided records | Blocking/nonblocking issues by content block and supporting refs; cannot grant final approval |
 | A10 Freshness/change reviewer | New/deleted/expired evidence, old approved manifest | Read diffs and change policy | Material-change classification and review reasons; deterministic invalidation operates even if model unavailable |
+| A11 Review curator | Eligible evidence from posts, comments and authorised video transcripts; construction status | Read supplied evidence only | First-person reviews, positive and negative, each from one source by one author: chosen spans, perspective, polarity, aspects and rendering (verbatim, punctuation only, shortened or translated). Never merges sources, adds words or paraphrases (D28) |
 
 ## Alternate-name and phase-name discovery (A01)
 
@@ -40,6 +41,21 @@ While matching, A01 also proposes names that sources use for a project or one of
 - Proposals have no effect until a researcher or moderator approves them in the console. Approval writes the alias, target and mode to `ai_project_configs` through the configuration API with an expected version, and the next query plan uses it. The `projects` record and the input file are never changed. Rejected proposals are kept so they are not proposed again and may become negative keywords.
 - Match rationales record which alias produced a match. Revoking an approved alias sends the associations it produced back to review through the normal dependency invalidation path.
 - Aliases are identity data, not facts about the project, and are never published as such.
+
+## Construction-status consistency (D27)
+
+A project's or phase's construction status (new launch, under construction, partially ready, ready to move) decides whether first-hand living experience is possible. Status records carry their source and date in the project configuration ([contracts/v1/content_rules.json](../contracts/v1/content_rules.json)).
+
+- A05 records each claim's perspective. The backend, not the model, compares a `resident_experience` perspective with the status in force on the post's date: before possession the claim is flagged `occupancy_before_possession`; in a partly ready project with no phase identified it is flagged `status_unknown`. Flagged claims and reviews stay out of findings and content, and their project match goes to review (a wrong phase, a stale status or a post that is not credible).
+- A08 writes for the status: "prospective buyers" or "owners awaiting possession" before handover, never "residents". A deterministic wording check blocks occupancy words in the client's own text before possession and asks for the phase in partly ready projects; A09 reports `status_inconsistent`.
+
+## First-person source reviews (D28)
+
+A11 proposes reviews in the first person because their authors wrote them that way. Each comes from one post, comment or authorised video transcript by one person, positive or negative, shown with a credit line naming who (for example "an owner awaiting possession"), the platform and the date, and the video moment for spoken reviews.
+
+- Rendering is `verbatim`, `punctuation_normalised` (dashes and hyphens removed, every word kept), `shortened` (whole sentences left out, the rest unchanged) or `translated` from Hindi or Hinglish. The backend checks every non-translated review word by word against the original; translations go to the moderator with the original beside them, and A09 reports `review_meaning_changed`.
+- Reviews are never merged, never given words the author did not write and never paraphrased by the model. They are shown on the project page with their credit, never presented as reviews written on the client and never reposted through user accounts (D21).
+- A moderator approves each revision; a flagged review cannot be approved. Withdrawal or deletion of the source removes the review through the normal dependency path.
 
 ## Initial aspect taxonomy
 

@@ -50,6 +50,55 @@
         "support": { "$ref": "#/$defs/Support" }
       }
     },
+    "PublicReview": {
+      "description": "An approved source review as the page shows it (D28): the author's words with a credit line. source_url is null unless the operating default show_review_source_links is on.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "polarity", "aspects", "credit", "source_url", "support"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "polarity": { "enum": ["positive", "negative", "mixed"] },
+        "aspects": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/Aspect" } },
+        "credit": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["speaker_label", "platform", "kind", "published", "timestamp_ms", "translated_from"],
+          "properties": {
+            "speaker_label": { "$ref": "common.schema.json#/$defs/SpeakerLabel" },
+            "platform": { "type": "string", "minLength": 1 },
+            "kind": { "enum": ["post", "comment", "video"] },
+            "published": { "$ref": "common.schema.json#/$defs/DatedValue" },
+            "timestamp_ms": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+            "translated_from": { "anyOf": [{ "$ref": "common.schema.json#/$defs/LanguageTag" }, { "type": "null" }] }
+          }
+        },
+        "source_url": { "anyOf": [{ "$ref": "common.schema.json#/$defs/HttpUrl" }, { "type": "null" }] },
+        "support": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["review", "source", "evidence"],
+          "properties": {
+            "review": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "revision"],
+              "properties": {
+                "id": { "$ref": "common.schema.json#/$defs/ReviewExcerptId" },
+                "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" }
+              }
+            },
+            "source": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" },
+            "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" } }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "credit": { "properties": { "kind": { "const": "video" } } } } },
+          "then": { "properties": { "credit": { "properties": { "timestamp_ms": { "type": "integer" } } } } }
+        }
+      ]
+    },
     "PublicSourceLink": {
       "type": "object",
       "additionalProperties": false,
@@ -76,6 +125,7 @@
         "overview",
         "advantages",
         "considerations",
+        "reviews",
         "questions",
         "sources",
         "coverage_note",
@@ -110,6 +160,11 @@
         "overview": { "$ref": "#/$defs/SupportedText" },
         "advantages": { "type": "array", "items": { "$ref": "#/$defs/SupportedItem" } },
         "considerations": { "type": "array", "items": { "$ref": "#/$defs/SupportedItem" } },
+        "reviews": {
+          "description": "Approved first-person reviews from real sources, positive and negative (D28). May be empty.",
+          "type": "array",
+          "items": { "$ref": "#/$defs/PublicReview" }
+        },
         "questions": { "type": "array", "items": { "$ref": "#/$defs/QuestionItem" } },
         "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/PublicSourceLink" } },
         "coverage_note": { "type": "string", "minLength": 1 },
@@ -142,9 +197,21 @@
       "description": "Exact dependencies of a content revision. Arrays sorted by (id, revision) and unique; hashed with the same method as the payload.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["findings", "claims", "evidence", "sources", "links", "policies", "eligibility_epoch"],
+      "required": ["findings", "claims", "reviews", "evidence", "sources", "links", "policies", "eligibility_epoch"],
       "properties": {
         "findings": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/FindingRef" } },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "revision"],
+            "properties": {
+              "id": { "$ref": "common.schema.json#/$defs/ReviewExcerptId" },
+              "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" }
+            }
+          }
+        },
         "claims": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/ClaimRef" } },
         "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" } },
         "sources": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" } },
@@ -282,7 +349,7 @@
       },
       "allOf": [
         {
-          "if": { "properties": { "target": { "properties": { "type": { "enum": ["finding", "content_revision"] } } } } },
+          "if": { "properties": { "target": { "properties": { "type": { "enum": ["finding", "review_excerpt", "content_revision"] } } } } },
           "then": {
             "properties": {
               "action": { "enum": ["approve", "reject", "changes_requested"] },
