@@ -7,7 +7,7 @@
 | Step | Work package | Status | Changed paths / commit | Validation evidence |
 |---|---|---|---|---|
 | 01 | [Requirements, source access and acceptance definition](steps/01-requirements-and-access.md) | complete (approved 25 Sep 2026) | `2b6476c`, `f0932cb`, `90a8c8b`: `seed/`, `scripts/validate_inputs.py`, `scripts/tests/`, `scripts/run_step01_checks.sh`, `evals/step-01-evaluation-brief.md`, `DECISIONS.md` | [logs/step-01](logs/step-01/README.md): all checks OK at `90a8c8b` (57/57 tests, N1–N5 fail as expected); mutation check OK at `f0932cb` |
-| 02 | [UX, architecture and contracts](steps/02-ux-architecture-and-contracts.md) | not_started | — | — |
+| 02 | [UX, architecture and contracts](steps/02-ux-architecture-and-contracts.md) | in_progress (built and checked; awaiting product-owner approval) | `57c8e3e`: `contracts/v1/`, `docs/09`, `docs/10`, `scripts/contract_tools.py`, `scripts/check_contracts.py`, `scripts/build_openapi.py`, `scripts/build_fixtures.py`, `scripts/jcs_check.mjs`, `scripts/tests/test_contracts.py`, `scripts/run_step02_checks.sh`, `DECISIONS.md` | [logs/step-02](logs/step-02/README.md): all checks OK at `57c8e3e` (110/110 tests, checker 12/12, N1–N6 fail as expected); mutation check OK |
 | 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | not_started | — | — |
 | 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | not_started | — | — |
 | 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | not_started | — | — |
@@ -25,16 +25,18 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 
 ## Current handoff
 
-- Active step: 02, not started. Step 01 is complete: approvals A–E granted 25 Sep 2026 and recorded; [logs/step-01/README.md](logs/step-01/README.md).
-- Next action: start Step 02. It freezes agent and API contracts, so first confirm with the product owner whether they include a clearly labelled the client summary entry in the website's review section (D21 alternative). The user-persona review agent in D21 is not implemented.
+- Active step: 02, built and checked, waiting for the product owner's approval of items F–K (D18 gate). Test plan, commands and approval list: [logs/step-02/README.md](logs/step-02/README.md).
+- Next action after approval: record the approvals (D22–D26 and I15 to accepted), rerun `bash scripts/run_step02_checks.sh`, mark Step 02 complete, then ask for seeded users and roles (I09) and start Step 03.
+- D21: the product owner will build the review-posting agent outside this repository and declined the labelled-summary alternative (28 Sep 2026); nothing in this repository supports it.
 - Deferred inputs, to be asked at the step that needs them (product owner's request): seeded users and roles I09 (Step 03), alternate names I01 (Step 04), transcript route I05 (Step 06), moderator capacity I11 (Step 09), correction owner I10 (before Step 11), demo machine I12 (Step 13).
 - Project inputs: all 5 in `contracts/five-project-input-template.json` with developers and 10 RERA registrations (D15, D16); slugs per D19.
 - Repository: https://github.com/deepeshgupta12/agentic_ai_review_model (private), all work on `main` (D18). No `backend/` or `web/` code yet.
 - Credentials: none configured. First expected: Anthropic API key (I02), then Brave/Firecrawl/YouTube (I03).
 - Fixture/live distinction: `contracts/client-data-example.json` is fictional and must not be presented as source evidence.
-- Last implemented commit: `90a8c8b`.
-- Last executed product checks: `bash scripts/run_step01_checks.sh` at `90a8c8b`, all OK ([log](logs/step-01/checks-20260925T070509Z.log)).
-- Spec issues to fix in Step 02 (found in the initial repo check): the baseline schema requires a non-null `micromarket` (conflicts with D01); `steps/04` requirement 4.1 still says "stable the client IDs"; the synthetic example names `gpt-6-sol` as a model; `steps/05` 5.2 assumes a contracted social provider; README omits the `scheduler` Compose service.
+- Last implemented commit: `57c8e3e`.
+- Last executed product checks: `bash scripts/run_step02_checks.sh` at `57c8e3e`, all OK ([log](logs/step-02/checks-20260928T051449Z.log)).
+- Spec issues from the initial repo check, resolved in Step 02: `micromarket` optional in contracts v1 (baseline kept as history, noted in docs/02); steps/04 4.1 and steps/05 5.2 reworded; README lists the scheduler. The baseline example's `gpt-6-sol` stays as history; v1 fixtures take model IDs from D10.
+- Tooling: contract checks use `.venv` with `scripts/requirements.txt` (created by the Step 02 script) and Node.js for the cross-language check (D26).
 
 ## Session log
 
@@ -76,6 +78,31 @@ Known defects / missing inputs / owner: deferred inputs listed above (product ow
   stakeholders; spec issues listed above (implementer, Step 02)
 Remaining acceptance checks: none for Step 01
 Next executable action: confirm the D21 alternative question, then start Step 02
+```
+
+```text
+Date / tool / branch / commit: 2026-09-25 → 2026-09-28 (paused 25 Sep, resumed 28 Sep) / Claude Code (VS Code) / main / f712a54 → 57c8e3e
+Step and scope completed: Step 02 (02.1–02.7) built and checked; awaiting approval
+Files changed: contracts/v1/ (9 schemas, routes.json, openapi.json, state_machines.json, journeys.json,
+  README.md, fixtures/); docs/09, docs/10 (generated); docs/02, 03, 04, 05; README.md; steps/04, 05;
+  scripts/contract_tools.py, check_contracts.py, build_openapi.py, build_fixtures.py, jcs_check.mjs,
+  requirements.txt, run_step02_checks.sh, run_step01_checks.sh (runs only its own tests);
+  scripts/tests/test_contracts.py; DECISIONS.md; CHANGELOG.md; PROGRESS.md; logs/step-02/
+Decisions made, with DECISIONS.md IDs: D22–D26 proposed; D10 notes on Opus 5.5/Haiku to verify at Step 03;
+  D21 updated (product owner builds that agent outside this repository); I13 done, I15 proposed
+Checks actually run and results: run_step02_checks.sh at 57c8e3e: Step 01 regression OK; 110/110 tests;
+  checker 12/12 sections; OpenAPI and fixtures current; Node v25.9.0 agrees on 15 hash/offset checks;
+  N1–N6 fail as expected; hygiene OK. Mutation check: six rules disabled one at a time, each caught
+  (first float mutation was equivalent; rerun recorded).
+  During the build the checks found and I fixed: pointer schemas that rejected their own fields; verified
+  unpublish needing a hash; a missing changes_requested content state; system actor for unpublish;
+  PolicyFamily pattern rejecting the approved family 'x'; a placeholder op reference in docs/09;
+  a test that could not follow the recursive JSON-LD schema.
+Live integrations verified (credential present + real query result): none; no credentials configured
+Fixture-only behavior still awaiting live validation: none in this step (no service is called)
+Known defects / missing inputs / owner: approvals F–K (product owner); seeded users and roles I09 before Step 03
+Remaining acceptance checks: product-owner approval of F–K
+Next executable action: product owner reviews logs/step-02/README.md and approves or amends F–K
 ```
 
 ## Session entry template

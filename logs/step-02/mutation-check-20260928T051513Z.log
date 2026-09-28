@@ -1,0 +1,47 @@
+Step 02 mutation check: each rule below is disabled in scripts/contract_tools.py on a scratch copy;
+the suite must then fail, and the failing tests must be the ones written for that rule.
+date (UTC): 2026-09-28T05:15:13Z
+commit:     57c8e3e
+
+== rule disabled: if binding.get\("eligibility_epoch"\) != state\["eligibility_epoch"\]:
+FAIL: test_rule_vectors_pass (test_contracts.UC12ApprovalAndPublicRead)
+FAIL: test_whole_checker_passes (test_contracts.UC15DocsAndSeedAlignment)
+Ran 53 tests in 1.937s
+FAILED (failures=2)
+
+== rule disabled: if state.get\("serving_state"\) != "active" or not state.get\("active"\):
+FAIL: test_public_read_serves_nothing_when_disabled (test_contracts.UC12ApprovalAndPublicRead)
+FAIL: test_rule_vectors_pass (test_contracts.UC12ApprovalAndPublicRead)
+FAIL: test_whole_checker_passes (test_contracts.UC15DocsAndSeedAlignment)
+Ran 53 tests in 1.809s
+FAILED (failures=3)
+
+== rule disabled: if isinstance\(value, float\):
+Ran 53 tests in 1.743s
+OK
+
+== rule disabled: if sorted\(node.get\("required", \[\]\)\) != sorted\(properties\):
+FAIL: test_unsupported_features_detected (test_contracts.UC13AgentOutputs) (case='optional property')
+Ran 53 tests in 1.763s
+FAILED (failures=1)
+
+== rule disabled: elif route\["access"\] == "session" and actor not in route_roles
+FAIL: test_role_not_allowed_detected (test_contracts.UC09ApiAndJourneys)
+Ran 53 tests in 1.592s
+FAILED (failures=1)
+
+== rule disabled: for state in sorted\(states - reachable\):
+FAIL: test_unreachable_state_detected (test_contracts.UC08VocabularyAndStateMachines)
+Ran 53 tests in 1.345s
+FAILED (failures=1)
+
+Note: the third mutation above ('if isinstance(value, float)' -> 'if False') was an equivalent mutant:
+floats then fell through to the final 'unsupported type' error and were still rejected, so no test could fail.
+Rerun with a mutation that really lets floats through:
+
+== rule disabled: floats accepted (raise CanonicalError(non-integer numbers ...) -> return)
+FAIL: test_hash_vectors_pass (test_contracts.UC11HashingAndAnchors)
+FAIL: test_unsafe_values_are_rejected (test_contracts.UC11HashingAndAnchors) (value="{'a': 1.5}")
+FAIL: test_whole_checker_passes (test_contracts.UC15DocsAndSeedAlignment)
+Ran 53 tests in 1.858s
+FAILED (failures=3)
