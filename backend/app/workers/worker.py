@@ -1,6 +1,6 @@
 """Worker process: recovers expired leases, claims jobs, heartbeats and runs handlers.
 
-Handlers are registered by later steps (collection, analysis, publication delivery).
+Step 04 registers invalidate_dependencies; later steps add collection, analysis and delivery.
 A job without a handler fails visibly instead of silently disappearing.
 """
 
@@ -18,6 +18,7 @@ from pymongo.database import Database
 
 from app.config import get_settings
 from app.db import get_db
+from app.identity import invalidation
 from app.jobs import queue
 from app.observability import configure_logging, log_event, register_secrets
 
@@ -36,6 +37,9 @@ def register(kind: str) -> Callable[[Handler], Handler]:
         return func
 
     return wrap
+
+
+register("invalidate_dependencies")(invalidation.handle)
 
 
 def run_one(db: Database[dict[str, Any]], owner: str, lease_seconds: int) -> str | None:

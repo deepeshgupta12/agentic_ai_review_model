@@ -65,6 +65,43 @@ def _login_attempt_validator() -> dict[str, Any]:
     }
 
 
+def _payload_validator() -> dict[str, Any]:
+    """Erasable source text (payload_ref.store = payload_store). Erasure deletes the document; metadata stays."""
+    return {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "additionalProperties": False,
+            "required": ["_id", "text", "sha256", "created_at"],
+            "properties": {
+                "_id": {"bsonType": "string", "minLength": 1},
+                "text": {"bsonType": "string"},
+                "sha256": {"bsonType": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+                "created_at": {"bsonType": "date"},
+            },
+        }
+    }
+
+
+def _idempotency_validator() -> dict[str, Any]:
+    """Idempotency-Key results (docs/03): same key and body returns the stored result."""
+    return {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "additionalProperties": False,
+            "required": ["_id", "operation_id", "user_id", "digest", "status_code", "response", "created_at"],
+            "properties": {
+                "_id": {"bsonType": "string", "pattern": "^[0-9a-f]{64}$"},
+                "operation_id": {"bsonType": "string"},
+                "user_id": {"bsonType": "string"},
+                "digest": {"bsonType": "string", "pattern": "^[0-9a-f]{64}$"},
+                "status_code": {"bsonType": "int"},
+                "response": {"bsonType": "object"},
+                "created_at": {"bsonType": "date"},
+            },
+        }
+    }
+
+
 def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
     string = {"bsonType": "string"}
     return [
@@ -142,6 +179,79 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
                 IndexSpec("by_run", [("run_id", ASCENDING)]),
                 IndexSpec("by_project_time", [("project_id", ASCENDING), ("created_at", DESCENDING)]),
             ],
+        ),
+        # Step 04: identity, source links, evidence spans, alias proposals, decisions and evaluations.
+        CollectionSpec(
+            "ai_sources",
+            contracts.mongo_validator(
+                "sources.schema.json#/$defs/SourceRevision", id_field=None, extra={"_id": string}
+            ),
+            [
+                IndexSpec("uniq_id_revision", [("id", ASCENDING), ("revision", ASCENDING)], {"unique": True}),
+                IndexSpec(
+                    "uniq_native_revision",
+                    [("connector_id", ASCENDING), ("native_id", ASCENDING), ("revision", ASCENDING)],
+                    {"unique": True},
+                ),
+            ],
+        ),
+        CollectionSpec("ai_payloads", _payload_validator(), []),
+        CollectionSpec(
+            "ai_project_source_links",
+            contracts.mongo_validator("sources.schema.json#/$defs/ProjectSourceLink"),
+            [
+                IndexSpec(
+                    "uniq_segment",
+                    [
+                        ("project_id", ASCENDING),
+                        ("source.id", ASCENDING),
+                        ("source.revision", ASCENDING),
+                        ("segment_key", ASCENDING),
+                    ],
+                    {"unique": True},
+                ),
+                IndexSpec("by_project_status", [("project_id", ASCENDING), ("status", ASCENDING), ("_id", DESCENDING)]),
+                IndexSpec("by_matched_alias", [("project_id", ASCENDING), ("match.matched_alias", ASCENDING)]),
+                IndexSpec("by_source", [("source.id", ASCENDING), ("source.revision", ASCENDING)]),
+            ],
+        ),
+        CollectionSpec(
+            "ai_evidence",
+            contracts.mongo_validator("evidence.schema.json#/$defs/Evidence", id_field=None, extra={"_id": string}),
+            [
+                IndexSpec("uniq_id_revision", [("id", ASCENDING), ("revision", ASCENDING)], {"unique": True}),
+                IndexSpec("by_link", [("link_id", ASCENDING)]),
+                IndexSpec("by_source", [("source.id", ASCENDING), ("source.revision", ASCENDING)]),
+            ],
+        ),
+        CollectionSpec(
+            "ai_alias_proposals",
+            contracts.mongo_validator("catalogue.schema.json#/$defs/AliasProposal"),
+            [
+                IndexSpec(
+                    "uniq_project_alias", [("project_id", ASCENDING), ("normalised", ASCENDING)], {"unique": True}
+                ),
+                IndexSpec("by_project_status", [("project_id", ASCENDING), ("status", ASCENDING), ("_id", DESCENDING)]),
+            ],
+        ),
+        CollectionSpec(
+            "ai_review_decisions",
+            contracts.mongo_validator("content.schema.json#/$defs/ReviewDecision"),
+            [
+                IndexSpec(
+                    "by_target", [("target.type", ASCENDING), ("target.id", ASCENDING), ("created_at", DESCENDING)]
+                )
+            ],
+        ),
+        CollectionSpec(
+            "ai_evaluations",
+            contracts.mongo_validator("operations.schema.json#/$defs/EvaluationRun"),
+            [IndexSpec("by_dataset", [("dataset.name", ASCENDING), ("created_at", DESCENDING)])],
+        ),
+        CollectionSpec(
+            "ai_idempotency_keys",
+            _idempotency_validator(),
+            [IndexSpec("ttl_created_at", [("created_at", ASCENDING)], {"expireAfterSeconds": 7 * 86400})],
         ),
     ]
 

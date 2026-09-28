@@ -1,5 +1,5 @@
 # Backend image for api, worker, scheduler and db-setup (Step 03.3).
-# Built from the repository root so contracts/ and seed/ are included.
+# Built from the repository root so contracts/, seed/, prompts/ and evals/ are included.
 FROM python:3.13-slim
 
 COPY --from=ghcr.io/astral-sh/uv:0.10.2 /uv /uvx /bin/
@@ -19,6 +19,8 @@ RUN uv sync --frozen --no-dev
 
 COPY contracts /srv/contracts
 COPY seed /srv/seed
+COPY prompts /srv/prompts
+COPY evals /srv/evals
 
 RUN useradd --system --uid 10001 --no-create-home app
 USER app

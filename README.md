@@ -27,6 +27,10 @@ Needs Docker with Compose v2+, [uv](https://docs.astral.sh/uv/), pnpm (through `
 | `make smoke-model` | Confirms the configured Claude model IDs and makes one structured-output call, or prints `skipped` without a key |
 | `make test`, `make lint`, `make typecheck` | Every test suite, linter and type check (MongoDB must be up) |
 | `make check-step03` | The full Step 03 check with a saved log in `logs/step-03/` |
+| `make plan-queries` | Bounded search queries for each project (approved names only) |
+| `make eval-identity` | Identity evaluation on the synthetic labelled set |
+| `make smoke-identity` | The whole identity path on a fictional catalogue in a scratch database |
+| `make check-step04` | The full Step 04 check with a saved log in `logs/step-04/` |
 | `make down` | Stops everything; the database volume is kept |
 
 Then open http://localhost:3000/console and sign in. The API is on http://localhost:8000 (`/healthz`, `/readyz`). All ports listen on 127.0.0.1 only. `.env` is git-ignored and must never be committed.

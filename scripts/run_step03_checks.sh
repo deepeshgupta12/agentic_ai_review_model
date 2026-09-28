@@ -140,6 +140,7 @@ seed_projects_twice() {
   "$PY" - "$T/seed.json" <<'EOF'
 import json, sys
 report = json.load(open(sys.argv[1]))
+report = report["projects"] if isinstance(report, dict) else report  # Step 04 adds construction_status
 for item in report:
     print(f"{item['slug']}: {item['outcome']}")
 sys.exit(0 if len(report) == 5 and all(item["outcome"] == "unchanged" for item in report) else 1)

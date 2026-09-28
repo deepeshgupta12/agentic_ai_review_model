@@ -1,10 +1,12 @@
-"""Seed the project catalogue from the five-project input file (Step 03.4, D15, D16, D19, D27).
+"""Import the project catalogue from the five-project input file (Steps 03.4 and 04.1, D15, D16, D19, D27).
 
-Safe to re-run: an existing project is found by its the client ID, else by
-normalised name and city; its ID and slug never change. The project record and its
-configuration are written in one transaction. An existing configuration is left
-alone (researchers may have edited it) except that missing input-derived aliases and
-the export status record are added.
+Used by `python -m app.cli seed-projects` and by POST /v1/projects/import. Safe to
+re-run: an existing project is found by its the client ID, else by normalised name
+and city; its ID and slug never change. The project record and its configuration are
+written in one transaction. An existing configuration is left alone (researchers may
+have edited it) except that missing input-derived aliases and the export status record
+are added. `seed_status_records` adds the phase and project status records kept in
+seed/construction_status.json (I16).
 """
 
 from __future__ import annotations
@@ -28,15 +30,19 @@ class SeedError(ValueError):
     pass
 
 
+def validate_input(data: Any, contracts: ContractStore) -> list[str]:
+    return contracts.errors(data, "catalogue.schema.json#/$defs/ProjectInputFile")
+
+
 def load_input(path: Path, contracts: ContractStore) -> dict[str, Any]:
     data = json.loads(path.read_text(encoding="utf-8"))
-    errors = contracts.errors(data, "catalogue.schema.json#/$defs/ProjectInputFile")
+    errors = validate_input(data, contracts)
     if errors:
         raise SeedError("project input file is invalid:\n  " + "\n  ".join(errors[:10]))
-    return data
+    return dict(data)
 
 
-def _aliases(item: dict[str, Any]) -> list[dict[str, Any]]:
+def input_aliases(item: dict[str, Any]) -> list[dict[str, Any]]:
     aliases: list[dict[str, Any]] = []
     seen: set[str] = set()
 
@@ -87,7 +93,7 @@ def _status_records(item: dict[str, Any], contracts: ContractStore) -> list[dict
     ]
 
 
-def _project_fields(item: dict[str, Any]) -> dict[str, Any]:
+def project_fields(item: dict[str, Any]) -> dict[str, Any]:
     ref = item.get("client_ref")
     return {
         "project_name": item["project_name"],
@@ -129,13 +135,25 @@ def seed_projects(
     input_path: Path,
     seed_dir: Path,
 ) -> list[dict[str, Any]]:
-    data = load_input(input_path, contracts)
+    return import_projects(client, db, contracts, load_input(input_path, contracts), seed_dir)
+
+
+def import_projects(
+    client: MongoClient[dict[str, Any]],
+    db: Database[dict[str, Any]],
+    contracts: ContractStore,
+    data: dict[str, Any],
+    seed_dir: Path,
+    actor: dict[str, Any] = audit.SYSTEM_ACTOR,
+    origin: str = "five-project input file",
+) -> list[dict[str, Any]]:
+    """Create or update the catalogue from a validated input file. Returns one report row per project."""
     defaults = _defaults(seed_dir)
     report: list[dict[str, Any]] = []
     for item in data["projects"]:
-        fields = _project_fields(item)
+        fields = project_fields(item)
         key = match_key(item["project_name"], item["city"])
-        aliases = _aliases(item)
+        aliases = input_aliases(item)
         status_records = _status_records(item, contracts)
 
         def write(
@@ -193,7 +211,7 @@ def seed_projects(
                         "negative_keywords": [],
                         **defaults,
                         "updated_at": now,
-                        "updated_by": audit.SYSTEM_ACTOR,
+                        "updated_by": actor,
                     },
                     session=session,
                 )
@@ -212,7 +230,7 @@ def seed_projects(
                         {
                             "$push": {"aliases": {"$each": new_aliases}, "construction_status": {"$each": new_status}},
                             "$inc": {"version": 1},
-                            "$set": {"updated_at": now, "updated_by": audit.SYSTEM_ACTOR},
+                            "$set": {"updated_at": now, "updated_by": actor},
                         },
                         session=session,
                     )
@@ -224,11 +242,80 @@ def seed_projects(
                     f"project.{outcome}",
                     "project",
                     project_id,
-                    audit.SYSTEM_ACTOR,
-                    details={"slug": slug, "source": "five-project input file"},
+                    actor,
+                    details={"slug": slug, "source": origin},
                     session=session,
                 )
             return {"project_id": project_id, "slug": slug, "project_name": item["project_name"], "outcome": outcome}
+
+        report.append(run_in_transaction(client, write))
+    return report
+
+
+def load_status_records(path: Path, contracts: ContractStore) -> list[dict[str, Any]]:
+    """seed/construction_status.json: StatusRecord plus the project slug (I16, D27)."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    records: list[dict[str, Any]] = []
+    for index, item in enumerate(data["records"]):
+        record = {k: v for k, v in item.items() if k != "project_slug"}
+        errors = contracts.errors(record, "catalogue.schema.json#/$defs/StatusRecord")
+        if errors or not isinstance(item.get("project_slug"), str):
+            raise SeedError(f"{path.name} records[{index}] is invalid: {'; '.join(errors) or 'project_slug missing'}")
+        records.append(item)
+    return records
+
+
+def seed_status_records(
+    client: MongoClient[dict[str, Any]], db: Database[dict[str, Any]], contracts: ContractStore, path: Path
+) -> list[dict[str, Any]]:
+    """Add each status record to its project's configuration unless an identical record is there."""
+    report: list[dict[str, Any]] = []
+    for item in load_status_records(path, contracts):
+        record = {k: v for k, v in item.items() if k != "project_slug"}
+
+        def write(
+            session: ClientSession, item: dict[str, Any] = item, record: dict[str, Any] = record
+        ) -> dict[str, Any]:
+            project = db["projects"].find_one({"slug": item["project_slug"]}, session=session)
+            if project is None:
+                raise SeedError(f"{item['project_slug']}: no such project; run seed-projects first")
+            target = record["applies_to"]
+            if target["kind"] == "phase" and target["rera_id"] not in {
+                r["id_normalised"] for r in project["rera_registrations"]
+            }:
+                raise SeedError(f"{item['project_slug']}: {target['rera_id']} is not one of its RERA registrations")
+            config = db["ai_project_configs"].find_one({"_id": project["_id"]}, session=session)
+            if config is None:
+                raise SeedError(f"{item['project_slug']}: no configuration; run seed-projects first")
+            outcome = "unchanged"
+            if record not in config["construction_status"]:
+                result = db["ai_project_configs"].update_one(
+                    {"_id": project["_id"], "version": config["version"]},
+                    {
+                        "$push": {"construction_status": record},
+                        "$inc": {"version": 1},
+                        "$set": {"updated_at": utcnow(), "updated_by": audit.SYSTEM_ACTOR},
+                    },
+                    session=session,
+                )
+                if result.modified_count != 1:
+                    raise SeedError(f"{item['project_slug']}: configuration changed while seeding; run again")
+                audit.record(
+                    db,
+                    "project_config.status_added",
+                    "project",
+                    project["_id"],
+                    audit.SYSTEM_ACTOR,
+                    details={"status": record["status"], "applies_to": target["rera_id"] or "project"},
+                    session=session,
+                )
+                outcome = "added"
+            return {
+                "project_slug": item["project_slug"],
+                "applies_to": target["rera_id"] or "project",
+                "status": record["status"],
+                "outcome": outcome,
+            }
 
         report.append(run_in_transaction(client, write))
     return report

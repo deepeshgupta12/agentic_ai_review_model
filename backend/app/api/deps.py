@@ -19,6 +19,7 @@ from app.config import Settings, get_settings
 from app.contracts import ContractStore, get_contracts
 from app.db import get_db
 from app.errors import ApiError
+from app.ids import ID_PATTERN
 
 MUTATING = {"POST", "PUT", "PATCH", "DELETE"}
 
@@ -83,3 +84,19 @@ def require(operation_id: str) -> Callable[..., Principal]:
 
     dependency.__name__ = f"require_{operation_id}"
     return dependency
+
+
+def contract_body(contracts: ContractStore, body: Any, ref: str) -> dict[str, Any]:
+    """The request body checked against its contract schema; 422 with field messages otherwise."""
+    problems = contracts.errors(body, ref)
+    if problems:
+        fields = [{"path": p.split(": ", 1)[0], "message": p.split(": ", 1)[-1][:300]} for p in problems[:10]]
+        raise ApiError(422, "validation_failed", "The request does not match the contract", fields=fields)
+    return dict(body)
+
+
+def known_id(value: str, prefix: str) -> str:
+    """A path ID with the right prefix, else 404 (a malformed ID never reveals whether a record exists)."""
+    if not ID_PATTERN.match(value) or not value.startswith(f"{prefix}_"):
+        raise ApiError(404, "not_found", "Not found")
+    return value

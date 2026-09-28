@@ -5,6 +5,21 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Project identity — 28 September 2026 (Step 04)
+
+- Identity service in `backend/app/identity/`:
+  - deterministic matching of sources to projects and phases (D36);
+  - project-source links and evidence spans;
+  - moderator corrections (accept, reject, split, remap) with dependency invalidation;
+  - alias proposals with backend checks for strong identifiers, collisions and generic names (D37);
+  - the A01 identity agent for review segments, which annotates only;
+  - bounded query plans;
+  - a synthetic identity evaluation (D39).
+- APIs: import (with Idempotency-Key), project list and detail, configuration updates, link decisions, alias proposals and their decisions.
+- Construction status per phase from I16 in `seed/construction_status.json`.
+- The link state machine and journey J05 were amended so revoked aliases return matches to review (D35).
+- New commands: `make plan-queries`, `make eval-identity`, `make smoke-identity`, `make check-step04`.
+
 ## Engineering foundation — 28 September 2026 (Step 03)
 
 - Backend (`backend/`): FastAPI API, worker and scheduler on Python 3.13; settings with explicit fixture/live modes; JSON logs with request IDs and redaction; MongoDB setup that creates collections, contract-derived validators and indexes and is safe to repeat; seeding of the five projects and the coordinator; own sign-in with argon2id, signed session cookie, CSRF and role checks from `routes.json`; durable jobs with leases, fencing, recovery, retries and cancellation; LangGraph checkpoints in MongoDB; the Claude gateway with structured outputs, one bounded repair, retries and a model-ID check.

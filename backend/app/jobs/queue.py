@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from pymongo import ReturnDocument
+from pymongo.client_session import ClientSession
 from pymongo.database import Database
 from pymongo.errors import DuplicateKeyError
 
@@ -60,6 +61,7 @@ def enqueue(
     project_id: str | None = None,
     max_attempts: int = 5,
     deadline: datetime | None = None,
+    session: ClientSession | None = None,
 ) -> tuple[dict[str, Any], bool]:
     """Create the job unless one with this logical key exists. Returns (job, created)."""
     if kind not in JOB_KINDS:
@@ -84,11 +86,15 @@ def enqueue(
         "created_at": now,
         "updated_at": now,
     }
+    if session is not None:  # inside a transaction a duplicate key would abort it, so look first
+        existing = db[JOBS].find_one({"logical_key": logical_key}, session=session)
+        if existing is not None:
+            return existing, False
     try:
-        db[JOBS].insert_one(doc)
+        db[JOBS].insert_one(doc, session=session)
         return doc, True
     except DuplicateKeyError:
-        existing = db[JOBS].find_one({"logical_key": logical_key})
+        existing = db[JOBS].find_one({"logical_key": logical_key}, session=session)
         assert existing is not None
         return existing, False
 

@@ -41,6 +41,7 @@ While matching, A01 also proposes names that sources use for a project or one of
 - Proposals have no effect until a researcher or moderator approves them in the console. Approval writes the alias, target and mode to `ai_project_configs` through the configuration API with an expected version, and the next query plan uses it. The `projects` record and the input file are never changed. Rejected proposals are kept so they are not proposed again and may become negative keywords.
 - Match rationales record which alias produced a match. Revoking an approved alias sends the associations it produced back to review through the normal dependency invalidation path.
 - Aliases are identity data, not facts about the project, and are never published as such.
+- A01 sees only segments that deterministic matching sent to review. It records its suggestion, a probable phase and its rationale on the link, but cannot change the link's status; a moderator decides (D36). Rules, thresholds and the backend checks are in backend/app/identity/ (D36, D37).
 
 ## Construction-status consistency (D27)
 

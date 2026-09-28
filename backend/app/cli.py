@@ -5,6 +5,10 @@ python -m app.cli seed-projects [--input PATH]
 python -m app.cli seed-users [--reset-password]
 python -m app.cli smoke-model
 python -m app.cli check-config
+python -m app.cli match-text --text TEXT [--focus SLUG ...]   (dry run: nothing is stored)
+python -m app.cli plan-queries [--project SLUG]
+python -m app.cli eval-identity [--save]
+python -m app.cli fixture-smoke-identity   (fictional catalogue in a scratch database, then dropped)
 """
 
 from __future__ import annotations
@@ -15,6 +19,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from app.config import REPO_ROOT, get_settings
 from app.contracts import get_contracts
@@ -33,15 +38,17 @@ def cmd_setup_db(args: argparse.Namespace) -> int:
 
 
 def cmd_seed_projects(args: argparse.Namespace) -> int:
-    from app.seed.projects import SeedError, seed_projects
+    from app.seed.projects import SeedError, seed_projects, seed_status_records
 
     db = get_db()
+    settings = get_settings()
     try:
-        report = seed_projects(db.client, db, get_contracts(), Path(args.input), get_settings().seed_dir)
+        report = seed_projects(db.client, db, get_contracts(), Path(args.input), settings.seed_dir)
+        statuses = seed_status_records(db.client, db, get_contracts(), settings.seed_dir / "construction_status.json")
     except SeedError as exc:
         print(f"seed-projects failed: {exc}", file=sys.stderr)
         return 1
-    _print(report)
+    _print({"projects": report, "construction_status": statuses})
     return 0
 
 
@@ -117,6 +124,173 @@ def cmd_check_config(_: argparse.Namespace) -> int:
     return 0
 
 
+def _slug_to_id(db: Any, slug: str) -> str:
+    project = db["projects"].find_one({"slug": slug}, {"_id": 1})
+    if project is None:
+        raise SystemExit(f"no project with slug {slug!r}; run seed-projects first")
+    return str(project["_id"])
+
+
+def cmd_match_text(args: argparse.Namespace) -> int:
+    """Show what the deterministic matcher decides for a text, without storing anything."""
+    from app.identity.catalogue import load_identities
+    from app.identity.matching import match_text
+
+    db = get_db()
+    focus = [_slug_to_id(db, s) for s in args.focus]
+    identities = load_identities(db)
+    names = {i.id: i.slug for i in identities}
+    outcomes = match_text(identities, args.text, focus)
+    _print(
+        [
+            {
+                "project": names[o.project_id],
+                "segment": o.segment.key,
+                "status": o.status,
+                "rule_score": o.rule_score,
+                "signals": o.signals,
+                "matched_alias": o.matched_alias,
+                "phase": o.phase,
+                "rationale": o.rationale,
+            }
+            for o in outcomes
+        ]
+        or "no catalogue project is named in this text"
+    )
+    return 0
+
+
+def cmd_plan_queries(args: argparse.Namespace) -> int:
+    from app.identity.queries import build_query_plan
+
+    db = get_db()
+    settings = get_settings()
+    registry = json.loads((settings.seed_dir / "connectors.json").read_text(encoding="utf-8"))
+    connectors = {c["id"]: c for c in registry["connectors"]}
+    ids = [_slug_to_id(db, args.project)] if args.project else [p["_id"] for p in db["projects"].find({}, {"_id": 1})]
+    plans = []
+    for project_id in ids:
+        plan = build_query_plan(db, project_id, connectors)
+        errors = get_contracts().errors(plan["plan"], "agents.schema.json#/$defs/DiscoveryPlan")
+        if errors:
+            print(
+                f"plan-queries: plan for {project_id} breaks the DiscoveryPlan contract: {errors[:3]}", file=sys.stderr
+            )
+            return 1
+        plans.append(plan)
+    _print(plans)
+    return 0
+
+
+def cmd_eval_identity(args: argparse.Namespace) -> int:
+    from app.db import utcnow
+    from app.identity.evaluation import evaluate_dataset, load_dataset
+    from app.ids import new_id
+
+    contracts = get_contracts()
+    catalogue, cases = load_dataset(REPO_ROOT / "evals" / "identity" / "v1", contracts)
+    result = evaluate_dataset(catalogue, cases)
+    record = {k: result[k] for k in ("dataset", "config", "status", "metrics")}
+    if args.save:
+        record = {"_id": new_id("evl"), **record, "created_at": utcnow()}
+        get_db()["ai_evaluations"].insert_one(record)
+    summary = {
+        "dataset": result["dataset"],
+        "rules": result["config"]["schema_version"],
+        "metrics": {
+            m["name"]: {"value": m["value"], "n": m["sample_size"], "note": m["note"]} for m in result["metrics"]
+        },
+        "auto_accept_precision_target_met": result["target_met"],
+        "saved_as": record.get("_id"),
+        "caution": "synthetic, fictional cases written with the rules; they show the rules behave as designed, "
+        "not real-world precision (real labels at Step 12)",
+    }
+    _print(summary)
+    return 0 if result["target_met"] else 1
+
+
+def cmd_fixture_smoke_identity(_: argparse.Namespace) -> int:
+    """The whole identity path on the fictional catalogue in a scratch database: source, match, links,
+    evidence, a moderator correction and the worker's invalidation job. The real catalogue is untouched."""
+    import secrets
+
+    from app.identity.intake import store_text_source
+    from app.identity.links import decide_link
+    from app.identity.service import identify_source
+    from app.ids import new_id
+    from app.seed.projects import import_projects
+    from app.setup.database import setup_database
+    from app.workers.worker import run_one
+
+    settings, contracts = get_settings(), get_contracts()
+    client = get_db().client
+    scratch = client[f"sy_poc_smoke_{secrets.token_hex(4)}"]
+    checks: dict[str, bool] = {}
+    try:
+        setup_database(scratch, contracts)
+        data = json.loads((REPO_ROOT / "evals" / "identity" / "v1" / "catalogue.json").read_text(encoding="utf-8"))
+        ids = {
+            r["project_name"]: r["project_id"]
+            for r in import_projects(client, scratch, contracts, data, settings.seed_dir)
+        }
+        q, t = ids["Quillon Residences"], ids["Tavira Vista"]
+
+        def source(native_id: str, text: str) -> dict[str, Any]:
+            return store_text_source(
+                scratch,
+                connector_id="firecrawl",
+                native_id=native_id,
+                canonical_url=f"https://smoke.example.test/{native_id}",
+                source_kind="forum_post",
+                text=text,
+                policy_family="web_public_pages",
+                seed_dir=settings.seed_dir,
+            )
+
+        comparison = source(
+            "c1",
+            "Two options.\n\nQuillon Residences in Sector 102: big balconies.\n\n"
+            "Tavira Vista in Sector 88: good finish.",
+        )
+        report = identify_source(client, scratch, contracts, settings.seed_dir, comparison, focus_project_ids=[q])
+        links = {row["project_id"]: row for row in report["links"]}
+        checks["comparison: one source, two projects, distinct segments"] = (
+            set(links) == {q, t}
+            and scratch["ai_sources"].count_documents({}) == 1
+            and links[q]["segment_key"] != links[t]["segment_key"]
+        )
+        elsewhere = source("c2", "Quillon Residences in Pune has a lovely clubhouse.")
+        other = identify_source(client, scratch, contracts, settings.seed_dir, elsewhere, focus_project_ids=[q])
+        checks["same name in another city is rejected"] = [r["status"] for r in other["links"]] == ["rejected"]
+        link = scratch["ai_project_source_links"].find_one({"_id": links[q]["link_id"]})
+        if link is None:
+            raise RuntimeError("the comparison produced no link for Quillon Residences")
+        checks["evidence created for the accepted segment"] = (
+            scratch["ai_evidence"].count_documents({"link_id": link["_id"]}) == 1
+        )
+        moderator = {"kind": "user", "user_id": new_id("usr"), "role": "moderator"}
+        body = {
+            "action": "reject",
+            "expected_version": link["version"],
+            "reason": "fixture smoke check",
+            "split_segments": None,
+            "remap_project_id": None,
+            "phase_rera_id": None,
+        }
+        decided = decide_link(client, scratch, contracts, settings.seed_dir, link["_id"], body, moderator)
+        checks["moderator correction recorded"] = decided["status"] == "rejected" and decided["decided_by"] is not None
+        status = run_one(scratch, "smoke-worker", 30)
+        audit = scratch["ai_audit_events"].find_one({"action": "dependencies.invalidated"})
+        checks["worker ran the invalidation job"] = status == "completed" and audit is not None
+        checks["evidence on the rejected link is now ineligible"] = (
+            audit is not None and audit["details"]["evidence_made_ineligible"] == 1
+        )
+    finally:
+        client.drop_database(scratch.name)
+    _print({"scratch_database": scratch.name, "dropped": True, "checks": checks})
+    return 0 if checks and all(checks.values()) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.cli")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -135,6 +309,19 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("check-config", help="show mode, models and which credentials are present").set_defaults(
         func=cmd_check_config
     )
+    p = sub.add_parser("match-text", help="dry run of project matching on a text (stores nothing)")
+    p.add_argument("--text", required=True)
+    p.add_argument("--focus", nargs="*", default=[], help="slugs of projects whose search found the text")
+    p.set_defaults(func=cmd_match_text)
+    p = sub.add_parser("plan-queries", help="bounded search queries per project (approved aliases only)")
+    p.add_argument("--project", help="project slug; all projects when omitted")
+    p.set_defaults(func=cmd_plan_queries)
+    p = sub.add_parser("eval-identity", help="identity evaluation on the labelled dataset")
+    p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
+    p.set_defaults(func=cmd_eval_identity)
+    sub.add_parser(
+        "fixture-smoke-identity", help="identity path on the fictional catalogue in a scratch database"
+    ).set_defaults(func=cmd_fixture_smoke_identity)
     args = parser.parse_args(argv)
     return int(args.func(args))
 

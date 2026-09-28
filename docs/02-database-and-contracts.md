@@ -35,6 +35,7 @@ Version these changes as a new contract revision, update fixtures and adapters, 
 | `ai_review_excerpts` | Unique `(project_id, id, revision)`; one source revision, its evidence spans, original words, rendering, displayed text, perspective, polarity, consistency flags and review status (D28) | Review curation service / review API |
 | `ai_alias_proposals` | Unique `(project_id, normalised_alias)`; alias as written, target project/phase, alias type, evidence refs, independent-origin count, collision result, status (proposed/approved/rejected/revoked) and decision reference | Identity service (proposals) / configuration API (decisions) |
 | `ai_sources` | Unique `(platform, native_id, revision)`; source identity, dates, hash, policy version and permitted payload reference | Ingestion service |
+| `ai_payloads` | Erasable source text keyed by source revision (`payload_ref.key`); erasure deletes it and leaves the metadata (D38) | Ingestion service |
 | `ai_project_source_links` | Unique `(project_id, source_id, source_revision, segment_key)`; match status and rationale | Identity service / moderator |
 | `ai_media_segments` | Unique `(source_id, revision, segment_key)`; time range, language, modality and permitted file reference | Media worker |
 | `ai_evidence` | Source revision and anchor; indexes for source/dependency invalidation | Evidence service |
@@ -50,6 +51,7 @@ Version these changes as a new contract revision, update fixtures and adapters, 
 | `ai_source_policies` | Immutable policy versions, scope and expiry; current eligibility pointer | Authorised administrator |
 | `ai_origin_clusters` | Cluster membership/version and provenance | Deduplication service |
 | `ai_audit_events` | Actor/action/target/time; no raw source payload | Backend services |
+| `ai_idempotency_keys` | Operation, user, key hash, request digest and stored response for seven days (docs/03 Idempotency-Key, D38) | API |
 | `ai_deletion_requests` | Source/policy scope, dependent IDs and erasure progress | Lifecycle service |
 | `ai_evaluations` | Dataset/version/model/prompt/config and measured results | Evaluation runner |
 | Checkpointer collections | Framework-specific run/thread/checkpoint keys | LangGraph persistence |

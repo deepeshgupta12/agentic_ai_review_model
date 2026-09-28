@@ -59,6 +59,10 @@ Output schemas use only what Claude structured outputs support: closed objects, 
 
 The baseline files (`contracts/client-data-*.json`) stay as history. Notable differences: `micromarket`, `client_id`, `page_url` and RERA references are optional; model IDs come from configuration, not fixtures.
 
+## Changes since Step 02
+
+- 1.1.0 of `state_machines.json` and `journeys.json` (Step 04, D35): links may return from `auto_accepted` or `accepted` to `needs_review`, by the system only, when an alias they relied on is revoked or a consistency check flags them. J05 shows it.
+
 ## Checks
 
 ```bash

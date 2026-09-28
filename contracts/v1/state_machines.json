@@ -1,6 +1,6 @@
 {
   "description": "State machines for contracts v1 (docs/05 'Separate state machines'). Each machine's states equal its enum in common.schema.json. actors: role names, 'system' (backend/worker) or 'public'. Models are never actors. The backend rejects any transition not listed (error invalid_transition).",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "machines": {
     "execution_job": {
       "enum": "common.schema.json#/$defs/JobStatus",
@@ -148,7 +148,9 @@
         { "from": "rejected", "to": "accepted", "actors": ["moderator"], "trigger": "Moderator reverses a rejection" },
         { "from": "needs_review", "to": "superseded", "actors": ["moderator"], "trigger": "Split into segments or remapped to another project" },
         { "from": "auto_accepted", "to": "superseded", "actors": ["moderator"], "trigger": "Split into segments or remapped to another project" },
-        { "from": "accepted", "to": "superseded", "actors": ["moderator"], "trigger": "Split into segments or remapped to another project" }
+        { "from": "accepted", "to": "superseded", "actors": ["moderator"], "trigger": "Split into segments or remapped to another project" },
+        { "from": "auto_accepted", "to": "needs_review", "actors": ["system"], "trigger": "An alias the match relied on was revoked, or a consistency check flagged it (D17, D27, D35); the match returns to review" },
+        { "from": "accepted", "to": "needs_review", "actors": ["system"], "trigger": "An alias the match relied on was revoked, or a consistency check flagged it (D17, D27, D35); the match returns to review" }
       ]
     },
     "alias_proposal": {

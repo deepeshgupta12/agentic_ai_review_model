@@ -1,0 +1,73 @@
+{
+  "instructions": "SYNTHETIC, FICTIONAL catalogue for the Step 04 identity evaluation and tests. These projects, developers and registrations do not exist; the registry code TST is invented. Never import into the real catalogue and never treat as evidence.",
+  "schema_version": "1.1",
+  "projects": [
+    {
+      "project_name": "Quillon Residences",
+      "alternate_names": ["Quillon"],
+      "locality": "Sector 102",
+      "city": "Gurgaon",
+      "micromarket": "Dwarka Expressway",
+      "developer": "Brightwell Estates",
+      "phase": null,
+      "rera_ids": [
+        { "id": "TST/901/801/2023/11", "registered_name": "Quillon Residences Phase 1" },
+        { "id": "TST/902/802/2024/12", "registered_name": "Quillon Residences Phase 2" }
+      ],
+      "reference_url": null,
+      "client_ref": null
+    },
+    {
+      "project_name": "Tavira Vista",
+      "alternate_names": [],
+      "locality": "Sector 88",
+      "city": "Gurgaon",
+      "micromarket": null,
+      "developer": "Brightwell Estates",
+      "phase": null,
+      "rera_ids": [{ "id": "TST/903/803/2024/13", "registered_name": "Tavira Vista" }],
+      "reference_url": null,
+      "client_ref": null
+    },
+    {
+      "project_name": "Zephyrine Crest",
+      "alternate_names": [],
+      "locality": "Sector 65",
+      "city": "Gurgaon",
+      "micromarket": "Golf Course Extension",
+      "developer": "Orbitas Realty",
+      "phase": null,
+      "rera_ids": [
+        { "id": "TST/904/804/2022/14", "registered_name": "Zephyrine Crest East" },
+        { "id": "TST/905/805/2024/15", "registered_name": "Zephyrine Crest West" },
+        { "id": "TST/906/806/2025/16", "registered_name": "Zephyrine Crest 3" }
+      ],
+      "reference_url": null,
+      "client_ref": null
+    },
+    {
+      "project_name": "Verdalia Parq",
+      "alternate_names": [],
+      "locality": "Sector 90",
+      "city": "Gurgaon",
+      "micromarket": null,
+      "developer": "Stoneholm Developers",
+      "phase": null,
+      "rera_ids": [{ "id": "TST/907/807/2024/17", "registered_name": "Parq" }],
+      "reference_url": null,
+      "client_ref": null
+    },
+    {
+      "project_name": "Solvane Heights",
+      "alternate_names": [],
+      "locality": "Manesar Sector 5",
+      "city": "Gurgaon",
+      "micromarket": "Manesar",
+      "developer": "Crestmark Builders",
+      "phase": null,
+      "rera_ids": [{ "id": "TST/908/808/2025/18", "registered_name": "Solvane Heights I" }],
+      "reference_url": null,
+      "client_ref": null
+    }
+  ]
+}

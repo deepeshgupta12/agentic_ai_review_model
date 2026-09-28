@@ -59,8 +59,10 @@ Covers: alias_review.
 | 2 | system | — | A01 proposes 'Parq'; the collision check marks it generic | alias_proposal[als2]: new → proposed |
 | 3 | researcher | `GET /v1/projects/{project_id}/alias-proposals` (listAliasProposals) | Reviews proposals with evidence and collision warnings | — |
 | 4 | researcher | `POST /v1/alias-proposals/{proposal_id}/decisions` (decideAliasProposal) | Approves 'Privana West' as a standalone alias for that phase | alias_proposal[als1]: proposed → approved |
-| 5 | moderator | `POST /v1/alias-proposals/{proposal_id}/decisions` (decideAliasProposal) | Approves 'Parq' as context-required only; standalone approval is refused by the contract | alias_proposal[als2]: proposed → approved |
-| 6 | moderator | `POST /v1/alias-proposals/{proposal_id}/decisions` (decideAliasProposal) | Later revokes 'Privana West'; the matches it produced return to review | alias_proposal[als1]: approved → revoked |
+| 5 | system | — | Deterministic matching auto-accepts a post that names 'Privana West' with the developer and sector; the rationale records the alias that produced the match | source_link[lnk1]: new → auto_accepted |
+| 6 | moderator | `POST /v1/alias-proposals/{proposal_id}/decisions` (decideAliasProposal) | Approves 'Parq' as context-required only; standalone approval is refused by the contract | alias_proposal[als2]: proposed → approved |
+| 7 | moderator | `POST /v1/alias-proposals/{proposal_id}/decisions` (decideAliasProposal) | Later revokes 'Privana West'; the matches it produced return to review | alias_proposal[als1]: approved → revoked |
+| 8 | system | — | The match that 'Privana West' produced returns to review, and its dependants are invalidated | source_link[lnk1]: auto_accepted → needs_review |
 
 ### J06: Review findings: approve, edit, reject
 
@@ -357,6 +359,8 @@ States (`SourceLinkStatus`), field `status` of `ProjectSourceLink`. Starts in `a
 | `needs_review` | `superseded` | moderator | Split into segments or remapped to another project |
 | `auto_accepted` | `superseded` | moderator | Split into segments or remapped to another project |
 | `accepted` | `superseded` | moderator | Split into segments or remapped to another project |
+| `auto_accepted` | `needs_review` | system | An alias the match relied on was revoked, or a consistency check flagged it (D17, D27, D35); the match returns to review |
+| `accepted` | `needs_review` | system | An alias the match relied on was revoked, or a consistency check flagged it (D17, D27, D35); the match returns to review |
 
 ### alias_proposal
 

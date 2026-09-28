@@ -42,7 +42,7 @@ select = ["E", "F", "I", "B", "UP", "S", "RUF"]
 ignore = ["S101"]
 
 [tool.ruff.lint.flake8-bugbear]
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "app.api.deps.require"]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Body", "fastapi.Header", "app.api.deps.require"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S105", "S106"]

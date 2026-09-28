@@ -3,6 +3,7 @@ and a fresh database per test; they fail, not skip, when MongoDB is unreachable.
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import uuid
@@ -112,3 +113,23 @@ def login(api: TestClient, email: str, password: str = PASSWORD) -> dict[str, An
 
 def fixture_path(*parts: str) -> Path:
     return REPO_ROOT.joinpath(*parts)
+
+
+FICTIONAL_CATALOGUE = REPO_ROOT / "evals" / "identity" / "v1" / "catalogue.json"
+
+
+@pytest.fixture
+def fictional(db: Database[dict[str, Any]], contracts: ContractStore, settings: Settings) -> dict[str, str]:
+    """The fictional evaluation catalogue imported into the test database: project name -> project ID."""
+    from app.seed.projects import import_projects
+
+    data = json.loads(FICTIONAL_CATALOGUE.read_text(encoding="utf-8"))
+    rows = import_projects(db.client, db, contracts, data, settings.seed_dir)
+    return {r["project_name"]: r["project_id"] for r in rows}
+
+
+def sign_in(api: TestClient, make_user: Any, roles: list[str]) -> dict[str, str]:
+    """Sign in a new user with these roles; returns the CSRF header for mutations."""
+    user = make_user(roles)
+    body = login(api, user["email"])
+    return {"X-CSRF-Token": body["csrf_token"]}
