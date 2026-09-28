@@ -7,7 +7,8 @@
 #
 #   bash scripts/run_step03_checks.sh
 #
-# Needs Docker, uv, pnpm, Node.js and Python 3.10+; `gh` signed in for the GitHub checks.
+# Needs Docker, uv, pnpm, Node.js and Python 3.10+; `gh` signed in for the GitHub checks; and
+# SEED_USER_PASSWORD in .env (the coordinator's password, used to sign in through the web app).
 # It starts the stack if needed and leaves it running (stop it with `make down`).
 
 set -u
@@ -155,7 +156,8 @@ raise SystemExit(0 if len(slugs) == 5 and len(set(slugs)) == 5 else 1)
 '
 }
 
-seed_users_repeat() {
+seed_users_repeat() { # first run creates the coordinator on a fresh database; the second must change nothing
+  docker compose exec -T api python -m app.cli seed-users > /dev/null || return 1
   docker compose exec -T api python -m app.cli seed-users > "$T/users.json" || return 1
   "$PY" - "$T/users.json" <<'EOF'
 import json, sys
@@ -464,42 +466,42 @@ expect "Regression: Step 01 validator" 0 python3 scripts/validate_inputs.py
 expect "Regression: Step 01-02 use-case suites (127 tests)" 0 "$PY" -m unittest discover -s scripts/tests -q
 expect "Regression: Step 02 contract checker" 0 "$PY" scripts/check_contracts.py
 
-expect "UC-17: stack builds and every service is healthy" 0 docker compose up -d --build --wait
-expect "UC-17: long-running services up; one-shot setup exited 0" 0 services_running
-expect "UC-17: MongoDB replica set rs0 initialised, primary" 0 replica_set_primary
-expect "UC-17: API readiness (replica set primary reachable)" 0 api_ready
+expect "UC-24: stack builds and every service is healthy" 0 docker compose up -d --build --wait
+expect "UC-24: long-running services up; one-shot setup exited 0" 0 services_running
+expect "UC-24: MongoDB replica set rs0 initialised, primary" 0 replica_set_primary
+expect "UC-24: API readiness (replica set primary reachable)" 0 api_ready
 
-expect "UC-18: repeating database setup changes nothing" 0 setup_db_is_a_no_op
-expect "UC-18: no duplicate indexes" 0 no_duplicate_indexes
-expect "UC-18: seeding projects twice; second run all unchanged" 0 seed_projects_twice
-expect "UC-18: five projects with unique slugs stored" 0 five_projects_stored
-expect "UC-18: seeding users again leaves the coordinator unchanged" 0 seed_users_repeat
+expect "UC-19: repeating database setup changes nothing" 0 setup_db_is_a_no_op
+expect "UC-19: no duplicate indexes" 0 no_duplicate_indexes
+expect "UC-20: seeding projects twice; second run all unchanged" 0 seed_projects_twice
+expect "UC-20: five projects with unique slugs stored" 0 five_projects_stored
+expect "UC-20: seeding users twice; second run leaves the coordinator unchanged" 0 seed_users_repeat
 
 expect "Backend: ruff lint" 0 bash -c "cd backend && $UV run ruff check ."
 expect "Backend: ruff format" 0 bash -c "cd backend && $UV run ruff format --check ."
 expect "Backend: mypy" 0 bash -c "cd backend && $UV run mypy"
-expect "UC-18..UC-23: backend tests against the Compose replica set" 0 bash -c "cd backend && $UV run pytest -q -p no:cacheprovider"
+expect "UC-17..UC-23: backend tests (83) against the Compose replica set" 0 bash -c "cd backend && $UV run pytest -q -p no:cacheprovider"
 
-expect "Web: eslint" 0 bash -c "cd web && pnpm -s lint"
-expect "Web: route types and TypeScript" 0 bash -c "cd web && pnpm -s typecheck"
-expect "Web: generated API types match OpenAPI" 0 bash -c "cd web && pnpm -s check:api"
-expect "Web: unit tests" 0 bash -c "cd web && pnpm -s test"
-expect "Web: production build" 0 bash -c "cd web && pnpm -s build"
+expect "UC-25: web eslint" 0 bash -c "cd web && pnpm -s lint"
+expect "UC-25: web route types and TypeScript" 0 bash -c "cd web && pnpm -s typecheck"
+expect "UC-22: web API types match the generated OpenAPI" 0 bash -c "cd web && pnpm -s check:api"
+expect "UC-25: web unit tests" 0 bash -c "cd web && pnpm -s test"
+expect "UC-25: web production build" 0 bash -c "cd web && pnpm -s build"
 
-expect "UC-19: signed-out console redirects to login" 0 signed_out_console_redirects
-expect "UC-19: signed-out API call is 401" 0 signed_out_api_is_401
-expect "UC-19: wrong password is 401" 0 wrong_password_is_401
-expect "UC-19: sign-in sets HttpOnly session and CSRF cookies" 0 login_sets_cookies
-expect "UC-19: /v1/auth/me shows the coordinator's five roles" 0 me_has_all_roles
-expect "UC-22: console shows the user, fixture banner and 5 catalogue projects" 0 console_shows_user_and_projects
-expect "UC-22: operations: 11 connectors, all access_pending" 0 operations_lists_connectors
-expect "UC-22: public page is the empty state, noindex" 0 public_page_empty_and_noindex
-expect "UC-19: logout without CSRF 403; with CSRF 204; old cookie 401" 0 logout_needs_csrf
-expect "UC-19: repeated failed logins are rate limited (429)" 0 login_rate_limited
+expect "UC-17: signed-out console redirects to login" 0 signed_out_console_redirects
+expect "UC-17: signed-out API call is 401" 0 signed_out_api_is_401
+expect "UC-17: wrong password is 401" 0 wrong_password_is_401
+expect "UC-17: sign-in sets HttpOnly session and CSRF cookies" 0 login_sets_cookies
+expect "UC-17: /v1/auth/me shows the coordinator's five roles" 0 me_has_all_roles
+expect "UC-25: console shows the user, fixture banner and 5 catalogue projects" 0 console_shows_user_and_projects
+expect "UC-25: operations: 11 connectors, all access_pending" 0 operations_lists_connectors
+expect "UC-25: public page is the empty state, noindex" 0 public_page_empty_and_noindex
+expect "UC-17: logout without CSRF 403; with CSRF 204; old cookie 401" 0 logout_needs_csrf
+expect "UC-17: repeated failed logins are rate limited (429)" 0 login_rate_limited
 
-expect "UC-20: a claimed job survives a real worker restart; the stale worker is refused" 0 job_survives_worker_restart
-expect "UC-20: the same logical key never makes a second job" 0 duplicate_logical_key_is_one_job
-expect "UC-20: remove the check job" 0 remove_check_job
+expect "UC-18: a claimed job survives a real worker restart; the stale worker is refused" 0 job_survives_worker_restart
+expect "UC-18: the same logical key never makes a second job" 0 duplicate_logical_key_is_one_job
+expect "UC-18: remove the check job" 0 remove_check_job
 
 expect "UC-21: model smoke test (real call with a key, otherwise skipped)" 0 smoke_model
 expect "UC-23: configuration shows credential names only" 0 config_shows_names_only
