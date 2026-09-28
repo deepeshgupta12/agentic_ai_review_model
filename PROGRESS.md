@@ -8,7 +8,7 @@
 |---|---|---|---|---|
 | 01 | [Requirements, source access and acceptance definition](steps/01-requirements-and-access.md) | complete (approved 25 Sep 2026) | `2b6476c`, `f0932cb`, `90a8c8b`: `seed/`, `scripts/validate_inputs.py`, `scripts/tests/`, `scripts/run_step01_checks.sh`, `evals/step-01-evaluation-brief.md`, `DECISIONS.md` | [logs/step-01](logs/step-01/README.md): all checks OK at `90a8c8b` (57/57 tests, N1–N5 fail as expected); mutation check OK at `f0932cb` |
 | 02 | [UX, architecture and contracts](steps/02-ux-architecture-and-contracts.md) | complete (approved 28 Sep 2026) | `57c8e3e`, `fb6cf66`, `88685f6`: `contracts/v1/`, `docs/09`, `docs/10`, `scripts/contract_tools.py`, `scripts/check_contracts.py`, `scripts/build_openapi.py`, `scripts/build_fixtures.py`, `scripts/jcs_check.mjs`, `scripts/tests/test_contracts.py`, `scripts/run_step02_checks.sh`, `seed/`, `DECISIONS.md` | [logs/step-02](logs/step-02/README.md): all checks OK at `88685f6` (127/127 tests, checker 13/13, N1–N6 as expected); product owner's own run OK at `bec6225`; mutation checks OK |
-| 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | in_progress (built and checked; awaiting approval of L–O) | `0847027`, `54d3954`, `38be1be`: `backend/`, `web/`, `docker-compose.yml`, `.env.example`, `Makefile`, `.github/workflows/ci.yml`, `prompts/`, `scripts/init_env.py`, `scripts/run_step03_checks.sh`, `scripts/run_step03_mutations.sh`, `DECISIONS.md` | [logs/step-03](logs/step-03/README.md): all 45 checks OK at `38be1be` and `174d6ae` (83 backend + 13 web tests, N1–N3 as expected, hygiene OK); 12/12 mutants caught; CI green. Live model call pending the Anthropic key (I02) |
+| 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | complete (approved 28 Sep 2026) | `0847027`, `54d3954`, `38be1be`, `174d6ae`: `backend/`, `web/`, `docker-compose.yml`, `.env.example`, `Makefile`, `.github/workflows/ci.yml`, `prompts/`, `scripts/init_env.py`, `scripts/run_step03_checks.sh`, `scripts/run_step03_mutations.sh`, `DECISIONS.md` | [logs/step-03](logs/step-03/README.md): all 45 checks OK at `174d6ae`; product owner's own run OK at `929a4ac` (45/45 checks, 12/12 mutants caught); CI green. Live model call still pending the Anthropic key (I02) |
 | 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | not_started | — | — |
 | 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | not_started | — | — |
 | 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | not_started | — | — |
@@ -25,19 +25,19 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 
 ## Current handoff
 
-- Active step: 03, built and checked, **awaiting product-owner approval of L–O** (D29 version freeze, D30 CLI setup commands, D31 session design, D32 deferred libraries). Test plan, commands and results: [logs/step-03/README.md](logs/step-03/README.md).
-- Next action: the product owner runs `bash scripts/run_step03_checks.sh` (and optionally tries the console at http://localhost:3000/console) and approves or amends L–O. Then Step 04 starts by asking for alternate names (I01) and the construction status of each phase (I16).
+- Active step: 04, not started. Step 03 is complete: L–O approved 28 Sep 2026 (D29–D32 accepted); the product owner ran both check scripts and confirmed the console works. [logs/step-03/README.md](logs/step-03/README.md).
+- Next action: collect alternate names for the five projects (I01) and the construction status of each phase (I16), then start Step 04 (import and reconciliation, search identity, bounded queries, candidate matching, corrections, alias proposals, identity evaluation).
 - Local stack: `make up` then `make seed`; sign in as `deepesh.gupta@client-site.example`. The password is only in the local `.env` (`SEED_USER_PASSWORD`, git-ignored, mode 600), never in the repository.
 - Running services: MongoDB 8.0 replica set `rs0`, API :8000, worker, scheduler and web :3000, all on 127.0.0.1. Fixture mode (explicit banner; nothing can be published).
 - Model gateway: built and unit-tested with a fake client. `make smoke-model` prints `skipped: no ANTHROPIC_API_KEY configured` until the key is added (I02). With a key it confirms the three configured model IDs through the Models API and makes one structured-output call, and the returned model ID is recorded here.
 - D21: the product owner will build the review-posting agent outside this repository; nothing in this repository supports it. Model-written first-person reviews were declined; the agreed form is D28 (reviews from real posts, one author each, credited, moderator-approved, never reposted through user accounts).
-- Deferred inputs, asked at the step that needs them (product owner's request): alternate names I01 and per-phase construction status I16 (Step 04, next), transcript route I05 (Step 06), moderator capacity I11 (Step 09), correction owner I10 (before Step 11), demo machine I12 (Step 13).
+- Deferred inputs, asked at the step that needs them (product owner's request): alternate names I01 and per-phase construction status I16 (Step 04, being asked now), transcript route I05 (Step 06), moderator capacity I11 (Step 09), correction owner I10 (before Step 11), demo machine I12 (Step 13).
 - Project inputs: all 5 in `contracts/five-project-input-template.json` with developers and 10 RERA registrations (D15, D16); slugs per D19; seeded into MongoDB by `make seed`.
 - Repository: https://github.com/deepeshgupta12/agentic_ai_review_model (private), all work on `main` (D18). CI (`.github/workflows/ci.yml`) runs contracts, backend, web and Compose jobs on every push.
 - Credentials: none configured. First expected: Anthropic API key (I02), then Brave/Firecrawl/YouTube (I03).
 - Fixture/live distinction: `contracts/client-data-example.json` is fictional and must not be presented as source evidence.
-- Last implemented commit: `38be1be`.
-- Last executed product checks: `bash scripts/run_step03_checks.sh` at `174d6ae`, all 45 OK ([log](logs/step-03/checks-20260928T085829Z.log)); mutation check at `38be1be`, 12/12 caught ([log](logs/step-03/mutation-check-20260928T084324Z.log)).
+- Last implemented commit: see `git log`; Step 03 closed after `929a4ac`.
+- Last executed product checks: product owner's `bash scripts/run_step03_checks.sh` at `929a4ac`, all 45 OK ([log](logs/step-03/checks-20260928T090216Z.log)), and `bash scripts/run_step03_mutations.sh`, 12/12 caught ([log](logs/step-03/mutation-check-20260928T090409Z.log)).
 - Tooling: backend `cd backend && uv run …` (unset any `VIRTUAL_ENV` from another project; the Makefile does this); web `cd web && pnpm …`; contract checks in `.venv` (D26). `make help` lists everything.
 
 ## Session log
@@ -153,6 +153,23 @@ Known defects / missing inputs / owner: approvals L–O (product owner); Anthrop
   I01 alternate names and I16 per-phase status before Step 04 (product owner)
 Remaining acceptance checks: product-owner approval of L–O; live smoke call once the key exists
 Next executable action: product owner runs the Step 03 checks and approves or amends L–O
+```
+
+```text
+Date / tool / branch / commit: 2026-09-28 / Claude Code (VS Code) / main / 929a4ac → (this commit)
+Step and scope completed: Step 03 closed after product-owner approval of L–O
+Files changed: DECISIONS.md (D29–D32 accepted); logs/step-03/ (README results and approvals; the product owner's
+  check and mutation logs); web/vitest.config.ts renamed to vitest.config.mts; PROGRESS.md
+Decisions made, with DECISIONS.md IDs: D29, D30, D31, D32 accepted (items L, M, N, O)
+Checks actually run and results: product owner at 929a4ac: run_step03_checks.sh 45/45 OK, run_step03_mutations.sh
+  12/12 caught; console tried in the browser and working. After the rename: 13/13 Vitest tests with no
+  CommonJS warning; eslint and TypeScript clean
+Live integrations verified (credential present + real query result): none; no credentials configured
+Fixture-only behavior still awaiting live validation: the Claude smoke call and model-ID check (I02)
+Known defects / missing inputs / owner: I01 alternate names and I16 per-phase status (product owner, now);
+  Anthropic key I02 (product owner)
+Remaining acceptance checks: none for Step 03 beyond the live smoke call, which waits for the key
+Next executable action: collect I01 and I16, then start Step 04
 ```
 
 ## Session entry template

@@ -1,0 +1,635 @@
+Step 03 checks
+date (UTC): 2026-09-28T09:02:18Z
+commit:     929a4ac
+python:     Python 3.10.11 (.venv); backend Python 3.13.9
+node:       v25.9.0 | pnpm 11.20.0 | uv 0.10.2
+docker:     29.4.2 | compose 5.1.3
+seeded password in .env: present (value not shown)
+
+=== Regression: Step 01 validator ===
+$ python3 scripts/validate_inputs.py
+Step 01 input validation
+========================
+
+Projects (contracts/five-project-input-template.json)
+  1. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana | dlf privana south | dlf privana west | dlf privana north
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         GGM/772/504/2023/116, GGM/819/551/2024/46, GGM/954/686/2025/57
+     Client id:        1170
+     status:       ready_to_move
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+     status:       under_construction
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+     status:       new_launch
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+     status:       new_launch
+  5. M3M Antalya Hills
+     slug:         m3m-antalya-hills-sector-79-gurgaon
+     search names: m3m antalya hills | m3m antalya hills phase 1 | m3m antalya hills phase ii | m3m antalya hills 3 | commercial 01 in m3m antalya hills phase i
+     place:        sector 79, new gurgaon, gurgaon
+     developer:    m3m
+     RERA:         GGM/650/382/2022/125, GGM/833/565/2024/60, GGM/844/576/2024/71, GGM/867/599/2024/94
+     Client id:        201749
+     status:       partially_ready
+
+Connectors + model providers: 11 (11 access_pending)
+Source policies: 10 (10 accepted)
+Operating defaults: 14 (12 accepted, 2 open)
+
+Warnings (1):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+
+Result: PASS (0 errors, 1 warnings)
+--> OK (exit 0, expected 0)
+
+=== Regression: Step 01-02 use-case suites (127 tests) ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python -m unittest discover -s scripts/tests -q
+----------------------------------------------------------------------
+Ran 127 tests in 1.966s
+
+OK
+--> OK (exit 0, expected 0)
+
+=== Regression: Step 02 contract checker ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/check_contracts.py
+Step 02 contract checks
+=======================
+9 schema files, 217 definitions, 50 operations, 14 state machines, 19 journeys, 110 fixture cases
+
+  PASS      Schema files are valid and every $ref resolves
+  PASS      Status vocabulary and state machines
+  PASS      Route table and generated OpenAPI
+  PASS      Journeys: actors, operations and state paths
+  PASS      Agent outputs fit Claude structured outputs
+  PASS      Fixtures: valid pass, invalid fail for the stated reason
+  PASS      Canonical hashing (D23)
+  PASS      Text anchors, code points and UTF-16 (D24)
+  PASS      Approval and public-read rules
+  PASS      Construction status and first-person source reviews (D27, D28)
+  PASS      Step 01 seed data uses the contract vocabulary
+  PASS      Docs: journeys doc current, screen references valid
+  PASS      JavaScript cross-check (Node)
+
+Result: PASS (13/13 sections passed)
+--> OK (exit 0, expected 0)
+
+=== UC-24: stack builds and every service is healthy ===
+$ docker compose up -d --build --wait
+ Image agentic_ai_review_model-web Building 
+ Image agentic_ai_review_model-db-setup Building 
+ Image agentic_ai_review_model-api Building 
+ Image agentic_ai_review_model-worker Building 
+ Image agentic_ai_review_model-scheduler Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 2.62kB done
+#1 DONE 0.0s
+
+#2 [web internal] load build definition from Dockerfile
+#2 transferring dockerfile: 877B done
+#2 DONE 0.0s
+
+#3 [scheduler internal] load build definition from Dockerfile
+#3 transferring dockerfile: 834B done
+#3 DONE 0.0s
+
+#4 [api internal] load metadata for ghcr.io/astral-sh/uv:0.10.2
+#4 DONE 1.2s
+
+#5 [web internal] load metadata for docker.io/library/node:24-alpine
+#5 DONE 1.2s
+
+#6 [api internal] load metadata for docker.io/library/python:3.13-slim
+#6 DONE 1.2s
+
+#7 [web internal] load .dockerignore
+#7 transferring context: 195B done
+#7 DONE 0.0s
+
+#8 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+#8 resolve docker.io/library/node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 0.0s done
+#8 DONE 0.0s
+
+#9 [worker] FROM ghcr.io/astral-sh/uv:0.10.2@sha256:94a23af2d50e97b87b522d3cea24aaf8a1faedec1344c952767434f69585cbf9
+#9 resolve ghcr.io/astral-sh/uv:0.10.2@sha256:94a23af2d50e97b87b522d3cea24aaf8a1faedec1344c952767434f69585cbf9 0.0s done
+#9 DONE 0.0s
+
+#10 [db-setup stage-0  1/10] FROM docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b
+#10 resolve docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b 0.0s done
+#10 DONE 0.0s
+
+#11 [web internal] load build context
+#11 transferring context: 1.97kB done
+#11 DONE 0.0s
+
+#12 [db-setup internal] load build context
+#12 transferring context: 3.69kB done
+#12 DONE 0.0s
+
+#13 [web build 6/6] RUN pnpm build
+#13 CACHED
+
+#14 [web build 4/6] COPY --from=deps /srv/web/node_modules ./node_modules
+#14 CACHED
+
+#15 [web run 4/5] COPY --from=build /srv/web/.next/static ./.next/static
+#15 CACHED
+
+#16 [web run 3/5] COPY --from=build /srv/web/.next/standalone ./
+#16 CACHED
+
+#17 [web deps 5/5] RUN pnpm install --frozen-lockfile
+#17 CACHED
+
+#18 [web deps 2/5] WORKDIR /srv/web
+#18 CACHED
+
+#19 [web deps 3/5] RUN corepack enable
+#19 CACHED
+
+#20 [web build 5/6] COPY web/ ./
+#20 CACHED
+
+#21 [web deps 4/5] COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
+#21 CACHED
+
+#22 [web run 5/5] COPY --from=build /srv/web/public ./public
+#22 CACHED
+
+#23 [db-setup stage-0  6/10] COPY backend/app ./app
+#23 CACHED
+
+#24 [db-setup stage-0  5/10] RUN uv sync --frozen --no-dev --no-install-project
+#24 CACHED
+
+#25 [db-setup stage-0  4/10] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#25 CACHED
+
+#26 [db-setup stage-0  8/10] COPY contracts /srv/contracts
+#26 CACHED
+
+#27 [db-setup stage-0  3/10] WORKDIR /srv/backend
+#27 CACHED
+
+#28 [db-setup stage-0  9/10] COPY seed /srv/seed
+#28 CACHED
+
+#29 [db-setup stage-0  7/10] RUN uv sync --frozen --no-dev
+#29 CACHED
+
+#30 [db-setup stage-0  2/10] COPY --from=ghcr.io/astral-sh/uv:0.10.2 /uv /uvx /bin/
+#30 CACHED
+
+#31 [scheduler stage-0 10/10] RUN useradd --system --uid 10001 --no-create-home app
+#31 CACHED
+
+#32 [scheduler] exporting to image
+#32 exporting layers done
+#32 exporting manifest sha256:575ffe885c1a517ae50fa978e8b9364f01c5a3c63fc40cddb67aa40c9cddec5e done
+#32 exporting config sha256:97446478e3db680e443859dca482c3727574f56568a9112c817da4a26929709b
+#32 exporting config sha256:97446478e3db680e443859dca482c3727574f56568a9112c817da4a26929709b done
+#32 exporting attestation manifest sha256:742a6249d161ea1495a5945af75e06ca3c41493151734953b067758ec91c49b6 0.1s done
+#32 exporting manifest list sha256:9cbc31c229860f442efc408551e22c0ea7a44149322f0acdfa406b17882e88f7
+#32 ...
+
+#33 [web] exporting to image
+#33 exporting layers done
+#33 exporting manifest sha256:68fbd6007c1f394e53f9dadcaba365445cb0a1dfab7929dcc05b7f1b6a6ce31c done
+#33 exporting config sha256:7a10e22919919d1d2f266bfe45044b179abf5326799399f3e586e92a02af972c done
+#33 exporting attestation manifest sha256:71d88caf0b5205dd5794c108590cb47894d205f63ca2e0abab2610b33d8d6bf2 0.1s done
+#33 exporting manifest list sha256:4ac694b4160479233a80a1c2a3419181e8fb75dd6b89eedd23b9d380576506ca 0.0s done
+#33 naming to docker.io/library/agentic_ai_review_model-web:latest done
+#33 unpacking to docker.io/library/agentic_ai_review_model-web:latest 0.0s done
+#33 DONE 0.2s
+
+#34 [worker] exporting to image
+#34 exporting layers done
+#34 exporting manifest sha256:ed1ceeed01e829156396e5dc53e97a4dd2c1f21a6ac06200cf461e0e5319eaf8 done
+#34 exporting config sha256:0f37b232fcb2cfbe6a478d7aa5bfe32e0216d2e0c1964a1f67f4adfcb8b871aa done
+#34 exporting attestation manifest sha256:4ce13bd2130158f149f43faa2638f4eb1b5cd4e1a63c88e2cefd8e319745376a 0.1s done
+#34 exporting manifest list sha256:d15959983486643b87d810985585cb133d938b56ae82eef99ce62f2a11dc4395 0.0s done
+#34 naming to docker.io/library/agentic_ai_review_model-worker:latest done
+#34 unpacking to docker.io/library/agentic_ai_review_model-worker:latest 0.0s done
+#34 DONE 0.2s
+
+#32 [scheduler] exporting to image
+#32 exporting manifest list sha256:9cbc31c229860f442efc408551e22c0ea7a44149322f0acdfa406b17882e88f7 0.0s done
+#32 naming to docker.io/library/agentic_ai_review_model-scheduler:latest done
+#32 unpacking to docker.io/library/agentic_ai_review_model-scheduler:latest 0.0s done
+#32 DONE 0.2s
+
+#35 [db-setup] exporting to image
+#35 exporting layers done
+#35 exporting manifest sha256:e0f27c65e1f3011222c3109b801fb88ad81473ea6ff40330d80d270385c817bc done
+#35 exporting config sha256:e63a9fa47ca9a5a00e1b7aec18116d3b684d19a2cbf12903bf9e95deee14d5ff 0.0s done
+#35 exporting attestation manifest sha256:8215d5798441536e3c24777f39a30c766a67263213550136e74ddbe319c3c4f6 0.0s done
+#35 exporting manifest list sha256:f0cc9b02b901892b205b7742e81c0d4c9e611fc5aba14f854f9ca56382f98ed1 0.0s done
+#35 naming to docker.io/library/agentic_ai_review_model-db-setup:latest done
+#35 unpacking to docker.io/library/agentic_ai_review_model-db-setup:latest 0.0s done
+#35 DONE 0.2s
+
+#36 [api] exporting to image
+#36 exporting layers done
+#36 exporting manifest sha256:989ee71a54221b349b031e2cd59585cab67f4675c2c0c04e92498129ff2604de done
+#36 exporting config sha256:01f7681fbec5144e3a9721d1076dfcc8c49427e03ea6749838c4f1e3a866d58f 0.0s done
+#36 exporting attestation manifest sha256:346e5516d8c6237252e7c9b68f71d699836d710a26734359da5bc3630160ee23 0.0s done
+#36 exporting manifest list sha256:be8a17bf87ee314aa3c39472e428dcae0e0203f80f46b0795959c651fa0cbc5e 0.0s done
+#36 naming to docker.io/library/agentic_ai_review_model-api:latest done
+#36 unpacking to docker.io/library/agentic_ai_review_model-api:latest 0.0s done
+#36 DONE 0.2s
+
+#37 [web] resolving provenance for metadata file
+#37 DONE 0.1s
+
+#38 [scheduler] resolving provenance for metadata file
+#38 DONE 0.0s
+
+#39 [worker] resolving provenance for metadata file
+#39 DONE 0.1s
+
+#40 [db-setup] resolving provenance for metadata file
+#40 DONE 0.1s
+
+#41 [api] resolving provenance for metadata file
+#41 DONE 0.0s
+ Image agentic_ai_review_model-web Built 
+ Image agentic_ai_review_model-worker Built 
+ Image agentic_ai_review_model-db-setup Built 
+ Image agentic_ai_review_model-scheduler Built 
+ Image agentic_ai_review_model-api Built 
+ Container agentic_ai_review_model-mongodb-1 Running 
+ Container agentic_ai_review_model-db-setup-1 Recreate 
+ Container agentic_ai_review_model-db-setup-1 Recreated 
+ Container agentic_ai_review_model-worker-1 Recreate 
+ Container agentic_ai_review_model-scheduler-1 Recreate 
+ Container agentic_ai_review_model-api-1 Recreate 
+ Container agentic_ai_review_model-scheduler-1 Recreated 
+ Container agentic_ai_review_model-worker-1 Recreated 
+ Container agentic_ai_review_model-api-1 Recreated 
+ Container agentic_ai_review_model-web-1 Recreate 
+ Container agentic_ai_review_model-web-1 Recreated 
+ Container agentic_ai_review_model-mongo-init-1 Starting 
+ Container agentic_ai_review_model-mongo-init-1 Started 
+ Container agentic_ai_review_model-mongodb-1 Waiting 
+ Container agentic_ai_review_model-mongo-init-1 Waiting 
+ Container agentic_ai_review_model-mongodb-1 Healthy 
+ Container agentic_ai_review_model-mongo-init-1 Exited 
+ Container agentic_ai_review_model-db-setup-1 Starting 
+ Container agentic_ai_review_model-db-setup-1 Started 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-api-1 Starting 
+ Container agentic_ai_review_model-worker-1 Starting 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-scheduler-1 Starting 
+ Container agentic_ai_review_model-scheduler-1 Started 
+ Container agentic_ai_review_model-api-1 Started 
+ Container agentic_ai_review_model-api-1 Waiting 
+ Container agentic_ai_review_model-worker-1 Started 
+ Container agentic_ai_review_model-api-1 Healthy 
+ Container agentic_ai_review_model-web-1 Starting 
+ Container agentic_ai_review_model-web-1 Started 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-api-1 Waiting 
+ Container agentic_ai_review_model-worker-1 Waiting 
+ Container agentic_ai_review_model-scheduler-1 Waiting 
+ Container agentic_ai_review_model-web-1 Waiting 
+ Container agentic_ai_review_model-mongodb-1 Waiting 
+ Container agentic_ai_review_model-mongo-init-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-api-1 Healthy 
+ Container agentic_ai_review_model-scheduler-1 Healthy 
+ Container agentic_ai_review_model-web-1 Healthy 
+ Container agentic_ai_review_model-mongo-init-1 Exited 
+ Container agentic_ai_review_model-mongodb-1 Healthy 
+ Container agentic_ai_review_model-worker-1 Healthy 
+--> OK (exit 0, expected 0)
+
+=== UC-24: long-running services up; one-shot setup exited 0 ===
+$ services_running
+mongodb running
+api running
+worker running
+scheduler running
+web running
+db-setup: exited Exited (0) 7 seconds ago
+mongo-init: exited Exited (0) 8 seconds ago
+--> OK (exit 0, expected 0)
+
+=== UC-24: MongoDB replica set rs0 initialised, primary ===
+$ replica_set_primary
+rs0 primary=true
+--> OK (exit 0, expected 0)
+
+=== UC-24: API readiness (replica set primary reachable) ===
+$ api_ready
+{"status":"ready","replica_set":"rs0"}
+--> OK (exit 0, expected 0)
+
+=== UC-19: repeating database setup changes nothing ===
+$ setup_db_is_a_no_op
+8 collections checked; changed on repeat: none
+--> OK (exit 0, expected 0)
+
+=== UC-19: no duplicate indexes ===
+$ no_duplicate_indexes
+ai_agent_runs: 3 indexes
+ai_audit_events: 3 indexes
+ai_jobs: 5 indexes
+ai_project_configs: 1 indexes
+login_attempts: 3 indexes
+projects: 4 indexes
+schema_migrations: 1 indexes
+sessions: 3 indexes
+users: 2 indexes
+--> OK (exit 0, expected 0)
+
+=== UC-20: seeding projects twice; second run all unchanged ===
+$ seed_projects_twice
+dlf-privana-sector-76-gurgaon: unchanged
+conscient-parq-sector-80-gurgaon: unchanged
+sobha-crescent-sector-63a-gurgaon: unchanged
+m3m-forestia-west-manesar-sector-9-gurgaon: unchanged
+m3m-antalya-hills-sector-79-gurgaon: unchanged
+--> OK (exit 0, expected 0)
+
+=== UC-20: five projects with unique slugs stored ===
+$ five_projects_stored
+5 projects: conscient-parq-sector-80-gurgaon, dlf-privana-sector-76-gurgaon, m3m-antalya-hills-sector-79-gurgaon, m3m-forestia-west-manesar-sector-9-gurgaon, sobha-crescent-sector-63a-gurgaon
+--> OK (exit 0, expected 0)
+
+=== UC-20: seeding users twice; second run leaves the coordinator unchanged ===
+$ seed_users_repeat
+deepesh.gupta@client-site.example: unchanged; roles admin, researcher, moderator, publisher, analyst
+--> OK (exit 0, expected 0)
+
+=== Backend: ruff lint ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run ruff check .
+All checks passed!
+--> OK (exit 0, expected 0)
+
+=== Backend: ruff format ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run ruff format --check .
+40 files already formatted
+--> OK (exit 0, expected 0)
+
+=== Backend: mypy ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run mypy
+Success: no issues found in 31 source files
+--> OK (exit 0, expected 0)
+
+=== UC-17..UC-23: backend tests (83) against the Compose replica set ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run pytest -q -p no:cacheprovider
+........................................................................ [ 86%]
+...........                                                              [100%]
+83 passed in 21.99s
+--> OK (exit 0, expected 0)
+
+=== UC-25: web eslint ===
+$ bash -c cd web && pnpm -s lint
+$ eslint
+--> OK (exit 0, expected 0)
+
+=== UC-25: web route types and TypeScript ===
+$ bash -c cd web && pnpm -s typecheck
+$ next typegen && tsc --noEmit
+Generating route types...
+✓ Types generated successfully
+--> OK (exit 0, expected 0)
+
+=== UC-22: web API types match the generated OpenAPI ===
+$ bash -c cd web && pnpm -s check:api
+$ openapi-typescript ../contracts/v1/openapi.json -o lib/api-schema.d.ts --check
+✨ openapi-typescript 7.13.0
+--> OK (exit 0, expected 0)
+
+=== UC-25: web unit tests ===
+$ bash -c cd web && pnpm -s test
+$ vitest run
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.0.2 [39m[90m/Users/deepeshgupta/Projects/agentic_ai_review_model/web[39m
+
+ [32m✓[39m lib/paths.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m13 passed[39m[22m[90m (13)[39m
+[2m   Start at [22m 14:33:21
+[2m   Duration [22m 187ms[2m (transform 61%, import 22%, tests 9%, worker 8%)[22m
+
+--> OK (exit 0, expected 0)
+
+=== UC-25: web production build ===
+$ bash -c cd web && pnpm -s build
+$ next build
+▲ Next.js 16.3.6 (Turbopack)
+✓ Running next.config.ts took 49ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.2s
+  Running TypeScript ...
+  Finished TypeScript in 1630ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/7) ...
+  Generating static pages using 7 workers (1/7) 
+  Generating static pages using 7 workers (3/7) 
+  Generating static pages using 7 workers (5/7) 
+✓ Generating static pages using 7 workers (7/7) in 207ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /console
+├ ƒ /console/login
+├ ƒ /console/operations
+└ ƒ /projects/[slug]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+--> OK (exit 0, expected 0)
+
+=== UC-17: signed-out console redirects to login ===
+$ signed_out_console_redirects
+HTTP 307 (expected 307)
+location: /console/login?next=%2Fconsole
+--> OK (exit 0, expected 0)
+
+=== UC-17: signed-out API call is 401 ===
+$ signed_out_api_is_401
+HTTP 401 (expected 401)
+found: "code":"unauthenticated"
+--> OK (exit 0, expected 0)
+
+=== UC-17: wrong password is 401 ===
+$ wrong_password_is_401
+HTTP 401 (expected 401)
+--> OK (exit 0, expected 0)
+
+=== UC-17: sign-in sets HttpOnly session and CSRF cookies ===
+$ login_sets_cookies
+HTTP 200 (expected 200)
+sy_session is HttpOnly
+sy_csrf present (readable by the page)
+--> OK (exit 0, expected 0)
+
+=== UC-17: /v1/auth/me shows the coordinator's five roles ===
+$ me_has_all_roles
+HTTP 200 (expected 200)
+roles: admin, analyst, moderator, publisher, researcher
+--> OK (exit 0, expected 0)
+
+=== UC-25: console shows the user, fixture banner and 5 catalogue projects ===
+$ console_shows_user_and_projects
+HTTP 200 (expected 200)
+operations summary: 5 projects
+HTTP 200 (expected 200)
+found: Deepesh Gupta
+found: Fixture mode: sample data only
+found: <span class="font-semibold">5</span> projects in the catalogue
+--> OK (exit 0, expected 0)
+
+=== UC-25: operations: 11 connectors, all access_pending ===
+$ operations_lists_connectors
+HTTP 200 (expected 200)
+11 connectors; statuses: access_pending
+HTTP 200 (expected 200)
+operations page rows: 11
+--> OK (exit 0, expected 0)
+
+=== UC-25: public page is the empty state, noindex ===
+$ public_page_empty_and_noindex
+HTTP 200 (expected 200)
+found: data-insights-state="empty"
+found: noindex
+--> OK (exit 0, expected 0)
+
+=== UC-17: logout without CSRF 403; with CSRF 204; old cookie 401 ===
+$ logout_needs_csrf
+HTTP 403 (expected 403)
+found: Missing or invalid CSRF token
+HTTP 204 (expected 204)
+old session cookie after logout:
+HTTP 401 (expected 401)
+--> OK (exit 0, expected 0)
+
+=== UC-17: repeated failed logins are rate limited (429) ===
+$ login_rate_limited
+401 401 401 401 401 401 401 401 401 401 429 429 
+--> OK (exit 0, expected 0)
+
+=== UC-18: a claimed job survives a real worker restart; the stale worker is refused ===
+$ job_survives_worker_restart
+worker stopped
+claimed job_01M3KM2NP18ST1SD9BKF3VBNFR as worker-before-restart with fencing token 1 and a 2 s lease
+worker started again
+after restart: status failed | attempts 2 | fencing 3 | error no_handler
+old worker tries to complete with its stale token 1 : refused
+--> OK (exit 0, expected 0)
+
+=== UC-18: the same logical key never makes a second job ===
+$ duplicate_logical_key_is_one_job
+second enqueue created a job: False | jobs with this key: 1
+--> OK (exit 0, expected 0)
+
+=== UC-18: remove the check job ===
+$ remove_check_job
+removed 1 check job
+--> OK (exit 0, expected 0)
+
+=== UC-21: model smoke test (real call with a key, otherwise skipped) ===
+$ smoke_model
+skipped: no ANTHROPIC_API_KEY configured (connector anthropic stays access_pending)
+--> OK (exit 0, expected 0)
+
+=== UC-23: configuration shows credential names only ===
+$ config_shows_names_only
+mode: fixture | models: {'routine': 'claude-sonnet-5', 'reasoning': 'claude-sonnet-5', 'difficult': 'claude-opus-5-5'}
+credentials present: none | absent: 9
+--> OK (exit 0, expected 0)
+
+=== N1: live mode without secrets refuses to start ===
+$ live_mode_without_secrets
+  Value error, live mode needs SESSION_SECRET, REVALIDATION_SECRET set to at least 32 characters [type=value_error]
+--> OK (failed as expected, exit 1)
+
+=== N2: MongoDB validator rejects a user with an unknown role ===
+$ validator_rejects_bad_user
+with roles [superuser]: rejected: Document failed validation | rule not met: [{'operatorName': 'properties', 'propertiesNotSatisfied': [{'propertyName': 'roles', 'details': [{'operatorName': 'items', 'reason': 'At least one item did not match the sub-schema', 'itemIndex': 0, 'details': [{'operatorName': 'enum', 'specifiedAs': {'enum': ['admin', 'researcher', 'moderator', 'publisher', 'analyst']}, 'reason': 'value was not found in enum', 'consideredValue': 'superuser'}]}]}]}]
+--> OK (failed as expected, exit 1)
+
+=== N3: web types out of date with OpenAPI are caught ===
+$ stale_api_types
+ ✘  Generated types are not up-to-date!
+--> OK (failed as expected, exit 1)
+
+=== Hygiene: .env ignored, untracked, permissions 600 ===
+$ env_file_private
+.env is git-ignored
+.env is not tracked
+.env permissions: 600
+--> OK (exit 0, expected 0)
+
+=== Hygiene: nothing generated or secret is tracked ===
+$ no_tracked_secrets_or_env
+no .env, .DS_Store, .venv, node_modules or .next tracked
+--> OK (exit 0, expected 0)
+
+=== Hygiene: secret values absent from commits, service logs and logs/ ===
+$ secrets_not_in_repo_or_logs
+SEED_USER_PASSWORD: not in committed files, service logs or logs/
+SESSION_SECRET: not in committed files, service logs or logs/
+REVALIDATION_SECRET: not in committed files, service logs or logs/
+ANTHROPIC_API_KEY: not set, nothing to look for
+--> OK (exit 0, expected 0)
+
+=== Hygiene: published ports bound to 127.0.0.1 only ===
+$ ports_on_loopback_only
+api 127.0.0.1:8000->8000/tcp
+mongodb 127.0.0.1:27017->27017/tcp
+scheduler 8000/tcp
+web 127.0.0.1:3000->3000/tcp
+worker 8000/tcp
+--> OK (exit 0, expected 0)
+
+=== Hygiene: GitHub repo is private, default branch main ===
+$ repo_is_private_on_main
+PRIVATE main
+--> OK (exit 0, expected 0)
+
+=== Hygiene: latest CI run on main is not failing ===
+$ ci_not_failing
+latest CI run on main: 929a4ac in_progress  Step 03 logs: fix CI run links
+--> OK (exit 0, expected 0)
+
+ALL CHECKS OK
+log: logs/step-03/checks-20260928T090216Z.log

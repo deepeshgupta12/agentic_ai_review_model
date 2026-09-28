@@ -1,0 +1,86 @@
+Step 03 mutation check: each rule is disabled on a scratch copy; its own tests must fail.
+date (UTC): 2026-09-28T09:04:09Z
+commit:     929a4ac
+
+== baseline: the unchanged copy passes and imports its own code
+imports the scratch copy
+83 passed in 22.19s
+
+== rule disabled: fencing: a stale token may still complete a job
+   in backend/app/jobs/queue.py
+FAILED tests/test_jobs.py::test_expired_worker_cannot_complete_its_successors_job
+1 failed, 82 passed in 20.78s
+--> OK (caught by test_expired_worker_cannot_complete_its_successors_job)
+
+== rule disabled: lease recovery: an expired lease is not returned to the queue
+   in backend/app/jobs/queue.py
+FAILED tests/test_jobs.py::test_expired_worker_cannot_complete_its_successors_job
+FAILED tests/test_jobs.py::test_claimed_job_survives_a_worker_restart
+2 failed, 81 passed in 19.81s
+--> OK (caught by test_claimed_job_survives_a_worker_restart)
+
+== rule disabled: roles: any signed-in user may call any operation
+   in backend/app/api/deps.py
+FAILED tests/test_auth_api.py::test_wrong_role_is_forbidden
+FAILED tests/test_auth_api.py::test_roles_come_from_the_contract
+2 failed, 81 passed in 18.82s
+--> OK (caught by test_wrong_role_is_forbidden)
+
+== rule disabled: CSRF: mutations accepted without the token
+   in backend/app/api/deps.py
+FAILED tests/test_auth_api.py::test_mutation_without_csrf_token_is_rejected
+1 failed, 82 passed in 23.64s
+--> OK (caught by test_mutation_without_csrf_token_is_rejected)
+
+== rule disabled: session signature: a tampered cookie is accepted
+   in backend/app/auth/sessions.py
+FAILED tests/test_auth_api.py::test_tampered_cookie_is_rejected
+1 failed, 82 passed in 20.11s
+--> OK (caught by test_tampered_cookie_is_rejected)
+
+== rule disabled: revocation: a logged-out session still works
+   in backend/app/auth/sessions.py
+FAILED tests/test_auth_api.py::test_logout_with_csrf_revokes_the_session
+FAILED tests/test_auth_api.py::test_expired_session_is_rejected
+2 failed, 81 passed in 20.49s
+--> OK (caught by test_logout_with_csrf_revokes_the_session)
+
+== rule disabled: rate limit: unlimited login attempts
+   in backend/app/api/routes_auth.py
+FAILED tests/test_auth_api.py::test_repeated_failures_are_rate_limited
+1 failed, 82 passed in 23.86s
+--> OK (caught by test_repeated_failures_are_rate_limited)
+
+== rule disabled: passwords: short passwords accepted
+   in backend/app/auth/passwords.py
+FAILED tests/test_seed.py::test_a_short_password_is_refused
+1 failed, 82 passed in 19.18s
+--> OK (caught by test_a_short_password_is_refused)
+
+== rule disabled: gateway: a refusal is parsed as output
+   in backend/app/agents/gateway.py
+FAILED tests/test_gateway.py::test_refusal_is_a_failure_not_parsed
+1 failed, 82 passed in 21.48s
+--> OK (caught by test_refusal_is_a_failure_not_parsed)
+
+== rule disabled: gateway: repair is not bounded to one attempt
+   in backend/app/agents/gateway.py
+FAILED tests/test_gateway.py::test_second_invalid_output_fails_without_a_third_try
+1 failed, 82 passed in 22.16s
+--> OK (caught by test_second_invalid_output_fails_without_a_third_try)
+
+== rule disabled: logs: redaction switched off
+   in backend/app/observability.py
+FAILED tests/test_config_and_logs.py::test_redaction_masks_known_secret_shapes_and_registered_values
+FAILED tests/test_config_and_logs.py::test_logs_are_json_with_request_id_and_redacted_fields
+2 failed, 81 passed in 21.89s
+--> OK (caught by test_redaction_masks_known_secret_shapes_and_registered_values)
+
+== rule disabled: settings: a failed start echoes configured values
+   in backend/app/config.py
+FAILED tests/test_config_and_logs.py::test_a_failed_start_does_not_echo_configured_values
+1 failed, 82 passed in 23.45s
+--> OK (caught by test_a_failed_start_does_not_echo_configured_values)
+
+ALL MUTANTS CAUGHT
+log: logs/step-03/mutation-check-20260928T090409Z.log
