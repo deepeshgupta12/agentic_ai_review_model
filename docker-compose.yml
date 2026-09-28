@@ -1,0 +1,111 @@
+# Agentic Project Intelligence POC (Step 03, D05, D08).
+# MongoDB runs as a single-node replica set so transactions and change streams work.
+#   make up      build and start everything
+#   make seed    create collections, then seed projects and users
+services:
+  mongodb:
+    image: mongo:8.0
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.hello().isWritablePrimary ? 0 : 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 10s
+
+  mongo-init:
+    image: mongo:8.0
+    depends_on:
+      mongodb:
+        condition: service_started
+    restart: "no"
+    entrypoint:
+      - bash
+      - -c
+      - |
+        for i in $$(seq 1 60); do
+          mongosh --quiet --host mongodb --eval '
+            try { rs.status(); print("replica set already initialised") }
+            catch (e) { rs.initiate({ _id: "rs0", members: [{ _id: 0, host: "mongodb:27017" }] }); print("replica set initialised") }
+          ' && exit 0
+          sleep 1
+        done
+        exit 1
+
+  db-setup:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: [.env]
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/?replicaSet=rs0
+    depends_on:
+      mongo-init:
+        condition: service_completed_successfully
+      mongodb:
+        condition: service_healthy
+    command: ["python", "-m", "app.cli", "setup-db"]
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: [.env]
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/?replicaSet=rs0
+    depends_on:
+      db-setup:
+        condition: service_completed_successfully
+    command: ["uvicorn", "app.api.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/readyz').status == 200 else 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  worker:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: [.env]
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/?replicaSet=rs0
+    depends_on:
+      db-setup:
+        condition: service_completed_successfully
+    command: ["python", "-m", "app.workers.worker"]
+    stop_grace_period: 30s
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    env_file: [.env]
+    environment:
+      MONGODB_URI: mongodb://mongodb:27017/?replicaSet=rs0
+    depends_on:
+      db-setup:
+        condition: service_completed_successfully
+    command: ["python", "-m", "app.scheduler.main"]
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    environment:
+      API_INTERNAL_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:3000"
+
+volumes:
+  mongo_data:
