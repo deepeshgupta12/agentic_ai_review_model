@@ -5,6 +5,13 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Engineering foundation — 28 September 2026 (Step 03)
+
+- Backend (`backend/`): FastAPI API, worker and scheduler on Python 3.13; settings with explicit fixture/live modes; JSON logs with request IDs and redaction; MongoDB setup that creates collections, contract-derived validators and indexes and is safe to repeat; seeding of the five projects and the coordinator; own sign-in with argon2id, signed session cookie, CSRF and role checks from `routes.json`; durable jobs with leases, fencing, recovery, retries and cancellation; LangGraph checkpoints in MongoDB; the Claude gateway with structured outputs, one bounded repair, retries and a model-ID check.
+- Web (`web/`): Next.js 16 console shell (sign-in, dashboard, operations) and the public project page's empty state, with API types generated from OpenAPI.
+- Docker Compose stack with a single-node replica set, `.env.example` and `scripts/init_env.py`, a Makefile, GitHub Actions CI (contracts, backend, web, Compose), `prompts/`.
+- Setup commands are backend CLI subcommands instead of separate scripts (D30); session design (D31); version matrix (D29) and deferred libraries (D32) in DECISIONS.md.
+
 ## Contracts v1 — 28 September 2026 (Step 02)
 
 - Implementation contracts in `contracts/v1/` replace the baseline exchange schema for all new code (D22); baseline files kept as history.

@@ -34,13 +34,17 @@ Initial state: no code, no credentials and no real five-project values yet. Keep
 | D26 | Contract tooling runs in a local `.venv` (git-ignored) with pinned `scripts/requirements.txt` (jsonschema, rfc8785); Node.js runs the cross-language check. Step 01 checks stay standard-library only. Step 03 folds these pins into the backend lockfile | Accepted by product owner (28 Sep 2026) |
 | D27 | Construction-status consistency (requested by the product owner, 28 Sep 2026). Status (new launch, under construction, partially ready, ready to move) is kept per project and per phase in the project configuration, with its source and date; the export label seeds the project-level record. Claims and reviews record whose experience they report. A first-hand living claim before possession, or in a partly ready project with no phase identified, is flagged by the backend, kept out of findings, reviews and content, and its match goes to review. the client's own page text cannot use occupancy words such as "residents" before possession and must name the phase when partly ready. Rules in `contracts/v1/content_rules.json` | Requested by user; implemented in Step 02 (28 Sep 2026) |
 | D28 | First-person source reviews as a core output (agreed with the product owner, 28 Sep 2026). A new specialist, A11 Review curator, proposes positive and negative reviews in the first person because their authors wrote them that way. Conditions agreed: one review is one real post, comment or authorised video transcript by one person, never merged and never given words the author did not write; faithful rendering (verbatim, punctuation only with dashes and hyphens removed, whole sentences left out, or translated from Hindi/Hinglish), checked word by word by the backend except translations, which the moderator checks; a credit line naming who, platform and date (video moment for spoken reviews), shown on the project page and never presented as written on the client or reposted through user accounts; moderator approval of each revision; the D27 status check applies. Video is included: YouTube comments now, spoken reviews once a transcript route exists (I05). The product owner chose the author's actual words and no public link: web_public_pages and youtube policies move to version 2 with quotation allowed, and `show_review_source_links` is off (links stay internal for moderators and withdrawal) | Agreed with product owner; implemented in Step 02 (28 Sep 2026) |
+| D29 | Step 03 toolchain and version freeze: Python 3.13 (uv, `backend/uv.lock`), Node 24 in images (pnpm, `web/pnpm-lock.yaml`), MongoDB 8.0 image, Next.js 16.3 with React 19.2, TypeScript 5.9 kept (the Next.js 16 scaffold default). Exact versions in the version matrix below; checked on 28 Sep 2026 by the Step 03 runner and CI. Contract tooling (D26) keeps its own `scripts/requirements.txt` because Step 01 checks must run on a bare Python; the backend lockfile pins the same `jsonschema` and `rfc8785` versions | Proposed technical design (Step 03) |
+| D30 | Setup and smoke commands are subcommands of the backend CLI, `python -m app.cli setup-db / seed-projects / seed-users / smoke-model / check-config`, run inside the `api` container through `make seed`, `make smoke-model` and `make config`. They replace the planned `scripts/seed_projects.py`, `scripts/seed_users.py` and `scripts/smoke_model.py`, so setup uses the same pinned environment, settings and database connection as the services. `scripts/` keeps repository checks. `smoke-model` first confirms each configured model ID through the Models API, then makes one structured-output call; without a key it prints `skipped: no ANTHROPIC_API_KEY configured` and exits 0 | Proposed technical design (Step 03) |
+| D31 | Sessions and browser calls. The backend issues `sy_session` (HttpOnly, SameSite=Lax, Secure when `COOKIE_SECURE=true`) holding `token.hmac`; the database stores only sha256(token), with expiry and revocation. Mutations need the `X-CSRF-Token` header matching the readable `sy_csrf` cookie, whose hash is bound to the session. Passwords: argon2id, 12+ characters. Failed sign-ins are limited per email and address (10 per window by default, then 429). Route roles come from `contracts/v1/routes.json`. The web app calls the API on its own origin through Next.js rewrites (`/v1/*` → `API_INTERNAL_URL`), so cookies stay first-party and the browser needs no CORS. Settings errors never echo configured values | Proposed technical design (Step 03) |
+| D32 | Libraries named in steps/03 but first needed later are pinned when used, not installed unused now: shadcn/ui, TanStack Query/Table, Zod and TipTap at Step 09 (console screens), faster-whisper at Step 06, embeddings at Step 07. Each addition updates the version matrix | Proposed technical design (Step 03) |
 
 ## Inputs to resolve during implementation
 
 | ID | Input/decision | Initial state | Owner | Work affected |
 |---|---|---|---|---|
 | I01 | Five real project input records (name, alternate names, locality, city; micromarket optional) | All 5 supplied 25 Sep 2026 (DLF Privana, Conscient Parq, Sobha Crescent, M3M Forestia West, M3M Antalya Hills; all Gurgaon). Developers and RERA registrations supplied the same day (D16). Alternate names still open | Product owner | Step 01 registration, discovery, evaluation |
-| I02 | Anthropic API key and rate limits for the account; confirm model IDs in D10 are available | Pending; registry row `anthropic` (acquisition order 1) | Product owner | Step 03 gateway check, Step 08 evaluation |
+| I02 | Anthropic API key and rate limits for the account; confirm model IDs in D10 are available | Pending; registry row `anthropic` (acquisition order 1). Once the key is in `.env`, `make smoke-model` confirms each configured model ID through the Models API and makes one structured-output call (D30); the returned model ID goes in PROGRESS.md | Product owner | Step 03 gateway check, Step 08 evaluation |
 | I03 | Source credentials, obtained incrementally: suggested order Brave Search → Firecrawl → YouTube Data API → others (Reddit/X/Meta/listening provider) | None yet; order, `.env` names and go-live demonstrations in the connector registry below | Product owner | Steps 05/06 live gates |
 | I04 | Mandatory vs optional source list for the POC demo | Accepted 25 Sep 2026: mandatory = Anthropic, Brave, YouTube, and one of Firecrawl/Playwright; all others optional (`seed/connectors.json`) | Product owner | Release scope |
 | I05 | Transcript/media acquisition policy for third-party videos (creator-supplied, licensed, or none) | Open; ask the product owner at Step 06. The `spoken_video_content` policy blocks collection until decided | Product owner | Step 06 live gate |
@@ -64,7 +68,7 @@ Summary of [seed/connectors.json](seed/connectors.json), which holds the full fi
 
 | Connector | Provider | Policy family | Demo requirement (I04, accepted) | Credential (`.env`) | Demonstration to go live | Status |
 |---|---|---|---|---|---|---|
-| `anthropic` | Anthropic Claude API (model provider) | n/a | Mandatory | `ANTHROPIC_API_KEY` | One real structured-output call via `scripts/smoke_model.py` (Step 03) | access_pending |
+| `anthropic` | Anthropic Claude API (model provider) | n/a | Mandatory | `ANTHROPIC_API_KEY` | Configured model IDs confirmed and one real structured-output call via `make smoke-model` (Step 03, D30) | access_pending |
 | `brave_search` | Brave Search API | web_public_pages | Mandatory | `BRAVE_SEARCH_API_KEY` | Real query for a supplied project returns results | access_pending |
 | `firecrawl` | Firecrawl | web_public_pages | One of `web_extraction` | `FIRECRAWL_API_KEY` | Fetch one allow-listed page found by Brave, robots decision recorded | access_pending |
 | `playwright_fetch` | Playwright (local) | web_public_pages | One of `web_extraction` | none (host allow-list) | Render one allow-listed page found by Brave, robots decision recorded | access_pending |
@@ -96,6 +100,33 @@ Accepted by the product owner on 25 Sep 2026 (Step 01). Targets come from [valid
 | UI | p95 common reads under 2 s at documented concurrency | k6 run on a realistic corpus | Implementer |
 | Editorial capacity | Review workload fits named moderator capacity (capacity open, I11) | Measured review minutes | Product owner |
 | Security | All blocking findings closed | Step 12 security report | Product owner + implementer |
+
+## Version matrix (Step 03)
+
+Pinned on 28 Sep 2026 (D29). Lockfiles are authoritative: `backend/uv.lock`, `web/pnpm-lock.yaml`, `scripts/requirements.txt`. Checked by `scripts/run_step03_checks.sh` on this machine and by GitHub Actions on Ubuntu.
+
+| Layer | Component | Version | Where pinned |
+|---|---|---|---|
+| Runtime | Python | 3.13 (3.13.9 local, 3.13.15 in `python:3.13-slim`) | `backend/.python-version`, `backend/Dockerfile` |
+| Runtime | Node.js | 24 in images and CI (24.21.0); 25 works locally | `web/Dockerfile`, CI |
+| Runtime | MongoDB | 8.0 (8.0.32), single-node replica set `rs0` | `docker-compose.yml` |
+| Tooling | uv / pnpm | 0.10.2 / 11.20.0 | `backend/Dockerfile`, `web/package.json` `packageManager` |
+| Tooling | Docker / Compose | 29 / v5 (29.4.2 / 5.1.3 tested) | not pinned; documented minimum |
+| Backend | FastAPI, Starlette, Uvicorn | 0.141.1, 1.7.0, 0.54.0 | `backend/uv.lock` |
+| Backend | Pydantic, pydantic-settings | 2.13.5, 2.15.0 | `backend/uv.lock` |
+| Backend | PyMongo | 4.17.0 | `backend/uv.lock` |
+| Backend | LangGraph, checkpoint, checkpoint-mongodb | 1.2.12, 4.2.0, 0.5.0 | `backend/uv.lock` |
+| Backend | Anthropic Python SDK (with httpx2) | 1.8.0 (2.13.1) | `backend/uv.lock` |
+| Backend | argon2-cffi, python-ulid | 25.1.0, 4.0.1 | `backend/uv.lock` |
+| Backend | jsonschema, rfc8785 | 4.26.0, 0.1.4 (same as `scripts/requirements.txt`) | `backend/uv.lock` |
+| Backend dev | pytest, ruff, mypy | 9.1.1, 0.16.9, 2.3.1 | `backend/uv.lock` |
+| Web | Next.js, React | 16.3.6, 19.2.8 | `web/pnpm-lock.yaml` |
+| Web | TypeScript, @types/node | 5.9.3, 24.19.0 | `web/pnpm-lock.yaml` |
+| Web | Tailwind CSS | 4.3.3 | `web/pnpm-lock.yaml` |
+| Web | openapi-typescript, openapi-fetch | 7.13.0, 0.17.0 | `web/pnpm-lock.yaml` |
+| Web dev | ESLint, eslint-config-next, Vitest | 9.39.5, 16.3.6, 5.0.2 | `web/pnpm-lock.yaml` |
+| Models | routine / reasoning / difficult | `claude-sonnet-5` / `claude-sonnet-5` / `claude-opus-5-5` (D10) | `.env` `MODEL_*`; confirmed for the account by `make smoke-model` once I02 is resolved |
+| Contracts | contracts v1 | 1.0.0 (`schema_migrations` records it) | `contracts/v1/` |
 
 ## Decision entry template
 

@@ -47,11 +47,11 @@ Services: `mongodb` (started with `--replSet rs0` and a one-shot init that runs 
 
 ### 03.4 Set up MongoDB safely
 
-Create AI collections, validators (MongoDB JSON-schema subset) and indexes through repeatable, idempotent scripts. Create the `projects` catalogue collection and `scripts/seed_projects.py` that loads the five-project input file, generates IDs/slugs and is safe to re-run. Test the LangGraph checkpointer against the replica set and a transaction commit/abort.
+Create AI collections, validators (MongoDB JSON-schema subset) and indexes through repeatable, idempotent scripts. Create the `projects` catalogue collection and a seed command (built as `python -m app.cli seed-projects`, D30) that loads the five-project input file, generates IDs/slugs and is safe to re-run. Test the LangGraph checkpointer against the replica set and a transaction commit/abort.
 
 ### 03.5 Implement authentication and roles
 
-`users` collection, `scripts/seed_users.py`, login/logout/me endpoints, signed HTTP-only session cookie, CSRF token on mutations, role dependencies for routes, denial tests and safe audit events. Fixture mode uses a seeded fixture user, never a bypass.
+`users` collection, a user seed command (built as `python -m app.cli seed-users`, D30), login/logout/me endpoints, signed HTTP-only session cookie, CSRF token on mutations, role dependencies for routes, denial tests and safe audit events. Fixture mode uses a seeded fixture user, never a bypass.
 
 ### 03.6 Build the job primitive
 
@@ -59,7 +59,7 @@ Implement atomic claim, heartbeat, fencing token, expiry recovery, retry schedul
 
 ### 03.7 Model gateway smoke test
 
-Implement `backend/app/agents/gateway.py` around the Anthropic SDK: role-based model selection from config, structured output via JSON-schema output format with a Pydantic model, usage/cost recording, refusal/incomplete handling, one bounded repair, retry with backoff on transport/rate-limit errors. Provide a `scripts/smoke_model.py` that performs one real structured-output call and records the returned model ID. Skip (not fail) in CI when no key is present, and say so in the output.
+Implement `backend/app/agents/gateway.py` around the Anthropic SDK: role-based model selection from config, structured output via JSON-schema output format with a Pydantic model, usage/cost recording, refusal/incomplete handling, one bounded repair, retry with backoff on transport/rate-limit errors. Provide a smoke command (built as `python -m app.cli smoke-model`, run by `make smoke-model`, D30) that performs one real structured-output call and records the returned model ID. Skip (not fail) in CI when no key is present, and say so in the output.
 
 ### 03.8 Web app shell and CI
 
@@ -82,7 +82,7 @@ Correlation IDs, structured JSON logs, content/secret redaction, per-run budget/
 - [ ] Unauthorised callers and wrong-role requests are rejected; CSRF is enforced on mutations.
 - [ ] A claimed job survives worker restart; an expired worker cannot complete a successor's job.
 - [ ] A transaction commit and abort succeed against the Compose replica set.
-- [ ] `scripts/smoke_model.py` completes one real structured-output call when a key is configured (recorded model ID in PROGRESS.md), or reports "skipped: no key".
+- [ ] `make smoke-model` completes one real structured-output call when a key is configured (recorded model ID in PROGRESS.md), or reports "skipped: no key".
 - [ ] No credential or raw source body appears in the repository or standard logs.
 - [ ] [PROGRESS.md](../PROGRESS.md) records changed paths, decisions, evidence, unresolved dependencies and the next action.
 

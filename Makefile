@@ -5,10 +5,10 @@ UV := env -u VIRTUAL_ENV uv
 COMPOSE := docker compose
 
 .PHONY: help env up down logs ps seed seed-projects seed-users smoke-model config \
-        install test test-contracts test-backend test-web lint typecheck check-step01 check-step02 check-step03
+        install test test-contracts test-backend test-web lint typecheck check-step01 check-step02 check-step03 mutations-step03
 
 help: ## Show the available commands
-	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-15s %s\n", $$1, $$2}'
+	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-17s %s\n", $$1, $$2}'
 
 env: ## Create or complete .env (keeps your values, generates secrets)
 	python3 scripts/init_env.py
@@ -72,3 +72,6 @@ check-step02: ## Step 02 checks with a saved log
 
 check-step03: ## Step 03 checks with a saved log
 	bash scripts/run_step03_checks.sh
+
+mutations-step03: ## Step 03 mutation check: each backend rule disabled must be caught (stack up)
+	bash scripts/run_step03_mutations.sh

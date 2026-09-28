@@ -30,6 +30,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         env_ignore_empty=True,
         extra="ignore",
+        hide_input_in_errors=True,  # a failed start must not echo credentials into logs
     )
 
     app_mode: Mode = Mode.FIXTURE

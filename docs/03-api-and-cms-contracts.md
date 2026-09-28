@@ -4,7 +4,7 @@ Use versioned REST JSON and generated OpenAPI. The backend is the single authori
 
 ## Authentication and roles
 
-- Own identity store: `users` collection with argon2 (or bcrypt) password hashes, `roles[]`, `active` flag, created/updated timestamps. Seeded by `scripts/seed_users.py`; no self-registration in the POC.
+- Own identity store: `users` collection with argon2id password hashes, `roles[]`, `active` flag, created/updated timestamps. Seeded by `python -m app.cli seed-users` (`make seed-users`, D30); no self-registration in the POC. Session and CSRF design: D31.
 - Login issues a signed, HTTP-only, SameSite=Lax session cookie from the backend; the console calls the API with that cookie. Mutations require a CSRF token bound to the session. Sessions expire; logout revokes.
 - Roles: `admin`, `researcher`, `moderator`, `publisher`, `analyst`. One person may hold several; every action still records which role authorised it. Derive actor and project permissions server-side; never trust actor IDs in request bodies.
 - Fixture mode may use a seeded fixture user, never an auth bypass.

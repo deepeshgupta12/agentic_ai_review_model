@@ -1,6 +1,6 @@
 # Database, JSON contracts and invariants
 
-The POC's own MongoDB holds the project catalogue (`projects`, seeded from the five-project input file by `scripts/seed_projects.py`) and the separate AI records. The console operates only through authenticated backend contracts. Catalogue records are written by the import/seed service; agents read them and never mutate them.
+The POC's own MongoDB holds the project catalogue (`projects`, seeded from the five-project input file by `python -m app.cli seed-projects`, run as `make seed-projects`; D30) and the separate AI records. The console operates only through authenticated backend contracts. Catalogue records are written by the import/seed service; agents read them and never mutate them.
 
 ## Baseline assets and required contract work
 

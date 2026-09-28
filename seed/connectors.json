@@ -11,7 +11,7 @@
       "acquisition_order": 1,
       "demo_requirement": "mandatory",
       "credential_env": ["ANTHROPIC_API_KEY"],
-      "demonstration": "scripts/smoke_model.py makes one real structured-output call; returned model ID and request ID recorded in PROGRESS.md (Step 03)",
+      "demonstration": "make smoke-model (python -m app.cli smoke-model) confirms the configured model IDs and makes one real structured-output call; returned model ID and request ID recorded in PROGRESS.md (Step 03)",
       "status": "access_pending",
       "last_verified": null,
       "verification_ref": null

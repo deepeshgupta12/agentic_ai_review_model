@@ -8,6 +8,7 @@
 - Rate limits, overload, server errors and connection problems retry with backoff under
   the configured attempt budget (on top of the SDK's own retries); other errors fail fast.
 - Every call returns what an AgentRun record needs: models, stop reason, usage, request ID.
+- `check_models` confirms through the Models API that each configured ID exists for the account.
 A missing API key is `access_pending`, not a crash (D06).
 """
 
@@ -28,15 +29,23 @@ from app.observability import log_event
 
 logger = logging.getLogger(__name__)
 RETRYABLE_STATUS = {408, 409, 429, 500, 502, 503, 504, 529}
+ROLES = ("routine", "reasoning", "difficult")
 
 
 class MessagesAPI(Protocol):
     def create(self, **kwargs: Any) -> Any: ...
 
 
+class ModelsAPI(Protocol):
+    def retrieve(self, model_id: str) -> Any: ...
+
+
 class ClientLike(Protocol):
     @property
     def messages(self) -> MessagesAPI: ...
+
+    @property
+    def models(self) -> ModelsAPI: ...
 
 
 @dataclass
@@ -80,6 +89,34 @@ class ModelGateway:
                 api_key=self.settings.anthropic_api_key.get_secret_value(), max_retries=2
             )
         return self._client
+
+    def check_models(self) -> dict[str, dict[str, str | None]]:
+        """Per role: the configured model ID and whether this account can use it (Step 03.2)."""
+        found: dict[str, dict[str, str | None]] = {}
+        report: dict[str, dict[str, str | None]] = {}
+        for role in ROLES:
+            model = self.settings.model_for_role(role)
+            if model not in found:
+                found[model] = self._retrieve_model(model)
+            report[role] = {"model": model, **found[model]}
+        return report
+
+    def _retrieve_model(self, model: str) -> dict[str, str | None]:
+        if not self.available:
+            return {"status": "access_pending", "resolved_id": None, "display_name": None}
+        try:
+            info = self._get_client().models.retrieve(model)
+        except anthropic.NotFoundError:
+            return {"status": "model_not_found", "resolved_id": None, "display_name": None}
+        except (anthropic.AuthenticationError, anthropic.PermissionDeniedError):
+            return {"status": "access_pending", "resolved_id": None, "display_name": None}
+        except (anthropic.APIStatusError, anthropic.APIConnectionError):
+            return {"status": "provider_unavailable", "resolved_id": None, "display_name": None}
+        return {
+            "status": "available",
+            "resolved_id": getattr(info, "id", None),
+            "display_name": getattr(info, "display_name", None),
+        }
 
     def run(
         self, role: str, schema_ref: str, system: str, user_content: str, *, max_tokens: int | None = None

@@ -34,11 +34,27 @@ def api_error(cls, status):
     return cls(f"HTTP {status}", response=httpx2.Response(status, request=request), body=None)
 
 
+class FakeModels:
+    def __init__(self, missing=(), error=None):
+        self.missing = set(missing)
+        self.error = error
+        self.calls = []
+
+    def retrieve(self, model_id):
+        self.calls.append(model_id)
+        if self.error is not None:
+            raise self.error
+        if model_id in self.missing:
+            raise api_error(anthropic.NotFoundError, 404)
+        return SimpleNamespace(id=model_id, display_name=f"Display {model_id}")
+
+
 class FakeClient:
-    def __init__(self, *outcomes):
+    def __init__(self, *outcomes, models=None):
         self.outcomes = list(outcomes)
         self.calls = []
         self.messages = self
+        self.models = models or FakeModels()
 
     def create(self, **kwargs):
         self.calls.append(kwargs)
@@ -135,3 +151,69 @@ def test_no_key_means_access_pending_without_calling_anyone(settings, contracts)
 def test_a_configured_key_makes_the_gateway_available(settings, contracts):
     settings.anthropic_api_key = SecretStr("test-only-fake-key-0000000000")
     assert ModelGateway(settings, contracts).available
+
+
+def test_configured_model_ids_are_confirmed_once_each(settings, contracts):
+    models = FakeModels()
+    report = gateway(settings, contracts, FakeClient(models=models)).check_models()
+    assert {role: entry["model"] for role, entry in report.items()} == {
+        "routine": settings.model_routine,
+        "reasoning": settings.model_reasoning,
+        "difficult": settings.model_difficult,
+    }
+    assert all(entry["status"] == "available" for entry in report.values())
+    assert sorted(models.calls) == sorted({settings.model_routine, settings.model_reasoning, settings.model_difficult})
+
+
+def test_a_model_missing_for_the_account_is_reported(settings, contracts):
+    report = gateway(
+        settings, contracts, FakeClient(models=FakeModels(missing={settings.model_difficult}))
+    ).check_models()
+    assert report["difficult"]["status"] == "model_not_found" and report["routine"]["status"] == "available"
+
+
+def test_model_check_without_a_key_calls_no_one(settings, contracts):
+    report = ModelGateway(settings, contracts).check_models()
+    assert all(entry["status"] == "access_pending" for entry in report.values())
+
+
+def test_model_check_with_a_rejected_key_is_access_pending(settings, contracts):
+    client = FakeClient(models=FakeModels(error=api_error(anthropic.AuthenticationError, 401)))
+    report = gateway(settings, contracts, client).check_models()
+    assert all(entry["status"] == "access_pending" for entry in report.values())
+
+
+def test_smoke_command_skips_without_a_key(settings, contracts, monkeypatch, capsys):
+    from app import cli
+
+    assert settings.anthropic_api_key is None
+    monkeypatch.setattr(cli, "get_settings", lambda: settings)
+    monkeypatch.setattr(cli, "get_contracts", lambda: contracts)
+    assert cli.main(["smoke-model"]) == 0
+    assert capsys.readouterr().out.startswith("skipped: no ANTHROPIC_API_KEY configured")
+
+
+def test_smoke_command_reports_models_and_the_call(settings, contracts, monkeypatch, capsys):
+    from app import cli
+    from app.agents import gateway as gateway_module
+
+    client = FakeClient(response(VALID), models=FakeModels())
+    monkeypatch.setattr(cli, "get_settings", lambda: settings)
+    monkeypatch.setattr(cli, "get_contracts", lambda: contracts)
+    monkeypatch.setattr(gateway_module, "ModelGateway", lambda s, c: ModelGateway(s, c, client=client))
+    assert cli.main(["smoke-model"]) == 0
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["outcome"] == "completed" and printed["model_outcome"] == "insufficient_evidence"
+    assert printed["models"]["routine"]["status"] == "available" and printed["returned_model"] == "claude-sonnet-5"
+
+
+def test_smoke_command_fails_when_a_configured_model_is_missing(settings, contracts, monkeypatch, capsys):
+    from app import cli
+    from app.agents import gateway as gateway_module
+
+    client = FakeClient(response(VALID), models=FakeModels(missing={settings.model_difficult}))
+    monkeypatch.setattr(cli, "get_settings", lambda: settings)
+    monkeypatch.setattr(cli, "get_contracts", lambda: contracts)
+    monkeypatch.setattr(gateway_module, "ModelGateway", lambda s, c: ModelGateway(s, c, client=client))
+    assert cli.main(["smoke-model"]) == 1
+    assert json.loads(capsys.readouterr().out)["models"]["difficult"]["status"] == "model_not_found"

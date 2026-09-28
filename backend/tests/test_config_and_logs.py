@@ -30,6 +30,16 @@ def test_live_mode_rejects_short_secrets():
         )
 
 
+def test_a_failed_start_does_not_echo_configured_values(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-only-fake-key-echo-check-0000")
+    monkeypatch.setenv("SESSION_SECRET", "short-secret-echo-check")
+    with pytest.raises(ValidationError) as info:
+        Settings(_env_file=None, app_mode=Mode.LIVE)
+    message = str(info.value)
+    assert "SESSION_SECRET" in message
+    assert "echo-check" not in message and "input_value" not in message
+
+
 def test_live_mode_with_secrets_starts():
     settings = Settings(
         _env_file=None, app_mode=Mode.LIVE, session_secret=SecretStr("s" * 40), revalidation_secret=SecretStr("r" * 40)

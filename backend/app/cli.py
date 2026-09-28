@@ -71,6 +71,7 @@ def cmd_smoke_model(_: argparse.Namespace) -> int:
     if not gateway.available:
         print("skipped: no ANTHROPIC_API_KEY configured (connector anthropic stays access_pending)")
         return 0
+    models = gateway.check_models()
     result = gateway.run(
         "routine",
         "agents.schema.json#/$defs/SynthesisResult",
@@ -80,6 +81,7 @@ def cmd_smoke_model(_: argparse.Namespace) -> int:
     )
     _print(
         {
+            "models": models,
             "outcome": result.outcome,
             "model_outcome": (result.data or {}).get("outcome"),
             "requested_model": result.requested_model,
@@ -90,7 +92,8 @@ def cmd_smoke_model(_: argparse.Namespace) -> int:
             "error": result.error,
         }
     )
-    return 0 if result.outcome == "completed" else 1
+    all_available = all(entry["status"] == "available" for entry in models.values())
+    return 0 if result.outcome == "completed" and all_available else 1
 
 
 def cmd_check_config(_: argparse.Namespace) -> int:

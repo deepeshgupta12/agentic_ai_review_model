@@ -15,6 +15,22 @@ Start with [MASTER.md](MASTER.md). It defines scope, architecture, reading order
 
 Expected layout after Step 03: `backend/` (Python, FastAPI, LangGraph, PyMongo), `web/` (Next.js console + public page), `docker-compose.yml` (MongoDB single-node replica set, API, worker, scheduler, web), `.github/workflows/` (CI), `evals/`, `prompts/`, `scripts/`.
 
+## Run it locally (from Step 03)
+
+Needs Docker with Compose v2+, [uv](https://docs.astral.sh/uv/), pnpm (through `corepack enable`), Node.js 24+ and Python 3.10+. Run from the repository root; `make help` lists every command.
+
+| Command | What it does |
+|---|---|
+| `make install` | Installs the backend (uv), web (pnpm) and contract-check (`.venv`) toolchains |
+| `make up` | Creates or completes `.env` (generates secrets, keeps your values), builds and starts MongoDB, API, worker, scheduler and web, and waits until healthy |
+| `make seed` | Loads the five projects and the seeded coordinator; the password comes from `SEED_USER_PASSWORD` in `.env`, or you are asked for it |
+| `make smoke-model` | Confirms the configured Claude model IDs and makes one structured-output call, or prints `skipped` without a key |
+| `make test`, `make lint`, `make typecheck` | Every test suite, linter and type check (MongoDB must be up) |
+| `make check-step03` | The full Step 03 check with a saved log in `logs/step-03/` |
+| `make down` | Stops everything; the database volume is kept |
+
+Then open http://localhost:3000/console and sign in. The API is on http://localhost:8000 (`/healthz`, `/readyz`). All ports listen on 127.0.0.1 only. `.env` is git-ignored and must never be committed.
+
 ## What is included
 
 - Master execution guide, changelog and 14 implementation step files.
