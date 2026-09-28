@@ -70,7 +70,7 @@ dirty=$(git status --porcelain -- . ":(exclude)$LOG_DIR" 2>/dev/null)
 echo "commit:     $(git rev-parse --short HEAD 2>/dev/null || echo unknown)${dirty:+ (plus uncommitted changes)}"
 echo "python:     $(python3 --version 2>&1)"
 
-expect "UC-01..UC-07 automated suite" 0 python3 -m unittest discover -s scripts/tests -v
+expect "UC-01..UC-07 automated suite" 0 python3 -m unittest discover -s scripts/tests -p 'test_validate_inputs.py' -v
 expect "Validator on the repository files" 0 python3 scripts/validate_inputs.py
 expect "Validator JSON summary" 0 json_summary
 

@@ -1,0 +1,322 @@
+{
+  "note": "Synthetic fixture for contract tests. Fictional projects and sources; not evidence, never imported as real data.",
+  "cases": [
+    {
+      "name": "synthesis_abstains",
+      "schema": "agents.schema.json#/$defs/SynthesisResult",
+      "expect": "valid",
+      "tags": [
+        "insufficient_evidence",
+        "abstention"
+      ],
+      "why": "Valid abstention: no findings are forced",
+      "instance": {
+        "outcome": "insufficient_evidence",
+        "findings": [],
+        "insufficiency_note": "Only one promotional source mentions the project"
+      }
+    },
+    {
+      "name": "identity_needs_review",
+      "schema": "agents.schema.json#/$defs/IdentityResult",
+      "expect": "valid",
+      "tags": [
+        "abstention",
+        "alias_review"
+      ],
+      "why": "Ambiguous match left for review, with an alias proposal",
+      "instance": {
+        "outcome": "needs_review",
+        "segments": [
+          {
+            "segment_key": "whole",
+            "decision": "ambiguous",
+            "project_id": null,
+            "phase_rera_id": null,
+            "signals": [
+              "project_name"
+            ],
+            "matched_alias": null,
+            "rationale": "The same name is used for a project in another city"
+          }
+        ],
+        "alias_proposals": [
+          {
+            "alias_text": "Fixture Twrs",
+            "alias_type": "spelling_variant",
+            "target_rera_id": null,
+            "evidence_ids": [
+              "evd_01JB0000000000000000000001"
+            ],
+            "strong_identifier_kind": "developer_and_locality",
+            "strong_identifier_evidence_id": "evd_01JB0000000000000000000001"
+          }
+        ],
+        "uncertainty_reasons": [
+          "No locality in the post title"
+        ]
+      }
+    },
+    {
+      "name": "claims_unknown_date",
+      "schema": "agents.schema.json#/$defs/ClaimExtraction",
+      "expect": "valid",
+      "tags": [
+        "unknown_date"
+      ],
+      "why": "Observation date unknown stays unknown",
+      "instance": {
+        "outcome": "completed",
+        "claims": [
+          {
+            "aspect": "possession",
+            "aspect_label": null,
+            "claim_type": "opinion",
+            "polarity": "negative",
+            "statement": "Possession was delayed",
+            "evidence_ids": [
+              "evd_01JB0000000000000000000001"
+            ],
+            "observation_date_status": "unknown",
+            "observation_date": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "claims_extra_field",
+      "schema": "agents.schema.json#/$defs/ClaimExtraction",
+      "expect": "invalid",
+      "tags": [
+        "closed_outputs"
+      ],
+      "why": "Outputs are closed objects; a model cannot add fields such as a self-rated confidence",
+      "error_contains": "Additional properties are not allowed",
+      "instance": {
+        "outcome": "completed",
+        "claims": [
+          {
+            "aspect": "possession",
+            "aspect_label": null,
+            "claim_type": "opinion",
+            "polarity": "negative",
+            "statement": "Possession was delayed",
+            "evidence_ids": [
+              "evd_01JB0000000000000000000001"
+            ],
+            "observation_date_status": "unknown",
+            "observation_date": null,
+            "confidence": 0.9
+          }
+        ]
+      }
+    },
+    {
+      "name": "claims_outcome_failed",
+      "schema": "agents.schema.json#/$defs/ClaimExtraction",
+      "expect": "invalid",
+      "tags": [
+        "failed_is_backend_only"
+      ],
+      "why": "Only the backend assigns 'failed'",
+      "error_contains": "'failed' is not one of",
+      "instance": {
+        "outcome": "failed",
+        "claims": [
+          {
+            "aspect": "possession",
+            "aspect_label": null,
+            "claim_type": "opinion",
+            "polarity": "negative",
+            "statement": "Possession was delayed",
+            "evidence_ids": [
+              "evd_01JB0000000000000000000001"
+            ],
+            "observation_date_status": "unknown",
+            "observation_date": null
+          }
+        ]
+      }
+    },
+    {
+      "name": "verification_opinion",
+      "schema": "agents.schema.json#/$defs/VerificationResult",
+      "expect": "valid",
+      "tags": [],
+      "why": "Opinions are classified, not verified",
+      "instance": {
+        "outcome": "completed",
+        "verdicts": [
+          {
+            "claim_id": "clm_01JB0000000000000000000001",
+            "status": "not_applicable",
+            "primary_record_ids": [],
+            "contradicting_evidence_ids": [],
+            "reason": "Reported opinion"
+          }
+        ]
+      }
+    },
+    {
+      "name": "editorial_draft",
+      "schema": "agents.schema.json#/$defs/EditorialDraft",
+      "expect": "valid",
+      "tags": [],
+      "why": "Copy from approved findings only; JSON-LD comes from the backend",
+      "instance": {
+        "outcome": "completed",
+        "heading": "What buyers discuss about Fixture Towers",
+        "overview": {
+          "text": "Discussion mostly concerns possession timing.",
+          "caveat": null,
+          "finding_ids": [
+            "fnd_01JB0000000000000000000001"
+          ],
+          "claim_ids": [
+            "clm_01JB0000000000000000000001"
+          ]
+        },
+        "advantages": [],
+        "considerations": [
+          {
+            "text": "Several residents report delays.",
+            "caveat": "Not confirmed by the developer.",
+            "finding_ids": [
+              "fnd_01JB0000000000000000000001"
+            ],
+            "claim_ids": [
+              "clm_01JB0000000000000000000001"
+            ]
+          }
+        ],
+        "questions": [],
+        "coverage_note": "Based on 6 public discussions.",
+        "metadata": {
+          "title": "Fixture Towers: what buyers discuss",
+          "description": "Summary of public discussion."
+        }
+      }
+    },
+    {
+      "name": "qa_blocking",
+      "schema": "agents.schema.json#/$defs/QaReport",
+      "expect": "valid",
+      "tags": [],
+      "why": "QA flags an overgeneralisation; it cannot approve",
+      "instance": {
+        "outcome": "completed",
+        "issues": [
+          {
+            "block": "considerations",
+            "item_index": 0,
+            "severity": "blocking",
+            "category": "overgeneralisation",
+            "explanation": "'All residents' overstates five posts",
+            "claim_ids": [
+              "clm_01JB0000000000000000000001"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "change_review_withdrawn",
+      "schema": "agents.schema.json#/$defs/ChangeReview",
+      "expect": "valid",
+      "tags": [
+        "withdrawal"
+      ],
+      "why": "Classifies a withdrawal against the approved manifest",
+      "instance": {
+        "outcome": "completed",
+        "classification": "withdrawn_source",
+        "reasons": [
+          "The forum thread was removed"
+        ],
+        "affected_finding_ids": [
+          "fnd_01JB0000000000000000000001"
+        ]
+      }
+    },
+    {
+      "name": "video_observations",
+      "schema": "agents.schema.json#/$defs/VideoObservations",
+      "expect": "valid",
+      "tags": [],
+      "why": "Timestamped observation from an authorised transcript",
+      "instance": {
+        "outcome": "completed",
+        "observations": [
+          {
+            "segment_id": "seg_01JB0000000000000000000001",
+            "modality": "speech",
+            "observation": "The creator says possession was delayed",
+            "speaker": "creator",
+            "start_ms": 12000,
+            "end_ms": 19000,
+            "uncertainty": "Approximate timing"
+          }
+        ]
+      }
+    },
+    {
+      "name": "language_context",
+      "schema": "agents.schema.json#/$defs/LanguageContextResult",
+      "expect": "valid",
+      "tags": [],
+      "why": "Hinglish kept alongside its translation",
+      "instance": {
+        "outcome": "completed",
+        "items": [
+          {
+            "input_id": "evd_01JB0000000000000000000002",
+            "language": "hi-Latn",
+            "normalised_text": "possession mein thoda delay hua",
+            "translation": {
+              "language": "en",
+              "text": "possession was delayed a little"
+            },
+            "negation": false,
+            "uncertainty": false,
+            "possible_sarcasm": false,
+            "preserved_terms": [
+              "possession"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "discovery_plan",
+      "schema": "agents.schema.json#/$defs/DiscoveryPlan",
+      "expect": "valid",
+      "tags": [],
+      "why": "Name and identifier queries",
+      "instance": {
+        "outcome": "completed",
+        "queries": [
+          {
+            "connector_id": "brave_search",
+            "query_text": "\"Fixture Towers\" Sector 0 possession",
+            "window_days": 90,
+            "language": "en",
+            "exclusions": [
+              "Otherville"
+            ],
+            "priority": "high",
+            "purpose": "project_name"
+          },
+          {
+            "connector_id": "brave_search",
+            "query_text": "FIX/0001/0001/2026/01",
+            "window_days": 90,
+            "language": "en",
+            "exclusions": [],
+            "priority": "normal",
+            "purpose": "identifier"
+          }
+        ]
+      }
+    }
+  ]
+}

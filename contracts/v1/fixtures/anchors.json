@@ -1,0 +1,42 @@
+{
+  "note": "Synthetic fixture for contract tests. Fictional projects and sources; not evidence, never imported as real data.",
+  "unit": "Stored offsets are Unicode code points over NFC text; utf16_* are what a browser uses (D24)",
+  "cases": [
+    {
+      "name": "ascii",
+      "text": "Possession was delayed by six months.",
+      "excerpt": "delayed by six months",
+      "start": 15,
+      "end": 36,
+      "utf16_start": 15,
+      "utf16_end": 36
+    },
+    {
+      "name": "hindi",
+      "text": "पज़ेशन में छह महीने की देरी हुई",
+      "excerpt": "छह महीने की देरी",
+      "start": 11,
+      "end": 27,
+      "utf16_start": 11,
+      "utf16_end": 27
+    },
+    {
+      "name": "emoji_before_excerpt",
+      "text": "Great location 😀👍 but parking is tight",
+      "excerpt": "parking is tight",
+      "start": 22,
+      "end": 38,
+      "utf16_start": 24,
+      "utf16_end": 40
+    },
+    {
+      "name": "emoji_inside_excerpt",
+      "text": "Lift 🚧 abhi tak nahi chali, parking 👎 bhi",
+      "excerpt": "parking 👎 bhi",
+      "start": 28,
+      "end": 41,
+      "utf16_start": 29,
+      "utf16_end": 43
+    }
+  ]
+}

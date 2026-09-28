@@ -1,0 +1,361 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Agent contracts",
+  "description": "Task envelope and the structured output of each model-backed specialist (docs/04). Output schemas use only the Claude structured-output subset: closed objects, every property required, null instead of optional, no numeric/string/array constraints, no recursion. The gateway bundles them (inlining common refs) before sending. The backend then validates business rules, including that every returned ID was in the task's input set. A00 is deterministic and has no model output.",
+  "x-contract-version": "1.0.0",
+  "x-agent-outputs": {
+    "A01_project_identity": "IdentityResult",
+    "A02_discovery_planner": "DiscoveryPlan",
+    "A03_video_understanding": "VideoObservations",
+    "A04_language_context": "LanguageContextResult",
+    "A05_claim_extractor": "ClaimExtraction",
+    "A06_evidence_verifier": "VerificationResult",
+    "A07_findings_synthesiser": "SynthesisResult",
+    "A08_seo_aeo_editor": "EditorialDraft",
+    "A09_editorial_qa": "QaReport",
+    "A10_freshness_reviewer": "ChangeReview"
+  },
+  "$defs": {
+    "AgentTaskEnvelope": {
+      "description": "What the coordinator hands a specialist. Created by the server; never produced by a model.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_id", "run_id", "project_id", "agent", "input_refs", "policy_context", "locale", "prompt_version", "schema_version", "budget"],
+      "properties": {
+        "task_id": { "$ref": "common.schema.json#/$defs/TaskId" },
+        "run_id": { "$ref": "common.schema.json#/$defs/RunId" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "agent": { "$ref": "common.schema.json#/$defs/AgentId" },
+        "input_refs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/RevisionRef" } },
+        "policy_context": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/PolicyRef" } },
+        "locale": { "$ref": "common.schema.json#/$defs/Locale" },
+        "prompt_version": { "type": "string", "pattern": "^[a-z0-9_]+\\.\\d+\\.\\d+$" },
+        "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_tool_steps", "max_output_tokens", "deadline"],
+          "properties": {
+            "max_tool_steps": { "type": "integer", "minimum": 0 },
+            "max_output_tokens": { "type": "integer", "minimum": 1 },
+            "deadline": { "$ref": "common.schema.json#/$defs/Timestamp" }
+          }
+        }
+      }
+    },
+    "ModelOutcome": {
+      "description": "What a model may report. 'failed' is assigned by the backend, never by the model.",
+      "enum": ["completed", "insufficient_evidence", "needs_review"]
+    },
+    "NullableString": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+    "IdList": { "type": "array", "items": { "type": "string" } },
+
+    "IdentityResult": {
+      "description": "A01: match/ambiguous/reject per segment, plus alternate-name proposals found in the evidence (D17).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "segments", "alias_proposals", "uncertainty_reasons"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "segments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["segment_key", "decision", "project_id", "phase_rera_id", "signals", "matched_alias", "rationale"],
+            "properties": {
+              "segment_key": { "type": "string" },
+              "decision": { "enum": ["match", "ambiguous", "reject"] },
+              "project_id": { "$ref": "#/$defs/NullableString" },
+              "phase_rera_id": { "$ref": "#/$defs/NullableString" },
+              "signals": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/MatchSignal" } },
+              "matched_alias": { "$ref": "#/$defs/NullableString" },
+              "rationale": { "type": "string" }
+            }
+          }
+        },
+        "alias_proposals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["alias_text", "alias_type", "target_rera_id", "evidence_ids", "strong_identifier_kind", "strong_identifier_evidence_id"],
+            "properties": {
+              "alias_text": { "type": "string" },
+              "alias_type": { "$ref": "common.schema.json#/$defs/AliasType" },
+              "target_rera_id": { "$ref": "#/$defs/NullableString" },
+              "evidence_ids": { "$ref": "#/$defs/IdList" },
+              "strong_identifier_kind": { "$ref": "common.schema.json#/$defs/StrongIdentifierKind" },
+              "strong_identifier_evidence_id": { "type": "string" }
+            }
+          }
+        },
+        "uncertainty_reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "DiscoveryPlan": {
+      "description": "A02: bounded queries using approved aliases and identifiers only. Collectors execute pagination.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "queries"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "queries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["connector_id", "query_text", "window_days", "language", "exclusions", "priority", "purpose"],
+            "properties": {
+              "connector_id": { "type": "string" },
+              "query_text": { "type": "string" },
+              "window_days": { "type": "integer" },
+              "language": { "type": "string" },
+              "exclusions": { "type": "array", "items": { "type": "string" } },
+              "priority": { "enum": ["high", "normal", "low"] },
+              "purpose": { "enum": ["project_name", "approved_alias", "identifier", "phase_name"] }
+            }
+          }
+        }
+      }
+    },
+    "VideoObservations": {
+      "description": "A03: timestamped observations from authorised transcripts/frames only. Metadata is never spoken evidence.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "observations"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "observations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["segment_id", "modality", "observation", "speaker", "start_ms", "end_ms", "uncertainty"],
+            "properties": {
+              "segment_id": { "type": "string" },
+              "modality": { "enum": ["speech", "on_screen_text", "frame"] },
+              "observation": { "type": "string" },
+              "speaker": { "enum": ["creator", "interviewee", "voiceover", "unknown"] },
+              "start_ms": { "type": "integer" },
+              "end_ms": { "type": "integer" },
+              "uncertainty": { "$ref": "#/$defs/NullableString" }
+            }
+          }
+        }
+      }
+    },
+    "LanguageContextResult": {
+      "description": "A04: normalised text and translation with negation/uncertainty flags; names, units and the original are preserved.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "items"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["input_id", "language", "normalised_text", "translation", "negation", "uncertainty", "possible_sarcasm", "preserved_terms"],
+            "properties": {
+              "input_id": { "type": "string" },
+              "language": { "type": "string" },
+              "normalised_text": { "type": "string" },
+              "translation": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["language", "text"],
+                    "properties": { "language": { "type": "string" }, "text": { "type": "string" } }
+                  },
+                  { "type": "null" }
+                ]
+              },
+              "negation": { "type": "boolean" },
+              "uncertainty": { "type": "boolean" },
+              "possible_sarcasm": { "type": "boolean" },
+              "preserved_terms": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "ClaimExtraction": {
+      "description": "A05: atomic aspect claims from supplied evidence only; no outside facts.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "claims"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "claims": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["aspect", "aspect_label", "claim_type", "polarity", "statement", "evidence_ids", "observation_date_status", "observation_date"],
+            "properties": {
+              "aspect": { "$ref": "common.schema.json#/$defs/Aspect" },
+              "aspect_label": { "$ref": "#/$defs/NullableString" },
+              "claim_type": { "$ref": "common.schema.json#/$defs/ClaimType" },
+              "polarity": { "$ref": "common.schema.json#/$defs/Polarity" },
+              "statement": { "type": "string" },
+              "evidence_ids": { "$ref": "#/$defs/IdList" },
+              "observation_date_status": { "$ref": "common.schema.json#/$defs/DateStatus" },
+              "observation_date": { "anyOf": [{ "type": "string", "format": "date" }, { "type": "null" }] }
+            }
+          }
+        }
+      }
+    },
+    "VerificationResult": {
+      "description": "A06: verdicts backed by dated primary records; reported opinion is classified separately from verified fact.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "verdicts"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "verdicts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["claim_id", "status", "primary_record_ids", "contradicting_evidence_ids", "reason"],
+            "properties": {
+              "claim_id": { "type": "string" },
+              "status": { "$ref": "common.schema.json#/$defs/VerificationStatus" },
+              "primary_record_ids": { "$ref": "#/$defs/IdList" },
+              "contradicting_evidence_ids": { "$ref": "#/$defs/IdList" },
+              "reason": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "SynthesisResult": {
+      "description": "A07: pros/cons/neutral findings from eligible claims. No forced balance; an empty result is valid.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "findings", "insufficiency_note"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "aspect", "wording", "attribution", "claim_ids", "caveats"],
+            "properties": {
+              "kind": { "$ref": "common.schema.json#/$defs/FindingKind" },
+              "aspect": { "$ref": "common.schema.json#/$defs/Aspect" },
+              "wording": { "type": "string" },
+              "attribution": { "$ref": "common.schema.json#/$defs/Attribution" },
+              "claim_ids": { "$ref": "#/$defs/IdList" },
+              "caveats": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "insufficiency_note": { "$ref": "#/$defs/NullableString" }
+      }
+    },
+    "DraftBlock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "caveat", "finding_ids", "claim_ids"],
+      "properties": {
+        "text": { "type": "string" },
+        "caveat": { "$ref": "#/$defs/NullableString" },
+        "finding_ids": { "$ref": "#/$defs/IdList" },
+        "claim_ids": { "$ref": "#/$defs/IdList" }
+      }
+    },
+    "EditorialDraft": {
+      "description": "A08: page copy from moderator-approved findings only. JSON-LD is built by the backend, not the model.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "heading", "overview", "advantages", "considerations", "questions", "coverage_note", "metadata"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "heading": { "type": "string" },
+        "overview": { "$ref": "#/$defs/DraftBlock" },
+        "advantages": { "type": "array", "items": { "$ref": "#/$defs/DraftBlock" } },
+        "considerations": { "type": "array", "items": { "$ref": "#/$defs/DraftBlock" } },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["question", "answer", "finding_ids", "claim_ids"],
+            "properties": {
+              "question": { "type": "string" },
+              "answer": { "type": "string" },
+              "finding_ids": { "$ref": "#/$defs/IdList" },
+              "claim_ids": { "$ref": "#/$defs/IdList" }
+            }
+          }
+        },
+        "coverage_note": { "type": "string" },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["title", "description"],
+          "properties": { "title": { "type": "string" }, "description": { "type": "string" } }
+        }
+      }
+    },
+    "QaReport": {
+      "description": "A09: issues by block; cannot approve anything.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "issues"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["block", "item_index", "severity", "category", "explanation", "claim_ids"],
+            "properties": {
+              "block": { "enum": ["heading", "overview", "advantages", "considerations", "questions", "coverage_note", "metadata"] },
+              "item_index": { "anyOf": [{ "type": "integer" }, { "type": "null" }] },
+              "severity": { "enum": ["blocking", "nonblocking"] },
+              "category": {
+                "enum": [
+                  "unsupported_claim",
+                  "number_mismatch",
+                  "date_mismatch",
+                  "unit_mismatch",
+                  "name_mismatch",
+                  "negation_lost",
+                  "attribution_lost",
+                  "caveat_lost",
+                  "overgeneralisation",
+                  "source_imbalance",
+                  "other"
+                ]
+              },
+              "explanation": { "type": "string" },
+              "claim_ids": { "$ref": "#/$defs/IdList" }
+            }
+          }
+        }
+      }
+    },
+    "ChangeReview": {
+      "description": "A10: classifies evidence changes against the approved manifest. Deterministic invalidation runs even when the model is unavailable.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outcome", "classification", "reasons", "affected_finding_ids"],
+      "properties": {
+        "outcome": { "$ref": "#/$defs/ModelOutcome" },
+        "classification": {
+          "enum": ["no_material_change", "routine_new_discussion", "contradicting_evidence", "expired_policy", "withdrawn_source"]
+        },
+        "reasons": { "type": "array", "items": { "type": "string" } },
+        "affected_finding_ids": { "$ref": "#/$defs/IdList" }
+      }
+    }
+  }
+}

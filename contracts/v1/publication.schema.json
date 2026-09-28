@@ -1,0 +1,247 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Publication contracts",
+  "description": "Project/locale control document and publication operations (docs/05, D08). Activation is one compare-and-set on the control document, inside a transaction with the operation record and delivery intent.",
+  "x-contract-version": "1.0.0",
+  "$defs": {
+    "RevisionPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision_id", "revision", "payload_sha256", "manifest_sha256"],
+      "properties": {
+        "revision_id": { "$ref": "common.schema.json#/$defs/ContentRevisionId" },
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "payload_sha256": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "manifest_sha256": { "$ref": "common.schema.json#/$defs/Sha256" }
+      }
+    },
+    "ApprovedPointer": {
+      "description": "The revision whose exact hash currently holds final approval.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision_id", "revision", "payload_sha256", "manifest_sha256", "decision_id"],
+      "properties": {
+        "revision_id": { "$ref": "common.schema.json#/$defs/ContentRevisionId" },
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "payload_sha256": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "manifest_sha256": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "decision_id": { "$ref": "common.schema.json#/$defs/DecisionId" }
+      }
+    },
+    "ActivePointer": {
+      "description": "The revision the public page serves while serving_state is active.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision_id", "revision", "payload_sha256", "manifest_sha256", "operation_id", "activated_at"],
+      "properties": {
+        "revision_id": { "$ref": "common.schema.json#/$defs/ContentRevisionId" },
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "payload_sha256": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "manifest_sha256": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "operation_id": { "$ref": "common.schema.json#/$defs/PublicationOperationId" },
+        "activated_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      }
+    },
+    "PublicationState": {
+      "description": "ai_publication_state: the single authoritative control document per (project_id, locale). The public page reads only active + serving_state, never the newest draft.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_id",
+        "locale",
+        "version",
+        "approved",
+        "active",
+        "serving_state",
+        "eligibility_epoch",
+        "pending_invalidation",
+        "pending_intent",
+        "updated_at"
+      ],
+      "properties": {
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "locale": { "$ref": "common.schema.json#/$defs/Locale" },
+        "version": { "$ref": "common.schema.json#/$defs/Version" },
+        "approved": { "anyOf": [{ "$ref": "#/$defs/ApprovedPointer" }, { "type": "null" }] },
+        "active": { "anyOf": [{ "$ref": "#/$defs/ActivePointer" }, { "type": "null" }] },
+        "serving_state": { "$ref": "common.schema.json#/$defs/ServingState" },
+        "eligibility_epoch": {
+          "description": "Bumped by every evidence invalidation that affects this project/locale.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "pending_invalidation": { "type": "boolean" },
+        "pending_intent": {
+          "description": "At most one pending delivery intent (bounded; history lives in operations).",
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["operation_id", "kind", "created_at"],
+              "properties": {
+                "operation_id": { "$ref": "common.schema.json#/$defs/PublicationOperationId" },
+                "kind": { "enum": ["deliver", "revalidate_after_invalidation"] },
+                "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "updated_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "serving_state": { "enum": ["active", "temporarily_disabled"] } } },
+          "then": { "properties": { "active": { "type": "object" } } }
+        },
+        {
+          "if": { "properties": { "serving_state": { "const": "unpublished" } } },
+          "then": { "properties": { "active": { "type": "null" } } }
+        },
+        {
+          "description": "Fail closed while an invalidation is pending.",
+          "if": { "properties": { "pending_invalidation": { "const": true } } },
+          "then": { "properties": { "serving_state": { "enum": ["temporarily_disabled", "unpublished"] } } }
+        }
+      ]
+    },
+    "PublicationOperation": {
+      "description": "ai_publication_operations record. Activation success and verified page delivery are separate facts.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "project_id",
+        "locale",
+        "target",
+        "expected_state_version",
+        "idempotency_key",
+        "request_digest",
+        "actor",
+        "reason",
+        "status",
+        "attempts",
+        "revalidation",
+        "verification",
+        "error",
+        "rolled_back_by",
+        "created_at",
+        "activated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/PublicationOperationId" },
+        "kind": { "enum": ["publish", "rollback", "unpublish"] },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "locale": { "$ref": "common.schema.json#/$defs/Locale" },
+        "target": { "anyOf": [{ "$ref": "#/$defs/RevisionPointer" }, { "type": "null" }] },
+        "expected_state_version": { "$ref": "common.schema.json#/$defs/Version" },
+        "idempotency_key": { "type": "string", "minLength": 8, "maxLength": 128 },
+        "request_digest": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "actor": {
+          "allOf": [
+            { "$ref": "common.schema.json#/$defs/Actor" },
+            { "properties": { "kind": { "const": "user" }, "role": { "const": "publisher" } } }
+          ]
+        },
+        "reason": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "status": { "$ref": "common.schema.json#/$defs/PublicationOperationStatus" },
+        "attempts": { "type": "integer", "minimum": 0 },
+        "revalidation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["requested_at", "acknowledged_at", "http_status"],
+          "properties": {
+            "requested_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+            "acknowledged_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+            "http_status": { "anyOf": [{ "type": "integer", "minimum": 100, "maximum": 599 }, { "type": "null" }] }
+          }
+        },
+        "verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["verified_at", "rendered_revision_id", "rendered_payload_sha256"],
+          "properties": {
+            "verified_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+            "rendered_revision_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/ContentRevisionId" }, { "type": "null" }] },
+            "rendered_payload_sha256": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Sha256" }, { "type": "null" }] }
+          }
+        },
+        "error": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["code", "message"],
+              "properties": { "code": { "$ref": "common.schema.json#/$defs/ErrorCode" }, "message": { "type": "string" } }
+            },
+            { "type": "null" }
+          ]
+        },
+        "rolled_back_by": { "anyOf": [{ "$ref": "common.schema.json#/$defs/PublicationOperationId" }, { "type": "null" }] },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "activated_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "unpublish" } } },
+          "then": { "properties": { "target": { "type": "null" }, "reason": { "type": "string" } } },
+          "else": { "properties": { "target": { "$ref": "#/$defs/RevisionPointer" } } }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "rollback" } } },
+          "then": { "properties": { "reason": { "type": "string" } } }
+        },
+        {
+          "description": "Verified means the rendered page was read back, not merely that revalidation was acknowledged.",
+          "if": { "properties": { "status": { "const": "verified" } } },
+          "then": {
+            "properties": {
+              "activated_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+              "verification": { "properties": { "verified_at": { "$ref": "common.schema.json#/$defs/Timestamp" } } }
+            }
+          }
+        },
+        {
+          "description": "A verified publish or rollback read back the revision marker; a verified unpublish read back the empty state (no marker).",
+          "if": { "properties": { "status": { "const": "verified" }, "kind": { "enum": ["publish", "rollback"] } } },
+          "then": {
+            "properties": {
+              "verification": {
+                "properties": {
+                  "rendered_revision_id": { "$ref": "common.schema.json#/$defs/ContentRevisionId" },
+                  "rendered_payload_sha256": { "$ref": "common.schema.json#/$defs/Sha256" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "unpublish" } } },
+          "then": {
+            "properties": {
+              "verification": { "properties": { "rendered_revision_id": { "type": "null" }, "rendered_payload_sha256": { "type": "null" } } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "status": { "enum": ["delivery_pending", "retry_wait"] } } },
+          "then": { "properties": { "activated_at": { "$ref": "common.schema.json#/$defs/Timestamp" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "failed" } } },
+          "then": { "properties": { "error": { "type": "object" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "rolled_back" } } },
+          "then": { "properties": { "rolled_back_by": { "$ref": "common.schema.json#/$defs/PublicationOperationId" } } },
+          "else": { "properties": { "rolled_back_by": { "type": "null" } } }
+        }
+      ],
+      "x-invariants": [
+        "status=verified requires verification.rendered_payload_sha256 == target.payload_sha256 (unpublish: page shows the empty state)",
+        "(project_id, locale, idempotency_key) is unique; the same key with a different request_digest returns 409"
+      ]
+    }
+  }
+}

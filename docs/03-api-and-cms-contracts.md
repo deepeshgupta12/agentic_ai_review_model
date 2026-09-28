@@ -53,7 +53,7 @@ Use versioned REST JSON and generated OpenAPI. The backend is the single authori
 | `GET /v1/public/projects/{slug}/insights` | **Public read.** Returns only the active, eligible revision payload plus revision ID/hash marker, or `404`/empty-state when none is active. Never returns drafts. Cacheable. | None (rate-limited) |
 | `POST /v1/public/projects/{slug}/corrections` | **Public write.** Correction/report form → moderation queue. Rate-limited, honeypot/turnstile protected, no personal data required | None |
 
-Route details, response schemas and role names are frozen in Step 02 and generated from code from Step 03 onward. SSE needs authenticated reconnection and bounded retention; polling the run endpoint is a valid UI fallback.
+Route details, response schemas and role names are frozen in Step 02 in [contracts/v1/routes.json](../contracts/v1/routes.json) (47 operations; OpenAPI generated from it) and generated from code from Step 03 onward, with a contract test comparing the two. Step 02 added the operations the console screens need beyond the table above: run lists, content revision lists, publication state, the corrections queue, operations views and administration ([screen specifications](09-screen-specifications.md)). SSE needs authenticated reconnection and bounded retention; polling the run endpoint is a valid UI fallback.
 
 ## Page-renderer adapter (replaces the former CMS adapter)
 

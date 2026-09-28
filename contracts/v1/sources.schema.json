@@ -1,0 +1,411 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Source contracts",
+  "description": "Source policies, global source revisions, project-source links, media segments, connector state and origin clusters (docs/02 items 1, 4, 5, 9; docs/06).",
+  "x-contract-version": "1.0.0",
+  "$defs": {
+    "SourcePolicy": {
+      "description": "ai_source_policies record. Immutable per policy_version; a change is a new version. Rights form a chain: each needs the one before it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "family",
+        "policy_version",
+        "collection_allowed",
+        "ai_processing_allowed",
+        "quotation_allowed",
+        "derived_publication_allowed",
+        "attribution_required",
+        "retention_days",
+        "hosts",
+        "excluded_hosts",
+        "conditions",
+        "basis",
+        "status",
+        "effective_from",
+        "expires_at",
+        "accepted_on",
+        "accepted_by"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/PolicyId" },
+        "family": { "$ref": "common.schema.json#/$defs/PolicyFamily" },
+        "policy_version": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "collection_allowed": { "type": "boolean" },
+        "ai_processing_allowed": { "type": "boolean" },
+        "quotation_allowed": { "type": "boolean" },
+        "derived_publication_allowed": { "type": "boolean" },
+        "attribution_required": { "type": "boolean" },
+        "retention_days": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] },
+        "hosts": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9.-]+$" } },
+        "excluded_hosts": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9.-]+$" } },
+        "conditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "basis": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["proposed", "accepted"] },
+        "effective_from": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "expires_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+        "accepted_on": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Date" }, { "type": "null" }] },
+        "accepted_by": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "ai_processing_allowed": { "const": true } } },
+          "then": { "properties": { "collection_allowed": { "const": true } } }
+        },
+        {
+          "if": { "properties": { "derived_publication_allowed": { "const": true } } },
+          "then": { "properties": { "ai_processing_allowed": { "const": true }, "attribution_required": { "const": true } } }
+        },
+        {
+          "if": { "properties": { "quotation_allowed": { "const": true } } },
+          "then": { "properties": { "derived_publication_allowed": { "const": true } } }
+        },
+        {
+          "if": { "properties": { "collection_allowed": { "const": true } } },
+          "then": { "properties": { "retention_days": { "type": "integer" } } },
+          "else": { "properties": { "retention_days": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "accepted" } } },
+          "then": {
+            "properties": {
+              "accepted_on": { "$ref": "common.schema.json#/$defs/Date" },
+              "accepted_by": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "Author": {
+      "description": "Minimum author metadata; no cross-platform profiles (docs/06 rule 4).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["display_name", "role", "role_basis"],
+      "properties": {
+        "display_name": { "anyOf": [{ "type": "string", "minLength": 1, "maxLength": 200 }, { "type": "null" }] },
+        "role": { "$ref": "common.schema.json#/$defs/SourceRole" },
+        "role_basis": { "enum": ["self_described", "platform_badge", "inferred", "none"] }
+      }
+    },
+    "MediaInfo": {
+      "description": "Video/Short library fields. Discovery, transcript access and analysis are separate (docs/06 media rules).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["duration_ms", "format", "format_basis", "access_status", "transcript_route", "channel"],
+      "properties": {
+        "duration_ms": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "format": { "enum": ["video", "short", "unknown"] },
+        "format_basis": {
+          "description": "Duration alone never establishes Shorts format.",
+          "enum": ["platform_metadata", "url_pattern", "unknown"]
+        },
+        "access_status": { "$ref": "common.schema.json#/$defs/MediaAccessStatus" },
+        "transcript_route": { "anyOf": [{ "enum": ["creator_supplied", "licensed_feed", "platform_captions_authorised"] }, { "type": "null" }] },
+        "channel": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["native_id", "title"],
+          "properties": {
+            "native_id": { "type": "string", "minLength": 1 },
+            "title": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "format": { "const": "unknown" } } },
+          "then": { "properties": { "format_basis": { "const": "unknown" } } },
+          "else": { "properties": { "format_basis": { "enum": ["platform_metadata", "url_pattern"] } } }
+        },
+        {
+          "if": { "properties": { "access_status": { "enum": ["transcribed", "analysed"] } } },
+          "then": { "properties": { "transcript_route": { "type": "string" } } }
+        }
+      ]
+    },
+    "SourceRevision": {
+      "description": "ai_sources record: one global revision of one source, independent of projects. Unique (connector_id, native_id, revision). Payload text lives in the erasable store (payload_ref).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "connector_id",
+        "native_id",
+        "canonical_url",
+        "source_kind",
+        "parent",
+        "title",
+        "author",
+        "publication_date",
+        "collected_at",
+        "language",
+        "capture_level",
+        "content_sha256",
+        "payload_ref",
+        "policy",
+        "lifecycle",
+        "media",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/SourceId" },
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "connector_id": { "$ref": "common.schema.json#/$defs/ConnectorId" },
+        "native_id": { "type": "string", "minLength": 1 },
+        "canonical_url": { "$ref": "common.schema.json#/$defs/HttpUrl" },
+        "source_kind": { "$ref": "common.schema.json#/$defs/SourceKind" },
+        "parent": { "anyOf": [{ "$ref": "common.schema.json#/$defs/SourceRevisionRef" }, { "type": "null" }] },
+        "title": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "author": { "anyOf": [{ "$ref": "#/$defs/Author" }, { "type": "null" }] },
+        "publication_date": { "$ref": "common.schema.json#/$defs/DatedValue" },
+        "collected_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "language": { "anyOf": [{ "$ref": "common.schema.json#/$defs/LanguageTag" }, { "type": "null" }] },
+        "capture_level": { "$ref": "common.schema.json#/$defs/CaptureLevel" },
+        "content_sha256": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Sha256" }, { "type": "null" }] },
+        "payload_ref": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["store", "key"],
+              "properties": { "store": { "enum": ["payload_store", "media_store"] }, "key": { "type": "string", "minLength": 1 } }
+            },
+            { "type": "null" }
+          ]
+        },
+        "policy": { "$ref": "common.schema.json#/$defs/PolicyRef" },
+        "lifecycle": { "$ref": "common.schema.json#/$defs/RecordLifecycle" },
+        "media": { "anyOf": [{ "$ref": "#/$defs/MediaInfo" }, { "type": "null" }] },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "description": "Metadata-only captures carry no payload; they are discovery metadata, not evidence.",
+          "if": { "properties": { "capture_level": { "const": "metadata_only" } } },
+          "then": { "properties": { "payload_ref": { "type": "null" }, "content_sha256": { "type": "null" } } },
+          "else": { "properties": { "content_sha256": { "$ref": "common.schema.json#/$defs/Sha256" } } }
+        },
+        {
+          "if": { "properties": { "source_kind": { "const": "search_result" } } },
+          "then": { "properties": { "capture_level": { "const": "metadata_only" } } }
+        },
+        {
+          "if": { "properties": { "source_kind": { "enum": ["video", "short"] } } },
+          "then": { "properties": { "media": { "$ref": "#/$defs/MediaInfo" } } },
+          "else": { "properties": { "media": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "source_kind": { "const": "comment" } } },
+          "then": { "properties": { "parent": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" } } }
+        },
+        {
+          "description": "Erased sources keep audit metadata only.",
+          "if": { "properties": { "lifecycle": { "enum": ["deleted", "withdrawn", "expired"] } } },
+          "then": { "properties": { "payload_ref": { "type": "null" } } }
+        }
+      ]
+    },
+    "ProjectSourceLink": {
+      "description": "ai_project_source_links record: associates one segment of a source revision with one project (docs/02 item 1). Unique (project_id, source.id, source.revision, segment_key).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "project_id",
+        "source",
+        "segment_key",
+        "segment_anchor",
+        "status",
+        "phase",
+        "match",
+        "decided_by",
+        "superseded_by",
+        "version",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/SourceLinkId" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "source": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" },
+        "segment_key": { "type": "string", "pattern": "^(whole|c:\\d+-\\d+|t:\\d+-\\d+)$" },
+        "segment_anchor": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Anchor" }, { "type": "null" }] },
+        "status": { "$ref": "common.schema.json#/$defs/SourceLinkStatus" },
+        "phase": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rera_id", "certainty"],
+          "properties": {
+            "rera_id": { "anyOf": [{ "type": "string", "pattern": "^[A-Z0-9/]+$" }, { "type": "null" }] },
+            "certainty": { "enum": ["known", "probable", "unknown", "not_applicable"] }
+          }
+        },
+        "match": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["method", "rule_score", "signals", "matched_alias", "rationale"],
+          "properties": {
+            "method": { "enum": ["deterministic", "identity_agent", "moderator"] },
+            "rule_score": {
+              "description": "Deterministic ranking score for thresholds. Not a probability of truth and never shown as one.",
+              "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 1000 }, { "type": "null" }]
+            },
+            "signals": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/MatchSignal" } },
+            "matched_alias": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+            "rationale": { "type": "string", "minLength": 1 }
+          }
+        },
+        "decided_by": { "anyOf": [{ "$ref": "common.schema.json#/$defs/DecisionId" }, { "type": "null" }] },
+        "superseded_by": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/SourceLinkId" } },
+        "version": { "$ref": "common.schema.json#/$defs/Version" },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "segment_key": { "const": "whole" } } },
+          "then": { "properties": { "segment_anchor": { "type": "null" } } },
+          "else": { "properties": { "segment_anchor": { "$ref": "common.schema.json#/$defs/Anchor" } } }
+        },
+        {
+          "if": { "properties": { "status": { "enum": ["accepted", "rejected"] } } },
+          "then": { "properties": { "decided_by": { "$ref": "common.schema.json#/$defs/DecisionId" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "superseded" } } },
+          "then": { "properties": { "superseded_by": { "minItems": 1 } } },
+          "else": { "properties": { "superseded_by": { "maxItems": 0 } } }
+        }
+      ]
+    },
+    "MediaSegment": {
+      "description": "ai_media_segments record for authorised media only. Original speech and translation are stored separately.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source",
+        "segment_key",
+        "time",
+        "language",
+        "modality",
+        "transcription",
+        "original_text_ref",
+        "translation",
+        "quality_flags"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/MediaSegmentId" },
+        "source": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" },
+        "segment_key": { "type": "string", "pattern": "^t:\\d+-\\d+$" },
+        "time": { "$ref": "common.schema.json#/$defs/TimeAnchor" },
+        "language": { "$ref": "common.schema.json#/$defs/LanguageTag" },
+        "modality": { "enum": ["speech", "on_screen_text", "frame"] },
+        "transcription": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["engine", "model_size", "language_hint"],
+              "properties": {
+                "engine": { "const": "faster-whisper" },
+                "model_size": { "type": "string", "minLength": 1 },
+                "language_hint": { "anyOf": [{ "$ref": "common.schema.json#/$defs/LanguageTag" }, { "type": "null" }] }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "original_text_ref": { "type": "string", "minLength": 1 },
+        "translation": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["language", "text_ref", "method"],
+              "properties": {
+                "language": { "$ref": "common.schema.json#/$defs/LanguageTag" },
+                "text_ref": { "type": "string", "minLength": 1 },
+                "method": { "enum": ["language_agent", "moderator"] }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "quality_flags": {
+          "type": "array",
+          "items": { "enum": ["low_audio_quality", "code_switching", "numbers_uncertain", "overlapping_speech", "music"] }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "modality": { "const": "speech" } } },
+          "then": {
+            "properties": {
+              "transcription": {
+                "type": "object",
+                "required": ["engine", "model_size", "language_hint"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ConnectorState": {
+      "description": "ai_connector_state record per provider/project/query partition. A page's records commit before its cursor advances.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "connector_id",
+        "project_id",
+        "query_key",
+        "cursor",
+        "watermark",
+        "last_success_at",
+        "last_error",
+        "coverage",
+        "version"
+      ],
+      "properties": {
+        "connector_id": { "$ref": "common.schema.json#/$defs/ConnectorId" },
+        "project_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/ProjectId" }, { "type": "null" }] },
+        "query_key": { "type": "string", "minLength": 1 },
+        "cursor": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "watermark": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+        "last_success_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+        "last_error": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["code", "message", "at", "retryable"],
+              "properties": {
+                "code": { "type": "string" },
+                "message": { "type": "string" },
+                "at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+                "retryable": { "type": "boolean" }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "coverage": { "$ref": "common.schema.json#/$defs/CoverageStatus" },
+        "version": { "$ref": "common.schema.json#/$defs/Version" }
+      }
+    },
+    "OriginCluster": {
+      "description": "ai_origin_clusters record: copies of one origin count once.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "members", "representative", "method", "created_at"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/ClusterId" },
+        "version": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "members": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" } },
+        "representative": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" },
+        "method": { "enum": ["exact_hash", "near_duplicate", "moderator"] },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      }
+    }
+  }
+}

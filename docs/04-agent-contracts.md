@@ -14,6 +14,8 @@ Provider refusals, incomplete responses and malformed output are explicit paths.
 
 ## Specialist definitions
 
+Output schemas for A01–A10 are in [contracts/v1/agents.schema.json](../contracts/v1/agents.schema.json), within the Claude structured-output subset. A00 is deterministic and has no model output. JSON-LD is built by the backend from the visible content, never by A08.
+
 | ID / component | Inputs | Allowed tools | Required output and boundary |
 |---|---|---|---|
 | A00 Master coordinator | Config, eligible sources, job, state and budget | Dispatch registered nodes, read checkpoints, record state | Deterministic next state, run coverage and errors; cannot invent tasks/tools or approve content |

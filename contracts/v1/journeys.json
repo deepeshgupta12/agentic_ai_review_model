@@ -1,0 +1,547 @@
+{
+  "description": "Mandatory user journeys (Step 02.1) with actor, API operation and state path. Checked by scripts/check_contracts.py: every operation exists and allows the actor, every transition is listed for that actor, and each record instance's transitions chain in order. from=null means the record is created in an initial state. 'system' steps have no API operation.",
+  "version": "1.0.0",
+  "required_coverage": [
+    "setup",
+    "collection",
+    "partial_coverage",
+    "evidence_inspection",
+    "video_access",
+    "match_correction",
+    "alias_review",
+    "finding_approval",
+    "finding_edit",
+    "finding_rejection",
+    "formatting",
+    "final_approval",
+    "delivery",
+    "public_read",
+    "insufficient_evidence",
+    "correction",
+    "withdrawal",
+    "rollback",
+    "unpublish",
+    "cancellation",
+    "stale_approval_rejected",
+    "recovery"
+  ],
+  "journeys": [
+    {
+      "id": "J01",
+      "title": "Register the five projects and configure them",
+      "covers": ["setup"],
+      "steps": [
+        { "actor": "researcher", "operation": "importProjects", "does": "Imports the five-project input file; catalogue records and slugs are created (D19)" },
+        { "actor": "researcher", "operation": "getProject", "does": "Checks the record and the seeded aliases (input names and RERA registered names)" },
+        { "actor": "researcher", "operation": "updateProjectConfig", "does": "Sets languages, refresh and enabled sources at the expected version; a stale version returns 409" },
+        { "actor": "researcher", "operation": "getConnectorHealth", "does": "Sees which connectors are still access_pending" }
+      ]
+    },
+    {
+      "id": "J02",
+      "title": "Collection run with partial coverage",
+      "covers": ["collection", "partial_coverage"],
+      "steps": [
+        {
+          "actor": "researcher",
+          "operation": "startRun",
+          "does": "Starts a run for one project within entitlements",
+          "transitions": [
+            { "machine": "workflow_stage", "instance": "run", "from": null, "to": "collecting" },
+            { "machine": "execution_job", "instance": "collect", "from": null, "to": "queued" }
+          ]
+        },
+        { "actor": "system", "operation": null, "does": "A worker claims the collect job with a lease", "transitions": [{ "machine": "execution_job", "instance": "collect", "from": "queued", "to": "running" }] },
+        { "actor": "system", "operation": null, "does": "Brave and YouTube collect; an access_pending connector is recorded as not run; one provider fails mid-way and is marked partial while the others finish" },
+        { "actor": "analyst", "operation": "streamRunEvents", "does": "Watches stage and coverage events" },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Collection finishes and analysis starts",
+          "transitions": [
+            { "machine": "execution_job", "instance": "collect", "from": "running", "to": "completed" },
+            { "machine": "workflow_stage", "instance": "run", "from": "collecting", "to": "analysing" }
+          ]
+        },
+        { "actor": "analyst", "operation": "getRun", "does": "Sees partial and access_pending coverage labelled per connector" }
+      ]
+    },
+    {
+      "id": "J03",
+      "title": "Inspect evidence and videos",
+      "covers": ["evidence_inspection", "video_access"],
+      "steps": [
+        { "actor": "analyst", "operation": "listSources", "does": "Filters sources by platform, aspect, date and language" },
+        { "actor": "moderator", "operation": "getSourceRevision", "does": "Reads the exact excerpt, its context, the anchor (with UTF-16 offsets for highlighting), the policy and eligibility" },
+        { "actor": "analyst", "operation": "listMedia", "does": "Sees each video's access and analysis status" },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "A video without an authorised route stays in the library as metadata_only and yields no spoken-content evidence",
+          "transitions": [{ "machine": "media_access", "instance": "video1", "from": "discovered", "to": "metadata_only" }]
+        }
+      ]
+    },
+    {
+      "id": "J04",
+      "title": "Correct a wrong project match",
+      "covers": ["match_correction"],
+      "steps": [
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Deterministic matching auto-accepts a post that names the project",
+          "transitions": [{ "machine": "source_link", "instance": "lnk1", "from": null, "to": "auto_accepted" }]
+        },
+        {
+          "actor": "moderator",
+          "operation": "decideSourceLink",
+          "does": "Sees the post is about a same-name project in another city and rejects the match with a reason",
+          "transitions": [{ "machine": "source_link", "instance": "lnk1", "from": "auto_accepted", "to": "rejected" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Evidence on the rejected link becomes ineligible; affected findings go back to analysis",
+          "transitions": [{ "machine": "workflow_stage", "instance": "run", "from": "findings_review", "to": "analysing" }]
+        }
+      ]
+    },
+    {
+      "id": "J05",
+      "title": "Review alternate-name proposals (D17)",
+      "covers": ["alias_review"],
+      "steps": [
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "A01 proposes 'Privana West' citing a span that also shows its RERA ID; the collision check finds none",
+          "transitions": [{ "machine": "alias_proposal", "instance": "als1", "from": null, "to": "proposed" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "A01 proposes 'Parq'; the collision check marks it generic",
+          "transitions": [{ "machine": "alias_proposal", "instance": "als2", "from": null, "to": "proposed" }]
+        },
+        { "actor": "researcher", "operation": "listAliasProposals", "does": "Reviews proposals with evidence and collision warnings" },
+        {
+          "actor": "researcher",
+          "operation": "decideAliasProposal",
+          "does": "Approves 'Privana West' as a standalone alias for that phase",
+          "transitions": [{ "machine": "alias_proposal", "instance": "als1", "from": "proposed", "to": "approved" }]
+        },
+        {
+          "actor": "moderator",
+          "operation": "decideAliasProposal",
+          "does": "Approves 'Parq' as context-required only; standalone approval is refused by the contract",
+          "transitions": [{ "machine": "alias_proposal", "instance": "als2", "from": "proposed", "to": "approved" }]
+        },
+        {
+          "actor": "moderator",
+          "operation": "decideAliasProposal",
+          "does": "Later revokes 'Privana West'; the matches it produced return to review",
+          "transitions": [{ "machine": "alias_proposal", "instance": "als1", "from": "approved", "to": "revoked" }]
+        }
+      ]
+    },
+    {
+      "id": "J06",
+      "title": "Review findings: approve, edit, reject",
+      "covers": ["finding_approval", "finding_edit", "finding_rejection"],
+      "steps": [
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Analysis produces three draft findings",
+          "transitions": [
+            { "machine": "workflow_stage", "instance": "run", "from": "analysing", "to": "findings_review" },
+            { "machine": "finding_review", "instance": "f1r1", "from": null, "to": "pending" },
+            { "machine": "finding_review", "instance": "f2r1", "from": null, "to": "pending" },
+            { "machine": "finding_review", "instance": "f3r1", "from": null, "to": "pending" }
+          ]
+        },
+        { "actor": "moderator", "operation": "listFindings", "does": "Opens findings with their claims, conflicting evidence and eligibility" },
+        {
+          "actor": "moderator",
+          "operation": "decideFinding",
+          "does": "Approves finding 1 after reading its original evidence",
+          "transitions": [{ "machine": "finding_review", "instance": "f1r1", "from": "pending", "to": "approved" }]
+        },
+        {
+          "actor": "moderator",
+          "operation": "reviseFinding",
+          "does": "Tightens finding 2's wording; this creates revision 2",
+          "transitions": [
+            { "machine": "finding_review", "instance": "f2r1", "from": "pending", "to": "superseded" },
+            { "machine": "finding_review", "instance": "f2r2", "from": null, "to": "pending" }
+          ]
+        },
+        {
+          "actor": "moderator",
+          "operation": "decideFinding",
+          "does": "Approves finding 2 revision 2",
+          "transitions": [{ "machine": "finding_review", "instance": "f2r2", "from": "pending", "to": "approved" }]
+        },
+        {
+          "actor": "moderator",
+          "operation": "decideFinding",
+          "does": "Rejects finding 3 with a reason (single promotional source)",
+          "transitions": [{ "machine": "finding_review", "instance": "f3r1", "from": "pending", "to": "rejected" }]
+        }
+      ]
+    },
+    {
+      "id": "J07",
+      "title": "Generate page content and give final approval",
+      "covers": ["formatting", "final_approval"],
+      "steps": [
+        {
+          "actor": "moderator",
+          "operation": "createContentRevision",
+          "does": "Generates content from the selected approved finding revisions only",
+          "transitions": [
+            { "machine": "workflow_stage", "instance": "run", "from": "findings_review", "to": "formatting" },
+            { "machine": "execution_job", "instance": "generate", "from": null, "to": "queued" }
+          ]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "A08 drafts, the backend builds JSON-LD and hashes the payload",
+          "transitions": [
+            { "machine": "execution_job", "instance": "generate", "from": "queued", "to": "running" },
+            { "machine": "content_lifecycle", "instance": "rev1", "from": null, "to": "draft" }
+          ]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "A09 QA and the deterministic reference checks pass",
+          "transitions": [
+            { "machine": "content_lifecycle", "instance": "rev1", "from": "draft", "to": "final_review" },
+            { "machine": "workflow_stage", "instance": "run", "from": "formatting", "to": "final_review" },
+            { "machine": "execution_job", "instance": "generate", "from": "running", "to": "completed" }
+          ]
+        },
+        { "actor": "moderator", "operation": "getContentRevision", "does": "Reviews the preview in the real page template, the diff and the hashes" },
+        {
+          "actor": "moderator",
+          "operation": "createContentRevision",
+          "does": "Edits one sentence; this saves revision 2 with a new hash",
+          "transitions": [
+            { "machine": "content_lifecycle", "instance": "rev1", "from": "final_review", "to": "superseded" },
+            { "machine": "content_lifecycle", "instance": "rev2", "from": null, "to": "draft" },
+            { "machine": "workflow_stage", "instance": "run", "from": "final_review", "to": "formatting" }
+          ]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "The edit passes the same checks",
+          "transitions": [
+            { "machine": "content_lifecycle", "instance": "rev2", "from": "draft", "to": "final_review" },
+            { "machine": "workflow_stage", "instance": "run", "from": "formatting", "to": "final_review" }
+          ]
+        },
+        {
+          "actor": "moderator",
+          "operation": "approveContentRevision",
+          "does": "Approves revision 2 by its exact payload hash, manifest hash, epoch and state version",
+          "transitions": [
+            { "machine": "content_lifecycle", "instance": "rev2", "from": "final_review", "to": "approved" },
+            { "machine": "workflow_stage", "instance": "run", "from": "final_review", "to": "approved" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "J08",
+      "title": "Publish and verify delivery",
+      "covers": ["delivery"],
+      "steps": [
+        { "actor": "publisher", "operation": "getPublicationState", "does": "Sees the approved revision and that nothing is active yet" },
+        {
+          "actor": "publisher",
+          "operation": "publish",
+          "does": "Publishes the approved revision with its hash and the expected state version",
+          "transitions": [
+            { "machine": "publication_operation", "instance": "op1", "from": null, "to": "queued" },
+            { "machine": "workflow_stage", "instance": "run", "from": "approved", "to": "publishing" }
+          ]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "One transaction: control-document compare-and-set, operation record and delivery intent",
+          "transitions": [
+            { "machine": "publication_operation", "instance": "op1", "from": "queued", "to": "activating" },
+            { "machine": "publication_operation", "instance": "op1", "from": "activating", "to": "delivery_pending" },
+            { "machine": "serving_state", "instance": "page", "from": "unpublished", "to": "active" }
+          ]
+        },
+        { "actor": "system", "operation": null, "does": "The delivery worker calls the signed revalidation route and stores the acknowledgement" },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Reads the rendered page; its revision marker and hash match",
+          "transitions": [
+            { "machine": "publication_operation", "instance": "op1", "from": "delivery_pending", "to": "verified" },
+            { "machine": "workflow_stage", "instance": "run", "from": "publishing", "to": "published" }
+          ]
+        },
+        { "actor": "publisher", "operation": "getPublication", "does": "Sees activation and verified delivery as separate times" }
+      ]
+    },
+    {
+      "id": "J09",
+      "title": "Public page reads only the active revision",
+      "covers": ["public_read"],
+      "steps": [
+        { "actor": "public", "operation": "getPublicInsights", "does": "Gets the active eligible revision; a newer draft is never returned" },
+        { "actor": "public", "operation": "getPublicInsights", "does": "For a project with nothing active, gets 404 and the page shows the empty state" }
+      ]
+    },
+    {
+      "id": "J10",
+      "title": "Too little evidence is reported honestly",
+      "covers": ["insufficient_evidence"],
+      "steps": [
+        {
+          "actor": "researcher",
+          "operation": "startRun",
+          "does": "Starts a run for a new-launch project",
+          "transitions": [
+            { "machine": "workflow_stage", "instance": "run", "from": null, "to": "collecting" },
+            { "machine": "execution_job", "instance": "collect", "from": null, "to": "queued" }
+          ]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Collection finds little permitted discussion",
+          "transitions": [
+            { "machine": "execution_job", "instance": "collect", "from": "queued", "to": "running" },
+            { "machine": "workflow_stage", "instance": "run", "from": "collecting", "to": "analysing" }
+          ]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "No eligible evidence supports a finding; no content revision is created and nothing is manufactured",
+          "transitions": [
+            { "machine": "workflow_stage", "instance": "run", "from": "analysing", "to": "insufficient_evidence" },
+            { "machine": "execution_job", "instance": "collect", "from": "running", "to": "completed" }
+          ]
+        },
+        { "actor": "analyst", "operation": "getRun", "does": "Sees the insufficient-evidence result with its coverage" }
+      ]
+    },
+    {
+      "id": "J11",
+      "title": "Handle a public correction",
+      "covers": ["correction"],
+      "steps": [
+        {
+          "actor": "public",
+          "operation": "submitCorrection",
+          "does": "A reader reports an outdated statement from the page's correction link",
+          "transitions": [{ "machine": "correction", "instance": "cor1", "from": null, "to": "received" }]
+        },
+        { "actor": "moderator", "operation": "listCorrections", "does": "Opens the correction queue" },
+        {
+          "actor": "moderator",
+          "operation": "decideCorrection",
+          "does": "Checks the evidence, revises the finding (J06 path) and resolves the correction with a reason",
+          "transitions": [{ "machine": "correction", "instance": "cor1", "from": "received", "to": "resolved" }]
+        }
+      ]
+    },
+    {
+      "id": "J12",
+      "title": "Withdraw a source behind published content",
+      "covers": ["withdrawal"],
+      "steps": [
+        {
+          "actor": "moderator",
+          "operation": "withdrawSource",
+          "does": "Withdraws a source revision the active page depends on",
+          "transitions": [{ "machine": "deletion_request", "instance": "del1", "from": null, "to": "pending" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "The control document's epoch is bumped first and serving is disabled; the page is revalidated to the empty state",
+          "transitions": [
+            { "machine": "deletion_request", "instance": "del1", "from": "pending", "to": "invalidating" },
+            { "machine": "record_lifecycle", "instance": "ev1", "from": "active", "to": "withdrawn" },
+            { "machine": "serving_state", "instance": "page", "from": "active", "to": "temporarily_disabled" },
+            { "machine": "content_lifecycle", "instance": "rev2", "from": "approved", "to": "withdrawn" }
+          ]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Affected findings get new revisions for re-review",
+          "transitions": [{ "machine": "finding_review", "instance": "f1r1", "from": "approved", "to": "superseded" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Payloads are erased only after invalidation",
+          "transitions": [
+            { "machine": "deletion_request", "instance": "del1", "from": "invalidating", "to": "erasing" },
+            { "machine": "deletion_request", "instance": "del1", "from": "erasing", "to": "completed" }
+          ]
+        },
+        { "actor": "publisher", "operation": "getPublicationState", "does": "Sees serving temporarily disabled and the reason" }
+      ]
+    },
+    {
+      "id": "J13",
+      "title": "Roll back to an eligible prior revision",
+      "covers": ["rollback"],
+      "steps": [
+        {
+          "actor": "publisher",
+          "operation": "rollbackPublication",
+          "does": "Rolls back from the current operation to an earlier, still-eligible revision",
+          "transitions": [{ "machine": "publication_operation", "instance": "op2", "from": null, "to": "queued" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "The prior revision is re-validated against current rights and evidence, activated and verified",
+          "transitions": [
+            { "machine": "publication_operation", "instance": "op2", "from": "queued", "to": "activating" },
+            { "machine": "publication_operation", "instance": "op2", "from": "activating", "to": "delivery_pending" },
+            { "machine": "publication_operation", "instance": "op2", "from": "delivery_pending", "to": "verified" },
+            { "machine": "publication_operation", "instance": "op1", "from": "verified", "to": "rolled_back" }
+          ]
+        },
+        {
+          "actor": "publisher",
+          "operation": "rollbackPublication",
+          "does": "Tries to roll back to a withdrawn revision",
+          "transitions": [{ "machine": "publication_operation", "instance": "op3", "from": null, "to": "queued" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Refused with 409 ineligible_dependency; nothing changes on the page",
+          "transitions": [{ "machine": "publication_operation", "instance": "op3", "from": "queued", "to": "failed" }]
+        }
+      ]
+    },
+    {
+      "id": "J14",
+      "title": "Unpublish the module",
+      "covers": ["unpublish"],
+      "steps": [
+        {
+          "actor": "publisher",
+          "operation": "unpublishProject",
+          "does": "Unpublishes with a reason and the expected state version",
+          "transitions": [{ "machine": "publication_operation", "instance": "op4", "from": null, "to": "queued" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Activated and verified: the page shows the empty state and stays usable",
+          "transitions": [
+            { "machine": "publication_operation", "instance": "op4", "from": "queued", "to": "activating" },
+            { "machine": "publication_operation", "instance": "op4", "from": "activating", "to": "delivery_pending" },
+            { "machine": "serving_state", "instance": "page", "from": "active", "to": "unpublished" },
+            { "machine": "publication_operation", "instance": "op4", "from": "delivery_pending", "to": "verified" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "J15",
+      "title": "An approval never carries over to an edited revision",
+      "covers": ["stale_approval_rejected"],
+      "steps": [
+        {
+          "actor": "moderator",
+          "operation": "approveContentRevision",
+          "does": "Approves revision A",
+          "transitions": [{ "machine": "content_lifecycle", "instance": "revA", "from": "final_review", "to": "approved" }]
+        },
+        {
+          "actor": "moderator",
+          "operation": "createContentRevision",
+          "does": "Edits the text, which saves revision B with a different payload hash",
+          "transitions": [{ "machine": "content_lifecycle", "instance": "revB", "from": null, "to": "draft" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Revision B passes QA and awaits its own approval",
+          "transitions": [{ "machine": "content_lifecycle", "instance": "revB", "from": "draft", "to": "final_review" }]
+        },
+        {
+          "actor": "publisher",
+          "operation": "publish",
+          "does": "Tries to publish revision B using revision A's approval",
+          "transitions": [{ "machine": "publication_operation", "instance": "op5", "from": null, "to": "queued" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Refused with 409 approval_required: A's approval binds A's hash only",
+          "transitions": [{ "machine": "publication_operation", "instance": "op5", "from": "queued", "to": "failed" }]
+        }
+      ]
+    },
+    {
+      "id": "J16",
+      "title": "Cancel a run",
+      "covers": ["cancellation"],
+      "steps": [
+        {
+          "actor": "researcher",
+          "operation": "startRun",
+          "does": "Starts a run",
+          "transitions": [
+            { "machine": "workflow_stage", "instance": "run", "from": null, "to": "collecting" },
+            { "machine": "execution_job", "instance": "collect", "from": null, "to": "queued" }
+          ]
+        },
+        { "actor": "system", "operation": null, "does": "A worker picks it up", "transitions": [{ "machine": "execution_job", "instance": "collect", "from": "queued", "to": "running" }] },
+        {
+          "actor": "researcher",
+          "operation": "cancelRun",
+          "does": "Cancels with a reason; valid results so far are kept",
+          "transitions": [
+            { "machine": "execution_job", "instance": "collect", "from": "running", "to": "cancelled" },
+            { "machine": "workflow_stage", "instance": "run", "from": "collecting", "to": "cancelled" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "J17",
+      "title": "Recover from a worker crash",
+      "covers": ["recovery"],
+      "steps": [
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "The worker dies mid-task; its lease expires and recovery increments the fencing token",
+          "transitions": [{ "machine": "execution_job", "instance": "collect", "from": "running", "to": "retry_wait" }]
+        },
+        {
+          "actor": "system",
+          "operation": null,
+          "does": "Another worker resumes from the last checkpoint; the old worker's late writes are rejected by the fencing token",
+          "transitions": [
+            { "machine": "execution_job", "instance": "collect", "from": "retry_wait", "to": "running" },
+            { "machine": "execution_job", "instance": "collect", "from": "running", "to": "completed" }
+          ]
+        },
+        { "actor": "analyst", "operation": "getRun", "does": "Sees one completed run with no duplicate records" }
+      ]
+    }
+  ]
+}

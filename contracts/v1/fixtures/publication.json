@@ -1,0 +1,379 @@
+{
+  "note": "Synthetic fixture for contract tests. Fictional projects and sources; not evidence, never imported as real data.",
+  "cases": [
+    {
+      "name": "state_unpublished",
+      "schema": "publication.schema.json#/$defs/PublicationState",
+      "expect": "valid",
+      "tags": [],
+      "why": "Nothing approved or active yet",
+      "instance": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 0,
+        "approved": null,
+        "active": null,
+        "serving_state": "unpublished",
+        "eligibility_epoch": 0,
+        "pending_invalidation": false,
+        "pending_intent": null,
+        "updated_at": "2026-09-20T10:00:00Z"
+      }
+    },
+    {
+      "name": "state_active",
+      "schema": "publication.schema.json#/$defs/PublicationState",
+      "expect": "valid",
+      "tags": [],
+      "why": "Approved and active revision 1",
+      "instance": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 8,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "active",
+        "eligibility_epoch": 3,
+        "pending_invalidation": false,
+        "pending_intent": null,
+        "updated_at": "2026-09-24T13:00:00Z"
+      }
+    },
+    {
+      "name": "state_disabled_after_withdrawal",
+      "schema": "publication.schema.json#/$defs/PublicationState",
+      "expect": "valid",
+      "tags": [
+        "withdrawal"
+      ],
+      "why": "Invalidation pending: serving disabled, epoch bumped",
+      "instance": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 9,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "temporarily_disabled",
+        "eligibility_epoch": 4,
+        "pending_invalidation": true,
+        "pending_intent": {
+          "operation_id": "pub_01JB0000000000000000000002",
+          "kind": "revalidate_after_invalidation",
+          "created_at": "2026-09-26T10:00:00Z"
+        },
+        "updated_at": "2026-09-26T10:00:00Z"
+      }
+    },
+    {
+      "name": "state_serving_during_invalidation",
+      "schema": "publication.schema.json#/$defs/PublicationState",
+      "expect": "invalid",
+      "tags": [
+        "withdrawal"
+      ],
+      "why": "Serving fails closed while an invalidation is pending",
+      "error_contains": "is not one of ['temporarily_disabled', 'unpublished']",
+      "instance": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 9,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "active",
+        "eligibility_epoch": 4,
+        "pending_invalidation": true,
+        "pending_intent": {
+          "operation_id": "pub_01JB0000000000000000000002",
+          "kind": "revalidate_after_invalidation",
+          "created_at": "2026-09-26T10:00:00Z"
+        },
+        "updated_at": "2026-09-26T10:00:00Z"
+      }
+    },
+    {
+      "name": "state_active_without_pointer",
+      "schema": "publication.schema.json#/$defs/PublicationState",
+      "expect": "invalid",
+      "tags": [],
+      "why": "Active serving needs an active revision",
+      "error_contains": "None is not of type 'object'",
+      "instance": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 8,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": null,
+        "serving_state": "active",
+        "eligibility_epoch": 3,
+        "pending_invalidation": false,
+        "pending_intent": null,
+        "updated_at": "2026-09-24T13:00:00Z"
+      }
+    },
+    {
+      "name": "operation_publish_verified",
+      "schema": "publication.schema.json#/$defs/PublicationOperation",
+      "expect": "valid",
+      "tags": [],
+      "why": "Verified by reading the rendered revision marker",
+      "instance": {
+        "id": "pub_01JB0000000000000000000001",
+        "kind": "publish",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "target": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db"
+        },
+        "expected_state_version": 7,
+        "idempotency_key": "publish-rev1-0001",
+        "request_digest": "sha256:e532a04f50ade56f316f52ad3fd48fc33203b17180ae95a2f8aba3297e6e220d",
+        "actor": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000002",
+          "role": "publisher"
+        },
+        "reason": null,
+        "status": "verified",
+        "attempts": 1,
+        "revalidation": {
+          "requested_at": "2026-09-24T13:00:00Z",
+          "acknowledged_at": "2026-09-24T13:00:00Z",
+          "http_status": 200
+        },
+        "verification": {
+          "verified_at": "2026-09-24T14:00:00Z",
+          "rendered_revision_id": "rev_01JB0000000000000000000001",
+          "rendered_payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7"
+        },
+        "error": null,
+        "rolled_back_by": null,
+        "created_at": "2026-09-24T13:00:00Z",
+        "activated_at": "2026-09-24T13:00:00Z"
+      }
+    },
+    {
+      "name": "operation_unpublish_verified",
+      "schema": "publication.schema.json#/$defs/PublicationOperation",
+      "expect": "valid",
+      "tags": [],
+      "why": "Unpublish verified by reading the empty state",
+      "instance": {
+        "id": "pub_01JB0000000000000000000002",
+        "kind": "unpublish",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "target": null,
+        "expected_state_version": 7,
+        "idempotency_key": "unpublish-0001",
+        "request_digest": "sha256:edc0ccb3d0b1a6ca33f23de09b3caceb34069c3fc3588095d09966a1ffd41f5b",
+        "actor": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000002",
+          "role": "publisher"
+        },
+        "reason": "Project details under review",
+        "status": "verified",
+        "attempts": 1,
+        "revalidation": {
+          "requested_at": "2026-09-24T13:00:00Z",
+          "acknowledged_at": "2026-09-24T13:00:00Z",
+          "http_status": 200
+        },
+        "verification": {
+          "verified_at": "2026-09-26T12:00:00Z",
+          "rendered_revision_id": null,
+          "rendered_payload_sha256": null
+        },
+        "error": null,
+        "rolled_back_by": null,
+        "created_at": "2026-09-24T13:00:00Z",
+        "activated_at": "2026-09-24T13:00:00Z"
+      }
+    },
+    {
+      "name": "operation_verified_without_rendered_hash",
+      "schema": "publication.schema.json#/$defs/PublicationOperation",
+      "expect": "invalid",
+      "tags": [
+        "verified_means_rendered"
+      ],
+      "why": "Revalidation acknowledgement alone is not delivery verification",
+      "error_contains": "None is not of type 'string'",
+      "instance": {
+        "id": "pub_01JB0000000000000000000001",
+        "kind": "publish",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "target": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db"
+        },
+        "expected_state_version": 7,
+        "idempotency_key": "publish-rev1-0001",
+        "request_digest": "sha256:e532a04f50ade56f316f52ad3fd48fc33203b17180ae95a2f8aba3297e6e220d",
+        "actor": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000002",
+          "role": "publisher"
+        },
+        "reason": null,
+        "status": "verified",
+        "attempts": 1,
+        "revalidation": {
+          "requested_at": "2026-09-24T13:00:00Z",
+          "acknowledged_at": "2026-09-24T13:00:00Z",
+          "http_status": 200
+        },
+        "verification": {
+          "verified_at": "2026-09-24T14:00:00Z",
+          "rendered_revision_id": "rev_01JB0000000000000000000001",
+          "rendered_payload_sha256": null
+        },
+        "error": null,
+        "rolled_back_by": null,
+        "created_at": "2026-09-24T13:00:00Z",
+        "activated_at": "2026-09-24T13:00:00Z"
+      }
+    },
+    {
+      "name": "operation_by_moderator",
+      "schema": "publication.schema.json#/$defs/PublicationOperation",
+      "expect": "invalid",
+      "tags": [],
+      "why": "Only a publisher can publish",
+      "error_contains": "'publisher' was expected",
+      "instance": {
+        "id": "pub_01JB0000000000000000000001",
+        "kind": "publish",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "target": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db"
+        },
+        "expected_state_version": 7,
+        "idempotency_key": "publish-rev1-0001",
+        "request_digest": "sha256:e532a04f50ade56f316f52ad3fd48fc33203b17180ae95a2f8aba3297e6e220d",
+        "actor": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000001",
+          "role": "moderator"
+        },
+        "reason": null,
+        "status": "verified",
+        "attempts": 1,
+        "revalidation": {
+          "requested_at": "2026-09-24T13:00:00Z",
+          "acknowledged_at": "2026-09-24T13:00:00Z",
+          "http_status": 200
+        },
+        "verification": {
+          "verified_at": "2026-09-24T14:00:00Z",
+          "rendered_revision_id": "rev_01JB0000000000000000000001",
+          "rendered_payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7"
+        },
+        "error": null,
+        "rolled_back_by": null,
+        "created_at": "2026-09-24T13:00:00Z",
+        "activated_at": "2026-09-24T13:00:00Z"
+      }
+    },
+    {
+      "name": "operation_delivery_pending_without_activation",
+      "schema": "publication.schema.json#/$defs/PublicationOperation",
+      "expect": "invalid",
+      "tags": [],
+      "why": "Delivery is pending only after activation",
+      "error_contains": "None is not of type 'string'",
+      "instance": {
+        "id": "pub_01JB0000000000000000000001",
+        "kind": "publish",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "target": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db"
+        },
+        "expected_state_version": 7,
+        "idempotency_key": "publish-rev1-0001",
+        "request_digest": "sha256:e532a04f50ade56f316f52ad3fd48fc33203b17180ae95a2f8aba3297e6e220d",
+        "actor": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000002",
+          "role": "publisher"
+        },
+        "reason": null,
+        "status": "delivery_pending",
+        "attempts": 1,
+        "revalidation": {
+          "requested_at": "2026-09-24T13:00:00Z",
+          "acknowledged_at": "2026-09-24T13:00:00Z",
+          "http_status": 200
+        },
+        "verification": {
+          "verified_at": "2026-09-24T14:00:00Z",
+          "rendered_revision_id": "rev_01JB0000000000000000000001",
+          "rendered_payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7"
+        },
+        "error": null,
+        "rolled_back_by": null,
+        "created_at": "2026-09-24T13:00:00Z",
+        "activated_at": null
+      }
+    }
+  ]
+}

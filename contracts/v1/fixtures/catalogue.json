@@ -1,0 +1,324 @@
+{
+  "note": "Synthetic fixture for contract tests. Fictional projects and sources; not evidence, never imported as real data.",
+  "cases": [
+    {
+      "name": "project",
+      "schema": "catalogue.schema.json#/$defs/Project",
+      "expect": "valid",
+      "tags": [],
+      "why": "Catalogue record with a phase registration",
+      "instance": {
+        "id": "prj_01JB0000000000000000000001",
+        "slug": "fixture-towers-sector-0-example-city",
+        "project_name": "Fixture Towers",
+        "alternate_names": [
+          "Fixture Twrs"
+        ],
+        "locality": "Sector 0",
+        "city": "Example City",
+        "micromarket": "Example Micromarket",
+        "developer": "Example Developer",
+        "phase": null,
+        "rera_registrations": [
+          {
+            "id": "FIX/0001/0001/2026/01",
+            "id_normalised": "FIX/0001/0001/2026/01",
+            "registered_name": "Fixture Towers Phase 1"
+          }
+        ],
+        "reference_url": null,
+        "client_id": null,
+        "client_ref": null,
+        "input_schema_version": "1.1",
+        "version": 1,
+        "created_at": "2026-09-20T10:00:00Z",
+        "updated_at": "2026-09-20T10:00:00Z"
+      }
+    },
+    {
+      "name": "project_config",
+      "schema": "catalogue.schema.json#/$defs/ProjectConfig",
+      "expect": "valid",
+      "tags": [],
+      "why": "Aliases from the input file, a RERA name and an approved proposal",
+      "instance": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "version": 3,
+        "aliases": [
+          {
+            "text": "Fixture Towers",
+            "normalised": "fixture towers",
+            "target": {
+              "kind": "project",
+              "rera_id": null
+            },
+            "mode": "standalone",
+            "origin": "input_file",
+            "proposal_id": null
+          },
+          {
+            "text": "Fixture Towers Phase 1",
+            "normalised": "fixture towers phase 1",
+            "target": {
+              "kind": "phase",
+              "rera_id": "FIX/0001/0001/2026/01"
+            },
+            "mode": "standalone",
+            "origin": "rera_registered_name",
+            "proposal_id": null
+          },
+          {
+            "text": "Towers",
+            "normalised": "towers",
+            "target": {
+              "kind": "project",
+              "rera_id": null
+            },
+            "mode": "context_required",
+            "origin": "approved_proposal",
+            "proposal_id": "als_01JB0000000000000000000002"
+          }
+        ],
+        "negative_keywords": [
+          "Fixture Towers Otherville"
+        ],
+        "input_languages": [
+          "en",
+          "hi",
+          "hi-Latn"
+        ],
+        "output_locale": "en-IN",
+        "refresh": {
+          "cadence": "daily_incremental_and_manual",
+          "lookback_days": 90
+        },
+        "sources": [
+          {
+            "connector_id": "brave_search",
+            "enabled": true
+          },
+          {
+            "connector_id": "youtube_data_api",
+            "enabled": true
+          }
+        ],
+        "updated_at": "2026-09-21T10:00:00Z",
+        "updated_by": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000003",
+          "role": "researcher"
+        }
+      }
+    },
+    {
+      "name": "alias_proposed",
+      "schema": "catalogue.schema.json#/$defs/AliasProposal",
+      "expect": "valid",
+      "tags": [
+        "alias_review"
+      ],
+      "why": "Proposal cites a span with a strong identifier; no decision yet",
+      "instance": {
+        "id": "als_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000001",
+        "alias_text": "Fixture Twrs P1",
+        "normalised": "fixture twrs p1",
+        "alias_type": "short_name",
+        "target": {
+          "kind": "phase",
+          "rera_id": "FIX/0001/0001/2026/01"
+        },
+        "evidence_refs": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "strong_identifier": {
+          "kind": "rera_id",
+          "evidence_ref": {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        },
+        "independent_origin_count": 2,
+        "collision": {
+          "status": "none",
+          "colliding_project_ids": [],
+          "reason": null
+        },
+        "status": "proposed",
+        "decision": null,
+        "proposed_by_task": "tsk_01JB0000000000000000000001",
+        "version": 0,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "alias_generic_context_required",
+      "schema": "catalogue.schema.json#/$defs/AliasProposal",
+      "expect": "valid",
+      "tags": [
+        "alias_review"
+      ],
+      "why": "A generic alias approved only as context-required",
+      "instance": {
+        "id": "als_01JB0000000000000000000002",
+        "project_id": "prj_01JB0000000000000000000001",
+        "alias_text": "Towers",
+        "normalised": "towers",
+        "alias_type": "short_name",
+        "target": {
+          "kind": "project",
+          "rera_id": null
+        },
+        "evidence_refs": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "strong_identifier": {
+          "kind": "rera_id",
+          "evidence_ref": {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        },
+        "independent_origin_count": 2,
+        "collision": {
+          "status": "generic",
+          "colliding_project_ids": [],
+          "reason": "A single common word"
+        },
+        "status": "approved",
+        "decision": {
+          "decision_id": "dec_01JB0000000000000000000009",
+          "mode": "context_required"
+        },
+        "proposed_by_task": "tsk_01JB0000000000000000000001",
+        "version": 1,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "alias_generic_standalone",
+      "schema": "catalogue.schema.json#/$defs/AliasProposal",
+      "expect": "invalid",
+      "tags": [
+        "alias_review"
+      ],
+      "why": "A generic alias cannot be approved as standalone (D17)",
+      "error_contains": "'context_required' was expected",
+      "instance": {
+        "id": "als_01JB0000000000000000000002",
+        "project_id": "prj_01JB0000000000000000000001",
+        "alias_text": "Towers",
+        "normalised": "towers",
+        "alias_type": "short_name",
+        "target": {
+          "kind": "project",
+          "rera_id": null
+        },
+        "evidence_refs": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "strong_identifier": {
+          "kind": "rera_id",
+          "evidence_ref": {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        },
+        "independent_origin_count": 2,
+        "collision": {
+          "status": "generic",
+          "colliding_project_ids": [],
+          "reason": "A single common word"
+        },
+        "status": "approved",
+        "decision": {
+          "decision_id": "dec_01JB0000000000000000000009",
+          "mode": "standalone"
+        },
+        "proposed_by_task": "tsk_01JB0000000000000000000001",
+        "version": 1,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "alias_proposed_with_decision",
+      "schema": "catalogue.schema.json#/$defs/AliasProposal",
+      "expect": "invalid",
+      "tags": [],
+      "why": "A proposal has no decision until someone decides",
+      "error_contains": "is not of type 'null'",
+      "instance": {
+        "id": "als_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000001",
+        "alias_text": "Fixture Twrs P1",
+        "normalised": "fixture twrs p1",
+        "alias_type": "short_name",
+        "target": {
+          "kind": "phase",
+          "rera_id": "FIX/0001/0001/2026/01"
+        },
+        "evidence_refs": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "strong_identifier": {
+          "kind": "rera_id",
+          "evidence_ref": {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        },
+        "independent_origin_count": 2,
+        "collision": {
+          "status": "none",
+          "colliding_project_ids": [],
+          "reason": null
+        },
+        "status": "proposed",
+        "decision": {
+          "decision_id": "dec_01JB0000000000000000000009",
+          "mode": null
+        },
+        "proposed_by_task": "tsk_01JB0000000000000000000001",
+        "version": 0,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "alias_target_phase_without_rera",
+      "schema": "catalogue.schema.json#/$defs/AliasTarget",
+      "expect": "invalid",
+      "tags": [],
+      "why": "A phase alias must name its registration",
+      "error_contains": "None is not of type 'string'",
+      "instance": {
+        "kind": "phase",
+        "rera_id": null
+      }
+    },
+    {
+      "name": "input_placeholder",
+      "schema": "catalogue.schema.json#/$defs/ProjectInput",
+      "expect": "invalid",
+      "tags": [],
+      "why": "Template placeholders are rejected",
+      "error_contains": "does not match",
+      "instance": {
+        "project_name": "<Project 1 name>",
+        "locality": "Sector 0",
+        "city": "Example City"
+      }
+    }
+  ]
+}

@@ -1,0 +1,659 @@
+{
+  "note": "Synthetic fixture for contract tests. Fictional projects and sources; not evidence, never imported as real data.",
+  "cases": [
+    {
+      "name": "evidence_text",
+      "schema": "evidence.schema.json#/$defs/Evidence",
+      "expect": "valid",
+      "tags": [],
+      "why": "Text evidence anchored in code points",
+      "instance": {
+        "id": "evd_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000003",
+        "anchor": {
+          "kind": "text",
+          "representation": "original",
+          "unit": "codepoint",
+          "start": 8,
+          "end": 44,
+          "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b"
+        },
+        "context_anchor": null,
+        "excerpt_text": "Possession was delayed by six months",
+        "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b",
+        "language": "en",
+        "modality": "text",
+        "translation_of": null,
+        "origin_cluster": {
+          "id": "cls_01JB0000000000000000000001",
+          "version": 1
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 1
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "evidence_speech_segment",
+      "schema": "evidence.schema.json#/$defs/Evidence",
+      "expect": "valid",
+      "tags": [
+        "multi_project_video"
+      ],
+      "why": "Speech evidence from the Fixture Towers segment of a comparison video",
+      "instance": {
+        "id": "evd_01JB0000000000000000000002",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000001",
+        "anchor": {
+          "kind": "time",
+          "start_ms": 12000,
+          "end_ms": 19000,
+          "precision": "approximate",
+          "method": "transcript_segment"
+        },
+        "context_anchor": null,
+        "excerpt_text": "possession mein thoda delay hua",
+        "excerpt_sha256": "sha256:1262bb2ec3b80eef9d4267b0abba3ef91231f993c57bb93c35476cab8e43a0d0",
+        "language": "hi-Latn",
+        "modality": "speech",
+        "translation_of": null,
+        "origin_cluster": {
+          "id": "cls_01JB0000000000000000000002",
+          "version": 1
+        },
+        "policy": {
+          "family": "youtube",
+          "policy_version": 1
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "evidence_from_metadata",
+      "schema": "evidence.schema.json#/$defs/Evidence",
+      "expect": "invalid",
+      "tags": [
+        "metadata_not_evidence"
+      ],
+      "why": "Metadata is never evidence",
+      "error_contains": "should not be valid",
+      "instance": {
+        "id": "evd_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000003",
+        "anchor": {
+          "kind": "text",
+          "representation": "original",
+          "unit": "codepoint",
+          "start": 8,
+          "end": 44,
+          "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b"
+        },
+        "context_anchor": null,
+        "excerpt_text": "Possession was delayed by six months",
+        "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b",
+        "language": "en",
+        "modality": "metadata",
+        "translation_of": null,
+        "origin_cluster": {
+          "id": "cls_01JB0000000000000000000001",
+          "version": 1
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 1
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "evidence_speech_with_text_anchor",
+      "schema": "evidence.schema.json#/$defs/Evidence",
+      "expect": "invalid",
+      "tags": [],
+      "why": "Speech evidence is anchored in time",
+      "error_contains": "'time' was expected",
+      "instance": {
+        "id": "evd_01JB0000000000000000000002",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000001",
+        "anchor": {
+          "kind": "text",
+          "representation": "original",
+          "unit": "codepoint",
+          "start": 8,
+          "end": 44,
+          "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b"
+        },
+        "context_anchor": null,
+        "excerpt_text": "possession mein thoda delay hua",
+        "excerpt_sha256": "sha256:1262bb2ec3b80eef9d4267b0abba3ef91231f993c57bb93c35476cab8e43a0d0",
+        "language": "hi-Latn",
+        "modality": "speech",
+        "translation_of": null,
+        "origin_cluster": {
+          "id": "cls_01JB0000000000000000000002",
+          "version": 1
+        },
+        "policy": {
+          "family": "youtube",
+          "policy_version": 1
+        },
+        "lifecycle": "active",
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "evidence_withdrawn_erased",
+      "schema": "evidence.schema.json#/$defs/Evidence",
+      "expect": "valid",
+      "tags": [
+        "withdrawal"
+      ],
+      "why": "Withdrawn evidence keeps audit metadata only",
+      "instance": {
+        "id": "evd_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000003",
+        "anchor": {
+          "kind": "text",
+          "representation": "original",
+          "unit": "codepoint",
+          "start": 8,
+          "end": 44,
+          "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b"
+        },
+        "context_anchor": null,
+        "excerpt_text": null,
+        "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b",
+        "language": "en",
+        "modality": "text",
+        "translation_of": null,
+        "origin_cluster": {
+          "id": "cls_01JB0000000000000000000001",
+          "version": 1
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 1
+        },
+        "lifecycle": "withdrawn",
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "evidence_withdrawn_with_text",
+      "schema": "evidence.schema.json#/$defs/Evidence",
+      "expect": "invalid",
+      "tags": [
+        "withdrawal"
+      ],
+      "why": "Withdrawn evidence cannot keep its excerpt",
+      "error_contains": "is not of type 'null'",
+      "instance": {
+        "id": "evd_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "link_id": "lnk_01JB0000000000000000000003",
+        "anchor": {
+          "kind": "text",
+          "representation": "original",
+          "unit": "codepoint",
+          "start": 8,
+          "end": 44,
+          "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b"
+        },
+        "context_anchor": null,
+        "excerpt_text": "Possession was delayed by six months",
+        "excerpt_sha256": "sha256:7d8242d9c8b96de6a1cabb52036400fed6c4ff27124a1d6c4b6575da1b63de2b",
+        "language": "en",
+        "modality": "text",
+        "translation_of": null,
+        "origin_cluster": {
+          "id": "cls_01JB0000000000000000000001",
+          "version": 1
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 1
+        },
+        "lifecycle": "withdrawn",
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "claim_opinion_many_origins",
+      "schema": "evidence.schema.json#/$defs/Claim",
+      "expect": "valid",
+      "tags": [
+        "independent_counts_not_truth"
+      ],
+      "why": "Five independent origins still leave an opinion unverified",
+      "instance": {
+        "id": "clm_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "aspect": "possession",
+        "aspect_label": null,
+        "claim_type": "opinion",
+        "polarity": "negative",
+        "statement": "Residents report that possession was delayed",
+        "observation_time": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "supporting_evidence": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          },
+          {
+            "id": "evd_01JB0000000000000000000002",
+            "revision": 1
+          }
+        ],
+        "contradicting_evidence": [],
+        "verification": {
+          "status": "not_applicable",
+          "primary_records": [],
+          "checked_at": null,
+          "reason": null
+        },
+        "origin_clusters": [
+          "cls_01JB0000000000000000000001",
+          "cls_01JB0000000000000000000002",
+          "cls_01JB0000000000000000000005",
+          "cls_01JB0000000000000000000006",
+          "cls_01JB0000000000000000000007"
+        ],
+        "independent_origin_count": 5,
+        "confidence": {
+          "value": null,
+          "calibration_ref": null
+        },
+        "created_by_task": "tsk_01JB0000000000000000000005",
+        "created_at": "2026-09-23T10:00:00Z"
+      }
+    },
+    {
+      "name": "claim_fact_verified",
+      "schema": "evidence.schema.json#/$defs/Claim",
+      "expect": "valid",
+      "tags": [],
+      "why": "A fact verified against a dated primary record",
+      "instance": {
+        "id": "clm_01JB0000000000000000000002",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "aspect": "possession",
+        "aspect_label": null,
+        "claim_type": "fact",
+        "polarity": "neutral",
+        "statement": "The registered completion date is 31 December 2027",
+        "observation_time": {
+          "status": "known",
+          "value": "2026-09-01T10:00:00Z",
+          "precision": "day",
+          "basis": "registry_record"
+        },
+        "supporting_evidence": [
+          {
+            "id": "evd_01JB0000000000000000000004",
+            "revision": 1
+          }
+        ],
+        "contradicting_evidence": [],
+        "verification": {
+          "status": "verified",
+          "primary_records": [
+            {
+              "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
+          "checked_at": "2026-09-23T10:00:00Z",
+          "reason": "Matches the registry record dated 1 Sep 2026"
+        },
+        "origin_clusters": [
+          "cls_01JB0000000000000000000003"
+        ],
+        "independent_origin_count": 1,
+        "confidence": {
+          "value": null,
+          "calibration_ref": null
+        },
+        "created_by_task": "tsk_01JB0000000000000000000005",
+        "created_at": "2026-09-23T10:00:00Z"
+      }
+    },
+    {
+      "name": "claim_verified_by_count",
+      "schema": "evidence.schema.json#/$defs/Claim",
+      "expect": "invalid",
+      "tags": [
+        "independent_counts_not_truth"
+      ],
+      "why": "Seven posts saying the same thing do not verify a fact",
+      "error_contains": "should be non-empty",
+      "instance": {
+        "id": "clm_01JB0000000000000000000002",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "aspect": "possession",
+        "aspect_label": null,
+        "claim_type": "fact",
+        "polarity": "neutral",
+        "statement": "The registered completion date is 31 December 2027",
+        "observation_time": {
+          "status": "known",
+          "value": "2026-09-01T10:00:00Z",
+          "precision": "day",
+          "basis": "registry_record"
+        },
+        "supporting_evidence": [
+          {
+            "id": "evd_01JB0000000000000000000004",
+            "revision": 1
+          }
+        ],
+        "contradicting_evidence": [],
+        "verification": {
+          "status": "verified",
+          "primary_records": [],
+          "checked_at": "2026-09-23T10:00:00Z",
+          "reason": "Matches the registry record dated 1 Sep 2026"
+        },
+        "origin_clusters": [
+          "cls_01JB0000000000000000000003"
+        ],
+        "independent_origin_count": 7,
+        "confidence": {
+          "value": null,
+          "calibration_ref": null
+        },
+        "created_by_task": "tsk_01JB0000000000000000000005",
+        "created_at": "2026-09-23T10:00:00Z"
+      }
+    },
+    {
+      "name": "claim_opinion_verified",
+      "schema": "evidence.schema.json#/$defs/Claim",
+      "expect": "invalid",
+      "tags": [
+        "independent_counts_not_truth"
+      ],
+      "why": "Opinions are attributed, never verified",
+      "error_contains": "'not_applicable' was expected",
+      "instance": {
+        "id": "clm_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "aspect": "possession",
+        "aspect_label": null,
+        "claim_type": "opinion",
+        "polarity": "negative",
+        "statement": "Residents report that possession was delayed",
+        "observation_time": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "supporting_evidence": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          },
+          {
+            "id": "evd_01JB0000000000000000000002",
+            "revision": 1
+          }
+        ],
+        "contradicting_evidence": [],
+        "verification": {
+          "status": "verified",
+          "primary_records": [
+            {
+              "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
+          "checked_at": "2026-09-23T10:00:00Z",
+          "reason": "x"
+        },
+        "origin_clusters": [
+          "cls_01JB0000000000000000000001",
+          "cls_01JB0000000000000000000002",
+          "cls_01JB0000000000000000000005",
+          "cls_01JB0000000000000000000006",
+          "cls_01JB0000000000000000000007"
+        ],
+        "independent_origin_count": 5,
+        "confidence": {
+          "value": null,
+          "calibration_ref": null
+        },
+        "created_by_task": "tsk_01JB0000000000000000000005",
+        "created_at": "2026-09-23T10:00:00Z"
+      }
+    },
+    {
+      "name": "claim_uncalibrated_confidence",
+      "schema": "evidence.schema.json#/$defs/Claim",
+      "expect": "invalid",
+      "tags": [
+        "calibrated_confidence"
+      ],
+      "why": "A confidence value needs the evaluation that calibrated it",
+      "error_contains": "None is not of type 'string'",
+      "instance": {
+        "id": "clm_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "aspect": "possession",
+        "aspect_label": null,
+        "claim_type": "opinion",
+        "polarity": "negative",
+        "statement": "Residents report that possession was delayed",
+        "observation_time": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "supporting_evidence": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          },
+          {
+            "id": "evd_01JB0000000000000000000002",
+            "revision": 1
+          }
+        ],
+        "contradicting_evidence": [],
+        "verification": {
+          "status": "not_applicable",
+          "primary_records": [],
+          "checked_at": null,
+          "reason": null
+        },
+        "origin_clusters": [
+          "cls_01JB0000000000000000000001",
+          "cls_01JB0000000000000000000002",
+          "cls_01JB0000000000000000000005",
+          "cls_01JB0000000000000000000006",
+          "cls_01JB0000000000000000000007"
+        ],
+        "independent_origin_count": 5,
+        "confidence": {
+          "value": 0.8,
+          "calibration_ref": null
+        },
+        "created_by_task": "tsk_01JB0000000000000000000005",
+        "created_at": "2026-09-23T10:00:00Z"
+      }
+    },
+    {
+      "name": "finding_con",
+      "schema": "evidence.schema.json#/$defs/Finding",
+      "expect": "valid",
+      "tags": [],
+      "why": "Con finding built from an exact claim revision",
+      "instance": {
+        "id": "fnd_01JB0000000000000000000001",
+        "revision": 1,
+        "project_id": "prj_01JB0000000000000000000001",
+        "kind": "con",
+        "aspect": "possession",
+        "wording": "Several residents report that possession was delayed",
+        "attribution": "reported_opinion",
+        "claims": [
+          {
+            "id": "clm_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "caveats": [
+          "Reported in public posts; not confirmed by the developer"
+        ],
+        "origin_clusters": [
+          "cls_01JB0000000000000000000001",
+          "cls_01JB0000000000000000000002",
+          "cls_01JB0000000000000000000005",
+          "cls_01JB0000000000000000000006",
+          "cls_01JB0000000000000000000007"
+        ],
+        "independent_origin_count": 5,
+        "review_status": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000007",
+          "actor": null
+        },
+        "created_at": "2026-09-23T10:00:00Z"
+      }
+    },
+    {
+      "name": "finding_revision_two",
+      "schema": "evidence.schema.json#/$defs/Finding",
+      "expect": "valid",
+      "tags": [],
+      "why": "Moderator edit saved as revision 2",
+      "instance": {
+        "id": "fnd_01JB0000000000000000000002",
+        "revision": 2,
+        "project_id": "prj_01JB0000000000000000000001",
+        "kind": "neutral",
+        "aspect": "possession",
+        "wording": "The registered completion date is 31 December 2027",
+        "attribution": "verified_fact",
+        "claims": [
+          {
+            "id": "clm_01JB0000000000000000000002",
+            "revision": 1
+          }
+        ],
+        "caveats": [],
+        "origin_clusters": [
+          "cls_01JB0000000000000000000003"
+        ],
+        "independent_origin_count": 1,
+        "review_status": "approved",
+        "supersedes": {
+          "id": "fnd_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "created_by": {
+          "kind": "moderator",
+          "task_id": null,
+          "actor": {
+            "kind": "user",
+            "user_id": "usr_01JB0000000000000000000001",
+            "role": "moderator"
+          }
+        },
+        "created_at": "2026-09-23T10:00:00Z"
+      }
+    },
+    {
+      "name": "finding_revision_two_without_base",
+      "schema": "evidence.schema.json#/$defs/Finding",
+      "expect": "invalid",
+      "tags": [],
+      "why": "A later revision names the revision it replaces",
+      "error_contains": "None is not of type 'object'",
+      "instance": {
+        "id": "fnd_01JB0000000000000000000002",
+        "revision": 2,
+        "project_id": "prj_01JB0000000000000000000001",
+        "kind": "neutral",
+        "aspect": "possession",
+        "wording": "The registered completion date is 31 December 2027",
+        "attribution": "verified_fact",
+        "claims": [
+          {
+            "id": "clm_01JB0000000000000000000002",
+            "revision": 1
+          }
+        ],
+        "caveats": [],
+        "origin_clusters": [
+          "cls_01JB0000000000000000000003"
+        ],
+        "independent_origin_count": 1,
+        "review_status": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "moderator",
+          "task_id": null,
+          "actor": {
+            "kind": "user",
+            "user_id": "usr_01JB0000000000000000000001",
+            "role": "moderator"
+          }
+        },
+        "created_at": "2026-09-23T10:00:00Z"
+      }
+    }
+  ]
+}

@@ -1,0 +1,265 @@
+{
+  "description": "State machines for contracts v1 (docs/05 'Separate state machines'). Each machine's states equal its enum in common.schema.json. actors: role names, 'system' (backend/worker) or 'public'. Models are never actors. The backend rejects any transition not listed (error invalid_transition).",
+  "version": "1.0.0",
+  "machines": {
+    "execution_job": {
+      "enum": "common.schema.json#/$defs/JobStatus",
+      "record": "operations.schema.json#/$defs/Job",
+      "field": "status",
+      "initial": ["queued"],
+      "terminal": ["completed", "failed", "cancelled"],
+      "transitions": [
+        { "from": "queued", "to": "running", "actors": ["system"], "trigger": "A worker claims the job atomically with a lease and a new fencing token" },
+        { "from": "retry_wait", "to": "running", "actors": ["system"], "trigger": "Next attempt is due and a worker claims it" },
+        { "from": "running", "to": "completed", "actors": ["system"], "trigger": "Work and its durable side effects are committed" },
+        { "from": "running", "to": "retry_wait", "actors": ["system"], "trigger": "Transient failure, or the lease expired; recovery increments the fencing token" },
+        { "from": "running", "to": "waiting_review", "actors": ["system"], "trigger": "The graph reached a human-review pause; the checkpoint is saved and the lease released" },
+        { "from": "running", "to": "failed", "actors": ["system"], "trigger": "Non-retryable error or attempts exhausted" },
+        { "from": "retry_wait", "to": "failed", "actors": ["system"], "trigger": "Deadline passed before a successful attempt" },
+        { "from": "queued", "to": "cancelled", "actors": ["researcher", "system"], "trigger": "Run cancelled before work started" },
+        { "from": "running", "to": "cancelled", "actors": ["researcher", "system"], "trigger": "Cooperative cancellation; valid results are kept" },
+        { "from": "retry_wait", "to": "cancelled", "actors": ["researcher", "system"], "trigger": "Run cancelled while waiting to retry" },
+        { "from": "waiting_review", "to": "completed", "actors": ["system"], "trigger": "An authenticated, version-checked decision arrived and a separate resume job was enqueued" },
+        { "from": "waiting_review", "to": "cancelled", "actors": ["researcher", "system"], "trigger": "Run cancelled while waiting for review" }
+      ]
+    },
+    "workflow_stage": {
+      "enum": "common.schema.json#/$defs/WorkflowStage",
+      "record": "operations.schema.json#/$defs/WorkflowRun",
+      "field": "stage",
+      "initial": ["collecting"],
+      "terminal": ["published", "insufficient_evidence", "cancelled"],
+      "transitions": [
+        { "from": "collecting", "to": "analysing", "actors": ["system"], "trigger": "Collection finished for every enabled connector (some may be partial)" },
+        { "from": "analysing", "to": "findings_review", "actors": ["system"], "trigger": "Draft findings with exact references are ready" },
+        { "from": "analysing", "to": "insufficient_evidence", "actors": ["system"], "trigger": "No eligible evidence supports any finding; no content revision is created" },
+        { "from": "findings_review", "to": "formatting", "actors": ["moderator"], "trigger": "Moderator generates content from selected approved finding revisions" },
+        { "from": "findings_review", "to": "analysing", "actors": ["moderator", "system"], "trigger": "Match correction or evidence invalidation needs re-analysis" },
+        { "from": "formatting", "to": "final_review", "actors": ["system"], "trigger": "Draft generated and QA found no blocking issue" },
+        { "from": "final_review", "to": "formatting", "actors": ["moderator"], "trigger": "Changes requested, or an edit created a new revision that needs QA" },
+        { "from": "final_review", "to": "findings_review", "actors": ["system"], "trigger": "A dependency was invalidated; affected findings return to review" },
+        { "from": "final_review", "to": "approved", "actors": ["moderator"], "trigger": "Exact revision and hashes approved" },
+        { "from": "approved", "to": "publishing", "actors": ["publisher"], "trigger": "Publisher requested publication" },
+        { "from": "approved", "to": "findings_review", "actors": ["system"], "trigger": "Evidence invalidated before publication" },
+        { "from": "publishing", "to": "published", "actors": ["system"], "trigger": "Rendered page verified to show the activated revision" },
+        { "from": "publishing", "to": "approved", "actors": ["system"], "trigger": "Activation conflict; approval still holds and publication can be retried" },
+        { "from": "collecting", "to": "cancelled", "actors": ["researcher", "system"], "trigger": "Run cancelled" },
+        { "from": "analysing", "to": "cancelled", "actors": ["researcher", "system"], "trigger": "Run cancelled" },
+        { "from": "findings_review", "to": "cancelled", "actors": ["researcher", "system"], "trigger": "Run cancelled" },
+        { "from": "formatting", "to": "cancelled", "actors": ["researcher", "system"], "trigger": "Run cancelled" },
+        { "from": "final_review", "to": "cancelled", "actors": ["researcher", "system"], "trigger": "Run cancelled" }
+      ]
+    },
+    "finding_review": {
+      "enum": "common.schema.json#/$defs/FindingReviewStatus",
+      "record": "evidence.schema.json#/$defs/Finding",
+      "field": "review_status",
+      "initial": ["pending"],
+      "terminal": ["superseded"],
+      "transitions": [
+        { "from": "pending", "to": "approved", "actors": ["moderator"], "trigger": "Moderator approves this exact revision after inspecting evidence" },
+        { "from": "pending", "to": "rejected", "actors": ["moderator"], "trigger": "Moderator rejects with a reason" },
+        { "from": "pending", "to": "changes_requested", "actors": ["moderator"], "trigger": "Moderator requests changes with a reason" },
+        { "from": "pending", "to": "superseded", "actors": ["moderator", "system"], "trigger": "A newer revision was created before review" },
+        { "from": "changes_requested", "to": "superseded", "actors": ["moderator", "system"], "trigger": "The requested change was made as a new revision" },
+        { "from": "approved", "to": "superseded", "actors": ["moderator", "system"], "trigger": "An edit or an evidence invalidation created a new revision needing review" },
+        { "from": "rejected", "to": "superseded", "actors": ["moderator"], "trigger": "Moderator reworked a rejected finding as a new revision" }
+      ]
+    },
+    "content_lifecycle": {
+      "enum": "common.schema.json#/$defs/ContentLifecycle",
+      "record": "content.schema.json#/$defs/ContentRevision",
+      "field": "lifecycle",
+      "initial": ["draft"],
+      "terminal": ["rejected", "superseded", "withdrawn"],
+      "transitions": [
+        { "from": "draft", "to": "final_review", "actors": ["system"], "trigger": "QA passed with no blocking issue" },
+        { "from": "draft", "to": "superseded", "actors": ["moderator", "system"], "trigger": "A newer draft revision was saved" },
+        { "from": "final_review", "to": "approved", "actors": ["moderator"], "trigger": "Exact payload hash, manifest hash, epoch and state version approved" },
+        { "from": "final_review", "to": "rejected", "actors": ["moderator"], "trigger": "Moderator rejects with a reason" },
+        { "from": "final_review", "to": "changes_requested", "actors": ["moderator"], "trigger": "Moderator requests changes with a reason" },
+        { "from": "final_review", "to": "superseded", "actors": ["moderator"], "trigger": "An edit saved a newer revision" },
+        { "from": "final_review", "to": "withdrawn", "actors": ["system"], "trigger": "A dependency was invalidated" },
+        { "from": "changes_requested", "to": "superseded", "actors": ["moderator", "system"], "trigger": "The change was made as a newer revision" },
+        { "from": "approved", "to": "superseded", "actors": ["system"], "trigger": "A newer revision was approved" },
+        { "from": "approved", "to": "withdrawn", "actors": ["system"], "trigger": "A dependency was invalidated; rollback can never revive it" }
+      ]
+    },
+    "publication_operation": {
+      "enum": "common.schema.json#/$defs/PublicationOperationStatus",
+      "record": "publication.schema.json#/$defs/PublicationOperation",
+      "field": "status",
+      "initial": ["queued"],
+      "terminal": ["failed", "rolled_back"],
+      "transitions": [
+        { "from": "queued", "to": "activating", "actors": ["system"], "trigger": "Preconditions re-checked: role, approval, recomputed hash, eligibility, expected version" },
+        { "from": "queued", "to": "failed", "actors": ["system"], "trigger": "A precondition failed before activation" },
+        { "from": "activating", "to": "delivery_pending", "actors": ["system"], "trigger": "Control-document compare-and-set and operation record committed in one transaction" },
+        { "from": "activating", "to": "failed", "actors": ["system"], "trigger": "Compare-and-set rejected (stale version, epoch or approval)" },
+        { "from": "delivery_pending", "to": "verified", "actors": ["system"], "trigger": "The rendered page's revision marker and hash match the activated revision" },
+        { "from": "delivery_pending", "to": "retry_wait", "actors": ["system"], "trigger": "Revalidation failed or timed out; state is reconciled before retrying" },
+        { "from": "retry_wait", "to": "delivery_pending", "actors": ["system"], "trigger": "Retry due after reconciliation" },
+        { "from": "retry_wait", "to": "failed", "actors": ["system"], "trigger": "Delivery deadline exceeded; activation stands and the console shows the delivery failure" },
+        { "from": "verified", "to": "rolled_back", "actors": ["system"], "trigger": "A later rollback operation activated a prior revision" }
+      ]
+    },
+    "serving_state": {
+      "enum": "common.schema.json#/$defs/ServingState",
+      "record": "publication.schema.json#/$defs/PublicationState",
+      "field": "serving_state",
+      "initial": ["unpublished"],
+      "terminal": [],
+      "transitions": [
+        { "from": "unpublished", "to": "active", "actors": ["system"], "trigger": "A publish operation activated a revision" },
+        { "from": "active", "to": "temporarily_disabled", "actors": ["system"], "trigger": "Evidence invalidation affects the active revision; the epoch is bumped" },
+        { "from": "temporarily_disabled", "to": "active", "actors": ["system"], "trigger": "An eligible, approved revision was activated (new revision or rollback)" },
+        { "from": "active", "to": "unpublished", "actors": ["publisher", "system"], "trigger": "An unpublish operation requested by a publisher was activated" },
+        { "from": "temporarily_disabled", "to": "unpublished", "actors": ["publisher", "system"], "trigger": "Unpublished, or no eligible prior revision remains" }
+      ]
+    },
+    "source_link": {
+      "enum": "common.schema.json#/$defs/SourceLinkStatus",
+      "record": "sources.schema.json#/$defs/ProjectSourceLink",
+      "field": "status",
+      "initial": ["auto_accepted", "needs_review", "rejected"],
+      "terminal": ["superseded"],
+      "transitions": [
+        { "from": "needs_review", "to": "accepted", "actors": ["moderator"], "trigger": "Moderator confirms the match" },
+        { "from": "needs_review", "to": "rejected", "actors": ["moderator"], "trigger": "Moderator rejects the match with a reason" },
+        { "from": "auto_accepted", "to": "accepted", "actors": ["moderator"], "trigger": "Moderator confirms an automatic match" },
+        { "from": "auto_accepted", "to": "rejected", "actors": ["moderator"], "trigger": "Moderator corrects a wrong automatic match; dependants are invalidated" },
+        { "from": "accepted", "to": "rejected", "actors": ["moderator"], "trigger": "Moderator corrects an earlier decision; dependants are invalidated" },
+        { "from": "rejected", "to": "accepted", "actors": ["moderator"], "trigger": "Moderator reverses a rejection" },
+        { "from": "needs_review", "to": "superseded", "actors": ["moderator"], "trigger": "Split into segments or remapped to another project" },
+        { "from": "auto_accepted", "to": "superseded", "actors": ["moderator"], "trigger": "Split into segments or remapped to another project" },
+        { "from": "accepted", "to": "superseded", "actors": ["moderator"], "trigger": "Split into segments or remapped to another project" }
+      ]
+    },
+    "alias_proposal": {
+      "enum": "common.schema.json#/$defs/AliasProposalStatus",
+      "record": "catalogue.schema.json#/$defs/AliasProposal",
+      "field": "status",
+      "initial": ["proposed"],
+      "terminal": ["rejected", "revoked"],
+      "transitions": [
+        { "from": "proposed", "to": "approved", "actors": ["researcher", "moderator"], "trigger": "Approved as standalone or context-required after the collision check" },
+        { "from": "proposed", "to": "rejected", "actors": ["researcher", "moderator"], "trigger": "Rejected with a reason; kept so it is not proposed again" },
+        { "from": "approved", "to": "revoked", "actors": ["researcher", "moderator"], "trigger": "Revoked; associations it produced return to review" }
+      ]
+    },
+    "record_lifecycle": {
+      "enum": "common.schema.json#/$defs/RecordLifecycle",
+      "record": "evidence.schema.json#/$defs/Evidence",
+      "field": "lifecycle",
+      "initial": ["active"],
+      "terminal": ["superseded", "deleted", "withdrawn", "expired"],
+      "transitions": [
+        { "from": "active", "to": "stale", "actors": ["system"], "trigger": "Freshness threshold passed; still eligible, flagged for review" },
+        { "from": "active", "to": "superseded", "actors": ["system"], "trigger": "The source was edited; a new revision exists" },
+        { "from": "stale", "to": "superseded", "actors": ["system"], "trigger": "The source was edited; a new revision exists" },
+        { "from": "active", "to": "unavailable", "actors": ["system"], "trigger": "Temporary fetch failure; not confirmed deletion" },
+        { "from": "stale", "to": "unavailable", "actors": ["system"], "trigger": "Temporary fetch failure; not confirmed deletion" },
+        { "from": "unavailable", "to": "active", "actors": ["system"], "trigger": "Fetch restored with unchanged content" },
+        { "from": "active", "to": "deleted", "actors": ["system"], "trigger": "Deletion confirmed on repeat checks" },
+        { "from": "stale", "to": "deleted", "actors": ["system"], "trigger": "Deletion confirmed on repeat checks" },
+        { "from": "unavailable", "to": "deleted", "actors": ["system"], "trigger": "Deletion confirmed on repeat checks" },
+        { "from": "active", "to": "withdrawn", "actors": ["moderator", "admin", "system"], "trigger": "Source or policy withdrawal" },
+        { "from": "stale", "to": "withdrawn", "actors": ["moderator", "admin", "system"], "trigger": "Source or policy withdrawal" },
+        { "from": "unavailable", "to": "withdrawn", "actors": ["moderator", "admin", "system"], "trigger": "Source or policy withdrawal" },
+        { "from": "active", "to": "expired", "actors": ["system"], "trigger": "Retention period or policy expiry reached" },
+        { "from": "stale", "to": "expired", "actors": ["system"], "trigger": "Retention period or policy expiry reached" }
+      ]
+    },
+    "media_access": {
+      "enum": "common.schema.json#/$defs/MediaAccessStatus",
+      "record": "sources.schema.json#/$defs/MediaInfo",
+      "field": "access_status",
+      "initial": ["discovered"],
+      "terminal": ["analysed"],
+      "transitions": [
+        { "from": "discovered", "to": "metadata_only", "actors": ["system"], "trigger": "No authorised transcript or media route" },
+        { "from": "discovered", "to": "access_pending", "actors": ["system"], "trigger": "A route exists but access is not yet granted" },
+        { "from": "access_pending", "to": "metadata_only", "actors": ["system"], "trigger": "Access refused" },
+        { "from": "access_pending", "to": "transcribed", "actors": ["system"], "trigger": "Authorised media transcribed with original timing" },
+        { "from": "metadata_only", "to": "access_pending", "actors": ["system"], "trigger": "An authorised route was obtained later" },
+        { "from": "transcribed", "to": "analysed", "actors": ["system"], "trigger": "Segments analysed into evidence" },
+        { "from": "discovered", "to": "error", "actors": ["system"], "trigger": "Processing error" },
+        { "from": "access_pending", "to": "error", "actors": ["system"], "trigger": "Processing error" },
+        { "from": "transcribed", "to": "error", "actors": ["system"], "trigger": "Processing error" },
+        { "from": "error", "to": "discovered", "actors": ["system"], "trigger": "Retried from the start" }
+      ]
+    },
+    "connector": {
+      "enum": "common.schema.json#/$defs/ConnectorStatus",
+      "record": "seed/connectors.json",
+      "field": "status",
+      "initial": ["access_pending"],
+      "terminal": [],
+      "transitions": [
+        { "from": "access_pending", "to": "live", "actors": ["admin", "researcher"], "trigger": "Credential configured and the go-live demonstration recorded" },
+        { "from": "access_pending", "to": "unavailable", "actors": ["admin", "researcher"], "trigger": "Access refused or not pursued" },
+        { "from": "live", "to": "unavailable", "actors": ["admin", "system"], "trigger": "Credential revoked, contract ended or quota withdrawn" },
+        { "from": "unavailable", "to": "access_pending", "actors": ["admin", "researcher"], "trigger": "A new credential was obtained but not yet demonstrated" }
+      ]
+    },
+    "deletion_request": {
+      "enum": "common.schema.json#/$defs/DeletionRequestStatus",
+      "record": "operations.schema.json#/$defs/DeletionRequest",
+      "field": "status",
+      "initial": ["pending"],
+      "terminal": ["completed"],
+      "transitions": [
+        { "from": "pending", "to": "invalidating", "actors": ["system"], "trigger": "Invalidation job started: epochs bumped, serving gates checked" },
+        { "from": "invalidating", "to": "erasing", "actors": ["system"], "trigger": "Every affected control document is invalidated" },
+        { "from": "erasing", "to": "completed", "actors": ["system"], "trigger": "Payloads, embeddings, media and caches erased" },
+        { "from": "pending", "to": "failed", "actors": ["system"], "trigger": "Could not start" },
+        { "from": "invalidating", "to": "failed", "actors": ["system"], "trigger": "Invalidation failed; serving stays fail-closed" },
+        { "from": "erasing", "to": "failed", "actors": ["system"], "trigger": "Erasure failed; tracked until reconciled" },
+        { "from": "failed", "to": "pending", "actors": ["system", "admin"], "trigger": "Retried" }
+      ]
+    },
+    "correction": {
+      "enum": "common.schema.json#/$defs/CorrectionStatus",
+      "record": "operations.schema.json#/$defs/PublicCorrection",
+      "field": "status",
+      "initial": ["received"],
+      "terminal": ["resolved", "dismissed"],
+      "transitions": [
+        { "from": "received", "to": "in_review", "actors": ["moderator"], "trigger": "Moderator picked it up" },
+        { "from": "received", "to": "resolved", "actors": ["moderator"], "trigger": "Resolved with a reason" },
+        { "from": "received", "to": "dismissed", "actors": ["moderator"], "trigger": "Dismissed with a reason" },
+        { "from": "in_review", "to": "resolved", "actors": ["moderator"], "trigger": "Resolved with a reason" },
+        { "from": "in_review", "to": "dismissed", "actors": ["moderator"], "trigger": "Dismissed with a reason" }
+      ]
+    }
+  },
+  "classifications": {
+    "coverage": {
+      "enum": "common.schema.json#/$defs/CoverageStatus",
+      "meaning": {
+        "complete_for_query": "The permitted query was exhausted. Never means the platform or the internet was covered.",
+        "partial": "Some pages or items could not be fetched; results so far are kept and labelled.",
+        "unavailable": "The provider failed or refused for this run. A broad outage is not evidence of zero discussion.",
+        "access_pending": "No demonstrated credential; the connector did not run."
+      }
+    },
+    "verification": {
+      "enum": "common.schema.json#/$defs/VerificationStatus",
+      "meaning": {
+        "unverified": "A factual claim or allegation not yet checked against a dated primary record.",
+        "verified": "Matches a cited, dated primary record. Counts of independent posts never make a claim verified.",
+        "contradicted": "A cited, dated primary record says otherwise.",
+        "disputed": "Sources conflict and no primary record settles it; both sides stay visible.",
+        "not_applicable": "Opinions and promotions are attributed, never verified."
+      }
+    },
+    "date": {
+      "enum": "common.schema.json#/$defs/DateStatus",
+      "meaning": {
+        "known": "The date comes from platform metadata, page markup, a registry record or a moderator.",
+        "approximate": "Only a coarse date is known (month or year); precision says which.",
+        "unknown": "No date could be established. Collection time is never substituted."
+      }
+    }
+  }
+}

@@ -1,0 +1,608 @@
+{
+  "note": "Synthetic fixture for contract tests. Fictional projects and sources; not evidence, never imported as real data.",
+  "cases": [
+    {
+      "name": "policy_web_accepted",
+      "schema": "sources.schema.json#/$defs/SourcePolicy",
+      "expect": "valid",
+      "tags": [],
+      "why": "Accepted policy with its approver",
+      "instance": {
+        "id": "pol_01JB0000000000000000000001",
+        "family": "web_public_pages",
+        "policy_version": 1,
+        "collection_allowed": true,
+        "ai_processing_allowed": true,
+        "quotation_allowed": false,
+        "derived_publication_allowed": true,
+        "attribution_required": true,
+        "retention_days": 90,
+        "hosts": [],
+        "excluded_hosts": [
+          "youtube.com",
+          "reddit.com"
+        ],
+        "conditions": [
+          "Public pages only"
+        ],
+        "basis": "docs/06 scraping policy",
+        "status": "accepted",
+        "effective_from": "2026-09-25T10:00:00Z",
+        "expires_at": null,
+        "accepted_on": "2026-09-25",
+        "accepted_by": "Product owner (fixture)"
+      }
+    },
+    {
+      "name": "policy_ai_without_collection",
+      "schema": "sources.schema.json#/$defs/SourcePolicy",
+      "expect": "invalid",
+      "tags": [
+        "policy_chain"
+      ],
+      "why": "AI processing needs collection rights",
+      "error_contains": "True was expected",
+      "instance": {
+        "id": "pol_01JB0000000000000000000001",
+        "family": "web_public_pages",
+        "policy_version": 1,
+        "collection_allowed": false,
+        "ai_processing_allowed": true,
+        "quotation_allowed": false,
+        "derived_publication_allowed": true,
+        "attribution_required": true,
+        "retention_days": null,
+        "hosts": [],
+        "excluded_hosts": [
+          "youtube.com",
+          "reddit.com"
+        ],
+        "conditions": [
+          "Public pages only"
+        ],
+        "basis": "docs/06 scraping policy",
+        "status": "accepted",
+        "effective_from": "2026-09-25T10:00:00Z",
+        "expires_at": null,
+        "accepted_on": "2026-09-25",
+        "accepted_by": "Product owner (fixture)"
+      }
+    },
+    {
+      "name": "policy_accepted_without_approver",
+      "schema": "sources.schema.json#/$defs/SourcePolicy",
+      "expect": "invalid",
+      "tags": [
+        "policy_chain"
+      ],
+      "why": "An accepted policy records who accepted it",
+      "error_contains": "None is not of type 'string'",
+      "instance": {
+        "id": "pol_01JB0000000000000000000001",
+        "family": "web_public_pages",
+        "policy_version": 1,
+        "collection_allowed": true,
+        "ai_processing_allowed": true,
+        "quotation_allowed": false,
+        "derived_publication_allowed": true,
+        "attribution_required": true,
+        "retention_days": 90,
+        "hosts": [],
+        "excluded_hosts": [
+          "youtube.com",
+          "reddit.com"
+        ],
+        "conditions": [
+          "Public pages only"
+        ],
+        "basis": "docs/06 scraping policy",
+        "status": "accepted",
+        "effective_from": "2026-09-25T10:00:00Z",
+        "expires_at": null,
+        "accepted_on": "2026-09-25",
+        "accepted_by": null
+      }
+    },
+    {
+      "name": "source_unknown_date",
+      "schema": "sources.schema.json#/$defs/SourceRevision",
+      "expect": "valid",
+      "tags": [
+        "unknown_date"
+      ],
+      "why": "Publication date unknown and stored as unknown",
+      "instance": {
+        "id": "src_01JB0000000000000000000001",
+        "revision": 1,
+        "connector_id": "firecrawl",
+        "native_id": "thread-123",
+        "canonical_url": "https://forum.example.invalid/t/123",
+        "source_kind": "forum_thread",
+        "parent": null,
+        "title": "Fixture Towers possession?",
+        "author": {
+          "display_name": null,
+          "role": "unknown",
+          "role_basis": "none"
+        },
+        "publication_date": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "collected_at": "2026-09-22T10:00:00Z",
+        "language": "en",
+        "capture_level": "full_content",
+        "content_sha256": "sha256:59ceec45bee9cf7ad129b57b1fbf7caed9fe9b71b9f0848679dcff2ccb0cfdd6",
+        "payload_ref": {
+          "store": "payload_store",
+          "key": "src/1/1"
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 1
+        },
+        "lifecycle": "active",
+        "media": null,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "source_unknown_date_with_collection_time",
+      "schema": "sources.schema.json#/$defs/SourceRevision",
+      "expect": "invalid",
+      "tags": [
+        "unknown_date"
+      ],
+      "why": "Collection time must never stand in for an unknown publication date",
+      "error_contains": "is not of type 'null'",
+      "instance": {
+        "id": "src_01JB0000000000000000000001",
+        "revision": 1,
+        "connector_id": "firecrawl",
+        "native_id": "thread-123",
+        "canonical_url": "https://forum.example.invalid/t/123",
+        "source_kind": "forum_thread",
+        "parent": null,
+        "title": "Fixture Towers possession?",
+        "author": {
+          "display_name": null,
+          "role": "unknown",
+          "role_basis": "none"
+        },
+        "publication_date": {
+          "status": "unknown",
+          "value": "2026-09-22T10:00:00Z",
+          "precision": null,
+          "basis": null
+        },
+        "collected_at": "2026-09-22T10:00:00Z",
+        "language": "en",
+        "capture_level": "full_content",
+        "content_sha256": "sha256:59ceec45bee9cf7ad129b57b1fbf7caed9fe9b71b9f0848679dcff2ccb0cfdd6",
+        "payload_ref": {
+          "store": "payload_store",
+          "key": "src/1/1"
+        },
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 1
+        },
+        "lifecycle": "active",
+        "media": null,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "source_video_unknown_format",
+      "schema": "sources.schema.json#/$defs/SourceRevision",
+      "expect": "valid",
+      "tags": [
+        "multi_project_video"
+      ],
+      "why": "Video whose format is unknown",
+      "instance": {
+        "id": "src_01JB0000000000000000000002",
+        "revision": 1,
+        "connector_id": "youtube_data_api",
+        "native_id": "video-abc",
+        "canonical_url": "https://video.example.invalid/watch?v=abc",
+        "source_kind": "video",
+        "parent": null,
+        "title": "Comparing Fixture Towers and Sample Greens",
+        "author": {
+          "display_name": "Example Creator",
+          "role": "creator",
+          "role_basis": "platform_badge"
+        },
+        "publication_date": {
+          "status": "known",
+          "value": "2026-09-10T10:00:00Z",
+          "precision": "day",
+          "basis": "platform_metadata"
+        },
+        "collected_at": "2026-09-22T10:00:00Z",
+        "language": "hi-Latn",
+        "capture_level": "full_content",
+        "content_sha256": "sha256:237541d15b52c15d8cdc9ea1587a83b4ae57845682c5df25c0f2f13f586c14f3",
+        "payload_ref": {
+          "store": "media_store",
+          "key": "media/abc"
+        },
+        "policy": {
+          "family": "youtube",
+          "policy_version": 1
+        },
+        "lifecycle": "active",
+        "media": {
+          "duration_ms": 600000,
+          "format": "unknown",
+          "format_basis": "unknown",
+          "access_status": "transcribed",
+          "transcript_route": "creator_supplied",
+          "channel": {
+            "native_id": "channel-1",
+            "title": "Example Creator"
+          }
+        },
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "source_short_from_duration",
+      "schema": "sources.schema.json#/$defs/SourceRevision",
+      "expect": "invalid",
+      "tags": [
+        "shorts_format"
+      ],
+      "why": "Duration alone never establishes Shorts format",
+      "error_contains": "is not one of ['platform_metadata', 'url_pattern']",
+      "instance": {
+        "id": "src_01JB0000000000000000000002",
+        "revision": 1,
+        "connector_id": "youtube_data_api",
+        "native_id": "video-abc",
+        "canonical_url": "https://video.example.invalid/watch?v=abc",
+        "source_kind": "video",
+        "parent": null,
+        "title": "Comparing Fixture Towers and Sample Greens",
+        "author": {
+          "display_name": "Example Creator",
+          "role": "creator",
+          "role_basis": "platform_badge"
+        },
+        "publication_date": {
+          "status": "known",
+          "value": "2026-09-10T10:00:00Z",
+          "precision": "day",
+          "basis": "platform_metadata"
+        },
+        "collected_at": "2026-09-22T10:00:00Z",
+        "language": "hi-Latn",
+        "capture_level": "full_content",
+        "content_sha256": "sha256:237541d15b52c15d8cdc9ea1587a83b4ae57845682c5df25c0f2f13f586c14f3",
+        "payload_ref": {
+          "store": "media_store",
+          "key": "media/abc"
+        },
+        "policy": {
+          "family": "youtube",
+          "policy_version": 1
+        },
+        "lifecycle": "active",
+        "media": {
+          "duration_ms": 45000,
+          "format": "short",
+          "format_basis": "unknown",
+          "access_status": "transcribed",
+          "transcript_route": "creator_supplied",
+          "channel": {
+            "native_id": "channel-1",
+            "title": "Example Creator"
+          }
+        },
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "source_search_metadata_only",
+      "schema": "sources.schema.json#/$defs/SourceRevision",
+      "expect": "valid",
+      "tags": [
+        "metadata_not_evidence"
+      ],
+      "why": "A search hit is discovery metadata only",
+      "instance": {
+        "id": "src_01JB0000000000000000000004",
+        "revision": 1,
+        "connector_id": "brave_search",
+        "native_id": "https://forum.example.invalid/t/123",
+        "canonical_url": "https://forum.example.invalid/t/123",
+        "source_kind": "search_result",
+        "parent": null,
+        "title": "Fixture Towers possession?",
+        "author": {
+          "display_name": null,
+          "role": "unknown",
+          "role_basis": "none"
+        },
+        "publication_date": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "collected_at": "2026-09-22T10:00:00Z",
+        "language": "en",
+        "capture_level": "metadata_only",
+        "content_sha256": null,
+        "payload_ref": null,
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 1
+        },
+        "lifecycle": "active",
+        "media": null,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "source_search_full_content",
+      "schema": "sources.schema.json#/$defs/SourceRevision",
+      "expect": "invalid",
+      "tags": [
+        "metadata_not_evidence"
+      ],
+      "why": "A search hit can never carry content",
+      "error_contains": "'metadata_only' was expected",
+      "instance": {
+        "id": "src_01JB0000000000000000000004",
+        "revision": 1,
+        "connector_id": "brave_search",
+        "native_id": "https://forum.example.invalid/t/123",
+        "canonical_url": "https://forum.example.invalid/t/123",
+        "source_kind": "search_result",
+        "parent": null,
+        "title": "Fixture Towers possession?",
+        "author": {
+          "display_name": null,
+          "role": "unknown",
+          "role_basis": "none"
+        },
+        "publication_date": {
+          "status": "unknown",
+          "value": null,
+          "precision": null,
+          "basis": null
+        },
+        "collected_at": "2026-09-22T10:00:00Z",
+        "language": "en",
+        "capture_level": "full_content",
+        "content_sha256": "sha256:2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+        "payload_ref": null,
+        "policy": {
+          "family": "web_public_pages",
+          "policy_version": 1
+        },
+        "lifecycle": "active",
+        "media": null,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "link_video_project_one",
+      "schema": "sources.schema.json#/$defs/ProjectSourceLink",
+      "expect": "valid",
+      "tags": [
+        "multi_project_video"
+      ],
+      "why": "First segment of a comparison video, linked to Fixture Towers",
+      "instance": {
+        "id": "lnk_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "segment_key": "t:0-240000",
+        "segment_anchor": {
+          "kind": "time",
+          "start_ms": 0,
+          "end_ms": 240000,
+          "precision": "approximate",
+          "method": "transcript_segment"
+        },
+        "status": "accepted",
+        "phase": {
+          "rera_id": null,
+          "certainty": "unknown"
+        },
+        "match": {
+          "method": "moderator",
+          "rule_score": null,
+          "signals": [
+            "project_name",
+            "locality"
+          ],
+          "matched_alias": null,
+          "rationale": "Names the project and its locality"
+        },
+        "decided_by": "dec_01JB0000000000000000000002",
+        "superseded_by": [],
+        "version": 1,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "link_video_project_two",
+      "schema": "sources.schema.json#/$defs/ProjectSourceLink",
+      "expect": "valid",
+      "tags": [
+        "multi_project_video"
+      ],
+      "why": "Second segment of the same video revision, linked to Sample Greens",
+      "instance": {
+        "id": "lnk_01JB0000000000000000000002",
+        "project_id": "prj_01JB0000000000000000000002",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "segment_key": "t:240000-600000",
+        "segment_anchor": {
+          "kind": "time",
+          "start_ms": 240000,
+          "end_ms": 600000,
+          "precision": "approximate",
+          "method": "transcript_segment"
+        },
+        "status": "auto_accepted",
+        "phase": {
+          "rera_id": null,
+          "certainty": "unknown"
+        },
+        "match": {
+          "method": "deterministic",
+          "rule_score": 870,
+          "signals": [
+            "project_name",
+            "locality"
+          ],
+          "matched_alias": null,
+          "rationale": "Names the project and its locality"
+        },
+        "decided_by": null,
+        "superseded_by": [],
+        "version": 1,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "link_whole_with_anchor",
+      "schema": "sources.schema.json#/$defs/ProjectSourceLink",
+      "expect": "invalid",
+      "tags": [],
+      "why": "A whole-source link has no segment anchor",
+      "error_contains": "is not of type 'null'",
+      "instance": {
+        "id": "lnk_01JB0000000000000000000003",
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "segment_key": "whole",
+        "segment_anchor": {
+          "kind": "time",
+          "start_ms": 0,
+          "end_ms": 1000,
+          "precision": "approximate",
+          "method": "transcript_segment"
+        },
+        "status": "accepted",
+        "phase": {
+          "rera_id": null,
+          "certainty": "unknown"
+        },
+        "match": {
+          "method": "deterministic",
+          "rule_score": 870,
+          "signals": [
+            "project_name",
+            "locality"
+          ],
+          "matched_alias": null,
+          "rationale": "Names the project and its locality"
+        },
+        "decided_by": "dec_01JB0000000000000000000003",
+        "superseded_by": [],
+        "version": 1,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "link_accepted_without_decision",
+      "schema": "sources.schema.json#/$defs/ProjectSourceLink",
+      "expect": "invalid",
+      "tags": [],
+      "why": "An accepted link names the decision that accepted it",
+      "error_contains": "None is not of type 'string'",
+      "instance": {
+        "id": "lnk_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "segment_key": "t:0-240000",
+        "segment_anchor": {
+          "kind": "time",
+          "start_ms": 0,
+          "end_ms": 240000,
+          "precision": "approximate",
+          "method": "transcript_segment"
+        },
+        "status": "accepted",
+        "phase": {
+          "rera_id": null,
+          "certainty": "unknown"
+        },
+        "match": {
+          "method": "moderator",
+          "rule_score": null,
+          "signals": [
+            "project_name",
+            "locality"
+          ],
+          "matched_alias": null,
+          "rationale": "Names the project and its locality"
+        },
+        "decided_by": null,
+        "superseded_by": [],
+        "version": 1,
+        "created_at": "2026-09-22T10:00:00Z"
+      }
+    },
+    {
+      "name": "media_segment_speech",
+      "schema": "sources.schema.json#/$defs/MediaSegment",
+      "expect": "valid",
+      "tags": [
+        "multi_project_video"
+      ],
+      "why": "Speech segment with transcription method and separate translation",
+      "instance": {
+        "id": "seg_01JB0000000000000000000001",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "segment_key": "t:0-240000",
+        "time": {
+          "kind": "time",
+          "start_ms": 0,
+          "end_ms": 240000,
+          "precision": "approximate",
+          "method": "transcript_segment"
+        },
+        "language": "hi-Latn",
+        "modality": "speech",
+        "transcription": {
+          "engine": "faster-whisper",
+          "model_size": "small",
+          "language_hint": "hi"
+        },
+        "original_text_ref": "seg/1/original",
+        "translation": {
+          "language": "en",
+          "text_ref": "seg/1/en",
+          "method": "language_agent"
+        },
+        "quality_flags": [
+          "code_switching"
+        ]
+      }
+    }
+  ]
+}

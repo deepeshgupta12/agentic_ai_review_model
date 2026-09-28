@@ -5,6 +5,13 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Contracts v1 — 28 September 2026 (Step 02)
+
+- Implementation contracts in `contracts/v1/` replace the baseline exchange schema for all new code (D22); baseline files kept as history.
+- State lists extended on purpose: workflow `cancelled`; content `changes_requested` and `rejected`; finding review `superseded` (docs/05).
+- API grows from the docs/03 table to 47 operations, adding what the console screens need (docs/09).
+- Canonical hashing and text anchors fixed (D23, D24); design direction proposed (D25).
+
 ## 1.1 — 25 September 2026
 
 Revised after the product owner confirmed a standalone build. Differences from handoff 1.0:

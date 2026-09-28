@@ -1,0 +1,303 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Catalogue contracts",
+  "description": "Project input file, catalogue records, project configuration and alias proposals (docs/02, D15-D17, D19).",
+  "x-contract-version": "1.0.0",
+  "$defs": {
+    "ProjectInputFile": {
+      "description": "contracts/five-project-input-template.json, input schema 1.1 (D15, D16).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instructions", "schema_version", "projects"],
+      "properties": {
+        "instructions": { "type": "string" },
+        "schema_version": { "const": "1.1" },
+        "projects": { "type": "array", "minItems": 5, "maxItems": 5, "items": { "$ref": "#/$defs/ProjectInput" } }
+      }
+    },
+    "ProjectInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_name", "locality", "city"],
+      "properties": {
+        "project_name": { "$ref": "#/$defs/InputText" },
+        "alternate_names": { "type": "array", "items": { "$ref": "#/$defs/InputText" } },
+        "locality": { "$ref": "#/$defs/InputText" },
+        "city": { "$ref": "#/$defs/InputText" },
+        "micromarket": { "anyOf": [{ "$ref": "#/$defs/InputText" }, { "type": "null" }] },
+        "developer": { "anyOf": [{ "$ref": "#/$defs/InputText" }, { "type": "null" }] },
+        "phase": { "anyOf": [{ "$ref": "#/$defs/InputText" }, { "type": "null" }] },
+        "rera_ids": { "type": "array", "items": { "$ref": "#/$defs/ReraRegistrationInput" } },
+        "reference_url": { "anyOf": [{ "$ref": "common.schema.json#/$defs/HttpUrl" }, { "type": "null" }] },
+        "client_ref": { "anyOf": [{ "$ref": "#/$defs/ClientRef" }, { "type": "null" }] }
+      }
+    },
+    "InputText": {
+      "description": "Non-empty text that is not a template placeholder such as <City>.",
+      "type": "string",
+      "pattern": "^(?!\\s*$)(?![\\s\\S]*<[^<>]*>)[\\s\\S]+$"
+    },
+    "ReraRegistrationInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "registered_name"],
+      "properties": {
+        "id": { "$ref": "#/$defs/InputText" },
+        "registered_name": { "$ref": "#/$defs/InputText" }
+      }
+    },
+    "ClientRef": {
+      "description": "External reference only: not evidence, never published (D15).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_id", "city_id", "location_id", "sublocation_id", "status", "supplied_on"],
+      "properties": {
+        "project_id": { "type": "string", "pattern": "^\\d+$" },
+        "city_id": { "type": "string", "pattern": "^\\d+$" },
+        "location_id": { "type": "string", "pattern": "^\\d+$" },
+        "sublocation_id": { "type": "string", "pattern": "^\\d+$" },
+        "status": { "type": "string", "minLength": 1 },
+        "supplied_on": { "$ref": "common.schema.json#/$defs/Date" }
+      }
+    },
+    "ReraRegistration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "id_normalised", "registered_name"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "id_normalised": { "type": "string", "pattern": "^[A-Z0-9/]+$" },
+        "registered_name": { "type": "string", "minLength": 1 }
+      }
+    },
+    "Project": {
+      "description": "Catalogue record (projects collection). Written only by the import service; agents read it and never mutate it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "slug",
+        "project_name",
+        "alternate_names",
+        "locality",
+        "city",
+        "micromarket",
+        "developer",
+        "phase",
+        "rera_registrations",
+        "reference_url",
+        "client_id",
+        "client_ref",
+        "input_schema_version",
+        "version",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "slug": { "$ref": "common.schema.json#/$defs/Slug" },
+        "project_name": { "type": "string", "minLength": 1 },
+        "alternate_names": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "locality": { "type": "string", "minLength": 1 },
+        "city": { "type": "string", "minLength": 1 },
+        "micromarket": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "developer": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "phase": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "rera_registrations": { "type": "array", "items": { "$ref": "#/$defs/ReraRegistration" } },
+        "reference_url": { "anyOf": [{ "$ref": "common.schema.json#/$defs/HttpUrl" }, { "type": "null" }] },
+        "client_id": { "anyOf": [{ "type": "string", "pattern": "^\\d+$" }, { "type": "null" }] },
+        "client_ref": { "anyOf": [{ "$ref": "#/$defs/ClientRef" }, { "type": "null" }] },
+        "input_schema_version": { "const": "1.1" },
+        "version": { "$ref": "common.schema.json#/$defs/Version" },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "updated_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      }
+    },
+    "AliasTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "rera_id"],
+      "properties": {
+        "kind": { "enum": ["project", "phase"] },
+        "rera_id": { "anyOf": [{ "type": "string", "pattern": "^[A-Z0-9/]+$" }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "phase" } } },
+          "then": { "properties": { "rera_id": { "type": "string" } } },
+          "else": { "properties": { "rera_id": { "type": "null" } } }
+        }
+      ]
+    },
+    "Alias": {
+      "description": "An approved search/matching name. Only approved aliases reach queries or matching (D17).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "normalised", "target", "mode", "origin", "proposal_id"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "normalised": { "type": "string", "minLength": 1 },
+        "target": { "$ref": "#/$defs/AliasTarget" },
+        "mode": { "$ref": "common.schema.json#/$defs/AliasMode" },
+        "origin": { "enum": ["input_file", "rera_registered_name", "approved_proposal", "configuration"] },
+        "proposal_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/AliasProposalId" }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "origin": { "const": "approved_proposal" } } },
+          "then": { "properties": { "proposal_id": { "$ref": "common.schema.json#/$defs/AliasProposalId" } } }
+        }
+      ]
+    },
+    "ProjectConfig": {
+      "description": "ai_project_configs record. Changes require the expected version.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project_id",
+        "version",
+        "aliases",
+        "negative_keywords",
+        "input_languages",
+        "output_locale",
+        "refresh",
+        "sources",
+        "updated_at",
+        "updated_by"
+      ],
+      "properties": {
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "version": { "$ref": "common.schema.json#/$defs/Version" },
+        "aliases": { "type": "array", "items": { "$ref": "#/$defs/Alias" } },
+        "negative_keywords": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "input_languages": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/LanguageTag" } },
+        "output_locale": { "$ref": "common.schema.json#/$defs/Locale" },
+        "refresh": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["cadence", "lookback_days"],
+          "properties": {
+            "cadence": { "enum": ["daily_incremental_and_manual", "manual_only"] },
+            "lookback_days": { "type": "integer", "minimum": 1, "maximum": 3650 }
+          }
+        },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["connector_id", "enabled"],
+            "properties": {
+              "connector_id": { "$ref": "common.schema.json#/$defs/ConnectorId" },
+              "enabled": { "type": "boolean" }
+            }
+          }
+        },
+        "updated_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "updated_by": { "$ref": "common.schema.json#/$defs/Actor" }
+      }
+    },
+    "AliasProposal": {
+      "description": "ai_alias_proposals record (D17). Has no effect until approved.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "project_id",
+        "alias_text",
+        "normalised",
+        "alias_type",
+        "target",
+        "evidence_refs",
+        "strong_identifier",
+        "independent_origin_count",
+        "collision",
+        "status",
+        "decision",
+        "proposed_by_task",
+        "version",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/AliasProposalId" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "alias_text": { "type": "string", "minLength": 1 },
+        "normalised": { "type": "string", "minLength": 1 },
+        "alias_type": { "$ref": "common.schema.json#/$defs/AliasType" },
+        "target": { "$ref": "#/$defs/AliasTarget" },
+        "evidence_refs": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" } },
+        "strong_identifier": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "evidence_ref"],
+          "properties": {
+            "kind": { "$ref": "common.schema.json#/$defs/StrongIdentifierKind" },
+            "evidence_ref": { "$ref": "common.schema.json#/$defs/EvidenceRef" }
+          }
+        },
+        "independent_origin_count": { "type": "integer", "minimum": 1 },
+        "collision": {
+          "description": "Result of the deterministic backend check, never the model's opinion.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "colliding_project_ids", "reason"],
+          "properties": {
+            "status": { "enum": ["none", "colliding", "generic"] },
+            "colliding_project_ids": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/ProjectId" } },
+            "reason": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+          }
+        },
+        "status": { "$ref": "common.schema.json#/$defs/AliasProposalStatus" },
+        "decision": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["decision_id", "mode"],
+              "properties": {
+                "decision_id": { "$ref": "common.schema.json#/$defs/DecisionId" },
+                "mode": { "anyOf": [{ "$ref": "common.schema.json#/$defs/AliasMode" }, { "type": "null" }] }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "proposed_by_task": { "$ref": "common.schema.json#/$defs/TaskId" },
+        "version": { "$ref": "common.schema.json#/$defs/Version" },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "proposed" } } },
+          "then": { "properties": { "decision": { "type": "null" } } },
+          "else": { "properties": { "decision": { "type": "object" } } }
+        },
+        {
+          "if": { "properties": { "status": { "enum": ["approved", "revoked"] } } },
+          "then": {
+            "properties": {
+              "decision": { "type": "object", "properties": { "mode": { "$ref": "common.schema.json#/$defs/AliasMode" } } }
+            }
+          }
+        },
+        {
+          "description": "A colliding or generic alias can only be approved as context_required (D17).",
+          "if": {
+            "properties": {
+              "status": { "enum": ["approved", "revoked"] },
+              "collision": { "properties": { "status": { "enum": ["colliding", "generic"] } } }
+            }
+          },
+          "then": { "properties": { "decision": { "properties": { "mode": { "const": "context_required" } } } } }
+        },
+        {
+          "if": { "properties": { "collision": { "properties": { "status": { "const": "none" } } } } },
+          "then": {
+            "properties": { "collision": { "properties": { "colliding_project_ids": { "maxItems": 0 }, "reason": { "type": "null" } } } }
+          },
+          "else": { "properties": { "collision": { "properties": { "reason": { "type": "string" } } } } }
+        }
+      ]
+    }
+  }
+}

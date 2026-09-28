@@ -13,7 +13,7 @@ Start with [MASTER.md](MASTER.md). It defines scope, architecture, reading order
 5. Give Claude Code the bootstrap prompt in MASTER.md and work from the repository terminal so it can inspect, edit, run and verify.
 6. Keep [PROGRESS.md](PROGRESS.md) and [DECISIONS.md](DECISIONS.md) current after each work package; they are the handoff between sessions.
 
-Expected layout after Step 03: `backend/` (Python, FastAPI, LangGraph, PyMongo), `web/` (Next.js console + public page), `docker-compose.yml` (MongoDB single-node replica set, API, worker, web), `.github/workflows/` (CI), `evals/`, `prompts/`, `scripts/`.
+Expected layout after Step 03: `backend/` (Python, FastAPI, LangGraph, PyMongo), `web/` (Next.js console + public page), `docker-compose.yml` (MongoDB single-node replica set, API, worker, scheduler, web), `.github/workflows/` (CI), `evals/`, `prompts/`, `scripts/`.
 
 ## What is included
 

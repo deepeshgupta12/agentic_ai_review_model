@@ -23,6 +23,8 @@ Required extensions to the baseline:
 
 Version these changes as a new contract revision, update fixtures and adapters, and record compatibility in DECISIONS.md. Keep the baseline files as historical reference. New client generation and validators must use the implementation version.
 
+**Implementation version: [contracts/v1](../contracts/v1/README.md)** (Step 02, D22). Its README maps each of the ten gaps above to the record that resolves it. In the baseline, `micromarket` is a required string; in v1 it is optional, as D01 requires.
+
 ## Collections and ownership
 
 | Collection | Key records / indexes | Writer |

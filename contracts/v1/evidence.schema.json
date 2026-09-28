@@ -1,0 +1,244 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Evidence contracts",
+  "description": "Evidence spans, atomic claims and findings. IDs alone never point to mutable meaning: every reference carries a revision (docs/02 item 2).",
+  "x-contract-version": "1.0.0",
+  "$defs": {
+    "Evidence": {
+      "description": "ai_evidence record: an anchored span of one eligible source revision, tied to one project association. Eligibility is computed at read, approval and publication time from lifecycle, policy and link status.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "project_id",
+        "source",
+        "link_id",
+        "anchor",
+        "context_anchor",
+        "excerpt_text",
+        "excerpt_sha256",
+        "language",
+        "modality",
+        "translation_of",
+        "origin_cluster",
+        "policy",
+        "lifecycle",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/EvidenceId" },
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "source": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" },
+        "link_id": { "$ref": "common.schema.json#/$defs/SourceLinkId" },
+        "anchor": { "$ref": "common.schema.json#/$defs/Anchor" },
+        "context_anchor": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Anchor" }, { "type": "null" }] },
+        "excerpt_text": {
+          "description": "Erasable source content; null after erasure while the audit metadata remains.",
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        },
+        "excerpt_sha256": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "language": { "$ref": "common.schema.json#/$defs/LanguageTag" },
+        "modality": { "$ref": "common.schema.json#/$defs/Modality" },
+        "translation_of": { "anyOf": [{ "$ref": "common.schema.json#/$defs/EvidenceRef" }, { "type": "null" }] },
+        "origin_cluster": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "version"],
+              "properties": {
+                "id": { "$ref": "common.schema.json#/$defs/ClusterId" },
+                "version": { "$ref": "common.schema.json#/$defs/RevisionNumber" }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "policy": { "$ref": "common.schema.json#/$defs/PolicyRef" },
+        "lifecycle": { "$ref": "common.schema.json#/$defs/RecordLifecycle" },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "description": "Metadata is never spoken or textual evidence (docs/04 A03).",
+          "not": { "properties": { "modality": { "const": "metadata" } }, "required": ["modality"] }
+        },
+        {
+          "if": { "properties": { "lifecycle": { "enum": ["deleted", "withdrawn", "expired"] } } },
+          "then": { "properties": { "excerpt_text": { "type": "null" } } },
+          "else": { "properties": { "excerpt_text": { "type": "string" } } }
+        },
+        {
+          "if": { "properties": { "anchor": { "properties": { "representation": { "const": "translated" } }, "required": ["representation"] } } },
+          "then": { "properties": { "translation_of": { "$ref": "common.schema.json#/$defs/EvidenceRef" } } }
+        },
+        {
+          "if": { "properties": { "modality": { "enum": ["speech", "on_screen_text", "frame"] } } },
+          "then": { "properties": { "anchor": { "$ref": "common.schema.json#/$defs/TimeAnchor" } } }
+        }
+      ]
+    },
+    "Verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "primary_records", "checked_at", "reason"],
+      "properties": {
+        "status": { "$ref": "common.schema.json#/$defs/VerificationStatus" },
+        "primary_records": {
+          "description": "Dated primary evidence (e.g. a RERA registry record). Counts of independent posts are never a substitute.",
+          "type": "array",
+          "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" }
+        },
+        "checked_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+        "reason": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "enum": ["verified", "contradicted"] } } },
+          "then": {
+            "properties": {
+              "primary_records": { "minItems": 1 },
+              "checked_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "status": { "const": "disputed" } } },
+          "then": { "properties": { "reason": { "type": "string" } } }
+        }
+      ]
+    },
+    "Claim": {
+      "description": "ai_claims record: one atomic aspect claim. Unique (project_id, id, revision).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "project_id",
+        "aspect",
+        "aspect_label",
+        "claim_type",
+        "polarity",
+        "statement",
+        "observation_time",
+        "supporting_evidence",
+        "contradicting_evidence",
+        "verification",
+        "origin_clusters",
+        "independent_origin_count",
+        "confidence",
+        "created_by_task",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/ClaimId" },
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "aspect": { "$ref": "common.schema.json#/$defs/Aspect" },
+        "aspect_label": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "claim_type": { "$ref": "common.schema.json#/$defs/ClaimType" },
+        "polarity": { "$ref": "common.schema.json#/$defs/Polarity" },
+        "statement": { "type": "string", "minLength": 1 },
+        "observation_time": { "$ref": "common.schema.json#/$defs/DatedValue" },
+        "supporting_evidence": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" } },
+        "contradicting_evidence": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" } },
+        "verification": { "$ref": "#/$defs/Verification" },
+        "origin_clusters": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/ClusterId" } },
+        "independent_origin_count": {
+          "description": "How many independent origins support the claim. Describes spread, never truth (docs/08).",
+          "type": "integer",
+          "minimum": 0
+        },
+        "confidence": { "$ref": "common.schema.json#/$defs/Confidence" },
+        "created_by_task": { "$ref": "common.schema.json#/$defs/TaskId" },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "aspect": { "const": "other" } } },
+          "then": { "properties": { "aspect_label": { "type": "string" } } },
+          "else": { "properties": { "aspect_label": { "type": "null" } } }
+        },
+        {
+          "description": "Opinions and promotions are attributed, never verified or contradicted.",
+          "if": { "properties": { "claim_type": { "enum": ["opinion", "promotion"] } } },
+          "then": { "properties": { "verification": { "properties": { "status": { "const": "not_applicable" } } } } },
+          "else": {
+            "properties": { "verification": { "properties": { "status": { "enum": ["unverified", "verified", "contradicted", "disputed"] } } } }
+          }
+        }
+      ]
+    },
+    "Finding": {
+      "description": "ai_findings record: a pro, con or neutral point built from exact claim revisions. Edits and invalidations create a new revision.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "project_id",
+        "kind",
+        "aspect",
+        "wording",
+        "attribution",
+        "claims",
+        "caveats",
+        "origin_clusters",
+        "independent_origin_count",
+        "review_status",
+        "supersedes",
+        "created_by",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/FindingId" },
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "kind": { "$ref": "common.schema.json#/$defs/FindingKind" },
+        "aspect": { "$ref": "common.schema.json#/$defs/Aspect" },
+        "wording": { "type": "string", "minLength": 1 },
+        "attribution": { "$ref": "common.schema.json#/$defs/Attribution" },
+        "claims": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/ClaimRef" } },
+        "caveats": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "origin_clusters": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/ClusterId" } },
+        "independent_origin_count": { "type": "integer", "minimum": 0 },
+        "review_status": { "$ref": "common.schema.json#/$defs/FindingReviewStatus" },
+        "supersedes": { "anyOf": [{ "$ref": "common.schema.json#/$defs/FindingRef" }, { "type": "null" }] },
+        "created_by": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "task_id", "actor"],
+          "properties": {
+            "kind": { "enum": ["agent", "moderator"] },
+            "task_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/TaskId" }, { "type": "null" }] },
+            "actor": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Actor" }, { "type": "null" }] }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "kind": { "const": "agent" } } },
+              "then": { "properties": { "task_id": { "$ref": "common.schema.json#/$defs/TaskId" }, "actor": { "type": "null" } } },
+              "else": { "properties": { "task_id": { "type": "null" }, "actor": { "$ref": "common.schema.json#/$defs/Actor" } } }
+            }
+          ]
+        },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "revision": { "const": 1 } } },
+          "then": { "properties": { "supersedes": { "type": "null" } } },
+          "else": { "properties": { "supersedes": { "$ref": "common.schema.json#/$defs/FindingRef" } } }
+        }
+      ],
+      "x-invariants": [
+        "attribution=verified_fact requires every referenced claim revision to have verification.status=verified",
+        "every referenced claim revision belongs to the same project_id",
+        "a single independent origin keeps attribution=reported_opinion"
+      ]
+    }
+  }
+}

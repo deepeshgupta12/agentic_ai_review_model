@@ -1,0 +1,3259 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Agentic Project Intelligence API",
+    "version": "1.0.0",
+    "description": "Generated from contracts/v1/routes.json by scripts/build_openapi.py. Do not edit by hand."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/v1/auth/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "Start a session",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "public",
+        "x-roles": [],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AuthSession",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        }
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "End the session",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      }
+    },
+    "/v1/auth/me": {
+      "get": {
+        "operationId": "getMe",
+        "summary": "Current user and roles",
+        "tags": [
+          "auth"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "UserView",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      }
+    },
+    "/v1/projects/import": {
+      "post": {
+        "operationId": "importProjects",
+        "summary": "Import the five-project input file; creates or updates catalogue records",
+        "tags": [
+          "projects"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "researcher",
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectInputFile"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ImportResult",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/projects": {
+      "get": {
+        "operationId": "listProjects",
+        "summary": "Portfolio with run, review, coverage and publication summary",
+        "tags": [
+          "projects"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ProjectPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}": {
+      "get": {
+        "operationId": "getProject",
+        "summary": "Project record and configuration",
+        "tags": [
+          "projects"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ProjectDetail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateProjectConfig",
+        "summary": "Change configuration at an expected version",
+        "tags": [
+          "projects"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "researcher"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectConfigPatch"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ProjectConfig",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectConfig"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/runs": {
+      "post": {
+        "operationId": "startRun",
+        "summary": "Start a collection and analysis run within entitlements",
+        "tags": [
+          "runs"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "researcher"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      },
+      "get": {
+        "operationId": "listRuns",
+        "summary": "Runs for a project, newest first",
+        "tags": [
+          "runs"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RunPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/runs/{run_id}": {
+      "get": {
+        "operationId": "getRun",
+        "summary": "Run stage, coverage, progress, errors and cost",
+        "tags": [
+          "runs"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/RunId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "WorkflowRun",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkflowRun"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/runs/{run_id}/events": {
+      "get": {
+        "operationId": "streamRunEvents",
+        "summary": "Server-sent run events; resume with Last-Event-ID. Polling getRun is the fallback",
+        "tags": [
+          "runs"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/RunId"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Resume after this event ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Event stream",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunEvent"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/runs/{run_id}/cancel": {
+      "post": {
+        "operationId": "cancelRun",
+        "summary": "Cooperative cancellation; valid results are kept",
+        "tags": [
+          "runs"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "researcher"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/RunId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/sources": {
+      "get": {
+        "operationId": "listSources",
+        "summary": "Sources linked to a project, filtered",
+        "tags": [
+          "sources"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "name": "connector_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ConnectorId"
+            }
+          },
+          {
+            "name": "source_kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/SourceKind"
+            }
+          },
+          {
+            "name": "aspect",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/Aspect"
+            }
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/LanguageTag"
+            }
+          },
+          {
+            "name": "published_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/Date"
+            }
+          },
+          {
+            "name": "published_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/Date"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SourcePage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcePage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/sources/{source_id}/revisions/{revision}": {
+      "get": {
+        "operationId": "getSourceRevision",
+        "summary": "Permitted source detail, project-scoped links and evidence",
+        "tags": [
+          "sources"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/SourceId"
+            }
+          },
+          {
+            "name": "revision",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/RevisionNumber"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SourceRevisionDetail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourceRevisionDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/media": {
+      "get": {
+        "operationId": "listMedia",
+        "summary": "Video and Short library with access and analysis status",
+        "tags": [
+          "media"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "name": "access_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/MediaAccessStatus"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "video",
+                "short",
+                "unknown"
+              ]
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "MediaPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/sources/{source_id}/withdrawals": {
+      "post": {
+        "operationId": "withdrawSource",
+        "summary": "Withdraw a source; dependencies are invalidated before erasure",
+        "tags": [
+          "sources"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator",
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "source_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/SourceId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WithdrawalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/project-source-links/{link_id}/decisions": {
+      "post": {
+        "operationId": "decideSourceLink",
+        "summary": "Accept, reject, split or remap a project association",
+        "tags": [
+          "links"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "link_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/SourceLinkId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ProjectSourceLink",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectSourceLink"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/alias-proposals": {
+      "get": {
+        "operationId": "listAliasProposals",
+        "summary": "Alternate-name proposals with evidence and collision result (D17)",
+        "tags": [
+          "aliases"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AliasProposalPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AliasProposalPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/alias-proposals/{proposal_id}/decisions": {
+      "post": {
+        "operationId": "decideAliasProposal",
+        "summary": "Approve (standalone or context-required), reject or revoke an alias",
+        "tags": [
+          "aliases"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "researcher",
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "proposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/AliasProposalId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AliasDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AliasProposal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AliasProposal"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/findings": {
+      "get": {
+        "operationId": "listFindings",
+        "summary": "Findings with exact claims, conflicts and eligibility",
+        "tags": [
+          "findings"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "name": "review_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/FindingReviewStatus"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/FindingKind"
+            }
+          },
+          {
+            "name": "aspect",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/Aspect"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "FindingPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FindingPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/findings/{finding_id}/revisions": {
+      "post": {
+        "operationId": "reviseFinding",
+        "summary": "Edit a finding as a new revision",
+        "tags": [
+          "findings"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "finding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/FindingId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FindingRevisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Finding",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Finding"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/findings/{finding_id}/decisions": {
+      "post": {
+        "operationId": "decideFinding",
+        "summary": "Approve, reject or request changes on an exact finding revision",
+        "tags": [
+          "findings"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "finding_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/FindingId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FindingDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ReviewDecision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDecision"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/content-revisions": {
+      "post": {
+        "operationId": "createContentRevision",
+        "summary": "Generate from approved findings (202) or save a validated edit as a new revision (201)",
+        "tags": [
+          "content"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentRevisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "ContentRevisionView",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentRevisionView"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      },
+      "get": {
+        "operationId": "listContentRevisions",
+        "summary": "Content revision history",
+        "tags": [
+          "content"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator",
+          "publisher"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "name": "lifecycle",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ContentLifecycle"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ContentRevisionPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentRevisionPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/content-revisions/{revision_id}": {
+      "get": {
+        "operationId": "getContentRevision",
+        "summary": "Immutable payload, lineage, QA and private preview path",
+        "tags": [
+          "content"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator",
+          "publisher"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ContentRevisionId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ContentRevisionView",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContentRevisionView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/content-revisions/{revision_id}/approvals": {
+      "post": {
+        "operationId": "approveContentRevision",
+        "summary": "Final approval of the exact revision and hashes; the server recomputes and compares",
+        "tags": [
+          "content"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ContentRevisionId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "ReviewDecision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDecision"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/content-revisions/{revision_id}/decisions": {
+      "post": {
+        "operationId": "decideContentRevision",
+        "summary": "Reject or request changes on the exact final revision",
+        "tags": [
+          "content"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ContentRevisionId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContentDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ReviewDecision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDecision"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/publication": {
+      "get": {
+        "operationId": "getPublicationState",
+        "summary": "Approved vs active vs delivered revision and recent operations",
+        "tags": [
+          "publication"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PublicationStateView",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationStateView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/publications": {
+      "post": {
+        "operationId": "publish",
+        "summary": "Activate an approved revision and deliver it to the public page",
+        "tags": [
+          "publication"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "publisher"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "PublicationOperation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationOperation"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/publications/{operation_id}": {
+      "get": {
+        "operationId": "getPublication",
+        "summary": "Activation vs delivery status and verified revision",
+        "tags": [
+          "publication"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "publisher"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/PublicationOperationId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PublicationOperation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationOperation"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          }
+        }
+      }
+    },
+    "/v1/publications/{operation_id}/rollback": {
+      "post": {
+        "operationId": "rollbackPublication",
+        "summary": "Roll back to an eligible prior revision as a new operation",
+        "tags": [
+          "publication"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "publisher"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "operation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/PublicationOperationId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RollbackRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "PublicationOperation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationOperation"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/projects/{project_id}/unpublish": {
+      "post": {
+        "operationId": "unpublishProject",
+        "summary": "Remove the module; the page shows the empty state",
+        "tags": [
+          "publication"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "publisher"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnpublishRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "PublicationOperation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicationOperation"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/public/projects/{slug}/insights": {
+      "get": {
+        "operationId": "getPublicInsights",
+        "summary": "Public read of the active eligible revision only; never drafts",
+        "tags": [
+          "public"
+        ],
+        "x-access": "public",
+        "x-roles": [],
+        "security": [],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/Slug"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PublicInsights",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicInsights"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        }
+      }
+    },
+    "/v1/public/projects/{slug}/corrections": {
+      "post": {
+        "operationId": "submitCorrection",
+        "summary": "Public correction or report into the moderation queue",
+        "tags": [
+          "public"
+        ],
+        "x-access": "public",
+        "x-roles": [],
+        "security": [],
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/Slug"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "CorrectionAck",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrectionAck"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          }
+        }
+      }
+    },
+    "/v1/corrections": {
+      "get": {
+        "operationId": "listCorrections",
+        "summary": "Correction queue",
+        "tags": [
+          "corrections"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CorrectionPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CorrectionPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      }
+    },
+    "/v1/corrections/{correction_id}/decisions": {
+      "post": {
+        "operationId": "decideCorrection",
+        "summary": "Resolve or dismiss a correction with a reason",
+        "tags": [
+          "corrections"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "moderator"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "correction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/CorrectionId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectionDecisionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ReviewDecision",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDecision"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/connectors/health": {
+      "get": {
+        "operationId": "getConnectorHealth",
+        "summary": "Entitlements, last success, quota and safe errors",
+        "tags": [
+          "connectors"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "researcher",
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ConnectorHealthList",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorHealthList"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      }
+    },
+    "/v1/webhooks/{provider}": {
+      "post": {
+        "operationId": "receiveWebhook",
+        "summary": "Provider webhook; verified signature, replay window and event ID",
+        "tags": [
+          "webhooks"
+        ],
+        "x-access": "signature",
+        "x-roles": [],
+        "security": [
+          {
+            "webhookSignature": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ConnectorId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "WebhookAck",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebhookAck"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/ops/jobs": {
+      "get": {
+        "operationId": "listJobs",
+        "summary": "Durable jobs, filterable by status",
+        "tags": [
+          "ops"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "researcher",
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/JobStatus"
+            }
+          },
+          {
+            "name": "project_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/ProjectId"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JobPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      }
+    },
+    "/v1/ops/summary": {
+      "get": {
+        "operationId": "getOpsSummary",
+        "summary": "Freshness, failures, delivery backlog, deletion backlog and model usage",
+        "tags": [
+          "ops"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OpsSummary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpsSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      }
+    },
+    "/v1/evaluations": {
+      "get": {
+        "operationId": "listEvaluations",
+        "summary": "Evaluation runs with sample sizes",
+        "tags": [
+          "ops"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher",
+          "moderator",
+          "publisher",
+          "analyst"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "EvaluationPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvaluationPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      }
+    },
+    "/v1/admin/users": {
+      "get": {
+        "operationId": "listUsers",
+        "summary": "Users and roles",
+        "tags": [
+          "admin"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "UserPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createUser",
+        "summary": "Create a user (no self-registration)",
+        "tags": [
+          "admin"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "UserView",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/admin/users/{user_id}": {
+      "patch": {
+        "operationId": "updateUser",
+        "summary": "Change roles, name or active flag",
+        "tags": [
+          "admin"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/UserId"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "UserView",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserView"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/admin/source-policies": {
+      "get": {
+        "operationId": "listSourcePolicies",
+        "summary": "Source policy versions",
+        "tags": [
+          "admin"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin",
+          "researcher"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PolicyPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createSourcePolicyVersion",
+        "summary": "Create the next immutable policy version for a family",
+        "tags": [
+          "admin"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyVersionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "SourcePolicy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SourcePolicy"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      }
+    },
+    "/v1/admin/audit-events": {
+      "get": {
+        "operationId": "listAuditEvents",
+        "summary": "Audit search",
+        "tags": [
+          "admin"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "target_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/Timestamp"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/Timestamp"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AuditEventPage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditEventPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "sy_session"
+      },
+      "csrfToken": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-Token"
+      },
+      "webhookSignature": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Webhook-Signature"
+      }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 128
+        },
+        "description": "Same key and body returns the original result; same key with a different body returns 409"
+      }
+    },
+    "responses": {
+      "Error401": {
+        "description": "Not signed in, or the webhook signature is invalid",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error403": {
+        "description": "Signed in without a role allowed for this operation",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error404": {
+        "description": "Not found (also returned when the caller may not know it exists)",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error409": {
+        "description": "Version, idempotency, approval or state conflict; the body names the current version",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error422": {
+        "description": "Request failed validation",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error429": {
+        "description": "Rate limited",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      },
+      "Error503": {
+        "description": "A provider or dependency is unavailable",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Accepted": {
+        "$ref": "api.schema.json#/$defs/Accepted"
+      },
+      "AliasDecisionRequest": {
+        "$ref": "api.schema.json#/$defs/AliasDecisionRequest"
+      },
+      "AliasProposal": {
+        "$ref": "catalogue.schema.json#/$defs/AliasProposal"
+      },
+      "AliasProposalPage": {
+        "$ref": "api.schema.json#/$defs/AliasProposalPage"
+      },
+      "ApprovalRequest": {
+        "$ref": "api.schema.json#/$defs/ApprovalRequest"
+      },
+      "AuditEventPage": {
+        "$ref": "api.schema.json#/$defs/AuditEventPage"
+      },
+      "AuthSession": {
+        "$ref": "api.schema.json#/$defs/AuthSession"
+      },
+      "ConnectorHealthList": {
+        "$ref": "api.schema.json#/$defs/ConnectorHealthList"
+      },
+      "ContentDecisionRequest": {
+        "$ref": "api.schema.json#/$defs/ContentDecisionRequest"
+      },
+      "ContentRevisionPage": {
+        "$ref": "api.schema.json#/$defs/ContentRevisionPage"
+      },
+      "ContentRevisionRequest": {
+        "$ref": "api.schema.json#/$defs/ContentRevisionRequest"
+      },
+      "ContentRevisionView": {
+        "$ref": "api.schema.json#/$defs/ContentRevisionView"
+      },
+      "CorrectionAck": {
+        "$ref": "api.schema.json#/$defs/CorrectionAck"
+      },
+      "CorrectionDecisionRequest": {
+        "$ref": "api.schema.json#/$defs/CorrectionDecisionRequest"
+      },
+      "CorrectionPage": {
+        "$ref": "api.schema.json#/$defs/CorrectionPage"
+      },
+      "CorrectionRequest": {
+        "$ref": "api.schema.json#/$defs/CorrectionRequest"
+      },
+      "ErrorEnvelope": {
+        "$ref": "common.schema.json#/$defs/ErrorEnvelope"
+      },
+      "EvaluationPage": {
+        "$ref": "api.schema.json#/$defs/EvaluationPage"
+      },
+      "Finding": {
+        "$ref": "evidence.schema.json#/$defs/Finding"
+      },
+      "FindingDecisionRequest": {
+        "$ref": "api.schema.json#/$defs/FindingDecisionRequest"
+      },
+      "FindingPage": {
+        "$ref": "api.schema.json#/$defs/FindingPage"
+      },
+      "FindingRevisionRequest": {
+        "$ref": "api.schema.json#/$defs/FindingRevisionRequest"
+      },
+      "ImportResult": {
+        "$ref": "api.schema.json#/$defs/ImportResult"
+      },
+      "JobPage": {
+        "$ref": "api.schema.json#/$defs/JobPage"
+      },
+      "LinkDecisionRequest": {
+        "$ref": "api.schema.json#/$defs/LinkDecisionRequest"
+      },
+      "LoginRequest": {
+        "$ref": "api.schema.json#/$defs/LoginRequest"
+      },
+      "MediaPage": {
+        "$ref": "api.schema.json#/$defs/MediaPage"
+      },
+      "OpsSummary": {
+        "$ref": "api.schema.json#/$defs/OpsSummary"
+      },
+      "PolicyPage": {
+        "$ref": "api.schema.json#/$defs/PolicyPage"
+      },
+      "PolicyVersionRequest": {
+        "$ref": "api.schema.json#/$defs/PolicyVersionRequest"
+      },
+      "ProjectConfig": {
+        "$ref": "catalogue.schema.json#/$defs/ProjectConfig"
+      },
+      "ProjectConfigPatch": {
+        "$ref": "api.schema.json#/$defs/ProjectConfigPatch"
+      },
+      "ProjectDetail": {
+        "$ref": "api.schema.json#/$defs/ProjectDetail"
+      },
+      "ProjectInputFile": {
+        "$ref": "catalogue.schema.json#/$defs/ProjectInputFile"
+      },
+      "ProjectPage": {
+        "$ref": "api.schema.json#/$defs/ProjectPage"
+      },
+      "ProjectSourceLink": {
+        "$ref": "sources.schema.json#/$defs/ProjectSourceLink"
+      },
+      "PublicInsights": {
+        "$ref": "api.schema.json#/$defs/PublicInsights"
+      },
+      "PublicationOperation": {
+        "$ref": "publication.schema.json#/$defs/PublicationOperation"
+      },
+      "PublicationRequest": {
+        "$ref": "api.schema.json#/$defs/PublicationRequest"
+      },
+      "PublicationStateView": {
+        "$ref": "api.schema.json#/$defs/PublicationStateView"
+      },
+      "ReasonRequest": {
+        "$ref": "api.schema.json#/$defs/ReasonRequest"
+      },
+      "ReviewDecision": {
+        "$ref": "content.schema.json#/$defs/ReviewDecision"
+      },
+      "RollbackRequest": {
+        "$ref": "api.schema.json#/$defs/RollbackRequest"
+      },
+      "RunEvent": {
+        "$ref": "api.schema.json#/$defs/RunEvent"
+      },
+      "RunPage": {
+        "$ref": "api.schema.json#/$defs/RunPage"
+      },
+      "RunRequest": {
+        "$ref": "api.schema.json#/$defs/RunRequest"
+      },
+      "SourcePage": {
+        "$ref": "api.schema.json#/$defs/SourcePage"
+      },
+      "SourcePolicy": {
+        "$ref": "sources.schema.json#/$defs/SourcePolicy"
+      },
+      "SourceRevisionDetail": {
+        "$ref": "api.schema.json#/$defs/SourceRevisionDetail"
+      },
+      "UnpublishRequest": {
+        "$ref": "api.schema.json#/$defs/UnpublishRequest"
+      },
+      "UserCreateRequest": {
+        "$ref": "api.schema.json#/$defs/UserCreateRequest"
+      },
+      "UserPage": {
+        "$ref": "api.schema.json#/$defs/UserPage"
+      },
+      "UserUpdateRequest": {
+        "$ref": "api.schema.json#/$defs/UserUpdateRequest"
+      },
+      "UserView": {
+        "$ref": "api.schema.json#/$defs/UserView"
+      },
+      "WebhookAck": {
+        "$ref": "api.schema.json#/$defs/WebhookAck"
+      },
+      "WithdrawalRequest": {
+        "$ref": "api.schema.json#/$defs/WithdrawalRequest"
+      },
+      "WorkflowRun": {
+        "$ref": "operations.schema.json#/$defs/WorkflowRun"
+      }
+    }
+  }
+}

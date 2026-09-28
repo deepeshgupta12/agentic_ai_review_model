@@ -1,0 +1,9 @@
+# Contract tooling (Step 02). Pinned; Step 03 folds these into the backend lockfile (D26).
+# Install: python3 -m venv .venv && .venv/bin/pip install -r scripts/requirements.txt
+attrs==26.1.0
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+referencing==0.37.0
+rfc8785==0.1.4
+rpds-py==0.30.0
+typing_extensions==4.16.0

@@ -1,0 +1,322 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Content contracts",
+  "description": "Frozen page payload, dependency manifest, content revisions and review decisions (docs/05 'Immutable content and hashing', D23).",
+  "x-contract-version": "1.0.0",
+  "$defs": {
+    "SafeJson": {
+      "description": "JSON with integers only (safe range) so canonical hashing is identical across languages (D23).",
+      "anyOf": [
+        { "type": "string" },
+        { "type": "boolean" },
+        { "type": "null" },
+        { "type": "integer", "minimum": -9007199254740991, "maximum": 9007199254740991 },
+        { "type": "array", "items": { "$ref": "#/$defs/SafeJson" } },
+        { "type": "object", "additionalProperties": { "$ref": "#/$defs/SafeJson" } }
+      ]
+    },
+    "Support": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findings", "claims"],
+      "properties": {
+        "findings": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/FindingRef" } },
+        "claims": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/ClaimRef" } }
+      }
+    },
+    "SupportedText": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "support"],
+      "properties": { "text": { "type": "string", "minLength": 1 }, "support": { "$ref": "#/$defs/Support" } }
+    },
+    "SupportedItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "caveat", "support"],
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "caveat": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "support": { "$ref": "#/$defs/Support" }
+      }
+    },
+    "QuestionItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["question", "answer", "support"],
+      "properties": {
+        "question": { "type": "string", "minLength": 1 },
+        "answer": { "type": "string", "minLength": 1 },
+        "support": { "$ref": "#/$defs/Support" }
+      }
+    },
+    "PublicSourceLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "title", "url", "platform", "published", "timestamp_ms"],
+      "properties": {
+        "source": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" },
+        "title": { "type": "string", "minLength": 1 },
+        "url": { "$ref": "common.schema.json#/$defs/HttpUrl" },
+        "platform": { "type": "string", "minLength": 1 },
+        "published": { "$ref": "common.schema.json#/$defs/DatedValue" },
+        "timestamp_ms": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] }
+      }
+    },
+    "ContentPayload": {
+      "description": "Everything the public page shows, frozen and hashed. Operational approval/delivery data stays outside. Pros and cons lists may be empty or unequal; every substantive block carries exact finding and claim revisions.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "payload_schema",
+        "project",
+        "locale",
+        "evidence_window",
+        "heading",
+        "overview",
+        "advantages",
+        "considerations",
+        "questions",
+        "sources",
+        "coverage_note",
+        "reviewed_on",
+        "attribution",
+        "metadata",
+        "json_ld"
+      ],
+      "properties": {
+        "payload_schema": { "const": "content-payload/1" },
+        "project": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "slug", "name"],
+          "properties": {
+            "id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+            "slug": { "$ref": "common.schema.json#/$defs/Slug" },
+            "name": { "type": "string", "minLength": 1 }
+          }
+        },
+        "locale": { "$ref": "common.schema.json#/$defs/Locale" },
+        "evidence_window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "to"],
+          "properties": {
+            "from": { "$ref": "common.schema.json#/$defs/Date" },
+            "to": { "$ref": "common.schema.json#/$defs/Date" }
+          }
+        },
+        "heading": { "type": "string", "minLength": 1 },
+        "overview": { "$ref": "#/$defs/SupportedText" },
+        "advantages": { "type": "array", "items": { "$ref": "#/$defs/SupportedItem" } },
+        "considerations": { "type": "array", "items": { "$ref": "#/$defs/SupportedItem" } },
+        "questions": { "type": "array", "items": { "$ref": "#/$defs/QuestionItem" } },
+        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/PublicSourceLink" } },
+        "coverage_note": { "type": "string", "minLength": 1 },
+        "reviewed_on": { "$ref": "common.schema.json#/$defs/Date" },
+        "attribution": {
+          "description": "Names the client as the compiler of a summary of public discussion. Never presented as a user review.",
+          "type": "string",
+          "minLength": 1
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["title", "description", "canonical_path", "robots"],
+          "properties": {
+            "title": { "type": "string", "minLength": 1, "maxLength": 70 },
+            "description": { "type": "string", "minLength": 1, "maxLength": 170 },
+            "canonical_path": { "type": "string", "pattern": "^/projects/[a-z0-9]+(-[a-z0-9]+)*$" },
+            "robots": { "enum": ["noindex", "index"] }
+          }
+        },
+        "json_ld": {
+          "description": "Built deterministically by the backend from the visible content, never written by a model. No aggregate ratings.",
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/SafeJson" },
+          "not": { "anyOf": [{ "required": ["aggregateRating"] }, { "required": ["review"] }] }
+        }
+      }
+    },
+    "DependencyManifest": {
+      "description": "Exact dependencies of a content revision. Arrays sorted by (id, revision) and unique; hashed with the same method as the payload.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["findings", "claims", "evidence", "sources", "links", "policies", "eligibility_epoch"],
+      "properties": {
+        "findings": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/FindingRef" } },
+        "claims": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/ClaimRef" } },
+        "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" } },
+        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" } },
+        "links": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/SourceLinkId" } },
+        "policies": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/PolicyRef" } },
+        "eligibility_epoch": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "ContentRevision": {
+      "description": "ai_content_revisions record. payload and manifest are immutable; lifecycle is mutable metadata outside the hash. Unique (project_id, locale, revision).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "project_id",
+        "locale",
+        "revision",
+        "payload",
+        "payload_sha256",
+        "manifest",
+        "manifest_sha256",
+        "lifecycle",
+        "supersedes",
+        "created_by",
+        "qa",
+        "created_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/ContentRevisionId" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "locale": { "$ref": "common.schema.json#/$defs/Locale" },
+        "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" },
+        "payload": { "$ref": "#/$defs/ContentPayload" },
+        "payload_sha256": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "manifest": { "$ref": "#/$defs/DependencyManifest" },
+        "manifest_sha256": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "lifecycle": { "$ref": "common.schema.json#/$defs/ContentLifecycle" },
+        "supersedes": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "revision"],
+              "properties": {
+                "id": { "$ref": "common.schema.json#/$defs/ContentRevisionId" },
+                "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "created_by": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "task_id", "actor"],
+          "properties": {
+            "kind": { "enum": ["agent", "moderator"] },
+            "task_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/TaskId" }, { "type": "null" }] },
+            "actor": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Actor" }, { "type": "null" }] }
+          }
+        },
+        "qa": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status", "blocking_issues", "nonblocking_issues", "report_task"],
+          "properties": {
+            "status": { "enum": ["not_run", "passed", "issues_found"] },
+            "blocking_issues": { "type": "integer", "minimum": 0 },
+            "nonblocking_issues": { "type": "integer", "minimum": 0 },
+            "report_task": { "anyOf": [{ "$ref": "common.schema.json#/$defs/TaskId" }, { "type": "null" }] }
+          }
+        },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "payload": { "properties": { "locale": { "const": "en-IN" } } } } },
+          "then": { "properties": { "locale": { "const": "en-IN" } } }
+        },
+        {
+          "description": "A revision with blocking QA issues cannot reach final review.",
+          "if": { "properties": { "lifecycle": { "enum": ["final_review", "approved"] } } },
+          "then": { "properties": { "qa": { "properties": { "status": { "enum": ["passed", "issues_found"] }, "blocking_issues": { "const": 0 } } } } }
+        }
+      ],
+      "x-invariants": [
+        "payload_sha256 == sha256(JCS(payload)) and manifest_sha256 == sha256(JCS(manifest)), recomputed by the backend",
+        "payload.project.id == project_id",
+        "every Support reference appears in manifest.findings / manifest.claims"
+      ]
+    },
+    "ContentBinding": {
+      "description": "What a final approval is bound to (docs/05 step 4). Approval of an old hash cannot authorise a new revision.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_id", "locale", "payload_sha256", "manifest_sha256", "eligibility_epoch", "expected_state_version"],
+      "properties": {
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "locale": { "$ref": "common.schema.json#/$defs/Locale" },
+        "payload_sha256": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "manifest_sha256": { "$ref": "common.schema.json#/$defs/Sha256" },
+        "eligibility_epoch": { "type": "integer", "minimum": 0 },
+        "expected_state_version": { "$ref": "common.schema.json#/$defs/Version" }
+      }
+    },
+    "ReviewDecision": {
+      "description": "ai_review_decisions record, append-only. The actor comes from the session and is always a person: models cannot approve.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "target", "action", "reason", "actor", "binding", "idempotency_key", "request_id", "created_at"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/DecisionId" },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "id", "revision"],
+          "properties": {
+            "type": { "$ref": "common.schema.json#/$defs/DecisionTargetType" },
+            "id": { "type": "string", "pattern": "^[a-z]{3}_[0-9A-HJKMNP-TV-Z]{26}$" },
+            "revision": { "anyOf": [{ "$ref": "common.schema.json#/$defs/RevisionNumber" }, { "type": "null" }] }
+          }
+        },
+        "action": { "$ref": "common.schema.json#/$defs/DecisionAction" },
+        "reason": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "actor": {
+          "allOf": [
+            { "$ref": "common.schema.json#/$defs/Actor" },
+            { "properties": { "kind": { "const": "user" } } }
+          ]
+        },
+        "binding": { "anyOf": [{ "$ref": "#/$defs/ContentBinding" }, { "type": "null" }] },
+        "idempotency_key": { "anyOf": [{ "type": "string", "minLength": 8, "maxLength": 128 }, { "type": "null" }] },
+        "request_id": { "type": "string", "minLength": 1 },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "target": { "properties": { "type": { "enum": ["finding", "content_revision"] } } } } },
+          "then": {
+            "properties": {
+              "action": { "enum": ["approve", "reject", "changes_requested"] },
+              "target": { "properties": { "revision": { "$ref": "common.schema.json#/$defs/RevisionNumber" } } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "target": { "properties": { "type": { "const": "project_source_link" } } } } },
+          "then": { "properties": { "action": { "enum": ["accept", "reject", "split", "remap"] } } }
+        },
+        {
+          "if": { "properties": { "target": { "properties": { "type": { "const": "alias_proposal" } } } } },
+          "then": { "properties": { "action": { "enum": ["approve", "reject", "revoke"] } } }
+        },
+        {
+          "if": { "properties": { "target": { "properties": { "type": { "const": "correction" } } } } },
+          "then": { "properties": { "action": { "enum": ["resolve", "dismiss"] } } }
+        },
+        {
+          "if": { "properties": { "action": { "enum": ["reject", "changes_requested", "split", "remap", "revoke", "dismiss"] } } },
+          "then": { "properties": { "reason": { "type": "string" } } }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": { "const": "approve" },
+              "target": { "properties": { "type": { "const": "content_revision" } } }
+            }
+          },
+          "then": { "properties": { "binding": { "$ref": "#/$defs/ContentBinding" } } },
+          "else": { "properties": { "binding": { "type": "null" } } }
+        }
+      ]
+    }
+  }
+}

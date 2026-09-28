@@ -14,7 +14,7 @@ This is the critical integrity contract. Implement it before any live publicatio
 | Publication operation | queued, activating, delivery_pending, verified, retry_wait, failed, rolled_back |
 | Serving state | active, temporarily_disabled, unpublished |
 
-These are implementation contracts to be schema-versioned in Step 02. Do not place every enum into one overloaded `status`. A workflow may have completed analysis with partial coverage; a page may still serve an older approved revision while a newer draft awaits review.
+Step 02 froze these in [contracts/v1/state_machines.json](../contracts/v1/state_machines.json), with every allowed transition and actor ([readable view](10-journeys-and-states.md)). It extends the lists above on purpose: workflow stage `cancelled`; content `changes_requested` and `rejected`; finding review `superseded`. Do not place every enum into one overloaded `status`. A workflow may have completed analysis with partial coverage; a page may still serve an older approved revision while a newer draft awaits review.
 
 ## Jobs and checkpoints
 

@@ -21,7 +21,7 @@ Numbered order is the default solo-coding order. Independent fixtures/contracts 
 
 5.1 Implement a common connector interface for discovery, fetch, incremental updates and deletion checks.
 
-5.2 Integrate the contracted social provider and approved direct APIs.
+5.2 Integrate the approved direct APIs and, if one is contracted, the social listening provider (optional per I04).
 
 5.3 Integrate web search and permitted forum/page adapters.
 

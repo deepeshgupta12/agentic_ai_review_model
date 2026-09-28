@@ -1,0 +1,2835 @@
+{
+  "note": "Synthetic fixture for contract tests. Fictional projects and sources; not evidence, never imported as real data.",
+  "approval": [
+    {
+      "name": "exact_revision_approved",
+      "decision": {
+        "id": "dec_01JB0000000000000000000001",
+        "target": {
+          "type": "content_revision",
+          "id": "rev_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "action": "approve",
+        "reason": null,
+        "actor": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000001",
+          "role": "moderator"
+        },
+        "binding": {
+          "project_id": "prj_01JB0000000000000000000001",
+          "locale": "en-IN",
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "eligibility_epoch": 3,
+          "expected_state_version": 7
+        },
+        "idempotency_key": "approve-rev1-0001",
+        "request_id": "req-0001",
+        "created_at": "2026-09-24T12:00:00Z"
+      },
+      "revision": {
+        "id": "rev_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "revision": 1,
+        "payload": {
+          "payload_schema": "content-payload/1",
+          "project": {
+            "id": "prj_01JB0000000000000000000001",
+            "slug": "fixture-towers-sector-0-example-city",
+            "name": "Fixture Towers"
+          },
+          "locale": "en-IN",
+          "evidence_window": {
+            "from": "2026-06-27",
+            "to": "2026-09-25"
+          },
+          "heading": "What buyers discuss about Fixture Towers",
+          "overview": {
+            "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+            "support": {
+              "findings": [
+                {
+                  "id": "fnd_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "fnd_01JB0000000000000000000002",
+                  "revision": 2
+                }
+              ],
+              "claims": [
+                {
+                  "id": "clm_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "clm_01JB0000000000000000000002",
+                  "revision": 1
+                }
+              ]
+            }
+          },
+          "advantages": [],
+          "considerations": [
+            {
+              "text": "Several residents report that possession was delayed.",
+              "caveat": "Reported in public posts; not confirmed by the developer.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "questions": [
+            {
+              "question": "What is the registered completion date?",
+              "answer": "The RERA registry lists 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "sources": [
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              "title": "Fixture Towers possession?",
+              "url": "https://forum.example.invalid/t/123",
+              "platform": "Example forum",
+              "published": {
+                "status": "unknown",
+                "value": null,
+                "precision": null,
+                "basis": null
+              },
+              "timestamp_ms": null
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              "title": "Comparing Fixture Towers and Sample Greens",
+              "url": "https://video.example.invalid/watch?v=abc",
+              "platform": "Example video site",
+              "published": {
+                "status": "known",
+                "value": "2026-09-10T10:00:00Z",
+                "precision": "day",
+                "basis": "platform_metadata"
+              },
+              "timestamp_ms": 12000
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              },
+              "title": "Registry record",
+              "url": "https://registry.example.invalid/project/FIX-0001",
+              "platform": "RERA registry",
+              "published": {
+                "status": "known",
+                "value": "2026-09-01T10:00:00Z",
+                "precision": "day",
+                "basis": "registry_record"
+              },
+              "timestamp_ms": null
+            }
+          ],
+          "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+          "reviewed_on": "2026-09-25",
+          "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+          "metadata": {
+            "title": "Fixture Towers: what buyers discuss",
+            "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+            "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+            "robots": "noindex"
+          },
+          "json_ld": {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "What buyers discuss about Fixture Towers",
+            "dateModified": "2026-09-25",
+            "about": {
+              "@type": "Place",
+              "name": "Fixture Towers, Sector 0, Example City"
+            }
+          }
+        },
+        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "manifest": {
+          "findings": [
+            {
+              "id": "fnd_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "fnd_01JB0000000000000000000002",
+              "revision": 2
+            }
+          ],
+          "claims": [
+            {
+              "id": "clm_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "clm_01JB0000000000000000000002",
+              "revision": 1
+            }
+          ],
+          "evidence": [
+            {
+              "id": "evd_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000002",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
+          "sources": [
+            {
+              "id": "src_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000002",
+              "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000003",
+              "revision": 1
+            }
+          ],
+          "links": [
+            "lnk_01JB0000000000000000000001",
+            "lnk_01JB0000000000000000000003",
+            "lnk_01JB0000000000000000000004"
+          ],
+          "policies": [
+            {
+              "family": "official_records",
+              "policy_version": 1
+            },
+            {
+              "family": "web_public_pages",
+              "policy_version": 1
+            },
+            {
+              "family": "youtube",
+              "policy_version": 1
+            }
+          ],
+          "eligibility_epoch": 3
+        },
+        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "lifecycle": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000008",
+          "actor": null
+        },
+        "qa": {
+          "status": "passed",
+          "blocking_issues": 0,
+          "nonblocking_issues": 1,
+          "report_task": "tsk_01JB0000000000000000000009"
+        },
+        "created_at": "2026-09-24T10:00:00Z"
+      },
+      "state": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 8,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "active",
+        "eligibility_epoch": 3,
+        "pending_invalidation": false,
+        "pending_intent": null,
+        "updated_at": "2026-09-24T13:00:00Z"
+      },
+      "authorised": true,
+      "reasons_contain": []
+    },
+    {
+      "name": "edited_revision_cannot_reuse_approval",
+      "decision": {
+        "id": "dec_01JB0000000000000000000001",
+        "target": {
+          "type": "content_revision",
+          "id": "rev_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "action": "approve",
+        "reason": null,
+        "actor": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000001",
+          "role": "moderator"
+        },
+        "binding": {
+          "project_id": "prj_01JB0000000000000000000001",
+          "locale": "en-IN",
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "eligibility_epoch": 3,
+          "expected_state_version": 7
+        },
+        "idempotency_key": "approve-rev1-0001",
+        "request_id": "req-0001",
+        "created_at": "2026-09-24T12:00:00Z"
+      },
+      "revision": {
+        "id": "rev_01JB0000000000000000000002",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "revision": 2,
+        "payload": {
+          "payload_schema": "content-payload/1",
+          "project": {
+            "id": "prj_01JB0000000000000000000001",
+            "slug": "fixture-towers-sector-0-example-city",
+            "name": "Fixture Towers"
+          },
+          "locale": "en-IN",
+          "evidence_window": {
+            "from": "2026-06-27",
+            "to": "2026-09-25"
+          },
+          "heading": "What buyers discuss about Fixture Towers",
+          "overview": {
+            "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+            "support": {
+              "findings": [
+                {
+                  "id": "fnd_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "fnd_01JB0000000000000000000002",
+                  "revision": 2
+                }
+              ],
+              "claims": [
+                {
+                  "id": "clm_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "clm_01JB0000000000000000000002",
+                  "revision": 1
+                }
+              ]
+            }
+          },
+          "advantages": [],
+          "considerations": [
+            {
+              "text": "Several residents report that possession was delayed by about six months.",
+              "caveat": "Reported in public posts; not confirmed by the developer.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "questions": [
+            {
+              "question": "What is the registered completion date?",
+              "answer": "The RERA registry lists 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "sources": [
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              "title": "Fixture Towers possession?",
+              "url": "https://forum.example.invalid/t/123",
+              "platform": "Example forum",
+              "published": {
+                "status": "unknown",
+                "value": null,
+                "precision": null,
+                "basis": null
+              },
+              "timestamp_ms": null
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              "title": "Comparing Fixture Towers and Sample Greens",
+              "url": "https://video.example.invalid/watch?v=abc",
+              "platform": "Example video site",
+              "published": {
+                "status": "known",
+                "value": "2026-09-10T10:00:00Z",
+                "precision": "day",
+                "basis": "platform_metadata"
+              },
+              "timestamp_ms": 12000
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              },
+              "title": "Registry record",
+              "url": "https://registry.example.invalid/project/FIX-0001",
+              "platform": "RERA registry",
+              "published": {
+                "status": "known",
+                "value": "2026-09-01T10:00:00Z",
+                "precision": "day",
+                "basis": "registry_record"
+              },
+              "timestamp_ms": null
+            }
+          ],
+          "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+          "reviewed_on": "2026-09-25",
+          "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+          "metadata": {
+            "title": "Fixture Towers: what buyers discuss",
+            "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+            "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+            "robots": "noindex"
+          },
+          "json_ld": {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "What buyers discuss about Fixture Towers",
+            "dateModified": "2026-09-25",
+            "about": {
+              "@type": "Place",
+              "name": "Fixture Towers, Sector 0, Example City"
+            }
+          }
+        },
+        "payload_sha256": "sha256:ea9f17702ffc62443d72f7ce380f74bc9639c8ff7a12bc1b0dae87cca003df16",
+        "manifest": {
+          "findings": [
+            {
+              "id": "fnd_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "fnd_01JB0000000000000000000002",
+              "revision": 2
+            }
+          ],
+          "claims": [
+            {
+              "id": "clm_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "clm_01JB0000000000000000000002",
+              "revision": 1
+            }
+          ],
+          "evidence": [
+            {
+              "id": "evd_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000002",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
+          "sources": [
+            {
+              "id": "src_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000002",
+              "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000003",
+              "revision": 1
+            }
+          ],
+          "links": [
+            "lnk_01JB0000000000000000000001",
+            "lnk_01JB0000000000000000000003",
+            "lnk_01JB0000000000000000000004"
+          ],
+          "policies": [
+            {
+              "family": "official_records",
+              "policy_version": 1
+            },
+            {
+              "family": "web_public_pages",
+              "policy_version": 1
+            },
+            {
+              "family": "youtube",
+              "policy_version": 1
+            }
+          ],
+          "eligibility_epoch": 3
+        },
+        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "lifecycle": "approved",
+        "supersedes": {
+          "id": "rev_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "created_by": {
+          "kind": "moderator",
+          "task_id": null,
+          "actor": {
+            "kind": "user",
+            "user_id": "usr_01JB0000000000000000000001",
+            "role": "moderator"
+          }
+        },
+        "qa": {
+          "status": "passed",
+          "blocking_issues": 0,
+          "nonblocking_issues": 1,
+          "report_task": "tsk_01JB0000000000000000000009"
+        },
+        "created_at": "2026-09-24T10:00:00Z"
+      },
+      "state": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 8,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "active",
+        "eligibility_epoch": 3,
+        "pending_invalidation": false,
+        "pending_intent": null,
+        "updated_at": "2026-09-24T13:00:00Z"
+      },
+      "authorised": false,
+      "reasons_contain": [
+        "approval names a different revision",
+        "approved payload hash differs from this payload"
+      ]
+    },
+    {
+      "name": "tampered_payload_same_revision_number",
+      "decision": {
+        "id": "dec_01JB0000000000000000000001",
+        "target": {
+          "type": "content_revision",
+          "id": "rev_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "action": "approve",
+        "reason": null,
+        "actor": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000001",
+          "role": "moderator"
+        },
+        "binding": {
+          "project_id": "prj_01JB0000000000000000000001",
+          "locale": "en-IN",
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "eligibility_epoch": 3,
+          "expected_state_version": 7
+        },
+        "idempotency_key": "approve-rev1-0001",
+        "request_id": "req-0001",
+        "created_at": "2026-09-24T12:00:00Z"
+      },
+      "revision": {
+        "id": "rev_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "revision": 1,
+        "payload": {
+          "payload_schema": "content-payload/1",
+          "project": {
+            "id": "prj_01JB0000000000000000000001",
+            "slug": "fixture-towers-sector-0-example-city",
+            "name": "Fixture Towers"
+          },
+          "locale": "en-IN",
+          "evidence_window": {
+            "from": "2026-06-27",
+            "to": "2026-09-25"
+          },
+          "heading": "What buyers discuss about Fixture Towers",
+          "overview": {
+            "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+            "support": {
+              "findings": [
+                {
+                  "id": "fnd_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "fnd_01JB0000000000000000000002",
+                  "revision": 2
+                }
+              ],
+              "claims": [
+                {
+                  "id": "clm_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "clm_01JB0000000000000000000002",
+                  "revision": 1
+                }
+              ]
+            }
+          },
+          "advantages": [],
+          "considerations": [
+            {
+              "text": "Possession was on time.",
+              "caveat": "Reported in public posts; not confirmed by the developer.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "questions": [
+            {
+              "question": "What is the registered completion date?",
+              "answer": "The RERA registry lists 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "sources": [
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              "title": "Fixture Towers possession?",
+              "url": "https://forum.example.invalid/t/123",
+              "platform": "Example forum",
+              "published": {
+                "status": "unknown",
+                "value": null,
+                "precision": null,
+                "basis": null
+              },
+              "timestamp_ms": null
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              "title": "Comparing Fixture Towers and Sample Greens",
+              "url": "https://video.example.invalid/watch?v=abc",
+              "platform": "Example video site",
+              "published": {
+                "status": "known",
+                "value": "2026-09-10T10:00:00Z",
+                "precision": "day",
+                "basis": "platform_metadata"
+              },
+              "timestamp_ms": 12000
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              },
+              "title": "Registry record",
+              "url": "https://registry.example.invalid/project/FIX-0001",
+              "platform": "RERA registry",
+              "published": {
+                "status": "known",
+                "value": "2026-09-01T10:00:00Z",
+                "precision": "day",
+                "basis": "registry_record"
+              },
+              "timestamp_ms": null
+            }
+          ],
+          "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+          "reviewed_on": "2026-09-25",
+          "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+          "metadata": {
+            "title": "Fixture Towers: what buyers discuss",
+            "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+            "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+            "robots": "noindex"
+          },
+          "json_ld": {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "What buyers discuss about Fixture Towers",
+            "dateModified": "2026-09-25",
+            "about": {
+              "@type": "Place",
+              "name": "Fixture Towers, Sector 0, Example City"
+            }
+          }
+        },
+        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "manifest": {
+          "findings": [
+            {
+              "id": "fnd_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "fnd_01JB0000000000000000000002",
+              "revision": 2
+            }
+          ],
+          "claims": [
+            {
+              "id": "clm_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "clm_01JB0000000000000000000002",
+              "revision": 1
+            }
+          ],
+          "evidence": [
+            {
+              "id": "evd_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000002",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
+          "sources": [
+            {
+              "id": "src_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000002",
+              "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000003",
+              "revision": 1
+            }
+          ],
+          "links": [
+            "lnk_01JB0000000000000000000001",
+            "lnk_01JB0000000000000000000003",
+            "lnk_01JB0000000000000000000004"
+          ],
+          "policies": [
+            {
+              "family": "official_records",
+              "policy_version": 1
+            },
+            {
+              "family": "web_public_pages",
+              "policy_version": 1
+            },
+            {
+              "family": "youtube",
+              "policy_version": 1
+            }
+          ],
+          "eligibility_epoch": 3
+        },
+        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "lifecycle": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000008",
+          "actor": null
+        },
+        "qa": {
+          "status": "passed",
+          "blocking_issues": 0,
+          "nonblocking_issues": 1,
+          "report_task": "tsk_01JB0000000000000000000009"
+        },
+        "created_at": "2026-09-24T10:00:00Z"
+      },
+      "state": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 8,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "active",
+        "eligibility_epoch": 3,
+        "pending_invalidation": false,
+        "pending_intent": null,
+        "updated_at": "2026-09-24T13:00:00Z"
+      },
+      "authorised": false,
+      "reasons_contain": [
+        "stored payload hash does not match the payload"
+      ]
+    },
+    {
+      "name": "eligibility_changed_since_approval",
+      "decision": {
+        "id": "dec_01JB0000000000000000000001",
+        "target": {
+          "type": "content_revision",
+          "id": "rev_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "action": "approve",
+        "reason": null,
+        "actor": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000001",
+          "role": "moderator"
+        },
+        "binding": {
+          "project_id": "prj_01JB0000000000000000000001",
+          "locale": "en-IN",
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "eligibility_epoch": 3,
+          "expected_state_version": 7
+        },
+        "idempotency_key": "approve-rev1-0001",
+        "request_id": "req-0001",
+        "created_at": "2026-09-24T12:00:00Z"
+      },
+      "revision": {
+        "id": "rev_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "revision": 1,
+        "payload": {
+          "payload_schema": "content-payload/1",
+          "project": {
+            "id": "prj_01JB0000000000000000000001",
+            "slug": "fixture-towers-sector-0-example-city",
+            "name": "Fixture Towers"
+          },
+          "locale": "en-IN",
+          "evidence_window": {
+            "from": "2026-06-27",
+            "to": "2026-09-25"
+          },
+          "heading": "What buyers discuss about Fixture Towers",
+          "overview": {
+            "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+            "support": {
+              "findings": [
+                {
+                  "id": "fnd_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "fnd_01JB0000000000000000000002",
+                  "revision": 2
+                }
+              ],
+              "claims": [
+                {
+                  "id": "clm_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "clm_01JB0000000000000000000002",
+                  "revision": 1
+                }
+              ]
+            }
+          },
+          "advantages": [],
+          "considerations": [
+            {
+              "text": "Several residents report that possession was delayed.",
+              "caveat": "Reported in public posts; not confirmed by the developer.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "questions": [
+            {
+              "question": "What is the registered completion date?",
+              "answer": "The RERA registry lists 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "sources": [
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              "title": "Fixture Towers possession?",
+              "url": "https://forum.example.invalid/t/123",
+              "platform": "Example forum",
+              "published": {
+                "status": "unknown",
+                "value": null,
+                "precision": null,
+                "basis": null
+              },
+              "timestamp_ms": null
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              "title": "Comparing Fixture Towers and Sample Greens",
+              "url": "https://video.example.invalid/watch?v=abc",
+              "platform": "Example video site",
+              "published": {
+                "status": "known",
+                "value": "2026-09-10T10:00:00Z",
+                "precision": "day",
+                "basis": "platform_metadata"
+              },
+              "timestamp_ms": 12000
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              },
+              "title": "Registry record",
+              "url": "https://registry.example.invalid/project/FIX-0001",
+              "platform": "RERA registry",
+              "published": {
+                "status": "known",
+                "value": "2026-09-01T10:00:00Z",
+                "precision": "day",
+                "basis": "registry_record"
+              },
+              "timestamp_ms": null
+            }
+          ],
+          "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+          "reviewed_on": "2026-09-25",
+          "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+          "metadata": {
+            "title": "Fixture Towers: what buyers discuss",
+            "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+            "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+            "robots": "noindex"
+          },
+          "json_ld": {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "What buyers discuss about Fixture Towers",
+            "dateModified": "2026-09-25",
+            "about": {
+              "@type": "Place",
+              "name": "Fixture Towers, Sector 0, Example City"
+            }
+          }
+        },
+        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "manifest": {
+          "findings": [
+            {
+              "id": "fnd_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "fnd_01JB0000000000000000000002",
+              "revision": 2
+            }
+          ],
+          "claims": [
+            {
+              "id": "clm_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "clm_01JB0000000000000000000002",
+              "revision": 1
+            }
+          ],
+          "evidence": [
+            {
+              "id": "evd_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000002",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
+          "sources": [
+            {
+              "id": "src_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000002",
+              "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000003",
+              "revision": 1
+            }
+          ],
+          "links": [
+            "lnk_01JB0000000000000000000001",
+            "lnk_01JB0000000000000000000003",
+            "lnk_01JB0000000000000000000004"
+          ],
+          "policies": [
+            {
+              "family": "official_records",
+              "policy_version": 1
+            },
+            {
+              "family": "web_public_pages",
+              "policy_version": 1
+            },
+            {
+              "family": "youtube",
+              "policy_version": 1
+            }
+          ],
+          "eligibility_epoch": 3
+        },
+        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "lifecycle": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000008",
+          "actor": null
+        },
+        "qa": {
+          "status": "passed",
+          "blocking_issues": 0,
+          "nonblocking_issues": 1,
+          "report_task": "tsk_01JB0000000000000000000009"
+        },
+        "created_at": "2026-09-24T10:00:00Z"
+      },
+      "state": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 8,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "active",
+        "eligibility_epoch": 4,
+        "pending_invalidation": false,
+        "pending_intent": null,
+        "updated_at": "2026-09-24T13:00:00Z"
+      },
+      "authorised": false,
+      "reasons_contain": [
+        "evidence eligibility changed since approval"
+      ]
+    },
+    {
+      "name": "invalidation_pending",
+      "decision": {
+        "id": "dec_01JB0000000000000000000001",
+        "target": {
+          "type": "content_revision",
+          "id": "rev_01JB0000000000000000000001",
+          "revision": 1
+        },
+        "action": "approve",
+        "reason": null,
+        "actor": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000001",
+          "role": "moderator"
+        },
+        "binding": {
+          "project_id": "prj_01JB0000000000000000000001",
+          "locale": "en-IN",
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "eligibility_epoch": 3,
+          "expected_state_version": 7
+        },
+        "idempotency_key": "approve-rev1-0001",
+        "request_id": "req-0001",
+        "created_at": "2026-09-24T12:00:00Z"
+      },
+      "revision": {
+        "id": "rev_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "revision": 1,
+        "payload": {
+          "payload_schema": "content-payload/1",
+          "project": {
+            "id": "prj_01JB0000000000000000000001",
+            "slug": "fixture-towers-sector-0-example-city",
+            "name": "Fixture Towers"
+          },
+          "locale": "en-IN",
+          "evidence_window": {
+            "from": "2026-06-27",
+            "to": "2026-09-25"
+          },
+          "heading": "What buyers discuss about Fixture Towers",
+          "overview": {
+            "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+            "support": {
+              "findings": [
+                {
+                  "id": "fnd_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "fnd_01JB0000000000000000000002",
+                  "revision": 2
+                }
+              ],
+              "claims": [
+                {
+                  "id": "clm_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "clm_01JB0000000000000000000002",
+                  "revision": 1
+                }
+              ]
+            }
+          },
+          "advantages": [],
+          "considerations": [
+            {
+              "text": "Several residents report that possession was delayed.",
+              "caveat": "Reported in public posts; not confirmed by the developer.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "questions": [
+            {
+              "question": "What is the registered completion date?",
+              "answer": "The RERA registry lists 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "sources": [
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              "title": "Fixture Towers possession?",
+              "url": "https://forum.example.invalid/t/123",
+              "platform": "Example forum",
+              "published": {
+                "status": "unknown",
+                "value": null,
+                "precision": null,
+                "basis": null
+              },
+              "timestamp_ms": null
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              "title": "Comparing Fixture Towers and Sample Greens",
+              "url": "https://video.example.invalid/watch?v=abc",
+              "platform": "Example video site",
+              "published": {
+                "status": "known",
+                "value": "2026-09-10T10:00:00Z",
+                "precision": "day",
+                "basis": "platform_metadata"
+              },
+              "timestamp_ms": 12000
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              },
+              "title": "Registry record",
+              "url": "https://registry.example.invalid/project/FIX-0001",
+              "platform": "RERA registry",
+              "published": {
+                "status": "known",
+                "value": "2026-09-01T10:00:00Z",
+                "precision": "day",
+                "basis": "registry_record"
+              },
+              "timestamp_ms": null
+            }
+          ],
+          "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+          "reviewed_on": "2026-09-25",
+          "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+          "metadata": {
+            "title": "Fixture Towers: what buyers discuss",
+            "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+            "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+            "robots": "noindex"
+          },
+          "json_ld": {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "What buyers discuss about Fixture Towers",
+            "dateModified": "2026-09-25",
+            "about": {
+              "@type": "Place",
+              "name": "Fixture Towers, Sector 0, Example City"
+            }
+          }
+        },
+        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "manifest": {
+          "findings": [
+            {
+              "id": "fnd_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "fnd_01JB0000000000000000000002",
+              "revision": 2
+            }
+          ],
+          "claims": [
+            {
+              "id": "clm_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "clm_01JB0000000000000000000002",
+              "revision": 1
+            }
+          ],
+          "evidence": [
+            {
+              "id": "evd_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000002",
+              "revision": 1
+            },
+            {
+              "id": "evd_01JB0000000000000000000004",
+              "revision": 1
+            }
+          ],
+          "sources": [
+            {
+              "id": "src_01JB0000000000000000000001",
+              "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000002",
+              "revision": 1
+            },
+            {
+              "id": "src_01JB0000000000000000000003",
+              "revision": 1
+            }
+          ],
+          "links": [
+            "lnk_01JB0000000000000000000001",
+            "lnk_01JB0000000000000000000003",
+            "lnk_01JB0000000000000000000004"
+          ],
+          "policies": [
+            {
+              "family": "official_records",
+              "policy_version": 1
+            },
+            {
+              "family": "web_public_pages",
+              "policy_version": 1
+            },
+            {
+              "family": "youtube",
+              "policy_version": 1
+            }
+          ],
+          "eligibility_epoch": 3
+        },
+        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "lifecycle": "approved",
+        "supersedes": null,
+        "created_by": {
+          "kind": "agent",
+          "task_id": "tsk_01JB0000000000000000000008",
+          "actor": null
+        },
+        "qa": {
+          "status": "passed",
+          "blocking_issues": 0,
+          "nonblocking_issues": 1,
+          "report_task": "tsk_01JB0000000000000000000009"
+        },
+        "created_at": "2026-09-24T10:00:00Z"
+      },
+      "state": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 8,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "active",
+        "eligibility_epoch": 3,
+        "pending_invalidation": true,
+        "pending_intent": null,
+        "updated_at": "2026-09-24T13:00:00Z"
+      },
+      "authorised": false,
+      "reasons_contain": [
+        "an invalidation is pending"
+      ]
+    }
+  ],
+  "public_read": [
+    {
+      "name": "active_not_newest_draft",
+      "state": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 8,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "active",
+        "eligibility_epoch": 3,
+        "pending_invalidation": false,
+        "pending_intent": null,
+        "updated_at": "2026-09-24T13:00:00Z"
+      },
+      "revisions": [
+        {
+          "id": "rev_01JB0000000000000000000001",
+          "project_id": "prj_01JB0000000000000000000001",
+          "locale": "en-IN",
+          "revision": 1,
+          "payload": {
+            "payload_schema": "content-payload/1",
+            "project": {
+              "id": "prj_01JB0000000000000000000001",
+              "slug": "fixture-towers-sector-0-example-city",
+              "name": "Fixture Towers"
+            },
+            "locale": "en-IN",
+            "evidence_window": {
+              "from": "2026-06-27",
+              "to": "2026-09-25"
+            },
+            "heading": "What buyers discuss about Fixture Towers",
+            "overview": {
+              "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            "advantages": [],
+            "considerations": [
+              {
+                "text": "Several residents report that possession was delayed.",
+                "caveat": "Reported in public posts; not confirmed by the developer.",
+                "support": {
+                  "findings": [
+                    {
+                      "id": "fnd_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ],
+                  "claims": [
+                    {
+                      "id": "clm_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "questions": [
+              {
+                "question": "What is the registered completion date?",
+                "answer": "The RERA registry lists 31 December 2027.",
+                "support": {
+                  "findings": [
+                    {
+                      "id": "fnd_01JB0000000000000000000002",
+                      "revision": 2
+                    }
+                  ],
+                  "claims": [
+                    {
+                      "id": "clm_01JB0000000000000000000002",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "title": "Fixture Towers possession?",
+                "url": "https://forum.example.invalid/t/123",
+                "platform": "Example forum",
+                "published": {
+                  "status": "unknown",
+                  "value": null,
+                  "precision": null,
+                  "basis": null
+                },
+                "timestamp_ms": null
+              },
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000002",
+                  "revision": 1
+                },
+                "title": "Comparing Fixture Towers and Sample Greens",
+                "url": "https://video.example.invalid/watch?v=abc",
+                "platform": "Example video site",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-10T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": 12000
+              },
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000003",
+                  "revision": 1
+                },
+                "title": "Registry record",
+                "url": "https://registry.example.invalid/project/FIX-0001",
+                "platform": "RERA registry",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-01T10:00:00Z",
+                  "precision": "day",
+                  "basis": "registry_record"
+                },
+                "timestamp_ms": null
+              }
+            ],
+            "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+            "reviewed_on": "2026-09-25",
+            "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+            "metadata": {
+              "title": "Fixture Towers: what buyers discuss",
+              "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+              "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+              "robots": "noindex"
+            },
+            "json_ld": {
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              "name": "What buyers discuss about Fixture Towers",
+              "dateModified": "2026-09-25",
+              "about": {
+                "@type": "Place",
+                "name": "Fixture Towers, Sector 0, Example City"
+              }
+            }
+          },
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest": {
+            "findings": [
+              {
+                "id": "fnd_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "fnd_01JB0000000000000000000002",
+                "revision": 2
+              }
+            ],
+            "claims": [
+              {
+                "id": "clm_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "clm_01JB0000000000000000000002",
+                "revision": 1
+              }
+            ],
+            "evidence": [
+              {
+                "id": "evd_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000002",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000004",
+                "revision": 1
+              }
+            ],
+            "sources": [
+              {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              }
+            ],
+            "links": [
+              "lnk_01JB0000000000000000000001",
+              "lnk_01JB0000000000000000000003",
+              "lnk_01JB0000000000000000000004"
+            ],
+            "policies": [
+              {
+                "family": "official_records",
+                "policy_version": 1
+              },
+              {
+                "family": "web_public_pages",
+                "policy_version": 1
+              },
+              {
+                "family": "youtube",
+                "policy_version": 1
+              }
+            ],
+            "eligibility_epoch": 3
+          },
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "lifecycle": "approved",
+          "supersedes": null,
+          "created_by": {
+            "kind": "agent",
+            "task_id": "tsk_01JB0000000000000000000008",
+            "actor": null
+          },
+          "qa": {
+            "status": "passed",
+            "blocking_issues": 0,
+            "nonblocking_issues": 1,
+            "report_task": "tsk_01JB0000000000000000000009"
+          },
+          "created_at": "2026-09-24T10:00:00Z"
+        },
+        {
+          "id": "rev_01JB0000000000000000000002",
+          "project_id": "prj_01JB0000000000000000000001",
+          "locale": "en-IN",
+          "revision": 2,
+          "payload": {
+            "payload_schema": "content-payload/1",
+            "project": {
+              "id": "prj_01JB0000000000000000000001",
+              "slug": "fixture-towers-sector-0-example-city",
+              "name": "Fixture Towers"
+            },
+            "locale": "en-IN",
+            "evidence_window": {
+              "from": "2026-06-27",
+              "to": "2026-09-25"
+            },
+            "heading": "What buyers discuss about Fixture Towers",
+            "overview": {
+              "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            "advantages": [],
+            "considerations": [
+              {
+                "text": "Several residents report that possession was delayed by about six months.",
+                "caveat": "Reported in public posts; not confirmed by the developer.",
+                "support": {
+                  "findings": [
+                    {
+                      "id": "fnd_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ],
+                  "claims": [
+                    {
+                      "id": "clm_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "questions": [
+              {
+                "question": "What is the registered completion date?",
+                "answer": "The RERA registry lists 31 December 2027.",
+                "support": {
+                  "findings": [
+                    {
+                      "id": "fnd_01JB0000000000000000000002",
+                      "revision": 2
+                    }
+                  ],
+                  "claims": [
+                    {
+                      "id": "clm_01JB0000000000000000000002",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "title": "Fixture Towers possession?",
+                "url": "https://forum.example.invalid/t/123",
+                "platform": "Example forum",
+                "published": {
+                  "status": "unknown",
+                  "value": null,
+                  "precision": null,
+                  "basis": null
+                },
+                "timestamp_ms": null
+              },
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000002",
+                  "revision": 1
+                },
+                "title": "Comparing Fixture Towers and Sample Greens",
+                "url": "https://video.example.invalid/watch?v=abc",
+                "platform": "Example video site",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-10T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": 12000
+              },
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000003",
+                  "revision": 1
+                },
+                "title": "Registry record",
+                "url": "https://registry.example.invalid/project/FIX-0001",
+                "platform": "RERA registry",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-01T10:00:00Z",
+                  "precision": "day",
+                  "basis": "registry_record"
+                },
+                "timestamp_ms": null
+              }
+            ],
+            "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+            "reviewed_on": "2026-09-25",
+            "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+            "metadata": {
+              "title": "Fixture Towers: what buyers discuss",
+              "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+              "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+              "robots": "noindex"
+            },
+            "json_ld": {
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              "name": "What buyers discuss about Fixture Towers",
+              "dateModified": "2026-09-25",
+              "about": {
+                "@type": "Place",
+                "name": "Fixture Towers, Sector 0, Example City"
+              }
+            }
+          },
+          "payload_sha256": "sha256:ea9f17702ffc62443d72f7ce380f74bc9639c8ff7a12bc1b0dae87cca003df16",
+          "manifest": {
+            "findings": [
+              {
+                "id": "fnd_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "fnd_01JB0000000000000000000002",
+                "revision": 2
+              }
+            ],
+            "claims": [
+              {
+                "id": "clm_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "clm_01JB0000000000000000000002",
+                "revision": 1
+              }
+            ],
+            "evidence": [
+              {
+                "id": "evd_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000002",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000004",
+                "revision": 1
+              }
+            ],
+            "sources": [
+              {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              }
+            ],
+            "links": [
+              "lnk_01JB0000000000000000000001",
+              "lnk_01JB0000000000000000000003",
+              "lnk_01JB0000000000000000000004"
+            ],
+            "policies": [
+              {
+                "family": "official_records",
+                "policy_version": 1
+              },
+              {
+                "family": "web_public_pages",
+                "policy_version": 1
+              },
+              {
+                "family": "youtube",
+                "policy_version": 1
+              }
+            ],
+            "eligibility_epoch": 3
+          },
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "lifecycle": "final_review",
+          "supersedes": {
+            "id": "rev_01JB0000000000000000000001",
+            "revision": 1
+          },
+          "created_by": {
+            "kind": "moderator",
+            "task_id": null,
+            "actor": {
+              "kind": "user",
+              "user_id": "usr_01JB0000000000000000000001",
+              "role": "moderator"
+            }
+          },
+          "qa": {
+            "status": "passed",
+            "blocking_issues": 0,
+            "nonblocking_issues": 1,
+            "report_task": "tsk_01JB0000000000000000000009"
+          },
+          "created_at": "2026-09-27T10:00:00Z"
+        }
+      ],
+      "serves": "rev_01JB0000000000000000000001"
+    },
+    {
+      "name": "disabled_serves_nothing",
+      "state": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 9,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "temporarily_disabled",
+        "eligibility_epoch": 4,
+        "pending_invalidation": true,
+        "pending_intent": {
+          "operation_id": "pub_01JB0000000000000000000002",
+          "kind": "revalidate_after_invalidation",
+          "created_at": "2026-09-26T10:00:00Z"
+        },
+        "updated_at": "2026-09-26T10:00:00Z"
+      },
+      "revisions": [
+        {
+          "id": "rev_01JB0000000000000000000001",
+          "project_id": "prj_01JB0000000000000000000001",
+          "locale": "en-IN",
+          "revision": 1,
+          "payload": {
+            "payload_schema": "content-payload/1",
+            "project": {
+              "id": "prj_01JB0000000000000000000001",
+              "slug": "fixture-towers-sector-0-example-city",
+              "name": "Fixture Towers"
+            },
+            "locale": "en-IN",
+            "evidence_window": {
+              "from": "2026-06-27",
+              "to": "2026-09-25"
+            },
+            "heading": "What buyers discuss about Fixture Towers",
+            "overview": {
+              "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            "advantages": [],
+            "considerations": [
+              {
+                "text": "Several residents report that possession was delayed.",
+                "caveat": "Reported in public posts; not confirmed by the developer.",
+                "support": {
+                  "findings": [
+                    {
+                      "id": "fnd_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ],
+                  "claims": [
+                    {
+                      "id": "clm_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "questions": [
+              {
+                "question": "What is the registered completion date?",
+                "answer": "The RERA registry lists 31 December 2027.",
+                "support": {
+                  "findings": [
+                    {
+                      "id": "fnd_01JB0000000000000000000002",
+                      "revision": 2
+                    }
+                  ],
+                  "claims": [
+                    {
+                      "id": "clm_01JB0000000000000000000002",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "title": "Fixture Towers possession?",
+                "url": "https://forum.example.invalid/t/123",
+                "platform": "Example forum",
+                "published": {
+                  "status": "unknown",
+                  "value": null,
+                  "precision": null,
+                  "basis": null
+                },
+                "timestamp_ms": null
+              },
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000002",
+                  "revision": 1
+                },
+                "title": "Comparing Fixture Towers and Sample Greens",
+                "url": "https://video.example.invalid/watch?v=abc",
+                "platform": "Example video site",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-10T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": 12000
+              },
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000003",
+                  "revision": 1
+                },
+                "title": "Registry record",
+                "url": "https://registry.example.invalid/project/FIX-0001",
+                "platform": "RERA registry",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-01T10:00:00Z",
+                  "precision": "day",
+                  "basis": "registry_record"
+                },
+                "timestamp_ms": null
+              }
+            ],
+            "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+            "reviewed_on": "2026-09-25",
+            "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+            "metadata": {
+              "title": "Fixture Towers: what buyers discuss",
+              "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+              "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+              "robots": "noindex"
+            },
+            "json_ld": {
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              "name": "What buyers discuss about Fixture Towers",
+              "dateModified": "2026-09-25",
+              "about": {
+                "@type": "Place",
+                "name": "Fixture Towers, Sector 0, Example City"
+              }
+            }
+          },
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest": {
+            "findings": [
+              {
+                "id": "fnd_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "fnd_01JB0000000000000000000002",
+                "revision": 2
+              }
+            ],
+            "claims": [
+              {
+                "id": "clm_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "clm_01JB0000000000000000000002",
+                "revision": 1
+              }
+            ],
+            "evidence": [
+              {
+                "id": "evd_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000002",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000004",
+                "revision": 1
+              }
+            ],
+            "sources": [
+              {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              }
+            ],
+            "links": [
+              "lnk_01JB0000000000000000000001",
+              "lnk_01JB0000000000000000000003",
+              "lnk_01JB0000000000000000000004"
+            ],
+            "policies": [
+              {
+                "family": "official_records",
+                "policy_version": 1
+              },
+              {
+                "family": "web_public_pages",
+                "policy_version": 1
+              },
+              {
+                "family": "youtube",
+                "policy_version": 1
+              }
+            ],
+            "eligibility_epoch": 3
+          },
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "lifecycle": "approved",
+          "supersedes": null,
+          "created_by": {
+            "kind": "agent",
+            "task_id": "tsk_01JB0000000000000000000008",
+            "actor": null
+          },
+          "qa": {
+            "status": "passed",
+            "blocking_issues": 0,
+            "nonblocking_issues": 1,
+            "report_task": "tsk_01JB0000000000000000000009"
+          },
+          "created_at": "2026-09-24T10:00:00Z"
+        }
+      ],
+      "serves": null
+    },
+    {
+      "name": "unpublished_serves_nothing",
+      "state": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 0,
+        "approved": null,
+        "active": null,
+        "serving_state": "unpublished",
+        "eligibility_epoch": 0,
+        "pending_invalidation": false,
+        "pending_intent": null,
+        "updated_at": "2026-09-20T10:00:00Z"
+      },
+      "revisions": [
+        {
+          "id": "rev_01JB0000000000000000000001",
+          "project_id": "prj_01JB0000000000000000000001",
+          "locale": "en-IN",
+          "revision": 1,
+          "payload": {
+            "payload_schema": "content-payload/1",
+            "project": {
+              "id": "prj_01JB0000000000000000000001",
+              "slug": "fixture-towers-sector-0-example-city",
+              "name": "Fixture Towers"
+            },
+            "locale": "en-IN",
+            "evidence_window": {
+              "from": "2026-06-27",
+              "to": "2026-09-25"
+            },
+            "heading": "What buyers discuss about Fixture Towers",
+            "overview": {
+              "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            "advantages": [],
+            "considerations": [
+              {
+                "text": "Several residents report that possession was delayed.",
+                "caveat": "Reported in public posts; not confirmed by the developer.",
+                "support": {
+                  "findings": [
+                    {
+                      "id": "fnd_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ],
+                  "claims": [
+                    {
+                      "id": "clm_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "questions": [
+              {
+                "question": "What is the registered completion date?",
+                "answer": "The RERA registry lists 31 December 2027.",
+                "support": {
+                  "findings": [
+                    {
+                      "id": "fnd_01JB0000000000000000000002",
+                      "revision": 2
+                    }
+                  ],
+                  "claims": [
+                    {
+                      "id": "clm_01JB0000000000000000000002",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "title": "Fixture Towers possession?",
+                "url": "https://forum.example.invalid/t/123",
+                "platform": "Example forum",
+                "published": {
+                  "status": "unknown",
+                  "value": null,
+                  "precision": null,
+                  "basis": null
+                },
+                "timestamp_ms": null
+              },
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000002",
+                  "revision": 1
+                },
+                "title": "Comparing Fixture Towers and Sample Greens",
+                "url": "https://video.example.invalid/watch?v=abc",
+                "platform": "Example video site",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-10T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": 12000
+              },
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000003",
+                  "revision": 1
+                },
+                "title": "Registry record",
+                "url": "https://registry.example.invalid/project/FIX-0001",
+                "platform": "RERA registry",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-01T10:00:00Z",
+                  "precision": "day",
+                  "basis": "registry_record"
+                },
+                "timestamp_ms": null
+              }
+            ],
+            "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+            "reviewed_on": "2026-09-25",
+            "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+            "metadata": {
+              "title": "Fixture Towers: what buyers discuss",
+              "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+              "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+              "robots": "noindex"
+            },
+            "json_ld": {
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              "name": "What buyers discuss about Fixture Towers",
+              "dateModified": "2026-09-25",
+              "about": {
+                "@type": "Place",
+                "name": "Fixture Towers, Sector 0, Example City"
+              }
+            }
+          },
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest": {
+            "findings": [
+              {
+                "id": "fnd_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "fnd_01JB0000000000000000000002",
+                "revision": 2
+              }
+            ],
+            "claims": [
+              {
+                "id": "clm_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "clm_01JB0000000000000000000002",
+                "revision": 1
+              }
+            ],
+            "evidence": [
+              {
+                "id": "evd_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000002",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000004",
+                "revision": 1
+              }
+            ],
+            "sources": [
+              {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              }
+            ],
+            "links": [
+              "lnk_01JB0000000000000000000001",
+              "lnk_01JB0000000000000000000003",
+              "lnk_01JB0000000000000000000004"
+            ],
+            "policies": [
+              {
+                "family": "official_records",
+                "policy_version": 1
+              },
+              {
+                "family": "web_public_pages",
+                "policy_version": 1
+              },
+              {
+                "family": "youtube",
+                "policy_version": 1
+              }
+            ],
+            "eligibility_epoch": 3
+          },
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "lifecycle": "approved",
+          "supersedes": null,
+          "created_by": {
+            "kind": "agent",
+            "task_id": "tsk_01JB0000000000000000000008",
+            "actor": null
+          },
+          "qa": {
+            "status": "passed",
+            "blocking_issues": 0,
+            "nonblocking_issues": 1,
+            "report_task": "tsk_01JB0000000000000000000009"
+          },
+          "created_at": "2026-09-24T10:00:00Z"
+        }
+      ],
+      "serves": null
+    },
+    {
+      "name": "pointer_hash_mismatch_serves_nothing",
+      "state": {
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "version": 8,
+        "approved": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "decision_id": "dec_01JB0000000000000000000001"
+        },
+        "active": {
+          "revision_id": "rev_01JB0000000000000000000001",
+          "revision": 1,
+          "payload_sha256": "sha256:ea9f17702ffc62443d72f7ce380f74bc9639c8ff7a12bc1b0dae87cca003df16",
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "operation_id": "pub_01JB0000000000000000000001",
+          "activated_at": "2026-09-24T13:00:00Z"
+        },
+        "serving_state": "active",
+        "eligibility_epoch": 3,
+        "pending_invalidation": false,
+        "pending_intent": null,
+        "updated_at": "2026-09-24T13:00:00Z"
+      },
+      "revisions": [
+        {
+          "id": "rev_01JB0000000000000000000001",
+          "project_id": "prj_01JB0000000000000000000001",
+          "locale": "en-IN",
+          "revision": 1,
+          "payload": {
+            "payload_schema": "content-payload/1",
+            "project": {
+              "id": "prj_01JB0000000000000000000001",
+              "slug": "fixture-towers-sector-0-example-city",
+              "name": "Fixture Towers"
+            },
+            "locale": "en-IN",
+            "evidence_window": {
+              "from": "2026-06-27",
+              "to": "2026-09-25"
+            },
+            "heading": "What buyers discuss about Fixture Towers",
+            "overview": {
+              "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  },
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            },
+            "advantages": [],
+            "considerations": [
+              {
+                "text": "Several residents report that possession was delayed.",
+                "caveat": "Reported in public posts; not confirmed by the developer.",
+                "support": {
+                  "findings": [
+                    {
+                      "id": "fnd_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ],
+                  "claims": [
+                    {
+                      "id": "clm_01JB0000000000000000000001",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "questions": [
+              {
+                "question": "What is the registered completion date?",
+                "answer": "The RERA registry lists 31 December 2027.",
+                "support": {
+                  "findings": [
+                    {
+                      "id": "fnd_01JB0000000000000000000002",
+                      "revision": 2
+                    }
+                  ],
+                  "claims": [
+                    {
+                      "id": "clm_01JB0000000000000000000002",
+                      "revision": 1
+                    }
+                  ]
+                }
+              }
+            ],
+            "sources": [
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                "title": "Fixture Towers possession?",
+                "url": "https://forum.example.invalid/t/123",
+                "platform": "Example forum",
+                "published": {
+                  "status": "unknown",
+                  "value": null,
+                  "precision": null,
+                  "basis": null
+                },
+                "timestamp_ms": null
+              },
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000002",
+                  "revision": 1
+                },
+                "title": "Comparing Fixture Towers and Sample Greens",
+                "url": "https://video.example.invalid/watch?v=abc",
+                "platform": "Example video site",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-10T10:00:00Z",
+                  "precision": "day",
+                  "basis": "platform_metadata"
+                },
+                "timestamp_ms": 12000
+              },
+              {
+                "source": {
+                  "id": "src_01JB0000000000000000000003",
+                  "revision": 1
+                },
+                "title": "Registry record",
+                "url": "https://registry.example.invalid/project/FIX-0001",
+                "platform": "RERA registry",
+                "published": {
+                  "status": "known",
+                  "value": "2026-09-01T10:00:00Z",
+                  "precision": "day",
+                  "basis": "registry_record"
+                },
+                "timestamp_ms": null
+              }
+            ],
+            "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+            "reviewed_on": "2026-09-25",
+            "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+            "metadata": {
+              "title": "Fixture Towers: what buyers discuss",
+              "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+              "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+              "robots": "noindex"
+            },
+            "json_ld": {
+              "@context": "https://schema.org",
+              "@type": "WebPage",
+              "name": "What buyers discuss about Fixture Towers",
+              "dateModified": "2026-09-25",
+              "about": {
+                "@type": "Place",
+                "name": "Fixture Towers, Sector 0, Example City"
+              }
+            }
+          },
+          "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+          "manifest": {
+            "findings": [
+              {
+                "id": "fnd_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "fnd_01JB0000000000000000000002",
+                "revision": 2
+              }
+            ],
+            "claims": [
+              {
+                "id": "clm_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "clm_01JB0000000000000000000002",
+                "revision": 1
+              }
+            ],
+            "evidence": [
+              {
+                "id": "evd_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000002",
+                "revision": 1
+              },
+              {
+                "id": "evd_01JB0000000000000000000004",
+                "revision": 1
+              }
+            ],
+            "sources": [
+              {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              }
+            ],
+            "links": [
+              "lnk_01JB0000000000000000000001",
+              "lnk_01JB0000000000000000000003",
+              "lnk_01JB0000000000000000000004"
+            ],
+            "policies": [
+              {
+                "family": "official_records",
+                "policy_version": 1
+              },
+              {
+                "family": "web_public_pages",
+                "policy_version": 1
+              },
+              {
+                "family": "youtube",
+                "policy_version": 1
+              }
+            ],
+            "eligibility_epoch": 3
+          },
+          "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+          "lifecycle": "approved",
+          "supersedes": null,
+          "created_by": {
+            "kind": "agent",
+            "task_id": "tsk_01JB0000000000000000000008",
+            "actor": null
+          },
+          "qa": {
+            "status": "passed",
+            "blocking_issues": 0,
+            "nonblocking_issues": 1,
+            "report_task": "tsk_01JB0000000000000000000009"
+          },
+          "created_at": "2026-09-24T10:00:00Z"
+        }
+      ],
+      "serves": null
+    }
+  ]
+}

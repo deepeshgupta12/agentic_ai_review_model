@@ -1,0 +1,326 @@
+{
+  "note": "Synthetic fixture for contract tests. Fictional projects and sources; not evidence, never imported as real data.",
+  "cases": [
+    {
+      "name": "approval_request",
+      "schema": "api.schema.json#/$defs/ApprovalRequest",
+      "expect": "valid",
+      "tags": [
+        "approval_binding"
+      ],
+      "why": "Approval names exactly what the moderator saw",
+      "instance": {
+        "revision": 1,
+        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "manifest_sha256": "sha256:0f50e960985c4874b5dd17742400b415886768a030becfe027f833a9e5de90db",
+        "eligibility_epoch": 3,
+        "expected_state_version": 7
+      }
+    },
+    {
+      "name": "approval_request_without_manifest",
+      "schema": "api.schema.json#/$defs/ApprovalRequest",
+      "expect": "invalid",
+      "tags": [
+        "approval_binding"
+      ],
+      "why": "The manifest hash is part of the approval",
+      "error_contains": "'manifest_sha256' is a required property",
+      "instance": {
+        "revision": 1,
+        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "eligibility_epoch": 3,
+        "expected_state_version": 7
+      }
+    },
+    {
+      "name": "alias_decision_context_required",
+      "schema": "api.schema.json#/$defs/AliasDecisionRequest",
+      "expect": "valid",
+      "tags": [
+        "alias_review"
+      ],
+      "why": "Approve a generic alias with context",
+      "instance": {
+        "action": "approve",
+        "mode": "context_required",
+        "reason": null,
+        "expected_version": 0
+      }
+    },
+    {
+      "name": "alias_decision_without_mode",
+      "schema": "api.schema.json#/$defs/AliasDecisionRequest",
+      "expect": "invalid",
+      "tags": [
+        "alias_review"
+      ],
+      "why": "Approval must say standalone or context-required",
+      "error_contains": "is not one of",
+      "instance": {
+        "action": "approve",
+        "mode": null,
+        "reason": null,
+        "expected_version": 0
+      }
+    },
+    {
+      "name": "correction_request",
+      "schema": "api.schema.json#/$defs/CorrectionRequest",
+      "expect": "valid",
+      "tags": [
+        "correction"
+      ],
+      "why": "Public correction",
+      "instance": {
+        "message": "The completion date was revised.",
+        "contact": null,
+        "revision_id": "rev_01JB0000000000000000000001",
+        "website": ""
+      }
+    },
+    {
+      "name": "correction_request_honeypot",
+      "schema": "api.schema.json#/$defs/CorrectionRequest",
+      "expect": "invalid",
+      "tags": [
+        "honeypot"
+      ],
+      "why": "The honeypot field must stay empty",
+      "error_contains": "'' was expected",
+      "instance": {
+        "message": "Buy cheap flats now!!!",
+        "contact": null,
+        "revision_id": null,
+        "website": "http://spam.example.invalid"
+      }
+    },
+    {
+      "name": "link_split",
+      "schema": "api.schema.json#/$defs/LinkDecisionRequest",
+      "expect": "valid",
+      "tags": [
+        "multi_project_video"
+      ],
+      "why": "Split a comparison video into per-project segments",
+      "instance": {
+        "action": "split",
+        "expected_version": 1,
+        "reason": "Comparison video covers two projects",
+        "split_segments": [
+          {
+            "segment_key": "t:0-240000",
+            "anchor": {
+              "kind": "time",
+              "start_ms": 0,
+              "end_ms": 240000,
+              "precision": "approximate",
+              "method": "transcript_segment"
+            },
+            "project_id": "prj_01JB0000000000000000000001"
+          },
+          {
+            "segment_key": "t:240000-600000",
+            "anchor": {
+              "kind": "time",
+              "start_ms": 240000,
+              "end_ms": 600000,
+              "precision": "approximate",
+              "method": "transcript_segment"
+            },
+            "project_id": "prj_01JB0000000000000000000002"
+          }
+        ],
+        "remap_project_id": null,
+        "phase_rera_id": null
+      }
+    },
+    {
+      "name": "public_insights",
+      "schema": "api.schema.json#/$defs/PublicInsights",
+      "expect": "valid",
+      "tags": [
+        "public_read"
+      ],
+      "why": "Public read of the active revision",
+      "instance": {
+        "revision_id": "rev_01JB0000000000000000000001",
+        "revision": 1,
+        "payload_sha256": "sha256:1c0013ef3802f904dc30f74244c5ba352dfc219627a5799cb5df07a1b32956c7",
+        "payload": {
+          "payload_schema": "content-payload/1",
+          "project": {
+            "id": "prj_01JB0000000000000000000001",
+            "slug": "fixture-towers-sector-0-example-city",
+            "name": "Fixture Towers"
+          },
+          "locale": "en-IN",
+          "evidence_window": {
+            "from": "2026-06-27",
+            "to": "2026-09-25"
+          },
+          "heading": "What buyers discuss about Fixture Towers",
+          "overview": {
+            "text": "Public discussion of Fixture Towers mostly concerns possession timing. The registry lists a completion date of 31 December 2027.",
+            "support": {
+              "findings": [
+                {
+                  "id": "fnd_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "fnd_01JB0000000000000000000002",
+                  "revision": 2
+                }
+              ],
+              "claims": [
+                {
+                  "id": "clm_01JB0000000000000000000001",
+                  "revision": 1
+                },
+                {
+                  "id": "clm_01JB0000000000000000000002",
+                  "revision": 1
+                }
+              ]
+            }
+          },
+          "advantages": [],
+          "considerations": [
+            {
+              "text": "Several residents report that possession was delayed.",
+              "caveat": "Reported in public posts; not confirmed by the developer.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000001",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "questions": [
+            {
+              "question": "What is the registered completion date?",
+              "answer": "The RERA registry lists 31 December 2027.",
+              "support": {
+                "findings": [
+                  {
+                    "id": "fnd_01JB0000000000000000000002",
+                    "revision": 2
+                  }
+                ],
+                "claims": [
+                  {
+                    "id": "clm_01JB0000000000000000000002",
+                    "revision": 1
+                  }
+                ]
+              }
+            }
+          ],
+          "sources": [
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000001",
+                "revision": 1
+              },
+              "title": "Fixture Towers possession?",
+              "url": "https://forum.example.invalid/t/123",
+              "platform": "Example forum",
+              "published": {
+                "status": "unknown",
+                "value": null,
+                "precision": null,
+                "basis": null
+              },
+              "timestamp_ms": null
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000002",
+                "revision": 1
+              },
+              "title": "Comparing Fixture Towers and Sample Greens",
+              "url": "https://video.example.invalid/watch?v=abc",
+              "platform": "Example video site",
+              "published": {
+                "status": "known",
+                "value": "2026-09-10T10:00:00Z",
+                "precision": "day",
+                "basis": "platform_metadata"
+              },
+              "timestamp_ms": 12000
+            },
+            {
+              "source": {
+                "id": "src_01JB0000000000000000000003",
+                "revision": 1
+              },
+              "title": "Registry record",
+              "url": "https://registry.example.invalid/project/FIX-0001",
+              "platform": "RERA registry",
+              "published": {
+                "status": "known",
+                "value": "2026-09-01T10:00:00Z",
+                "precision": "day",
+                "basis": "registry_record"
+              },
+              "timestamp_ms": null
+            }
+          ],
+          "coverage_note": "Based on 6 public discussions and 1 registry record collected between 27 Jun and 25 Sep 2026. Not a survey of all buyers.",
+          "reviewed_on": "2026-09-25",
+          "attribution": "Compiled by the editorial team from public discussions and official records; reviewed by our editorial team.",
+          "metadata": {
+            "title": "Fixture Towers: what buyers discuss",
+            "description": "Evidence-linked summary of public discussion about Fixture Towers, Sector 0, Example City.",
+            "canonical_path": "/projects/fixture-towers-sector-0-example-city",
+            "robots": "noindex"
+          },
+          "json_ld": {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "What buyers discuss about Fixture Towers",
+            "dateModified": "2026-09-25",
+            "about": {
+              "@type": "Place",
+              "name": "Fixture Towers, Sector 0, Example City"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "generate_without_findings",
+      "schema": "api.schema.json#/$defs/ContentRevisionRequest",
+      "expect": "invalid",
+      "tags": [],
+      "why": "Generation needs selected approved findings",
+      "error_contains": "should be non-empty",
+      "instance": {
+        "mode": "generate",
+        "locale": "en-IN",
+        "findings": []
+      }
+    },
+    {
+      "name": "config_patch_empty",
+      "schema": "api.schema.json#/$defs/ProjectConfigPatch",
+      "expect": "invalid",
+      "tags": [],
+      "why": "A patch must change something",
+      "error_contains": "does not have enough properties",
+      "instance": {
+        "expected_version": 3
+      }
+    }
+  ]
+}

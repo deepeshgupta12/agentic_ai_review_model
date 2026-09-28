@@ -1,0 +1,477 @@
+{
+  "note": "Synthetic fixture for contract tests. Fictional projects and sources; not evidence, never imported as real data.",
+  "cases": [
+    {
+      "name": "run_insufficient_evidence",
+      "schema": "operations.schema.json#/$defs/WorkflowRun",
+      "expect": "valid",
+      "tags": [
+        "insufficient_evidence",
+        "partial_coverage"
+      ],
+      "why": "A valid result with no content revision and honest coverage",
+      "instance": {
+        "id": "run_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000002",
+        "stage": "insufficient_evidence",
+        "trigger": "manual",
+        "requested_by": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000003",
+          "role": "researcher"
+        },
+        "window": {
+          "from": "2026-06-27T00:00:00Z",
+          "to": "2026-09-25T00:00:00Z"
+        },
+        "coverage": [
+          {
+            "connector_id": "brave_search",
+            "status": "complete_for_query",
+            "attempted_queries": 6,
+            "fetched": 14,
+            "matched": 3,
+            "analysed": 3,
+            "metadata_only": 11,
+            "last_success_at": "2026-09-25T10:00:00Z",
+            "note": null
+          },
+          {
+            "connector_id": "youtube_data_api",
+            "status": "partial",
+            "attempted_queries": 4,
+            "fetched": 2,
+            "matched": 1,
+            "analysed": 0,
+            "metadata_only": 1,
+            "last_success_at": "2026-09-25T10:00:00Z",
+            "note": "Quota exhausted on the second page"
+          },
+          {
+            "connector_id": "reddit_api",
+            "status": "access_pending",
+            "attempted_queries": 0,
+            "fetched": 0,
+            "matched": 0,
+            "analysed": 0,
+            "metadata_only": 0,
+            "last_success_at": null,
+            "note": "No demonstrated credential"
+          }
+        ],
+        "budget": {
+          "max_usd": 5,
+          "spent_usd": 0.42,
+          "exhausted": false
+        },
+        "content_revision_id": null,
+        "outcome_note": "No eligible evidence supported a finding",
+        "created_at": "2026-09-25T10:00:00Z",
+        "updated_at": "2026-09-25T11:00:00Z"
+      }
+    },
+    {
+      "name": "run_insufficient_with_content",
+      "schema": "operations.schema.json#/$defs/WorkflowRun",
+      "expect": "invalid",
+      "tags": [
+        "insufficient_evidence"
+      ],
+      "why": "Insufficient evidence never produces content",
+      "error_contains": "is not of type 'null'",
+      "instance": {
+        "id": "run_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000002",
+        "stage": "insufficient_evidence",
+        "trigger": "manual",
+        "requested_by": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000003",
+          "role": "researcher"
+        },
+        "window": {
+          "from": "2026-06-27T00:00:00Z",
+          "to": "2026-09-25T00:00:00Z"
+        },
+        "coverage": [
+          {
+            "connector_id": "brave_search",
+            "status": "complete_for_query",
+            "attempted_queries": 6,
+            "fetched": 14,
+            "matched": 3,
+            "analysed": 3,
+            "metadata_only": 11,
+            "last_success_at": "2026-09-25T10:00:00Z",
+            "note": null
+          },
+          {
+            "connector_id": "youtube_data_api",
+            "status": "partial",
+            "attempted_queries": 4,
+            "fetched": 2,
+            "matched": 1,
+            "analysed": 0,
+            "metadata_only": 1,
+            "last_success_at": "2026-09-25T10:00:00Z",
+            "note": "Quota exhausted on the second page"
+          },
+          {
+            "connector_id": "reddit_api",
+            "status": "access_pending",
+            "attempted_queries": 0,
+            "fetched": 0,
+            "matched": 0,
+            "analysed": 0,
+            "metadata_only": 0,
+            "last_success_at": null,
+            "note": "No demonstrated credential"
+          }
+        ],
+        "budget": {
+          "max_usd": 5,
+          "spent_usd": 0.42,
+          "exhausted": false
+        },
+        "content_revision_id": "rev_01JB0000000000000000000001",
+        "outcome_note": "No eligible evidence supported a finding",
+        "created_at": "2026-09-25T10:00:00Z",
+        "updated_at": "2026-09-25T11:00:00Z"
+      }
+    },
+    {
+      "name": "coverage_access_pending_with_results",
+      "schema": "operations.schema.json#/$defs/RunCoverage",
+      "expect": "invalid",
+      "tags": [
+        "honest_coverage"
+      ],
+      "why": "An access_pending connector did not run",
+      "error_contains": "0 was expected",
+      "instance": {
+        "connector_id": "reddit_api",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 3,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "last_success_at": null,
+        "note": "No demonstrated credential"
+      }
+    },
+    {
+      "name": "job_running",
+      "schema": "operations.schema.json#/$defs/Job",
+      "expect": "valid",
+      "tags": [],
+      "why": "Running job holds a lease with a fencing token",
+      "instance": {
+        "id": "job_01JB0000000000000000000001",
+        "logical_key": "collect:prj_01JB0000000000000000000001:2026-09-25",
+        "kind": "collect",
+        "run_id": "run_01JB0000000000000000000002",
+        "project_id": "prj_01JB0000000000000000000001",
+        "status": "running",
+        "attempts": 1,
+        "max_attempts": 5,
+        "next_attempt_at": null,
+        "lease": {
+          "owner": "worker-1",
+          "expires_at": "2026-09-25T11:00:00Z",
+          "fencing_token": 4
+        },
+        "deadline": "2026-09-25T18:00:00Z",
+        "checkpoint_id": "ckpt-1",
+        "error": null,
+        "created_at": "2026-09-25T10:00:00Z",
+        "updated_at": "2026-09-25T10:00:00Z"
+      }
+    },
+    {
+      "name": "job_running_without_lease",
+      "schema": "operations.schema.json#/$defs/Job",
+      "expect": "invalid",
+      "tags": [],
+      "why": "A running job must hold a lease",
+      "error_contains": "None is not of type 'object'",
+      "instance": {
+        "id": "job_01JB0000000000000000000001",
+        "logical_key": "collect:prj_01JB0000000000000000000001:2026-09-25",
+        "kind": "collect",
+        "run_id": "run_01JB0000000000000000000002",
+        "project_id": "prj_01JB0000000000000000000001",
+        "status": "running",
+        "attempts": 1,
+        "max_attempts": 5,
+        "next_attempt_at": null,
+        "lease": null,
+        "deadline": "2026-09-25T18:00:00Z",
+        "checkpoint_id": "ckpt-1",
+        "error": null,
+        "created_at": "2026-09-25T10:00:00Z",
+        "updated_at": "2026-09-25T10:00:00Z"
+      }
+    },
+    {
+      "name": "agent_run_coordinator",
+      "schema": "operations.schema.json#/$defs/AgentRun",
+      "expect": "valid",
+      "tags": [],
+      "why": "The coordinator never calls a model",
+      "instance": {
+        "task_id": "tsk_01JB0000000000000000000020",
+        "run_id": "run_01JB0000000000000000000002",
+        "project_id": "prj_01JB0000000000000000000001",
+        "agent": "A00_master_coordinator",
+        "outcome": "completed",
+        "input_refs": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "output_refs": [
+          {
+            "id": "clm_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "prompt_version": "claim_extractor.1.0",
+        "schema_version": "1.0.0",
+        "requested_model": null,
+        "returned_model": null,
+        "stop_reason": null,
+        "tool_steps": 0,
+        "attempt": 1,
+        "repair_used": false,
+        "usage": {
+          "input_tokens": null,
+          "output_tokens": null,
+          "cache_read_input_tokens": null,
+          "audio_seconds": null
+        },
+        "estimated_cost_usd": null,
+        "provider_request_id": null,
+        "elapsed_ms": 2100,
+        "error": null,
+        "created_at": "2026-09-25T10:00:00Z"
+      }
+    },
+    {
+      "name": "agent_run_extractor",
+      "schema": "operations.schema.json#/$defs/AgentRun",
+      "expect": "valid",
+      "tags": [],
+      "why": "Model ID recorded from configuration (D10)",
+      "instance": {
+        "task_id": "tsk_01JB0000000000000000000020",
+        "run_id": "run_01JB0000000000000000000002",
+        "project_id": "prj_01JB0000000000000000000001",
+        "agent": "A05_claim_extractor",
+        "outcome": "completed",
+        "input_refs": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "output_refs": [
+          {
+            "id": "clm_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "prompt_version": "claim_extractor.1.0",
+        "schema_version": "1.0.0",
+        "requested_model": "claude-sonnet-5",
+        "returned_model": "claude-sonnet-5",
+        "stop_reason": "end_turn",
+        "tool_steps": 0,
+        "attempt": 1,
+        "repair_used": false,
+        "usage": {
+          "input_tokens": 1800,
+          "output_tokens": 240,
+          "cache_read_input_tokens": null,
+          "audio_seconds": null
+        },
+        "estimated_cost_usd": null,
+        "provider_request_id": null,
+        "elapsed_ms": 2100,
+        "error": null,
+        "created_at": "2026-09-25T10:00:00Z"
+      }
+    },
+    {
+      "name": "agent_run_extractor_without_model",
+      "schema": "operations.schema.json#/$defs/AgentRun",
+      "expect": "invalid",
+      "tags": [],
+      "why": "Model-backed agents record the requested model",
+      "error_contains": "None is not of type 'string'",
+      "instance": {
+        "task_id": "tsk_01JB0000000000000000000020",
+        "run_id": "run_01JB0000000000000000000002",
+        "project_id": "prj_01JB0000000000000000000001",
+        "agent": "A05_claim_extractor",
+        "outcome": "completed",
+        "input_refs": [
+          {
+            "id": "evd_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "output_refs": [
+          {
+            "id": "clm_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ],
+        "prompt_version": "claim_extractor.1.0",
+        "schema_version": "1.0.0",
+        "requested_model": null,
+        "returned_model": null,
+        "stop_reason": null,
+        "tool_steps": 0,
+        "attempt": 1,
+        "repair_used": false,
+        "usage": {
+          "input_tokens": null,
+          "output_tokens": null,
+          "cache_read_input_tokens": null,
+          "audio_seconds": null
+        },
+        "estimated_cost_usd": null,
+        "provider_request_id": null,
+        "elapsed_ms": 2100,
+        "error": null,
+        "created_at": "2026-09-25T10:00:00Z"
+      }
+    },
+    {
+      "name": "deletion_completed",
+      "schema": "operations.schema.json#/$defs/DeletionRequest",
+      "expect": "valid",
+      "tags": [
+        "withdrawal"
+      ],
+      "why": "Invalidated before erased",
+      "instance": {
+        "id": "del_01JB0000000000000000000001",
+        "scope": {
+          "kind": "source_revision",
+          "source": {
+            "id": "src_01JB0000000000000000000001",
+            "revision": 1
+          },
+          "policy": null
+        },
+        "reason": "Author asked for removal",
+        "requested_by": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000001",
+          "role": "moderator"
+        },
+        "status": "completed",
+        "affected": {
+          "projects": [
+            "prj_01JB0000000000000000000001"
+          ],
+          "evidence": 1,
+          "claims": 1,
+          "findings": 1,
+          "content_revisions": [
+            "rev_01JB0000000000000000000001"
+          ]
+        },
+        "invalidated_at": "2026-09-26T10:00:00Z",
+        "erased_at": "2026-09-26T11:00:00Z",
+        "created_at": "2026-09-26T09:00:00Z"
+      }
+    },
+    {
+      "name": "deletion_erased_before_invalidation",
+      "schema": "operations.schema.json#/$defs/DeletionRequest",
+      "expect": "invalid",
+      "tags": [
+        "withdrawal"
+      ],
+      "why": "Erasure never precedes invalidation",
+      "error_contains": "None is not of type 'string'",
+      "instance": {
+        "id": "del_01JB0000000000000000000001",
+        "scope": {
+          "kind": "source_revision",
+          "source": {
+            "id": "src_01JB0000000000000000000001",
+            "revision": 1
+          },
+          "policy": null
+        },
+        "reason": "Author asked for removal",
+        "requested_by": {
+          "kind": "user",
+          "user_id": "usr_01JB0000000000000000000001",
+          "role": "moderator"
+        },
+        "status": "completed",
+        "affected": {
+          "projects": [
+            "prj_01JB0000000000000000000001"
+          ],
+          "evidence": 1,
+          "claims": 1,
+          "findings": 1,
+          "content_revisions": [
+            "rev_01JB0000000000000000000001"
+          ]
+        },
+        "invalidated_at": null,
+        "erased_at": "2026-09-26T11:00:00Z",
+        "created_at": "2026-09-26T09:00:00Z"
+      }
+    },
+    {
+      "name": "correction_received",
+      "schema": "operations.schema.json#/$defs/PublicCorrection",
+      "expect": "valid",
+      "tags": [
+        "correction"
+      ],
+      "why": "Public correction with no personal data",
+      "instance": {
+        "id": "cor_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "revision_id": "rev_01JB0000000000000000000001",
+        "message": "The completion date was revised last week.",
+        "contact": null,
+        "status": "received",
+        "decision_id": null,
+        "created_at": "2026-09-26T10:00:00Z"
+      }
+    },
+    {
+      "name": "correction_resolved_without_decision",
+      "schema": "operations.schema.json#/$defs/PublicCorrection",
+      "expect": "invalid",
+      "tags": [
+        "correction"
+      ],
+      "why": "A resolved correction names its decision",
+      "error_contains": "None is not of type 'string'",
+      "instance": {
+        "id": "cor_01JB0000000000000000000001",
+        "project_id": "prj_01JB0000000000000000000001",
+        "locale": "en-IN",
+        "revision_id": "rev_01JB0000000000000000000001",
+        "message": "The completion date was revised last week.",
+        "contact": null,
+        "status": "resolved",
+        "decision_id": null,
+        "created_at": "2026-09-26T10:00:00Z"
+      }
+    }
+  ]
+}

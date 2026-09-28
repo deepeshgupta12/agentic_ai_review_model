@@ -1,0 +1,436 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Operations contracts",
+  "description": "Durable jobs, workflow runs, agent runs, audit events, deletion requests, evaluations, users and public corrections (docs/04, docs/05).",
+  "x-contract-version": "1.0.0",
+  "$defs": {
+    "Lease": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner", "expires_at", "fencing_token"],
+      "properties": {
+        "owner": { "type": "string", "minLength": 1 },
+        "expires_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "fencing_token": {
+          "description": "Monotonic; recovery increments it and every worker write checks it.",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "Job": {
+      "description": "ai_jobs record. Unique logical_key. A human-review pause ends the job (waiting_review); a separate resume job continues the graph.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "logical_key",
+        "kind",
+        "run_id",
+        "project_id",
+        "status",
+        "attempts",
+        "max_attempts",
+        "next_attempt_at",
+        "lease",
+        "deadline",
+        "checkpoint_id",
+        "error",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/JobId" },
+        "logical_key": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": ["collect", "analyse", "resume_after_review", "generate_content", "deliver_publication", "invalidate_dependencies", "erase_payloads", "scheduled_refresh", "evaluate"]
+        },
+        "run_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/RunId" }, { "type": "null" }] },
+        "project_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/ProjectId" }, { "type": "null" }] },
+        "status": { "$ref": "common.schema.json#/$defs/JobStatus" },
+        "attempts": { "type": "integer", "minimum": 0 },
+        "max_attempts": { "type": "integer", "minimum": 1 },
+        "next_attempt_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+        "lease": { "anyOf": [{ "$ref": "#/$defs/Lease" }, { "type": "null" }] },
+        "deadline": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+        "checkpoint_id": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "error": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["code", "message", "retryable"],
+              "properties": {
+                "code": { "type": "string", "minLength": 1 },
+                "message": { "type": "string" },
+                "retryable": { "type": "boolean" }
+              }
+            },
+            { "type": "null" }
+          ]
+        },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "updated_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "running" } } },
+          "then": { "properties": { "lease": { "$ref": "#/$defs/Lease" } } },
+          "else": { "properties": { "lease": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "retry_wait" } } },
+          "then": { "properties": { "next_attempt_at": { "$ref": "common.schema.json#/$defs/Timestamp" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "failed" } } },
+          "then": { "properties": { "error": { "type": "object" } } }
+        }
+      ]
+    },
+    "RunCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["connector_id", "status", "attempted_queries", "fetched", "matched", "analysed", "metadata_only", "last_success_at", "note"],
+      "properties": {
+        "connector_id": { "$ref": "common.schema.json#/$defs/ConnectorId" },
+        "status": { "$ref": "common.schema.json#/$defs/CoverageStatus" },
+        "attempted_queries": { "type": "integer", "minimum": 0 },
+        "fetched": { "type": "integer", "minimum": 0 },
+        "matched": { "type": "integer", "minimum": 0 },
+        "analysed": { "type": "integer", "minimum": 0 },
+        "metadata_only": { "type": "integer", "minimum": 0 },
+        "last_success_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+        "note": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "description": "An access_pending connector did not run: nothing attempted or fetched.",
+          "if": { "properties": { "status": { "const": "access_pending" } } },
+          "then": { "properties": { "attempted_queries": { "const": 0 }, "fetched": { "const": 0 } } }
+        }
+      ]
+    },
+    "WorkflowRun": {
+      "description": "One collection/analysis/publication cycle for a project. Stage and per-connector coverage are separate facts.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "project_id",
+        "stage",
+        "trigger",
+        "requested_by",
+        "window",
+        "coverage",
+        "budget",
+        "content_revision_id",
+        "outcome_note",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/RunId" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "stage": { "$ref": "common.schema.json#/$defs/WorkflowStage" },
+        "trigger": { "enum": ["manual", "schedule", "freshness_change"] },
+        "requested_by": { "$ref": "common.schema.json#/$defs/Actor" },
+        "window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["from", "to"],
+          "properties": {
+            "from": { "$ref": "common.schema.json#/$defs/Timestamp" },
+            "to": { "$ref": "common.schema.json#/$defs/Timestamp" }
+          }
+        },
+        "coverage": { "type": "array", "items": { "$ref": "#/$defs/RunCoverage" } },
+        "budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_usd", "spent_usd", "exhausted"],
+          "properties": {
+            "max_usd": { "type": "number", "minimum": 0 },
+            "spent_usd": { "type": "number", "minimum": 0 },
+            "exhausted": { "type": "boolean" }
+          }
+        },
+        "content_revision_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/ContentRevisionId" }, { "type": "null" }] },
+        "outcome_note": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "updated_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "description": "Insufficient evidence is a valid result with no content revision (docs/02 item 7).",
+          "if": { "properties": { "stage": { "const": "insufficient_evidence" } } },
+          "then": { "properties": { "content_revision_id": { "type": "null" }, "outcome_note": { "type": "string" } } }
+        },
+        {
+          "if": { "properties": { "stage": { "enum": ["collecting", "analysing", "findings_review"] } } },
+          "then": { "properties": { "content_revision_id": { "type": "null" } } }
+        },
+        {
+          "if": { "properties": { "trigger": { "const": "manual" } } },
+          "then": { "properties": { "requested_by": { "properties": { "kind": { "const": "user" } } } } }
+        }
+      ]
+    },
+    "AgentRun": {
+      "description": "ai_agent_runs record: one specialist task. Unknown measurements are null, never guessed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "task_id",
+        "run_id",
+        "project_id",
+        "agent",
+        "outcome",
+        "input_refs",
+        "output_refs",
+        "prompt_version",
+        "schema_version",
+        "requested_model",
+        "returned_model",
+        "stop_reason",
+        "tool_steps",
+        "attempt",
+        "repair_used",
+        "usage",
+        "estimated_cost_usd",
+        "provider_request_id",
+        "elapsed_ms",
+        "error",
+        "created_at"
+      ],
+      "properties": {
+        "task_id": { "$ref": "common.schema.json#/$defs/TaskId" },
+        "run_id": { "$ref": "common.schema.json#/$defs/RunId" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "agent": { "$ref": "common.schema.json#/$defs/AgentId" },
+        "outcome": { "$ref": "common.schema.json#/$defs/AgentOutcome" },
+        "input_refs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/RevisionRef" } },
+        "output_refs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/RevisionRef" } },
+        "prompt_version": { "type": "string", "pattern": "^[a-z0-9_]+\\.\\d+\\.\\d+$" },
+        "schema_version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "requested_model": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "returned_model": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "stop_reason": {
+          "anyOf": [{ "enum": ["end_turn", "max_tokens", "stop_sequence", "tool_use", "pause_turn", "refusal"] }, { "type": "null" }]
+        },
+        "tool_steps": { "type": "integer", "minimum": 0 },
+        "attempt": { "type": "integer", "minimum": 1 },
+        "repair_used": { "type": "boolean" },
+        "usage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["input_tokens", "output_tokens", "cache_read_input_tokens", "audio_seconds"],
+          "properties": {
+            "input_tokens": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+            "output_tokens": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+            "cache_read_input_tokens": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+            "audio_seconds": { "anyOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }] }
+          }
+        },
+        "estimated_cost_usd": { "anyOf": [{ "type": "number", "minimum": 0 }, { "type": "null" }] },
+        "provider_request_id": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "elapsed_ms": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+        "error": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["code", "message"],
+              "properties": { "code": { "type": "string" }, "message": { "type": "string" } }
+            },
+            { "type": "null" }
+          ]
+        },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "description": "The coordinator is deterministic and never calls a model.",
+          "if": { "properties": { "agent": { "const": "A00_master_coordinator" } } },
+          "then": { "properties": { "requested_model": { "type": "null" }, "returned_model": { "type": "null" } } },
+          "else": { "properties": { "requested_model": { "type": "string" } } }
+        },
+        {
+          "if": { "properties": { "outcome": { "const": "failed" } } },
+          "then": { "properties": { "error": { "type": "object" } } }
+        }
+      ]
+    },
+    "AuditEvent": {
+      "description": "ai_audit_events record. Never contains raw source payload.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "actor", "action", "target", "at", "request_id", "details"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/AuditEventId" },
+        "actor": { "$ref": "common.schema.json#/$defs/Actor" },
+        "action": { "type": "string", "pattern": "^[a-z_]+\\.[a-z_]+$" },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "id", "revision"],
+          "properties": {
+            "type": { "type": "string", "pattern": "^[a-z_]+$" },
+            "id": { "type": "string", "minLength": 1 },
+            "revision": { "anyOf": [{ "$ref": "common.schema.json#/$defs/RevisionNumber" }, { "type": "null" }] }
+          }
+        },
+        "at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "request_id": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "details": {
+          "type": "object",
+          "additionalProperties": { "anyOf": [{ "type": "string", "maxLength": 500 }, { "type": "integer" }, { "type": "boolean" }, { "type": "null" }] }
+        }
+      }
+    },
+    "DeletionRequest": {
+      "description": "ai_deletion_requests record. Dependencies are invalidated before payloads are erased.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "scope", "reason", "requested_by", "status", "affected", "invalidated_at", "erased_at", "created_at"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/DeletionRequestId" },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "source", "policy"],
+          "properties": {
+            "kind": { "enum": ["source_revision", "source_all_revisions", "policy_expiry"] },
+            "source": { "anyOf": [{ "$ref": "common.schema.json#/$defs/SourceRevisionRef" }, { "type": "null" }] },
+            "policy": { "anyOf": [{ "$ref": "common.schema.json#/$defs/PolicyRef" }, { "type": "null" }] }
+          },
+          "allOf": [
+            {
+              "if": { "properties": { "kind": { "const": "policy_expiry" } } },
+              "then": { "properties": { "policy": { "$ref": "common.schema.json#/$defs/PolicyRef" }, "source": { "type": "null" } } },
+              "else": { "properties": { "source": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" } } }
+            }
+          ]
+        },
+        "reason": { "type": "string", "minLength": 1 },
+        "requested_by": { "$ref": "common.schema.json#/$defs/Actor" },
+        "status": { "$ref": "common.schema.json#/$defs/DeletionRequestStatus" },
+        "affected": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["projects", "evidence", "claims", "findings", "content_revisions"],
+          "properties": {
+            "projects": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/ProjectId" } },
+            "evidence": { "type": "integer", "minimum": 0 },
+            "claims": { "type": "integer", "minimum": 0 },
+            "findings": { "type": "integer", "minimum": 0 },
+            "content_revisions": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/ContentRevisionId" } }
+          }
+        },
+        "invalidated_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+        "erased_at": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Timestamp" }, { "type": "null" }] },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "description": "Erasure never precedes invalidation.",
+          "if": { "properties": { "erased_at": { "type": "string" } } },
+          "then": { "properties": { "invalidated_at": { "$ref": "common.schema.json#/$defs/Timestamp" } } }
+        },
+        {
+          "if": { "properties": { "status": { "enum": ["erasing", "completed"] } } },
+          "then": { "properties": { "invalidated_at": { "$ref": "common.schema.json#/$defs/Timestamp" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "completed" } } },
+          "then": { "properties": { "erased_at": { "$ref": "common.schema.json#/$defs/Timestamp" } } }
+        }
+      ]
+    },
+    "EvaluationRun": {
+      "description": "ai_evaluations record: frozen dataset, config and measured results with sample sizes.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "dataset", "config", "status", "metrics", "created_at"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/EvaluationId" },
+        "dataset": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["name", "version", "synthetic"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "version": { "type": "string", "minLength": 1 },
+            "synthetic": { "type": "boolean" }
+          }
+        },
+        "config": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["agent", "model", "prompt_version", "schema_version"],
+          "properties": {
+            "agent": { "anyOf": [{ "$ref": "common.schema.json#/$defs/AgentId" }, { "type": "null" }] },
+            "model": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+            "prompt_version": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+            "schema_version": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+          }
+        },
+        "status": { "enum": ["running", "completed", "failed"] },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "value", "sample_size", "note"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "value": { "anyOf": [{ "type": "number" }, { "type": "null" }] },
+              "sample_size": { "type": "integer", "minimum": 0 },
+              "note": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+            }
+          }
+        },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      }
+    },
+    "User": {
+      "description": "users record. password_hash never leaves the backend (UserView omits it).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "email", "display_name", "roles", "active", "password_hash", "created_at", "updated_at"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/UserId" },
+        "email": { "type": "string", "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$" },
+        "display_name": { "type": "string", "minLength": 1 },
+        "roles": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "common.schema.json#/$defs/Role" } },
+        "active": { "type": "boolean" },
+        "password_hash": { "type": "string", "pattern": "^\\$(argon2id|2b)\\$" },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+        "updated_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      }
+    },
+    "PublicCorrection": {
+      "description": "A correction or report from the public page. No personal data is required.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "project_id", "locale", "revision_id", "message", "contact", "status", "decision_id", "created_at"],
+      "properties": {
+        "id": { "$ref": "common.schema.json#/$defs/CorrectionId" },
+        "project_id": { "$ref": "common.schema.json#/$defs/ProjectId" },
+        "locale": { "$ref": "common.schema.json#/$defs/Locale" },
+        "revision_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/ContentRevisionId" }, { "type": "null" }] },
+        "message": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "contact": { "anyOf": [{ "type": "string", "maxLength": 200 }, { "type": "null" }] },
+        "status": { "$ref": "common.schema.json#/$defs/CorrectionStatus" },
+        "decision_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/DecisionId" }, { "type": "null" }] },
+        "created_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "enum": ["resolved", "dismissed"] } } },
+          "then": { "properties": { "decision_id": { "$ref": "common.schema.json#/$defs/DecisionId" } } }
+        }
+      ]
+    }
+  }
+}

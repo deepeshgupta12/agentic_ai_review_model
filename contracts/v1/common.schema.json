@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Common definitions",
+  "description": "Shared vocabulary for contracts v1: IDs, revisions, hashes, time, anchors, confidence and every status enum. Backend, web and agent schemas reference these; none redefines them (D22).",
+  "x-contract-version": "1.0.0",
+  "$defs": {
+    "Ulid": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$" },
+    "ProjectId": { "type": "string", "pattern": "^prj_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "UserId": { "type": "string", "pattern": "^usr_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "SourceId": { "type": "string", "pattern": "^src_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "SourceLinkId": { "type": "string", "pattern": "^lnk_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "MediaSegmentId": { "type": "string", "pattern": "^seg_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "EvidenceId": { "type": "string", "pattern": "^evd_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "ClaimId": { "type": "string", "pattern": "^clm_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "FindingId": { "type": "string", "pattern": "^fnd_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "ContentRevisionId": { "type": "string", "pattern": "^rev_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "DecisionId": { "type": "string", "pattern": "^dec_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "PublicationOperationId": { "type": "string", "pattern": "^pub_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "JobId": { "type": "string", "pattern": "^job_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "RunId": { "type": "string", "pattern": "^run_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "TaskId": { "type": "string", "pattern": "^tsk_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "PolicyId": { "type": "string", "pattern": "^pol_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "ClusterId": { "type": "string", "pattern": "^cls_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "AuditEventId": { "type": "string", "pattern": "^aud_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "DeletionRequestId": { "type": "string", "pattern": "^del_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "EvaluationId": { "type": "string", "pattern": "^evl_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "AliasProposalId": { "type": "string", "pattern": "^als_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "CorrectionId": { "type": "string", "pattern": "^cor_[0-9A-HJKMNP-TV-Z]{26}$" },
+    "ConnectorId": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+    "PolicyFamily": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$" },
+    "Slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "maxLength": 80 },
+    "RevisionNumber": { "type": "integer", "minimum": 1 },
+    "Version": {
+      "description": "Optimistic-concurrency version of a mutable record; every write states the version it expects.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "Sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "Timestamp": {
+      "description": "RFC 3339 instant in UTC with a Z suffix.",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,6})?Z$"
+    },
+    "Date": { "type": "string", "format": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "HttpUrl": { "type": "string", "pattern": "^https?://[^\\s]+$", "maxLength": 2048 },
+    "LanguageTag": {
+      "description": "BCP 47 tag, e.g. en, hi, hi-Latn; 'und' when undetermined.",
+      "type": "string",
+      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+    },
+    "Locale": { "enum": ["en-IN"] },
+    "NonEmptyText": { "type": "string", "minLength": 1 },
+    "RevisionRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "revision"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z]{3}_[0-9A-HJKMNP-TV-Z]{26}$" },
+        "revision": { "$ref": "#/$defs/RevisionNumber" }
+      }
+    },
+    "SourceRevisionRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "revision"],
+      "properties": { "id": { "$ref": "#/$defs/SourceId" }, "revision": { "$ref": "#/$defs/RevisionNumber" } }
+    },
+    "EvidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "revision"],
+      "properties": { "id": { "$ref": "#/$defs/EvidenceId" }, "revision": { "$ref": "#/$defs/RevisionNumber" } }
+    },
+    "ClaimRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "revision"],
+      "properties": { "id": { "$ref": "#/$defs/ClaimId" }, "revision": { "$ref": "#/$defs/RevisionNumber" } }
+    },
+    "FindingRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "revision"],
+      "properties": { "id": { "$ref": "#/$defs/FindingId" }, "revision": { "$ref": "#/$defs/RevisionNumber" } }
+    },
+    "PolicyRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["family", "policy_version"],
+      "properties": {
+        "family": { "$ref": "#/$defs/PolicyFamily" },
+        "policy_version": { "$ref": "#/$defs/RevisionNumber" }
+      }
+    },
+    "Actor": {
+      "description": "Who did something. Derived server-side from the session; never taken from a request body.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "user_id", "role"],
+      "properties": {
+        "kind": { "enum": ["user", "system", "public"] },
+        "user_id": { "anyOf": [{ "$ref": "#/$defs/UserId" }, { "type": "null" }] },
+        "role": { "anyOf": [{ "$ref": "#/$defs/Role" }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "user" } } },
+          "then": { "properties": { "user_id": { "$ref": "#/$defs/UserId" }, "role": { "$ref": "#/$defs/Role" } } },
+          "else": { "properties": { "user_id": { "type": "null" }, "role": { "type": "null" } } }
+        }
+      ]
+    },
+    "DatedValue": {
+      "description": "A date that may be unknown. Unknown stays unknown; collection time is never substituted (docs/02 item 5).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "value", "precision", "basis"],
+      "properties": {
+        "status": { "$ref": "#/$defs/DateStatus" },
+        "value": { "anyOf": [{ "$ref": "#/$defs/Timestamp" }, { "type": "null" }] },
+        "precision": { "anyOf": [{ "enum": ["instant", "day", "month", "year"] }, { "type": "null" }] },
+        "basis": {
+          "anyOf": [
+            { "enum": ["platform_metadata", "page_markup", "text_mention", "registry_record", "moderator"] },
+            { "type": "null" }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "unknown" } } },
+          "then": {
+            "properties": { "value": { "type": "null" }, "precision": { "type": "null" }, "basis": { "type": "null" } }
+          },
+          "else": {
+            "properties": {
+              "value": { "$ref": "#/$defs/Timestamp" },
+              "precision": { "enum": ["instant", "day", "month", "year"] },
+              "basis": { "enum": ["platform_metadata", "page_markup", "text_mention", "registry_record", "moderator"] }
+            }
+          }
+        }
+      ]
+    },
+    "TextAnchor": {
+      "description": "Span in a stored text representation, in Unicode code points over NFC text (D24). end > start is checked by the backend. APIs add UTF-16 offsets for browsers (TextAnchorView).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "representation", "unit", "start", "end", "excerpt_sha256"],
+      "properties": {
+        "kind": { "const": "text" },
+        "representation": { "$ref": "#/$defs/AnchorRepresentation" },
+        "unit": { "const": "codepoint" },
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 1 },
+        "excerpt_sha256": { "$ref": "#/$defs/Sha256" }
+      }
+    },
+    "TextAnchorView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "representation", "unit", "start", "end", "excerpt_sha256", "utf16_start", "utf16_end"],
+      "properties": {
+        "kind": { "const": "text" },
+        "representation": { "$ref": "#/$defs/AnchorRepresentation" },
+        "unit": { "const": "codepoint" },
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 1 },
+        "excerpt_sha256": { "$ref": "#/$defs/Sha256" },
+        "utf16_start": { "type": "integer", "minimum": 0 },
+        "utf16_end": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "TimeAnchor": {
+      "description": "Span on the original media timeline in milliseconds. Approximate timing states its method.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "start_ms", "end_ms", "precision", "method"],
+      "properties": {
+        "kind": { "const": "time" },
+        "start_ms": { "type": "integer", "minimum": 0 },
+        "end_ms": { "type": "integer", "minimum": 1 },
+        "precision": { "$ref": "#/$defs/TimestampPrecision" },
+        "method": { "enum": ["caption_timing", "transcript_segment", "platform_chapter", "manual"] }
+      }
+    },
+    "Anchor": { "oneOf": [{ "$ref": "#/$defs/TextAnchor" }, { "$ref": "#/$defs/TimeAnchor" }] },
+    "Confidence": {
+      "description": "Calibrated probability or null. A value is only allowed with the evaluation that calibrated it (docs/02 item 10); model self-assessment is never stored here.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "calibration_ref"],
+      "properties": {
+        "value": { "anyOf": [{ "type": "number", "minimum": 0, "maximum": 1 }, { "type": "null" }] },
+        "calibration_ref": { "anyOf": [{ "$ref": "#/$defs/EvaluationId" }, { "type": "null" }] }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "value": { "type": "number" } } },
+          "then": { "properties": { "calibration_ref": { "$ref": "#/$defs/EvaluationId" } } }
+        }
+      ]
+    },
+    "ErrorEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error"],
+      "properties": {
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message", "request_id", "retryable", "fields"],
+          "properties": {
+            "code": { "$ref": "#/$defs/ErrorCode" },
+            "message": { "type": "string" },
+            "request_id": { "type": "string" },
+            "retryable": { "type": "boolean" },
+            "current_version": { "anyOf": [{ "$ref": "#/$defs/Version" }, { "type": "null" }] },
+            "fields": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["path", "message"],
+                "properties": { "path": { "type": "string" }, "message": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "ErrorCode": {
+      "enum": [
+        "unauthenticated",
+        "forbidden",
+        "not_found",
+        "validation_failed",
+        "version_conflict",
+        "idempotency_conflict",
+        "approval_required",
+        "hash_mismatch",
+        "ineligible_dependency",
+        "invalid_transition",
+        "rate_limited",
+        "provider_unavailable",
+        "access_pending",
+        "internal_error"
+      ]
+    },
+
+    "Role": { "enum": ["admin", "researcher", "moderator", "publisher", "analyst"] },
+    "JobStatus": { "enum": ["queued", "running", "retry_wait", "waiting_review", "completed", "failed", "cancelled"] },
+    "WorkflowStage": {
+      "enum": [
+        "collecting",
+        "analysing",
+        "findings_review",
+        "formatting",
+        "final_review",
+        "approved",
+        "publishing",
+        "published",
+        "insufficient_evidence",
+        "cancelled"
+      ]
+    },
+    "CoverageStatus": { "enum": ["complete_for_query", "partial", "unavailable", "access_pending"] },
+    "FindingReviewStatus": { "enum": ["pending", "approved", "rejected", "changes_requested", "superseded"] },
+    "ContentLifecycle": { "enum": ["draft", "final_review", "changes_requested", "approved", "rejected", "superseded", "withdrawn"] },
+    "PublicationOperationStatus": {
+      "enum": ["queued", "activating", "delivery_pending", "verified", "retry_wait", "failed", "rolled_back"]
+    },
+    "ServingState": { "enum": ["unpublished", "active", "temporarily_disabled"] },
+    "ConnectorStatus": { "enum": ["access_pending", "live", "unavailable"] },
+    "SourceLinkStatus": { "enum": ["auto_accepted", "needs_review", "accepted", "rejected", "superseded"] },
+    "RecordLifecycle": { "enum": ["active", "stale", "superseded", "unavailable", "deleted", "withdrawn", "expired"] },
+    "MediaAccessStatus": {
+      "enum": ["discovered", "access_pending", "metadata_only", "transcribed", "analysed", "error"]
+    },
+    "AliasProposalStatus": { "enum": ["proposed", "approved", "rejected", "revoked"] },
+    "DeletionRequestStatus": { "enum": ["pending", "invalidating", "erasing", "completed", "failed"] },
+    "CorrectionStatus": { "enum": ["received", "in_review", "resolved", "dismissed"] },
+
+    "AliasMode": { "enum": ["standalone", "context_required"] },
+    "AliasType": {
+      "enum": ["short_name", "phase_name", "spelling_variant", "transliteration", "script_variant", "marketing_name"]
+    },
+    "StrongIdentifierKind": {
+      "enum": ["rera_id", "developer_and_locality", "known_project_name", "official_page"]
+    },
+    "MatchSignal": {
+      "enum": ["project_name", "approved_alias", "developer", "locality", "micromarket", "city", "rera_id", "phase_name"]
+    },
+    "DateStatus": { "enum": ["known", "approximate", "unknown"] },
+    "TimestampPrecision": { "enum": ["exact", "approximate"] },
+    "AnchorRepresentation": { "enum": ["original", "normalised", "translated"] },
+    "CaptureLevel": { "enum": ["metadata_only", "partial_content", "full_content"] },
+    "SourceKind": {
+      "enum": [
+        "search_result",
+        "forum_thread",
+        "forum_post",
+        "article",
+        "blog_post",
+        "news_article",
+        "video",
+        "short",
+        "comment",
+        "registration_record"
+      ]
+    },
+    "SourceRole": {
+      "enum": ["resident", "owner", "prospective_buyer", "broker", "developer_official", "journalist", "creator", "unknown"]
+    },
+    "Modality": { "enum": ["text", "speech", "on_screen_text", "frame", "metadata"] },
+    "Aspect": {
+      "description": "Aspect taxonomy v1 (docs/04). 'other' needs a proposed label for review.",
+      "enum": [
+        "connectivity",
+        "location",
+        "layout",
+        "construction_quality",
+        "construction_progress",
+        "possession",
+        "amenities",
+        "maintenance",
+        "density",
+        "parking",
+        "water",
+        "power",
+        "service_management",
+        "value_perception",
+        "other"
+      ]
+    },
+    "ClaimType": { "enum": ["fact", "opinion", "promotion", "allegation"] },
+    "Polarity": { "enum": ["positive", "negative", "neutral", "mixed"] },
+    "VerificationStatus": { "enum": ["unverified", "verified", "contradicted", "disputed", "not_applicable"] },
+    "FindingKind": { "enum": ["pro", "con", "neutral"] },
+    "Attribution": { "enum": ["reported_opinion", "verified_fact", "mixed"] },
+    "AgentId": {
+      "enum": [
+        "A00_master_coordinator",
+        "A01_project_identity",
+        "A02_discovery_planner",
+        "A03_video_understanding",
+        "A04_language_context",
+        "A05_claim_extractor",
+        "A06_evidence_verifier",
+        "A07_findings_synthesiser",
+        "A08_seo_aeo_editor",
+        "A09_editorial_qa",
+        "A10_freshness_reviewer"
+      ]
+    },
+    "AgentOutcome": { "enum": ["completed", "insufficient_evidence", "needs_review", "failed"] },
+    "DecisionTargetType": { "enum": ["finding", "content_revision", "project_source_link", "alias_proposal", "correction"] },
+    "DecisionAction": {
+      "enum": ["approve", "reject", "changes_requested", "accept", "split", "remap", "revoke", "resolve", "dismiss"]
+    }
+  }
+}
