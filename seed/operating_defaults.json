@@ -52,15 +52,31 @@
         "publisher",
         "analyst"
       ],
-      "status": "proposed",
+      "status": "accepted",
       "ref": "I09",
-      "note": "One person may hold several roles. Confirm together with seeded users at Step 03"
+      "note": "One person may hold several roles. POC starts with one coordinator holding all five",
+      "accepted_on": "2026-09-28",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     "seeded_users": {
-      "value": [],
-      "status": "open",
+      "value": [
+        {
+          "email": "deepesh.gupta@client-site.example",
+          "display_name": "Deepesh Gupta",
+          "roles": [
+            "admin",
+            "researcher",
+            "moderator",
+            "publisher",
+            "analyst"
+          ]
+        }
+      ],
+      "status": "accepted",
       "ref": "I09",
-      "note": "Ask the product owner at Step 03: names, emails and role assignments"
+      "note": "Sole coordinator for the POC. Passwords are never stored here: the seed step asks for them in the terminal and stores only an argon2 hash",
+      "accepted_on": "2026-09-28",
+      "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     "recurring_opinion_threshold": {
       "value": 3,
