@@ -20,17 +20,21 @@ from app import audit
 DEPENDANTS: list[str] = []
 
 
-def target_of(logical_key: str) -> str:
-    """invalidate_dependencies:link:<link id>:v<version> -> link id."""
+def target_of(logical_key: str) -> tuple[str, str]:
+    """invalidate_dependencies:<link|policy>:<id or family>:v<version> -> (kind, id or family)."""
     parts = logical_key.split(":")
-    if len(parts) != 4 or parts[0] != "invalidate_dependencies" or parts[1] != "link":
+    if len(parts) != 4 or parts[0] != "invalidate_dependencies" or parts[1] not in ("link", "policy"):
         raise ValueError(f"unsupported invalidation key {logical_key!r}")
-    return parts[2]
+    return parts[1], parts[2]
 
 
 def handle(db: Database[dict[str, Any]], job: dict[str, Any], check: Callable[[], str]) -> str | None:
-    link_id = target_of(job["logical_key"])
+    kind, target = target_of(job["logical_key"])
     check()
+    if kind == "policy":
+        _policy_narrowed(db, target)
+        return None
+    link_id = target
     link = db["ai_project_source_links"].find_one({"_id": link_id})
     evidence = db["ai_evidence"].count_documents({"link_id": link_id})
     details: dict[str, Any] = {
@@ -40,4 +44,16 @@ def handle(db: Database[dict[str, Any]], job: dict[str, Any], check: Callable[[]
     for name in DEPENDANTS:
         details[name] = 0
     audit.record(db, "dependencies.invalidated", "project_source_link", link_id, audit.SYSTEM_ACTOR, details=details)
+    return None
+
+
+def _policy_narrowed(db: Database[dict[str, Any]], family: str) -> None:
+    """A policy version took rights away: evidence under that family is re-judged at every read already; record
+    how much is affected so a person can see it, and let later steps re-review their dependants."""
+    sources = db["ai_sources"].count_documents({"policy.family": family})
+    evidence = db["ai_evidence"].count_documents({"policy.family": family})
+    details: dict[str, Any] = {"family": family, "sources": sources, "evidence": evidence}
+    for name in DEPENDANTS:
+        details[name] = 0
+    audit.record(db, "dependencies.invalidated", "source_policy", family, audit.SYSTEM_ACTOR, details=details)
     return None

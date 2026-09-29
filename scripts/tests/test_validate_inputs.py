@@ -244,7 +244,7 @@ class UC03ConnectorMatrix(unittest.TestCase):
         assert_error(self, errors, "policy_family 'somewhere_else' has no source policy")
 
     def test_missing_credential_reason_rejected(self):
-        del self.data["connectors"][2]["no_credential_reason"]  # playwright_fetch
+        del next(c for c in self.data["connectors"] if c["id"] == "playwright_fetch")["no_credential_reason"]
         errors, _ = vi.validate_connectors(self.data, self.families)
         assert_error(self, errors, "playwright_fetch", "no_credential_reason")
 
@@ -254,7 +254,10 @@ class UC03ConnectorMatrix(unittest.TestCase):
         assert_error(self, errors, "brave_search", "UPPER_SNAKE_CASE")
 
     def test_one_of_group_needs_two_members(self):
-        self.data["connectors"] = [c for c in self.data["connectors"] if c["id"] != "playwright_fetch"]
+        keep = "firecrawl"  # drop every other member of the group
+        self.data["connectors"] = [
+            c for c in self.data["connectors"] if c.get("group") != "web_extraction" or c["id"] == keep
+        ]
         errors, _ = vi.validate_connectors(self.data, self.families)
         assert_error(self, errors, "group 'web_extraction'", "at least two")
 
@@ -425,7 +428,8 @@ class UC07CommandLine(unittest.TestCase):
         self.assertEqual(payload["result"], "pass")
         self.assertEqual(payload["summary"]["projects"], 5)
         by_status = payload["summary"]["connectors"]["by_status"]
-        self.assertEqual(sum(by_status.values()), 11)
+        registry = load("connectors")
+        self.assertEqual(sum(by_status.values()), len(registry["connectors"]) + len(registry["model_providers"]))
         self.assertLessEqual(set(by_status), {"access_pending", "live"})
 
 

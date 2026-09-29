@@ -60,12 +60,9 @@ def run(db, contracts, settings, text, focus, client, native_id="a01-1"):
         source_kind="forum_post",
         text=text,
         policy_family="web_public_pages",
-        seed_dir=settings.seed_dir,
     )
     gateway = ModelGateway(settings, contracts, client=client, sleep=lambda _s: None)
-    return identify_source(
-        db.client, db, contracts, settings.seed_dir, source, focus_project_ids=focus, gateway=gateway
-    )
+    return identify_source(db.client, db, contracts, source, focus_project_ids=focus, gateway=gateway)
 
 
 REVIEW_TEXT = "Quillon Residences, Gurgaon: the second phase is late. Locals call it QR Lakeside."
@@ -161,13 +158,10 @@ def test_without_a_key_nothing_is_called(db, contracts, settings, fictional):
         source_kind="forum_post",
         text=REVIEW_TEXT,
         policy_family="web_public_pages",
-        seed_dir=settings.seed_dir,
     )
     gateway = ModelGateway(settings, contracts)
     assert not gateway.available
-    report = identify_source(
-        db.client, db, contracts, settings.seed_dir, source, focus_project_ids=[q], gateway=gateway
-    )
+    report = identify_source(db.client, db, contracts, source, focus_project_ids=[q], gateway=gateway)
     assert report["a01"] == [] and db["ai_agent_runs"].count_documents({}) == 0
     assert report["links"][0]["status"] == "needs_review"
 

@@ -24,9 +24,8 @@ def add_source(db, contracts, settings, text, focus, native_id):
         source_kind="forum_post",
         text=text,
         policy_family="web_public_pages",
-        seed_dir=settings.seed_dir,
     )
-    identify_source(db.client, db, contracts, settings.seed_dir, source, focus_project_ids=focus)
+    identify_source(db.client, db, contracts, source, focus_project_ids=focus)
     link = db["ai_project_source_links"].find_one({"source.id": source["id"], "project_id": focus[0]})
     return db["ai_evidence"].find_one({"link_id": link["_id"]})
 
@@ -39,9 +38,7 @@ def identity_of(db, project_id):
 def propose(db, settings, project_id, proposals, evidence_docs):
     identity, others = identity_of(db, project_id)
     allowed = {e["id"]: e for e in evidence_docs}
-    return record_proposals(
-        db, settings.seed_dir, identity, others, proposals, allowed, "tsk_01K0000000000000000000000A"
-    )
+    return record_proposals(db, identity, others, proposals, allowed, "tsk_01K0000000000000000000000A")
 
 
 def proposal(alias, evidence_ids, *, target=None, kind="rera_id", alias_type="short_name"):

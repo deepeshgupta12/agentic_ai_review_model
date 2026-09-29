@@ -59,9 +59,11 @@ def mongo_client() -> Iterator[MongoClient[dict[str, Any]]]:
 @pytest.fixture
 def db(mongo_client: MongoClient[dict[str, Any]], contracts: ContractStore) -> Iterator[Database[dict[str, Any]]]:
     from app.setup.database import setup_database
+    from app.sources.policies import seed_policies
 
     database = mongo_client[f"sy_poc_test_{uuid.uuid4().hex[:10]}"]
     setup_database(database, contracts)
+    seed_policies(mongo_client, database, contracts, REPO_ROOT / "seed" / "source_policies.json")
     yield database
     mongo_client.drop_database(database.name)
 

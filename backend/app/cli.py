@@ -1,6 +1,7 @@
 """Command line for setup and checks:
 
 python -m app.cli setup-db [--dry-run]
+python -m app.cli seed-policies
 python -m app.cli seed-projects [--input PATH]
 python -m app.cli seed-users [--reset-password]
 python -m app.cli smoke-model
@@ -49,6 +50,19 @@ def cmd_seed_projects(args: argparse.Namespace) -> int:
         print(f"seed-projects failed: {exc}", file=sys.stderr)
         return 1
     _print({"projects": report, "construction_status": statuses})
+    return 0
+
+
+def cmd_seed_policies(_: argparse.Namespace) -> int:
+    from app.sources.policies import PolicyError, seed_policies
+
+    db = get_db()
+    try:
+        report = seed_policies(db.client, db, get_contracts(), get_settings().seed_dir / "source_policies.json")
+    except PolicyError as exc:
+        print(f"seed-policies failed: {exc}", file=sys.stderr)
+        return 1
+    _print(report)
     return 0
 
 
@@ -221,6 +235,7 @@ def cmd_fixture_smoke_identity(args: argparse.Namespace) -> int:
     from app.ids import new_id
     from app.seed.projects import import_projects
     from app.setup.database import setup_database
+    from app.sources.policies import seed_policies
     from app.workers.worker import run_one
 
     settings, contracts = get_settings(), get_contracts()
@@ -230,6 +245,7 @@ def cmd_fixture_smoke_identity(args: argparse.Namespace) -> int:
     live: dict[str, Any] | str = "not requested"
     try:
         setup_database(scratch, contracts)
+        seed_policies(client, scratch, contracts, settings.seed_dir / "source_policies.json")
         data = json.loads((REPO_ROOT / "evals" / "identity" / "v1" / "catalogue.json").read_text(encoding="utf-8"))
         ids = {
             r["project_name"]: r["project_id"]
@@ -246,7 +262,6 @@ def cmd_fixture_smoke_identity(args: argparse.Namespace) -> int:
                 source_kind="forum_post",
                 text=text,
                 policy_family="web_public_pages",
-                seed_dir=settings.seed_dir,
             )
 
         comparison = source(
@@ -254,7 +269,7 @@ def cmd_fixture_smoke_identity(args: argparse.Namespace) -> int:
             "Two options.\n\nQuillon Residences in Sector 102: big balconies.\n\n"
             "Tavira Vista in Sector 88: good finish.",
         )
-        report = identify_source(client, scratch, contracts, settings.seed_dir, comparison, focus_project_ids=[q])
+        report = identify_source(client, scratch, contracts, comparison, focus_project_ids=[q])
         links = {row["project_id"]: row for row in report["links"]}
         checks["comparison: one source, two projects, distinct segments"] = (
             set(links) == {q, t}
@@ -262,7 +277,7 @@ def cmd_fixture_smoke_identity(args: argparse.Namespace) -> int:
             and links[q]["segment_key"] != links[t]["segment_key"]
         )
         elsewhere = source("c2", "Quillon Residences in Pune has a lovely clubhouse.")
-        other = identify_source(client, scratch, contracts, settings.seed_dir, elsewhere, focus_project_ids=[q])
+        other = identify_source(client, scratch, contracts, elsewhere, focus_project_ids=[q])
         checks["same name in another city is rejected"] = [r["status"] for r in other["links"]] == ["rejected"]
         link = scratch["ai_project_source_links"].find_one({"_id": links[q]["link_id"]})
         if link is None:
@@ -279,7 +294,7 @@ def cmd_fixture_smoke_identity(args: argparse.Namespace) -> int:
             "remap_project_id": None,
             "phase_rera_id": None,
         }
-        decided = decide_link(client, scratch, contracts, settings.seed_dir, link["_id"], body, moderator)
+        decided = decide_link(client, scratch, contracts, link["_id"], body, moderator)
         checks["moderator correction recorded"] = decided["status"] == "rejected" and decided["decided_by"] is not None
         status = run_one(scratch, "smoke-worker", 30)
         audit = scratch["ai_audit_events"].find_one({"action": "dependencies.invalidated"})
@@ -319,9 +334,7 @@ def _live_a01_check(
         "Quillon Residences, Gurgaon: locals call the lake-facing towers QR Lakeside. "
         "Possession of the second phase keeps slipping.",
     )
-    report = identify_source(
-        client, scratch, contracts, settings.seed_dir, review, focus_project_ids=[project_id], gateway=gateway
-    )
+    report = identify_source(client, scratch, contracts, review, focus_project_ids=[project_id], gateway=gateway)
     a01 = report["a01"][0] if report["a01"] else None
     link = scratch["ai_project_source_links"].find_one({"source.id": review["id"], "project_id": project_id})
     run = scratch["ai_agent_runs"].find_one({"agent": "A01_project_identity"})
@@ -354,6 +367,9 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("seed-projects", help="load the five-project input file")
     p.add_argument("--input", default=str(REPO_ROOT / "contracts" / "five-project-input-template.json"))
     p.set_defaults(func=cmd_seed_projects)
+    sub.add_parser("seed-policies", help="load seed/source_policies.json (immutable versions)").set_defaults(
+        func=cmd_seed_policies
+    )
     p = sub.add_parser("seed-users", help="create the seeded users (password from SEED_USER_PASSWORD or a prompt)")
     p.add_argument("--reset-password", action="store_true")
     p.set_defaults(func=cmd_seed_users)

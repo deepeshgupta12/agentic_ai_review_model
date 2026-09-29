@@ -6,16 +6,15 @@ one ID across revisions; unchanged content does not create a new revision.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from pymongo.client_session import ClientSession
 from pymongo.database import Database
 
 from app.db import utcnow
-from app.identity.policies import policy_ref
 from app.identity.text import nfc, sha256_text
 from app.ids import new_id
+from app.sources import policies
 
 TEXT_KINDS = {"forum_thread", "forum_post", "article", "blog_post", "news_article", "comment", "registration_record"}
 
@@ -29,7 +28,6 @@ def store_text_source(
     source_kind: str,
     text: str,
     policy_family: str,
-    seed_dir: Path,
     title: str | None = None,
     language: str | None = None,
     publication_date: dict[str, Any] | None = None,
@@ -39,6 +37,9 @@ def store_text_source(
 ) -> dict[str, Any]:
     if source_kind not in TEXT_KINDS:
         raise ValueError(f"{source_kind} is not a text source kind")
+    policy = policies.current(db, policy_family, session=session)
+    if policy is None or not policy["collection_allowed"]:
+        raise PermissionError(f"the {policy_family} policy does not allow collection")
     text = nfc(text)
     digest = sha256_text(text)
     latest = db["ai_sources"].find_one(
@@ -68,7 +69,7 @@ def store_text_source(
         "capture_level": "full_content",
         "content_sha256": digest,
         "payload_ref": {"store": "payload_store", "key": key},
-        "policy": policy_ref(seed_dir, policy_family),
+        "policy": policies.ref_of(policy),
         "lifecycle": "active",
         "media": None,
         "created_at": now,

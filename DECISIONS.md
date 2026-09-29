@@ -78,6 +78,7 @@ Summary of [seed/connectors.json](seed/connectors.json), which holds the full fi
 | `anthropic` | Anthropic Claude API (model provider) | n/a | Mandatory | `ANTHROPIC_API_KEY` | Configured model IDs confirmed and one real structured-output call via `make smoke-model` (Step 03, D30) | live (29 Sep 2026) |
 | `brave_search` | Brave Search API | web_public_pages | Mandatory | `BRAVE_SEARCH_API_KEY` | Real query for a supplied project returns results | access_pending |
 | `firecrawl` | Firecrawl | web_public_pages | One of `web_extraction` | `FIRECRAWL_API_KEY` | Fetch one allow-listed page found by Brave, robots decision recorded | access_pending |
+| `web_fetch` | Static HTTP fetch with Trafilatura extraction (local; D33, replacing Crawl4AI) | web_public_pages, competitor_portals, official_records (by host) | One of `web_extraction` | none (policy allow-list, robots.txt, honest user agent) | Fetch one allow-listed page found by Brave, robots decision recorded | access_pending |
 | `playwright_fetch` | Playwright (local) | web_public_pages | One of `web_extraction` | none (host allow-list) | Render one allow-listed page found by Brave, robots decision recorded | access_pending |
 | `youtube_data_api` | YouTube Data API v3 | youtube | Mandatory | `YOUTUBE_API_KEY` | Real search returns a video; one comments page or comments-disabled status | access_pending |
 | `harera_registry` | Haryana RERA public registry | official_records | Optional | none (public site) | Fetch the record for one supplied RERA ID | access_pending |

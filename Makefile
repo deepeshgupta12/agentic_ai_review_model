@@ -4,7 +4,7 @@ SHELL := /bin/bash
 UV := env -u VIRTUAL_ENV uv
 COMPOSE := docker compose
 
-.PHONY: help env up down logs ps seed seed-projects seed-users smoke-model config \
+.PHONY: help env up down logs ps seed seed-policies seed-projects seed-users smoke-model config \
         install test test-contracts test-backend test-web lint typecheck check-step01 check-step02 check-step03 mutations-step03 \
         check-step04 mutations-step04 plan-queries eval-identity smoke-identity set-secret hooks
 
@@ -34,7 +34,10 @@ ps: ## Show service status
 logs: ## Follow logs from all services
 	$(COMPOSE) logs -f --tail=100
 
-seed: seed-projects seed-users ## Load the five projects and the seeded users
+seed: seed-policies seed-projects seed-users ## Load source policies, the five projects and the seeded users
+
+seed-policies: ## Load seed/source_policies.json into ai_source_policies (immutable versions; safe to repeat)
+	$(COMPOSE) exec -T api python -m app.cli seed-policies
 
 seed-projects: ## Load the five-project input file (safe to repeat)
 	$(COMPOSE) exec -T api python -m app.cli seed-projects

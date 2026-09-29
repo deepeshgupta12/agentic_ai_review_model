@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import time
-from pathlib import Path
 from typing import Any
 
 from pymongo import MongoClient
@@ -68,7 +67,6 @@ def run_identity_agent(
     db: Database[dict[str, Any]],
     contracts: ContractStore,
     gateway: ModelGateway,
-    seed_dir: Path,
     identity: ProjectIdentity,
     identities: list[ProjectIdentity],
     items: list[dict[str, Any]],
@@ -105,7 +103,7 @@ def run_identity_agent(
                     annotated += 1
             others = [i for i in identities if i.id != identity.id]
             alias_report = record_proposals(
-                db, seed_dir, identity, others, result.data["alias_proposals"], allowed_evidence, task_id, session
+                db, identity, others, result.data["alias_proposals"], allowed_evidence, task_id, session
             )
         _record_run(db, result, task_id, run_id, identity.id, items, elapsed_ms, session)
         return {

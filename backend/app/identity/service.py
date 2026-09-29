@@ -7,7 +7,6 @@ Collectors (Step 05) call identify_source after storing each source revision.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from pymongo import MongoClient
@@ -31,7 +30,6 @@ def identify_source(
     client: MongoClient[dict[str, Any]],
     db: Database[dict[str, Any]],
     contracts: ContractStore,
-    seed_dir: Path,
     source: dict[str, Any],
     *,
     focus_project_ids: list[str] | None = None,
@@ -85,7 +83,5 @@ def identify_source(
             groups.setdefault(link["project_id"], []).append({"link": link, "evidence": evidence})
     for project_id, items in groups.items():
         identity = next(i for i in identities if i.id == project_id)
-        report["a01"].append(
-            run_identity_agent(client, db, contracts, gateway, seed_dir, identity, identities, items, run_id)
-        )
+        report["a01"].append(run_identity_agent(client, db, contracts, gateway, identity, identities, items, run_id))
     return report

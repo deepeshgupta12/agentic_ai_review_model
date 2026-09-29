@@ -197,6 +197,15 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
         ),
         CollectionSpec("ai_payloads", _payload_validator(), []),
         CollectionSpec(
+            "ai_source_policies",
+            contracts.mongo_validator("sources.schema.json#/$defs/SourcePolicy"),
+            [
+                IndexSpec(
+                    "uniq_family_version", [("family", ASCENDING), ("policy_version", ASCENDING)], {"unique": True}
+                ),
+            ],
+        ),
+        CollectionSpec(
             "ai_project_source_links",
             contracts.mongo_validator("sources.schema.json#/$defs/ProjectSourceLink"),
             [

@@ -7,9 +7,8 @@ from typing import Any
 from fastapi import APIRouter, Body, Depends, Query
 from pymongo.database import Database
 
-from app.api.deps import Principal, contract_body, contracts_dep, db_dep, known_id, require, settings_dep
+from app.api.deps import Principal, contract_body, contracts_dep, db_dep, known_id, require
 from app.api.routes_ops import decode_cursor, encode_cursor
-from app.config import Settings
 from app.contracts import ContractStore
 from app.errors import ApiError
 from app.identity.aliases import decide_alias, proposal_view
@@ -30,11 +29,10 @@ def decide_source_link(
     principal: Principal = Depends(require("decideSourceLink")),
     db: Database[dict[str, Any]] = Depends(db_dep),
     contracts: ContractStore = Depends(contracts_dep),
-    settings: Settings = Depends(settings_dep),
 ) -> dict[str, Any]:
     known_id(link_id, "lnk")
     request = contract_body(contracts, body, "api.schema.json#/$defs/LinkDecisionRequest")
-    return decide_link(db.client, db, contracts, settings.seed_dir, link_id, request, principal.actor)
+    return decide_link(db.client, db, contracts, link_id, request, principal.actor)
 
 
 @router.get(

@@ -9,7 +9,6 @@ and the expected version. Leaving an accepted state enqueues dependency invalida
 from __future__ import annotations
 
 import re
-from pathlib import Path
 from typing import Any
 
 from pymongo import MongoClient
@@ -216,7 +215,6 @@ def decide_link(
     client: MongoClient[dict[str, Any]],
     db: Database[dict[str, Any]],
     contracts: ContractStore,
-    seed_dir: Path,
     link_id: str,
     body: dict[str, Any],
     actor: dict[str, Any],

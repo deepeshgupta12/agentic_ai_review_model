@@ -26,13 +26,12 @@ def store(db, settings, text, native_id="post-1"):
         source_kind="forum_post",
         text=text,
         policy_family="web_public_pages",
-        seed_dir=settings.seed_dir,
         language="en",
     )
 
 
 def identify(db, contracts, settings, source, focus):
-    return identify_source(db.client, db, contracts, settings.seed_dir, source, focus_project_ids=focus)
+    return identify_source(db.client, db, contracts, source, focus_project_ids=focus)
 
 
 def link_of(db, project_id, **extra):
@@ -54,7 +53,7 @@ def test_a_matched_source_gets_a_contract_valid_link_and_evidence(db, contracts,
     view["created_at"] = "2026-09-28T00:00:00Z"
     assert contracts.errors(view, "evidence.schema.json#/$defs/Evidence") == []
     assert evidence["excerpt_sha256"] == sha256_text(evidence["excerpt_text"])
-    assert usable_for_identity(db, evidence, settings.seed_dir)
+    assert usable_for_identity(db, evidence)
 
 
 def test_identifying_again_changes_nothing(db, contracts, settings, fictional):
@@ -105,7 +104,7 @@ def test_moderator_rejects_a_wrong_match_and_dependants_are_invalidated(
     assert response.json()["status"] == "rejected" and response.json()["decided_by"].startswith("dec_")
     assert contracts.errors(response.json(), "sources.schema.json#/$defs/ProjectSourceLink") == []
     evidence = db["ai_evidence"].find_one({"link_id": link["_id"]})
-    assert not usable_for_identity(db, evidence, settings.seed_dir), "evidence on a rejected link is ineligible at once"
+    assert not usable_for_identity(db, evidence), "evidence on a rejected link is ineligible at once"
     job = db["ai_jobs"].find_one({"kind": "invalidate_dependencies"})
     assert job is not None and link["_id"] in job["logical_key"] and job["project_id"] == q
     invalidate(db, job, lambda: "ok")

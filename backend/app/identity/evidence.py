@@ -6,17 +6,16 @@ policy must allow AI processing and the link must not be rejected or superseded.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from pymongo.client_session import ClientSession
 from pymongo.database import Database
 
 from app.db import utcnow
-from app.identity.policies import ai_processing_allowed
 from app.identity.rules import EVIDENCE_MAX_CHARS
 from app.identity.text import text_anchor
 from app.ids import new_id
+from app.sources.policies import ai_processing_allowed
 
 UNUSABLE_LINK_STATUSES = {"rejected", "superseded"}
 
@@ -40,6 +39,8 @@ def create_link_evidence(
     text: str,
     session: ClientSession | None = None,
 ) -> dict[str, Any] | None:
+    if source.get("capture_level") == "metadata_only":
+        return None  # discovery metadata is never evidence (docs/06; Step 05 acceptance)
     bounds = segment_bounds(link["segment_key"], len(text))
     if bounds is None:
         return None
@@ -73,7 +74,7 @@ def create_link_evidence(
 
 
 def usable_for_identity(
-    db: Database[dict[str, Any]], evidence: dict[str, Any], seed_dir: Path, session: ClientSession | None = None
+    db: Database[dict[str, Any]], evidence: dict[str, Any], session: ClientSession | None = None
 ) -> bool:
     if evidence.get("lifecycle") != "active" or not evidence.get("excerpt_text"):
         return False
@@ -85,4 +86,4 @@ def usable_for_identity(
     )
     if source is None or source["lifecycle"] != "active":
         return False
-    return ai_processing_allowed(seed_dir, evidence["policy"])
+    return ai_processing_allowed(db, evidence["policy"], session)

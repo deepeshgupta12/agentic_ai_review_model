@@ -13,7 +13,6 @@ to review. Rejected proposals are kept so the same name is not proposed again.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 from pymongo import MongoClient
@@ -83,7 +82,6 @@ def strong_identifier_kind(
 
 def record_proposals(
     db: Database[dict[str, Any]],
-    seed_dir: Path,
     identity: ProjectIdentity,
     others: list[ProjectIdentity],
     proposals: list[dict[str, Any]],
@@ -121,7 +119,7 @@ def record_proposals(
             continue
         strong: tuple[str, dict[str, Any]] | None = None
         for doc in docs:
-            if not usable_for_identity(db, doc, seed_dir, session):
+            if not usable_for_identity(db, doc, session):
                 continue
             source = db["ai_sources"].find_one(doc["source"], session=session)
             kind = strong_identifier_kind(
