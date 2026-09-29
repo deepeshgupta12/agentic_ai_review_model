@@ -85,8 +85,11 @@ class ModelGateway:
     def _get_client(self) -> ClientLike:
         if self._client is None:
             assert self.settings.anthropic_api_key is not None
+            workspace = self.settings.anthropic_workspace_id
             self._client = anthropic.Anthropic(
-                api_key=self.settings.anthropic_api_key.get_secret_value(), max_retries=2
+                api_key=self.settings.anthropic_api_key.get_secret_value(),
+                max_retries=2,
+                default_headers={"anthropic-workspace-id": workspace} if workspace else None,
             )
         return self._client
 
@@ -110,6 +113,8 @@ class ModelGateway:
             return {"status": "model_not_found", "resolved_id": None, "display_name": None}
         except (anthropic.AuthenticationError, anthropic.PermissionDeniedError):
             return {"status": "access_pending", "resolved_id": None, "display_name": None}
+        except anthropic.BadRequestError:
+            return {"status": "bad_request", "resolved_id": None, "display_name": None}
         except (anthropic.APIStatusError, anthropic.APIConnectionError):
             return {"status": "provider_unavailable", "resolved_id": None, "display_name": None}
         return {

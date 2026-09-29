@@ -47,6 +47,8 @@ class Settings(BaseSettings):
     login_window_minutes: int = Field(default=15, ge=1)
 
     anthropic_api_key: SecretStr | None = None
+    # Only for an organisation-level key: the workspace its requests run in (sent as anthropic-workspace-id).
+    anthropic_workspace_id: str | None = Field(default=None, pattern=r"^wrkspc_[A-Za-z0-9]+$")
     model_routine: str = "claude-sonnet-5"
     model_reasoning: str = "claude-sonnet-5"
     model_difficult: str = "claude-opus-5-5"

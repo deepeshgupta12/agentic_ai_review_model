@@ -119,6 +119,7 @@ def cmd_check_config(_: argparse.Namespace) -> int:
                 "difficult": settings.model_difficult,
             },
             "credentials_present": {name: settings.credential_present(name) for name in names},
+            "anthropic_workspace_id_set": settings.anthropic_workspace_id is not None,
         }
     )
     return 0

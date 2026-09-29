@@ -217,3 +217,32 @@ def test_smoke_command_fails_when_a_configured_model_is_missing(settings, contra
     monkeypatch.setattr(gateway_module, "ModelGateway", lambda s, c: ModelGateway(s, c, client=client))
     assert cli.main(["smoke-model"]) == 1
     assert json.loads(capsys.readouterr().out)["models"]["difficult"]["status"] == "model_not_found"
+
+
+def test_a_workspace_id_is_sent_as_a_client_level_header(settings, contracts):
+    settings.anthropic_api_key = SecretStr("test-only-fake-key-workspace-0000")
+    settings.anthropic_workspace_id = "wrkspc_01TestOnlyExample"
+    client = ModelGateway(settings, contracts)._get_client()
+    assert client.default_headers["anthropic-workspace-id"] == "wrkspc_01TestOnlyExample"
+
+
+def test_without_a_workspace_id_no_workspace_header_is_sent(settings, contracts):
+    settings.anthropic_api_key = SecretStr("test-only-fake-key-workspace-0000")
+    client = ModelGateway(settings, contracts)._get_client()
+    assert "anthropic-workspace-id" not in client.default_headers
+
+
+def test_a_bad_request_from_the_models_api_is_reported_as_such(settings, contracts):
+    client = FakeClient(models=FakeModels(error=api_error(anthropic.BadRequestError, 400)))
+    report = gateway(settings, contracts, client).check_models()
+    assert {entry["status"] for entry in report.values()} == {"bad_request"}
+
+
+def test_a_malformed_workspace_id_is_refused():
+    import pytest
+    from pydantic import ValidationError
+
+    from app.config import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None, anthropic_workspace_id="not-a-workspace")
