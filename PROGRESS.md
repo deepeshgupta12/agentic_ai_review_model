@@ -9,7 +9,7 @@
 | 01 | [Requirements, source access and acceptance definition](steps/01-requirements-and-access.md) | complete (approved 25 Sep 2026) | `2b6476c`, `f0932cb`, `90a8c8b`: `seed/`, `scripts/validate_inputs.py`, `scripts/tests/`, `scripts/run_step01_checks.sh`, `evals/step-01-evaluation-brief.md`, `DECISIONS.md` | [logs/step-01](logs/step-01/README.md): all checks OK at `90a8c8b` (57/57 tests, N1–N5 fail as expected); mutation check OK at `f0932cb` |
 | 02 | [UX, architecture and contracts](steps/02-ux-architecture-and-contracts.md) | complete (approved 28 Sep 2026) | `57c8e3e`, `fb6cf66`, `88685f6`: `contracts/v1/`, `docs/09`, `docs/10`, `scripts/contract_tools.py`, `scripts/check_contracts.py`, `scripts/build_openapi.py`, `scripts/build_fixtures.py`, `scripts/jcs_check.mjs`, `scripts/tests/test_contracts.py`, `scripts/run_step02_checks.sh`, `seed/`, `DECISIONS.md` | [logs/step-02](logs/step-02/README.md): all checks OK at `88685f6` (127/127 tests, checker 13/13, N1–N6 as expected); product owner's own run OK at `bec6225`; mutation checks OK |
 | 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | complete (approved 28 Sep 2026) | `0847027`, `54d3954`, `38be1be`, `174d6ae`: `backend/`, `web/`, `docker-compose.yml`, `.env.example`, `Makefile`, `.github/workflows/ci.yml`, `prompts/`, `scripts/init_env.py`, `scripts/run_step03_checks.sh`, `scripts/run_step03_mutations.sh`, `DECISIONS.md` | [logs/step-03](logs/step-03/README.md): all 45 checks OK at `174d6ae`; product owner's own run OK at `929a4ac` (45/45 checks, 12/12 mutants caught); CI green. Live model call still pending the Anthropic key (I02) |
-| 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | not_started | — | — |
+| 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | in_progress (built and checked; awaiting approval of P–T) | `9495f30`, `2a030e4`, `da76682`, `ed57fdf`: `backend/app/identity/`, `backend/app/api/routes_projects.py`, `routes_identity.py`, `idempotency.py`, `backend/app/decisions.py`, `backend/app/setup/database.py`, `seed/construction_status.json`, `evals/identity/v1/`, `prompts/a01_project_identity.1.0.md`, `contracts/v1/state_machines.json` and `journeys.json` (1.1.0), `scripts/run_step04_checks.sh`, `scripts/run_step04_mutations.sh`, `DECISIONS.md` | [logs/step-04](logs/step-04/README.md): 32/32 checks at `ed57fdf` (142 backend tests); 16/16 mutants caught; CI green incl. identity smoke in containers. Synthetic evaluation 22/22 auto-accepts correct (not a real-world measure, D39). Live A01 pending the Anthropic key (I02); dependent findings/approvals join invalidation at Steps 07–11 |
 | 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | not_started | — | — |
 | 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | not_started | — | — |
 | 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | not_started | — | — |
@@ -25,8 +25,9 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 
 ## Current handoff
 
-- Active step: 04, not started. Step 03 is complete: L–O approved 28 Sep 2026 (D29–D32 accepted); the product owner ran both check scripts and confirmed the console works. [logs/step-03/README.md](logs/step-03/README.md).
-- Next action: build Step 04 (import and reconciliation with per-phase construction status, search identity, bounded queries, candidate matching, corrections, alias proposals by A01, identity evaluation). Inputs recorded 28 Sep 2026: I01 (alternate names found by A01, none supplied) and I16 (phase statuses; M3M Antalya Hills Phase II unknown until confirmed).
+- Active step: 04, built and checked, **awaiting product-owner approval of P–T** (D35 contract amendment, D36 matching rules, D37 alternate-name rules, D38 storage and interim sources, D39 synthetic evaluation). Test plan, commands and results: [logs/step-04/README.md](logs/step-04/README.md).
+- Next action: the product owner runs `bash scripts/run_step04_checks.sh` and `bash scripts/run_step04_mutations.sh` and approves or amends P–T. Then Step 05 (text and social collection) starts, building the D33/D34 tools; its first live gates need Brave, YouTube and optionally Reddit credentials (I03).
+- Open, not blocking: M3M Antalya Hills Phase II construction status (unknown until confirmed; living claims about it go to review); Anthropic key (I02) for live A01 and alias-proposal precision.
 - Collection tools and competitor portals decided 28 Sep 2026 (D33, D34; I05 settled): built in Steps 05–06 after Step 04. Account sign-in, bot-protection bypass and robots-disallowed paths are not built; 99acres, Housing.com and MagicBricks project pages stay `access_pending` under those rules.
 - Local stack: `make up` then `make seed`; sign in as `deepesh.gupta@client-site.example`. The password is only in the local `.env` (`SEED_USER_PASSWORD`, git-ignored, mode 600), never in the repository.
 - Running services: MongoDB 8.0 replica set `rs0`, API :8000, worker, scheduler and web :3000, all on 127.0.0.1. Fixture mode (explicit banner; nothing can be published).
@@ -37,8 +38,8 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 - Repository: https://github.com/deepeshgupta12/agentic_ai_review_model (private), all work on `main` (D18). CI (`.github/workflows/ci.yml`) runs contracts, backend, web and Compose jobs on every push.
 - Credentials: none configured. First expected: Anthropic API key (I02), then Brave/Firecrawl/YouTube (I03).
 - Fixture/live distinction: `contracts/client-data-example.json` is fictional and must not be presented as source evidence.
-- Last implemented commit: see `git log`; Step 03 closed after `929a4ac`.
-- Last executed product checks: product owner's `bash scripts/run_step03_checks.sh` at `929a4ac`, all 45 OK ([log](logs/step-03/checks-20260928T090216Z.log)), and `bash scripts/run_step03_mutations.sh`, 12/12 caught ([log](logs/step-03/mutation-check-20260928T090409Z.log)).
+- Last implemented commit: `ed57fdf` (Step 04).
+- Last executed product checks: `bash scripts/run_step04_checks.sh` at `ed57fdf`, all 32 OK ([log](logs/step-04/checks-20260929T041158Z.log)); `bash scripts/run_step04_mutations.sh` at `da76682`, 16/16 caught ([log](logs/step-04/mutation-check-20260928T121611Z.log)).
 - Tooling: backend `cd backend && uv run …` (unset any `VIRTUAL_ENV` from another project; the Makefile does this); web `cd web && pnpm …`; contract checks in `.venv` (D26). `make help` lists everything.
 
 ## Session log
@@ -171,6 +172,36 @@ Known defects / missing inputs / owner: I01 alternate names and I16 per-phase st
   Anthropic key I02 (product owner)
 Remaining acceptance checks: none for Step 03 beyond the live smoke call, which waits for the key
 Next executable action: collect I01 and I16, then start Step 04
+```
+
+```text
+Date / tool / branch / commit: 2026-09-28 → 2026-09-29 / Claude Code (VS Code) / main / eb8edde → ed57fdf
+Step and scope completed: Step 04 (04.1–04.8) built and checked; awaiting approval of P–T. Also recorded D33/D34
+  (collection tools, competitor portals; I05 settled) and I01/I16 (alternate names by A01; phase statuses)
+Files changed: backend/app/identity/ (rules, text, catalogue, matching, intake, evidence, links, aliases, agent,
+  queries, invalidation, service, policies, evaluation); backend/app/api/routes_projects.py, routes_identity.py,
+  idempotency.py, deps.py, main.py; backend/app/decisions.py; backend/app/setup/database.py (8 collections);
+  backend/app/seed/projects.py (shared import, status seeding); backend/app/cli.py (match-text, plan-queries,
+  eval-identity, fixture-smoke-identity); backend/app/jobs/queue.py (enqueue in a transaction); worker registers
+  invalidate_dependencies; backend/Dockerfile (prompts, evals); 7 new test files; contracts/v1 state machines and
+  journeys 1.1.0; docs/02, 04, 10; seed/construction_status.json; evals/identity/v1; prompts/a01_project_identity.1.0.md;
+  scripts/run_step04_checks.sh, run_step04_mutations.sh, run_step03_checks.sh (seed output shape); Makefile; CI;
+  README; CHANGELOG; DECISIONS.md; logs/step-04/
+Decisions made, with DECISIONS.md IDs: D33, D34 accepted (tools; competitor portals, risk accepted by the product
+  owner; account sign-in, bot-protection bypass and robots-disallowed paths declined); I01, I05, I16 settled;
+  D35–D39 proposed
+Checks actually run and results: run_step04_checks.sh at ed57fdf: 32/32 OK (regression; 142 backend tests; web
+  gates; setup and seeding idempotent incl. 7 status records; catalogue/config APIs through the web app; five query
+  plans; three real-catalogue dry runs; fixture smoke on a scratch database with the real worker; evaluation;
+  N1–N6; hygiene incl. no fixture data in the real catalogue). Mutation check at da76682: 16/16 caught after two
+  weak tests found by its first run were strengthened. CI green on da76682 incl. identity smoke in containers.
+  Web research for I16 (M3M Antalya Hills phases) with sources recorded in seed/construction_status.json.
+Live integrations verified (credential present + real query result): none; no credentials configured
+Fixture-only behavior still awaiting live validation: A01 (fake client only); identity evaluation is synthetic (D39)
+Known defects / missing inputs / owner: approvals P–T (product owner); Antalya Phase II status (product owner);
+  Anthropic key I02 (product owner); findings/approval invalidation completes at Steps 07–11 (implementer)
+Remaining acceptance checks: approval of P–T; the invalidation of findings and approvals once they exist
+Next executable action: product owner runs the Step 04 checks and approves or amends P–T
 ```
 
 ## Session entry template
