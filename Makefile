@@ -6,13 +6,16 @@ COMPOSE := docker compose
 
 .PHONY: help env up down logs ps seed seed-projects seed-users smoke-model config \
         install test test-contracts test-backend test-web lint typecheck check-step01 check-step02 check-step03 mutations-step03 \
-        check-step04 mutations-step04 plan-queries eval-identity smoke-identity
+        check-step04 mutations-step04 plan-queries eval-identity smoke-identity set-secret
 
 help: ## Show the available commands
 	@grep -E '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  make %-17s %s\n", $$1, $$2}'
 
 env: ## Create or complete .env (keeps your values, generates secrets)
 	python3 scripts/init_env.py
+
+set-secret: ## Store one credential in .env from a hidden prompt: make set-secret NAME=ANTHROPIC_API_KEY
+	python3 scripts/set_env_secret.py $(NAME)
 
 up: env ## Build and start MongoDB, API, worker, scheduler and web; waits until healthy
 	$(COMPOSE) up -d --build --wait

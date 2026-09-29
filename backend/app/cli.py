@@ -8,7 +8,7 @@ python -m app.cli check-config
 python -m app.cli match-text --text TEXT [--focus SLUG ...]   (dry run: nothing is stored)
 python -m app.cli plan-queries [--project SLUG]
 python -m app.cli eval-identity [--save]
-python -m app.cli fixture-smoke-identity   (fictional catalogue in a scratch database, then dropped)
+python -m app.cli fixture-smoke-identity [--live-a01]   (fictional catalogue in a scratch database, dropped)
 """
 
 from __future__ import annotations
@@ -209,7 +209,7 @@ def cmd_eval_identity(args: argparse.Namespace) -> int:
     return 0 if result["target_met"] else 1
 
 
-def cmd_fixture_smoke_identity(_: argparse.Namespace) -> int:
+def cmd_fixture_smoke_identity(args: argparse.Namespace) -> int:
     """The whole identity path on the fictional catalogue in a scratch database: source, match, links,
     evidence, a moderator correction and the worker's invalidation job. The real catalogue is untouched."""
     import secrets
@@ -226,6 +226,7 @@ def cmd_fixture_smoke_identity(_: argparse.Namespace) -> int:
     client = get_db().client
     scratch = client[f"sy_poc_smoke_{secrets.token_hex(4)}"]
     checks: dict[str, bool] = {}
+    live: dict[str, Any] | str = "not requested"
     try:
         setup_database(scratch, contracts)
         data = json.loads((REPO_ROOT / "evals" / "identity" / "v1" / "catalogue.json").read_text(encoding="utf-8"))
@@ -285,10 +286,62 @@ def cmd_fixture_smoke_identity(_: argparse.Namespace) -> int:
         checks["evidence on the rejected link is now ineligible"] = (
             audit is not None and audit["details"]["evidence_made_ineligible"] == 1
         )
+        if args.live_a01:
+            live = _live_a01_check(client, scratch, contracts, settings, source, q, checks)
     finally:
         client.drop_database(scratch.name)
-    _print({"scratch_database": scratch.name, "dropped": True, "checks": checks})
+    summary: dict[str, Any] = {"scratch_database": scratch.name, "dropped": True, "checks": checks}
+    if args.live_a01:
+        summary["live_a01"] = live
+    _print(summary)
     return 0 if checks and all(checks.values()) else 1
+
+
+def _live_a01_check(
+    client: Any,
+    scratch: Any,
+    contracts: Any,
+    settings: Any,
+    source: Any,
+    project_id: str,
+    checks: dict[str, bool],
+) -> dict[str, Any] | str:
+    """One real A01 call on a fictional review segment (a few cents). Skipped without an API key."""
+    from app.agents.gateway import ModelGateway
+    from app.identity.service import identify_source
+
+    gateway = ModelGateway(settings, contracts)
+    if not gateway.available:
+        return "skipped: no ANTHROPIC_API_KEY configured"
+    review = source(
+        "live-a01",
+        "Quillon Residences, Gurgaon: locals call the lake-facing towers QR Lakeside. "
+        "Possession of the second phase keeps slipping.",
+    )
+    report = identify_source(
+        client, scratch, contracts, settings.seed_dir, review, focus_project_ids=[project_id], gateway=gateway
+    )
+    a01 = report["a01"][0] if report["a01"] else None
+    link = scratch["ai_project_source_links"].find_one({"source.id": review["id"], "project_id": project_id})
+    run = scratch["ai_agent_runs"].find_one({"agent": "A01_project_identity"})
+    checks["live A01 answered in the contract shape"] = bool(a01) and a01 is not None and a01["error"] is None
+    checks["live A01 cannot accept: the link stays in review"] = link is not None and link["status"] == "needs_review"
+    checks["live A01 call recorded with the returned model and usage"] = bool(
+        run and run["returned_model"] and run["usage"]["input_tokens"]
+    )
+    return {
+        "requested_model": run["requested_model"] if run else None,
+        "returned_model": run["returned_model"] if run else None,
+        "provider_request_id": run["provider_request_id"] if run else None,
+        "usage": run["usage"] if run else None,
+        "outcome": a01["outcome"] if a01 else None,
+        "error": a01["error"] if a01 else None,
+        "link_rationale": link["match"]["rationale"][:400] if link else None,
+        "alias_proposals": [
+            {"alias": r["alias_text"], "outcome": r["outcome"], "reason": r["reason"]}
+            for r in (a01["alias_proposals"] if a01 else [])
+        ],
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -319,9 +372,9 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("eval-identity", help="identity evaluation on the labelled dataset")
     p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
     p.set_defaults(func=cmd_eval_identity)
-    sub.add_parser(
-        "fixture-smoke-identity", help="identity path on the fictional catalogue in a scratch database"
-    ).set_defaults(func=cmd_fixture_smoke_identity)
+    p = sub.add_parser("fixture-smoke-identity", help="identity path on the fictional catalogue in a scratch database")
+    p.add_argument("--live-a01", action="store_true", help="also make one real A01 call (needs ANTHROPIC_API_KEY)")
+    p.set_defaults(func=cmd_fixture_smoke_identity)
     args = parser.parse_args(argv)
     return int(args.func(args))
 

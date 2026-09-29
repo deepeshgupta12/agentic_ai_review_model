@@ -1,7 +1,7 @@
 {
   "version": 1,
-  "updated": "2026-09-28",
-  "note": "Construction status by project and phase (I16, D27), added to ai_project_configs by `make seed-projects`. Each record follows catalogue.schema.json StatusRecord plus the project slug. Status is context for the consistency checks, never a published fact. A phase with no record uses the project-level status; M3M Antalya Hills Phase II has none on purpose (unknown: its RERA completion date, 30 Jun 2026, has passed and no source confirms an OC or handover), so first-hand living claims about it go to review.",
+  "updated": "2026-09-29",
+  "note": "Construction status by project and phase (I16, D27), added to ai_project_configs by `make seed-projects`. Each record follows catalogue.schema.json StatusRecord plus the project slug. Status is context for the consistency checks, never a published fact. A phase with no record uses the project-level status. M3M Antalya Hills Phase II was unknown until the product owner confirmed it on 29 Sep 2026.",
   "records": [
     {
       "project_slug": "dlf-privana-sector-76-gurgaon",
@@ -42,6 +42,14 @@
       "basis": "developer_page",
       "as_of": "2026-03-23",
       "note": "M3M announced the occupancy certificate and the start of possession on 23 Mar 2026 (m3mindia.com); the HARERA certificate (registration 125 of 2022, 636 units) declared completion by 31 Dec 2025. The announcement does not name the phase; Phase I is the only one that was due by then (web research, 28 Sep 2026)"
+    },
+    {
+      "project_slug": "m3m-antalya-hills-sector-79-gurgaon",
+      "status": "ready_to_move",
+      "applies_to": { "kind": "phase", "rera_id": "GGM/833/565/2024/60" },
+      "basis": "moderator",
+      "as_of": "2026-09-29",
+      "note": "M3M Antalya Hills Phase II; product owner, 29 Sep 2026 (RERA completion date was 30 Jun 2026)"
     },
     {
       "project_slug": "m3m-antalya-hills-sector-79-gurgaon",

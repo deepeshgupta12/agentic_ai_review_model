@@ -170,3 +170,21 @@ def test_without_a_key_nothing_is_called(db, contracts, settings, fictional):
     )
     assert report["a01"] == [] and db["ai_agent_runs"].count_documents({}) == 0
     assert report["links"][0]["status"] == "needs_review"
+
+
+def test_the_live_a01_smoke_option_checks_a_real_shaped_answer(db, settings, contracts, monkeypatch, capsys):
+    from app import cli
+    from app.agents import gateway as gateway_module
+
+    real = gateway_module.ModelGateway
+    fake = A01Fake(lambda segs: result([segment(s, None, decision="ambiguous") for s in segs]))
+    monkeypatch.setattr(gateway_module, "ModelGateway", lambda s, c: real(s, c, client=fake))
+    monkeypatch.setattr(cli, "get_db", lambda: db)
+    monkeypatch.setattr(cli, "get_settings", lambda: settings)
+    monkeypatch.setattr(cli, "get_contracts", lambda: contracts)
+    before = set(db.client.list_database_names())
+    assert cli.main(["fixture-smoke-identity", "--live-a01"]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert len(report["checks"]) == 9 and all(report["checks"].values())
+    assert report["live_a01"]["returned_model"] == "claude-sonnet-5" and report["live_a01"]["error"] is None
+    assert len(fake.calls) == 1 and set(db.client.list_database_names()) == before

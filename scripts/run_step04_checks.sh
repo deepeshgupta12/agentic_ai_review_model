@@ -120,7 +120,7 @@ report = json.load(open(sys.argv[1]))
 for row in report["construction_status"]:
     print(f"  {row['project_slug']}: {row['applies_to']} -> {row['status']} ({row['outcome']})")
 ok = len(report["projects"]) == 5 and all(p["outcome"] == "unchanged" for p in report["projects"])
-ok = ok and len(report["construction_status"]) == 7 and all(r["outcome"] == "unchanged" for r in report["construction_status"])
+ok = ok and len(report["construction_status"]) == 8 and all(r["outcome"] == "unchanged" for r in report["construction_status"])
 print("second run: projects and status records unchanged" if ok else "second run changed something")
 sys.exit(0 if ok else 1)
 EOF
@@ -167,7 +167,7 @@ for target, status in sorted(records.items()):
     print(f"  {target}: {status}")
 aliases = [a["text"] for a in config["aliases"]]
 print("  aliases:", ", ".join(aliases))
-ok = records.get("GGM/650/382/2022/125") == "ready_to_move" and "GGM/833/565/2024/60" not in records
+ok = records.get("GGM/650/382/2022/125") == "ready_to_move" and records.get("GGM/833/565/2024/60") == "ready_to_move"
 sys.exit(0 if ok else 1)
 EOF
 }
@@ -382,12 +382,12 @@ expect "Web: eslint, TypeScript, API types, unit tests" 0 bash -c "cd web && pnp
 expect "Stack builds and every service is healthy" 0 docker compose up -d --build --wait
 expect "Long-running services up" 0 services_running
 expect "UC-26: repeating database setup changes nothing (16 collections)" 0 setup_db_is_a_no_op
-expect "UC-26: seeding twice; projects and 7 status records unchanged (I16)" 0 seed_twice_with_statuses
+expect "UC-26: seeding twice; projects and 8 status records unchanged (I16)" 0 seed_twice_with_statuses
 expect "Hygiene: the real catalogue holds the five projects and no fixture data" 0 real_catalogue_has_no_fixture_data
 
 expect "Sign in through the web app" 0 sign_in
 expect "UC-26: portfolio lists five projects (contract)" 0 list_projects
-expect "UC-26: project detail with phase statuses; Antalya Phase II unknown (contract)" 0 project_detail_has_statuses
+expect "UC-26: project detail with phase statuses; Antalya Phases 1 and II ready (contract)" 0 project_detail_has_statuses
 expect "UC-26: import needs an Idempotency-Key; the same key replays the result" 0 import_is_idempotent
 expect "UC-29: alias proposals list (contract); unknown proposal 404" 0 alias_proposals_listed
 

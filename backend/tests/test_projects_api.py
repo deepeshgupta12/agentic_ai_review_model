@@ -123,20 +123,22 @@ def test_config_changes_need_the_expected_version(api, db, make_user, contracts,
 def test_real_catalogue_gets_the_recorded_phase_statuses(db, contracts, settings):
     seed_projects(db.client, db, contracts, REAL_INPUT, settings.seed_dir)
     first = seed_status_records(db.client, db, contracts, STATUS_FILE)
-    assert [r["outcome"] for r in first] == ["added"] * 7
+    assert [r["outcome"] for r in first] == ["added"] * 8
     again = seed_status_records(db.client, db, contracts, STATUS_FILE)
-    assert [r["outcome"] for r in again] == ["unchanged"] * 7, "seeding statuses is idempotent"
+    assert [r["outcome"] for r in again] == ["unchanged"] * 8, "seeding statuses is idempotent"
     antalya = db["projects"].find_one({"slug": "m3m-antalya-hills-sector-79-gurgaon"})
     records = db["ai_project_configs"].find_one({"_id": antalya["_id"]})["construction_status"]
     by_target = {r["applies_to"]["rera_id"]: r["status"] for r in records}
     assert by_target["GGM/650/382/2022/125"] == "ready_to_move"
-    assert "GGM/833/565/2024/60" not in by_target, "Phase II stays unknown until confirmed (I16)"
+    assert by_target["GGM/833/565/2024/60"] == "ready_to_move", "Phase II confirmed by the product owner (I16)"
     assert by_target[None] == "partially_ready"
     import contract_tools
 
-    assert contract_tools.consistency_flags("resident_experience", records, "GGM/833/565/2024/60", "2026-09-28") == [
+    phase_ii = "GGM/833/565/2024/60"
+    assert contract_tools.consistency_flags("resident_experience", records, phase_ii, "2026-09-28") == [
         "status_unknown"
-    ]
+    ], "before the record's date the project-level status (partially ready) applies"
+    assert contract_tools.consistency_flags("resident_experience", records, phase_ii, "2026-09-30") == []
     assert contract_tools.consistency_flags("resident_experience", records, "GGM/650/382/2022/125", "2026-09-28") == []
     privana = db["projects"].find_one({"slug": "dlf-privana-sector-76-gurgaon"})
     dlf = db["ai_project_configs"].find_one({"_id": privana["_id"]})["construction_status"]
