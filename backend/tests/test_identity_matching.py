@@ -156,3 +156,28 @@ def test_helpers():
     assert not contains_unit_guarded("zephyrine crest 3 bhk", "zephyrine crest 3")
     text = "  one \n\n\n two\n"
     assert [text[a:b] for a, b in paragraphs(text)] == ["one", "two"]
+
+
+def test_a_comparison_video_links_each_project_to_its_own_time_segments(ids):
+    """Pre-cut media segments (Step 06 supplies them from authorised transcripts) stand alone."""
+    from app.identity.matching import Segment
+
+    def timed(start_ms, end_ms, text):
+        anchor = {
+            "kind": "time",
+            "start_ms": start_ms,
+            "end_ms": end_ms,
+            "precision": "exact",
+            "method": "transcript_segment",
+        }
+        return Segment(f"t:{start_ms}-{end_ms}", text, anchor)
+
+    segments = [
+        timed(0, 60000, "First up, Quillon Residences in Sector 102. Big balconies, far from the metro."),
+        timed(60000, 125000, "Next, Tavira Vista in Sector 88. Better finishing in the show flat."),
+        timed(125000, 150000, "Subscribe for more property tours."),
+    ]
+    got = by_project(match_text(ids, " ".join(s.text for s in segments), [Q], segments=segments))
+    assert set(got) == {Q, T}
+    assert got[Q].segment.key == "t:0-60000" and got[T].segment.key == "t:60000-125000"
+    assert got[Q].status == got[T].status == "auto_accepted"
