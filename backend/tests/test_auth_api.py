@@ -3,9 +3,11 @@ requests are rejected; CSRF is enforced on mutations)."""
 
 from __future__ import annotations
 
+import json
 from datetime import timedelta
 
 from app.auth.sessions import CSRF_COOKIE, SESSION_COOKIE
+from app.config import REPO_ROOT
 from app.db import utcnow
 
 from .conftest import PASSWORD, login
@@ -114,7 +116,9 @@ def test_allowed_role_is_accepted_and_response_matches_contract(api, make_user, 
     response = api.get("/v1/connectors/health")
     assert response.status_code == 200
     assert contracts.errors(response.json(), "api.schema.json#/$defs/ConnectorHealthList") == []
-    assert {c["status"] for c in response.json()["connectors"]} == {"access_pending"}
+    registry = json.loads((REPO_ROOT / "seed" / "connectors.json").read_text(encoding="utf-8"))
+    expected = {c["id"]: c["status"] for c in registry["model_providers"] + registry["connectors"]}
+    assert {c["connector_id"]: c["status"] for c in response.json()["connectors"]} == expected
 
 
 def test_roles_come_from_the_contract(api, make_user, contracts):

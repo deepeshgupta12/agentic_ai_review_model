@@ -8,8 +8,8 @@
 |---|---|---|---|---|
 | 01 | [Requirements, source access and acceptance definition](steps/01-requirements-and-access.md) | complete (approved 25 Sep 2026) | `2b6476c`, `f0932cb`, `90a8c8b`: `seed/`, `scripts/validate_inputs.py`, `scripts/tests/`, `scripts/run_step01_checks.sh`, `evals/step-01-evaluation-brief.md`, `DECISIONS.md` | [logs/step-01](logs/step-01/README.md): all checks OK at `90a8c8b` (57/57 tests, N1–N5 fail as expected); mutation check OK at `f0932cb` |
 | 02 | [UX, architecture and contracts](steps/02-ux-architecture-and-contracts.md) | complete (approved 28 Sep 2026) | `57c8e3e`, `fb6cf66`, `88685f6`: `contracts/v1/`, `docs/09`, `docs/10`, `scripts/contract_tools.py`, `scripts/check_contracts.py`, `scripts/build_openapi.py`, `scripts/build_fixtures.py`, `scripts/jcs_check.mjs`, `scripts/tests/test_contracts.py`, `scripts/run_step02_checks.sh`, `seed/`, `DECISIONS.md` | [logs/step-02](logs/step-02/README.md): all checks OK at `88685f6` (127/127 tests, checker 13/13, N1–N6 as expected); product owner's own run OK at `bec6225`; mutation checks OK |
-| 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | complete (approved 28 Sep 2026) | `0847027`, `54d3954`, `38be1be`, `174d6ae`: `backend/`, `web/`, `docker-compose.yml`, `.env.example`, `Makefile`, `.github/workflows/ci.yml`, `prompts/`, `scripts/init_env.py`, `scripts/run_step03_checks.sh`, `scripts/run_step03_mutations.sh`, `DECISIONS.md` | [logs/step-03](logs/step-03/README.md): all 45 checks OK at `174d6ae`; product owner's own run OK at `929a4ac` (45/45 checks, 12/12 mutants caught); CI green. Live model call still pending the Anthropic key (I02) |
-| 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | complete (approved 29 Sep 2026) | `da76682`, `ed57fdf`, `5cc63a6`: `backend/app/identity/`, `backend/app/api/routes_projects.py`, `routes_identity.py`, `idempotency.py`, `backend/app/decisions.py`, `seed/construction_status.json`, `evals/identity/v1/`, `prompts/a01_project_identity.1.0.md`, `contracts/v1/state_machines.json` and `journeys.json` (1.1.0), `scripts/run_step04_*.sh`, `scripts/set_env_secret.py`, `DECISIONS.md` | [logs/step-04](logs/step-04/README.md): 32/32 at `5cc63a6` (143 backend tests); product owner's run 32/32 and 16/16 mutants at `4606c3a`; CI green. Carried forward: live A01 once the Anthropic key is in `.env`; invalidation of findings and approvals joins at Steps 07–11 |
+| 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | complete (approved 28 Sep 2026) | `0847027`, `54d3954`, `38be1be`, `174d6ae`: `backend/`, `web/`, `docker-compose.yml`, `.env.example`, `Makefile`, `.github/workflows/ci.yml`, `prompts/`, `scripts/init_env.py`, `scripts/run_step03_checks.sh`, `scripts/run_step03_mutations.sh`, `DECISIONS.md` | [logs/step-03](logs/step-03/README.md): all 45 checks OK at `174d6ae`; product owner's own run OK at `929a4ac` (45/45 checks, 12/12 mutants caught); CI green. Live model check done 29 Sep 2026: `claude-sonnet-5` and `claude-opus-5-5` confirmed, structured outputs on both ([log](logs/step-03/live-model-check-20260929T060000Z.log)) |
+| 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | complete (approved 29 Sep 2026) | `da76682`, `ed57fdf`, `5cc63a6`: `backend/app/identity/`, `backend/app/api/routes_projects.py`, `routes_identity.py`, `idempotency.py`, `backend/app/decisions.py`, `seed/construction_status.json`, `evals/identity/v1/`, `prompts/a01_project_identity.1.0.md`, `contracts/v1/state_machines.json` and `journeys.json` (1.1.0), `scripts/run_step04_*.sh`, `scripts/set_env_secret.py`, `DECISIONS.md` | [logs/step-04](logs/step-04/README.md): 32/32 at `5cc63a6` (143 backend tests); product owner's run 32/32 and 16/16 mutants at `4606c3a`; CI green. Live A01 verified 29 Sep 2026 ([log](logs/step-04/live-a01-check-20260929T060000Z.log)). Carried forward: invalidation of findings and approvals joins at Steps 07–11 |
 | 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | not_started | — | — |
 | 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | not_started | — | — |
 | 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | not_started | — | — |
@@ -26,7 +26,7 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 ## Current handoff
 
 - Active step: 05 (text and social collection), not started. Step 04 is complete: P–T approved 29 Sep 2026 (D35–D39 accepted); the product owner ran both check scripts. M3M Antalya Hills Phase II confirmed ready to move (I16 closed).
-- Next action: the product owner stores the Anthropic key with `make set-secret NAME=ANTHROPIC_API_KEY` (hidden prompt; never pasted into chat or committed), then `make up`. The implementer then runs `make smoke-model` and `fixture-smoke-identity --live-a01`, records the returned model IDs here, and moves the `anthropic` connector to live. Step 05 then starts; its mandatory live gates need `BRAVE_SEARCH_API_KEY` and `YOUTUBE_API_KEY` (I03), stored the same way.
+- Next action: start Step 05 (text and social collection): Brave Search discovery, the Crawl4AI web adapter, the YouTube Data API, and collection jobs feeding Step 04 identity. The Anthropic connector is live (29 Sep 2026). The Brave key is in `.env`; its live gate is demonstrated in Step 05. The YouTube key is still missing (I03, mandatory): the product owner adds it with `make set-secret NAME=YOUTUBE_API_KEY`, never in `.env.example`, which the pre-commit hook now guards.
 - Collection tools and competitor portals decided 28 Sep 2026 (D33, D34; I05 settled): built in Steps 05–06 after Step 04. Account sign-in, bot-protection bypass and robots-disallowed paths are not built; 99acres, Housing.com and MagicBricks project pages stay `access_pending` under those rules.
 - Local stack: `make up` then `make seed`; sign in as `deepesh.gupta@client-site.example`. The password is only in the local `.env` (`SEED_USER_PASSWORD`, git-ignored, mode 600), never in the repository.
 - Running services: MongoDB 8.0 replica set `rs0`, API :8000, worker, scheduler and web :3000, all on 127.0.0.1. Fixture mode (explicit banner; nothing can be published).
@@ -35,7 +35,7 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 - Deferred inputs, asked at the step that needs them (product owner's request): moderator capacity I11 (Step 09), correction owner I10 (before Step 11), demo machine I12 (Step 13).
 - Project inputs: all 5 in `contracts/five-project-input-template.json` with developers and 10 RERA registrations (D15, D16); slugs per D19; seeded into MongoDB by `make seed`.
 - Repository: https://github.com/deepeshgupta12/agentic_ai_review_model (private), all work on `main` (D18). CI (`.github/workflows/ci.yml`) runs contracts, backend, web and Compose jobs on every push.
-- Credentials: none configured. First expected: Anthropic API key (I02), then Brave/Firecrawl/YouTube (I03).
+- Credentials (names only): ANTHROPIC_API_KEY (workspace-scoped, live), BRAVE_SEARCH_API_KEY (present, not yet demonstrated). Missing: YOUTUBE_API_KEY (mandatory), Reddit (optional, needs approval).
 - Fixture/live distinction: `contracts/client-data-example.json` is fictional and must not be presented as source evidence.
 - Last implemented commit: `5cc63a6` (Step 04 closed).
 - Last executed product checks: `bash scripts/run_step04_checks.sh` at `5cc63a6`, all 32 OK ([log](logs/step-04/checks-20260929T054524Z.log)); product owner's runs at `4606c3a`: 32/32 checks, 16/16 mutants.
@@ -219,6 +219,29 @@ Fixture-only behavior still awaiting live validation: smoke-model real call and 
 Known defects / missing inputs / owner: Anthropic key in .env (product owner); Brave and YouTube keys for Step 05 (I03)
 Remaining acceptance checks: Step 03 live smoke call (key); Step 04 invalidation of findings/approvals (Steps 07–11)
 Next executable action: product owner runs `make set-secret NAME=ANTHROPIC_API_KEY` and `make up`
+```
+
+```text
+Date / tool / branch / commit: 2026-09-29 / Claude Code (VS Code) / main / ed0f13f → (this commit)
+Step and scope completed: Anthropic key live (Step 03 live smoke; Step 04 live A01); secret guard
+Files changed: scripts/check_no_secrets.py, Makefile (`make hooks`, pre-commit hook installed locally), CI (.env.example check);
+  backend: optional ANTHROPIC_WORKSPACE_ID (anthropic-workspace-id header), bad_request status in the model check;
+  seed/connectors.json (anthropic live); scripts/validate_inputs.py (live needs an existing evidence file) and its tests;
+  backend/tests/test_auth_api.py and run_step03_checks.sh (connector statuses follow the registry); DECISIONS (D10 verified,
+  I02 done, registry row, matrix); logs/step-03 and step-04 live logs and READMEs; PROGRESS.md
+Decisions made, with DECISIONS.md IDs: D10 verified on the account; I02 done
+Checks actually run and results: the product owner pasted keys into .env.example as well as .env; found before any commit
+  (origin and HEAD had empty values), restored, and a pre-commit guard added and tested. First key was organisation-level:
+  400 "not scoped to a workspace"; the product owner replaced it with a workspace-scoped key and deleted the old one.
+  make smoke-model: 3 roles available, structured call completed (claude-sonnet-5, req_011CfXEZY6AQiDxY1oSagZyt,
+  1,102/61 tokens, abstained on no evidence). Opus 5.5 structured call completed (req_011CfXEe5LimvvW1x4j5MmQh).
+  fixture-smoke-identity --live-a01: 9/9 (A01 3,515/1,178 tokens; suggestion recorded, link stayed in review; alias
+  'QR Lakeside' proposed through the backend check). Regression: 128 Step 01–02 tests OK; checker 13/13
+Live integrations verified (credential present + real query result): anthropic (live, 29 Sep 2026)
+Fixture-only behavior still awaiting live validation: source connectors (Step 05)
+Known defects / missing inputs / owner: YOUTUBE_API_KEY (product owner, mandatory for Step 05)
+Remaining acceptance checks: Step 04 invalidation of findings/approvals joins at Steps 07–11
+Next executable action: start Step 05
 ```
 
 ## Session entry template

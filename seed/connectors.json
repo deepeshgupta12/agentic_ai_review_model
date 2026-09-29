@@ -12,9 +12,9 @@
       "demo_requirement": "mandatory",
       "credential_env": ["ANTHROPIC_API_KEY"],
       "demonstration": "make smoke-model (python -m app.cli smoke-model) confirms the configured model IDs and makes one real structured-output call; returned model ID and request ID recorded in PROGRESS.md (Step 03)",
-      "status": "access_pending",
-      "last_verified": null,
-      "verification_ref": null
+      "status": "live",
+      "last_verified": "2026-09-29",
+      "verification_ref": "logs/step-03/live-model-check-20260929T060000Z.log"
     }
   ],
   "connectors": [

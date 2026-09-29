@@ -134,6 +134,7 @@ make down
 | 2026-09-28 08:58 | `174d6ae` | Implementer | `bash scripts/run_step03_checks.sh` (final script) | ALL CHECKS OK, 45/45, same results with the renumbered labels; user seeding now runs twice | [checks-20260928T085829Z.log](checks-20260928T085829Z.log) |
 | 2026-09-28 09:02 | `929a4ac` | Product owner, own terminal | `bash scripts/run_step03_checks.sh` | ALL CHECKS OK, 45/45; independent confirmation before approval. Vitest warned that `vitest.config.ts` loads as CommonJS; renamed to `vitest.config.mts` afterwards (13/13 tests, no warning) | [checks-20260928T090216Z.log](checks-20260928T090216Z.log) |
 | 2026-09-28 09:04 | `929a4ac` | Product owner, own terminal | `bash scripts/run_step03_mutations.sh` | ALL MUTANTS CAUGHT, 12/12 | [mutation-check-20260928T090409Z.log](mutation-check-20260928T090409Z.log) |
+| 2026-09-29 06:00 | `8265bcf` | Implementer, product owner's machine | `make smoke-model` and one difficult-role call | First key (organisation-level) refused with 400; after replacing it with a workspace-scoped key: both model IDs available, structured outputs on Sonnet 5 and Opus 5.5 | [live-model-check-20260929T060000Z.log](live-model-check-20260929T060000Z.log) |
 
 The first runs found four problems, all fixed before these results:
 
@@ -151,7 +152,7 @@ No live integration was run. No Anthropic key is configured yet (I02), so the mo
 - [x] Unauthorised callers and wrong-role requests are rejected, and CSRF is enforced on mutations (UC-17; mutation check).
 - [x] A claimed job survives a worker restart, and an expired worker cannot complete a successor's job (UC-18, including a real worker restart).
 - [x] A transaction commit and abort succeed against the Compose replica set (UC-19, `test_database.py`).
-- [x] The smoke command reports "skipped: no key". The real structured-output call and the model-ID check wait for the Anthropic key (I02); the returned model ID goes in PROGRESS.md when it runs.
+- [x] The smoke command made a real structured-output call on 29 Sep 2026. The Models API confirmed `claude-sonnet-5` and `claude-opus-5-5`; both returned contract-shaped output. Returned model `claude-sonnet-5`, request `req_011CfXEZY6AQiDxY1oSagZyt` ([log](live-model-check-20260929T060000Z.log)). Before the key existed it reported "skipped: no key".
 - [x] No credential or raw source body appears in the repository or standard logs (UC-23; hygiene checks).
 - [x] PROGRESS.md records changed paths, decisions, evidence, unresolved dependencies and the next action.
 - [x] Product owner approved items L–O on 28 Sep 2026 (D18 gate) and confirmed the console works in the browser.

@@ -371,7 +371,7 @@ echo "python:     $("$PY" --version 2>&1) (.venv); backend $(cd backend && $UV r
 echo "node:       $(node --version 2>/dev/null) | pnpm $(pnpm --version 2>/dev/null) | docker $(docker version --format '{{.Server.Version}}' 2>/dev/null)"
 
 expect "Regression: Step 01 validator" 0 python3 scripts/validate_inputs.py
-expect "Regression: Step 01-02 use-case suites (127 tests)" 0 "$PY" -m unittest discover -s scripts/tests -q
+expect "Regression: Step 01-02 use-case suites" 0 "$PY" -m unittest discover -s scripts/tests -q
 expect "Regression: contract checker (state machines 1.1 and journeys 1.1, D35)" 0 "$PY" scripts/check_contracts.py
 
 expect "Backend: ruff lint and format" 0 bash -c "cd backend && $UV run ruff check . && $UV run ruff format --check ."

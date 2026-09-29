@@ -414,6 +414,8 @@ def _check_status(label: str, item: dict[str, Any], errors: list[str]) -> None:
         # docs/06: live only after a real credential and a recorded demonstration.
         if not _is_iso_date(item.get("last_verified")) or not _is_text(item.get("verification_ref")):
             errors.append(f"{label}: 'live' requires last_verified (date) and verification_ref (recorded demonstration)")
+        elif not (ROOT / item["verification_ref"]).is_file():
+            errors.append(f"{label}: verification_ref {item['verification_ref']} is not a file in the repository")
     elif status == "unavailable" and not _is_text(item.get("unavailable_reason")):
         errors.append(f"{label}: 'unavailable' requires unavailable_reason")
     if item.get("last_verified") is not None and not _is_iso_date(item.get("last_verified")):

@@ -1,0 +1,101 @@
+Live model checks (Step 03 acceptance: one real structured-output call; D10 model IDs)
+date: 2026-09-29 | commit: 8265bcf | run by: implementer, on the product owner's machine
+Credentials are read from .env; no value appears in this log.
+
+== 1. make smoke-model with the first key (organisation-level, not scoped to a workspace)
+{
+  "models": {
+    "routine": {
+      "model": "claude-sonnet-5",
+      "status": "provider_unavailable",
+      "resolved_id": null,
+      "display_name": null
+    },
+    "reasoning": {
+      "model": "claude-sonnet-5",
+      "status": "provider_unavailable",
+      "resolved_id": null,
+      "display_name": null
+    },
+    "difficult": {
+      "model": "claude-opus-5-5",
+      "status": "provider_unavailable",
+      "resolved_id": null,
+      "display_name": null
+    }
+  },
+  "outcome": "failed",
+  "model_outcome": null,
+  "requested_model": "claude-sonnet-5",
+  "returned_model": null,
+  "stop_reason": null,
+  "provider_request_id": null,
+  "usage": {
+    "input_tokens": null,
+    "output_tokens": null,
+    "cache_read_input_tokens": null,
+    "audio_seconds": null
+  },
+  "error": {
+    "code": "bad_request",
+    "message": "Error code: 400 - {'type': 'error', 'error': {'type': 'invalid_request_error', 'message': 'This API key is not scoped to a workspace, so this request must include the anthropic-workspace-id header with the ID of the workspace to use. Add the header, or use an API key that is scoped to a workspace.'}"
+  }
+}
+
+Result: refused with 400. The product owner replaced the key with a workspace-scoped key and deleted the first one.
+The gateway now also supports ANTHROPIC_WORKSPACE_ID for organisation-level keys (commit 8265bcf).
+
+== 2. make smoke-model with the workspace-scoped key
+{
+  "models": {
+    "routine": {
+      "model": "claude-sonnet-5",
+      "status": "available",
+      "resolved_id": "claude-sonnet-5",
+      "display_name": "Claude Sonnet 5"
+    },
+    "reasoning": {
+      "model": "claude-sonnet-5",
+      "status": "available",
+      "resolved_id": "claude-sonnet-5",
+      "display_name": "Claude Sonnet 5"
+    },
+    "difficult": {
+      "model": "claude-opus-5-5",
+      "status": "available",
+      "resolved_id": "claude-opus-5-5",
+      "display_name": "Claude Opus 5.5"
+    }
+  },
+  "outcome": "completed",
+  "model_outcome": "insufficient_evidence",
+  "requested_model": "claude-sonnet-5",
+  "returned_model": "claude-sonnet-5",
+  "stop_reason": "end_turn",
+  "provider_request_id": "req_011CfXEZY6AQiDxY1oSagZyt",
+  "usage": {
+    "input_tokens": 1102,
+    "output_tokens": 61,
+    "cache_read_input_tokens": 0,
+    "audio_seconds": null
+  },
+  "error": null
+}
+
+== 3. One structured-output call with the difficult role (Claude Opus 5.5), to settle the D10 note
+{
+  "outcome": "completed",
+  "model_outcome": "insufficient_evidence",
+  "requested_model": "claude-opus-5-5",
+  "returned_model": "claude-opus-5-5",
+  "stop_reason": "end_turn",
+  "provider_request_id": "req_011CfXEe5LimvvW1x4j5MmQh",
+  "usage": {
+    "input_tokens": 1104,
+    "output_tokens": 82,
+    "cache_read_input_tokens": 0,
+    "audio_seconds": null
+  },
+  "repair_used": false,
+  "error": null
+}

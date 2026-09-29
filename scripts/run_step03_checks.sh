@@ -246,7 +246,11 @@ import json, sys
 connectors = json.load(open(sys.argv[1]))["connectors"]
 statuses = {c["status"] for c in connectors}
 print(len(connectors), "connectors; statuses:", ", ".join(sorted(statuses)))
-sys.exit(0 if len(connectors) == 11 and statuses == {"access_pending"} else 1)
+registry = json.load(open("seed/connectors.json"))
+expected = {c["id"]: c["status"] for c in registry["model_providers"] + registry["connectors"]}
+shown = {c["connector_id"]: c["status"] for c in connectors}
+print("same statuses as the registry (seed/connectors.json):", shown == expected)
+sys.exit(0 if len(connectors) == 11 and shown == expected else 1)
 EOF
   status_is 200 -b "$JAR" "$WEB/console/operations" || return 1
   local rows
@@ -464,7 +468,7 @@ echo "docker:     $(docker version --format '{{.Server.Version}}' 2>/dev/null) |
 echo "seeded password in .env: $([ -n "$SEED_PASSWORD" ] && echo present || echo MISSING) (value not shown)"
 
 expect "Regression: Step 01 validator" 0 python3 scripts/validate_inputs.py
-expect "Regression: Step 01-02 use-case suites (127 tests)" 0 "$PY" -m unittest discover -s scripts/tests -q
+expect "Regression: Step 01-02 use-case suites" 0 "$PY" -m unittest discover -s scripts/tests -q
 expect "Regression: Step 02 contract checker" 0 "$PY" scripts/check_contracts.py
 
 expect "UC-24: stack builds and every service is healthy" 0 docker compose up -d --build --wait
@@ -495,7 +499,7 @@ expect "UC-17: wrong password is 401" 0 wrong_password_is_401
 expect "UC-17: sign-in sets HttpOnly session and CSRF cookies" 0 login_sets_cookies
 expect "UC-17: /v1/auth/me shows the coordinator's five roles" 0 me_has_all_roles
 expect "UC-25: console shows the user, fixture banner and 5 catalogue projects" 0 console_shows_user_and_projects
-expect "UC-25: operations: 11 connectors, all access_pending" 0 operations_lists_connectors
+expect "UC-25: operations: 11 connectors, statuses as in the registry" 0 operations_lists_connectors
 expect "UC-25: public page is the empty state, noindex" 0 public_page_empty_and_noindex
 expect "UC-17: logout without CSRF 403; with CSRF 204; old cookie 401" 0 logout_needs_csrf
 expect "UC-17: repeated failed logins are rate limited (429)" 0 login_rate_limited

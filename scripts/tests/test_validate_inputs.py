@@ -200,8 +200,19 @@ class UC03ConnectorMatrix(unittest.TestCase):
         errors, _ = vi.validate_connectors(self.data, self.families)
         self.assertEqual(errors, [])
 
-    def test_every_source_is_access_pending(self):
-        self.assertEqual({s["id"]: s["status"] for s in self.all_sources() if s["status"] != "access_pending"}, {})
+    def test_a_source_is_live_only_with_a_recorded_demonstration(self):
+        # Step 01 registered every source as access_pending; one goes live only with a dated, recorded demonstration.
+        for source in self.all_sources():
+            self.assertIn(source["status"], ("access_pending", "live"), source["id"])
+            if source["status"] == "live":
+                self.assertRegex(source["last_verified"], r"^\d{4}-\d{2}-\d{2}$", source["id"])
+                self.assertTrue((vi.ROOT / source["verification_ref"]).is_file(), source["id"])
+
+    def test_live_without_a_recorded_demonstration_file_fails(self):
+        data = copy.deepcopy(self.data)
+        data["model_providers"][0].update(status="live", last_verified="2026-09-29", verification_ref="logs/missing.log")
+        errors, _ = vi.validate_connectors(data, self.families)
+        self.assertTrue(any("is not a file in the repository" in e for e in errors), errors)
 
     def test_every_source_has_credential_plan_and_demonstration(self):
         for source in self.all_sources():
@@ -223,7 +234,7 @@ class UC03ConnectorMatrix(unittest.TestCase):
         assert_error(self, errors, "brave_search", "'live' requires")
 
     def test_live_with_recorded_demonstration_accepted(self):
-        self.data["connectors"][0].update(status="live", last_verified="2026-10-01", verification_ref="PROGRESS.md 2026-10-01")
+        self.data["connectors"][0].update(status="live", last_verified="2026-10-01", verification_ref="logs/step-03/live-model-check-20260929T060000Z.log")
         errors, _ = vi.validate_connectors(self.data, self.families)
         self.assertEqual(errors, [])
 
@@ -413,7 +424,9 @@ class UC07CommandLine(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["result"], "pass")
         self.assertEqual(payload["summary"]["projects"], 5)
-        self.assertEqual(payload["summary"]["connectors"]["by_status"], {"access_pending": 11})
+        by_status = payload["summary"]["connectors"]["by_status"]
+        self.assertEqual(sum(by_status.values()), 11)
+        self.assertLessEqual(set(by_status), {"access_pending", "live"})
 
 
 if __name__ == "__main__":

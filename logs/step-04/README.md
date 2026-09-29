@@ -134,8 +134,9 @@ The first run found two weak tests, both strengthened before the recorded run:
 | 2026-09-29 04:20 | `4606c3a` | Product owner, own terminal | `bash scripts/run_step04_checks.sh` | ALL CHECKS OK, 32/32; independent confirmation before approval | [checks-20260929T042049Z.log](checks-20260929T042049Z.log) |
 | 2026-09-29 04:24 | `4606c3a` | Product owner, own terminal | `bash scripts/run_step04_mutations.sh` | ALL MUTANTS CAUGHT, 16/16 | [mutation-check-20260929T042446Z.log](mutation-check-20260929T042446Z.log) |
 | 2026-09-29 05:45 | `5cc63a6` | Implementer | `bash scripts/run_step04_checks.sh` after approval, with Antalya Phase II ready (8 status records) | ALL CHECKS OK, 32/32; 143 backend tests | [checks-20260929T054524Z.log](checks-20260929T054524Z.log) |
+| 2026-09-29 06:00 | `8265bcf` | Implementer, product owner's machine | `fixture-smoke-identity --live-a01` | 9/9 checks. First live A01 call (claude-sonnet-5, 3,515 in / 1,178 out tokens): the output fit the contract; it suggested a match and the phase, and the link stayed in review; it proposed "QR Lakeside", which passed the backend check. Fictional text only | [live-a01-check-20260929T060000Z.log](live-a01-check-20260929T060000Z.log) |
 
-No live integration was run. There's no Anthropic key yet, so A01 is tested only with a recorded fake client, and no source connector exists until Step 05.
+The runs above use a recorded fake client for A01. The live A01 call on 29 Sep 2026 is recorded separately. No source connector exists until Step 05.
 
 ## Step 04 acceptance checks
 
@@ -161,4 +162,4 @@ No live integration was run. There's no Anthropic key yet, so A01 is tested only
 | S | Storage and interim sources: <ul><li>source text kept in an erasable payload store;</li><li>source policies read from the seed file until Step 05;</li><li>your phase statuses in `seed/construction_status.json`, with DLF Privana treated as under construction at project level;</li><li>up to 12 search queries per connector</li></ul> | D38 |
 | T | The identity evaluation is synthetic until Step 12; real precision is measured on collected, labelled data then | D39 |
 
-Settled on 29 Sep 2026: M3M Antalya Hills Phase II is ready to move (product owner). Still open: the Anthropic key (I02) goes into `.env` with `make set-secret NAME=ANTHROPIC_API_KEY`. After that, `make smoke-model` and `docker compose exec -T api python -m app.cli fixture-smoke-identity --live-a01` verify the model and A01 live.
+Settled on 29 Sep 2026: M3M Antalya Hills Phase II is ready to move (product owner), and A01 runs live on the account's workspace-scoped key ([log](live-a01-check-20260929T060000Z.log)). Alias-proposal precision still needs labelled real mentions (Step 12, D39).

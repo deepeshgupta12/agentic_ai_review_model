@@ -1,0 +1,41 @@
+Live A01 check (Step 04): fixture-smoke-identity --live-a01 on the fictional catalogue in a scratch database (dropped)
+date: 2026-09-29 | commit: 8265bcf | run by: implementer, on the product owner's machine
+The text sent to the model is fictional (evals/identity/v1 catalogue); no real project data was sent. No credential appears here.
+
+$ docker compose exec -T api python -m app.cli fixture-smoke-identity --live-a01
+{
+  "scratch_database": "sy_poc_smoke_cd24f40c",
+  "dropped": true,
+  "checks": {
+    "comparison: one source, two projects, distinct segments": true,
+    "same name in another city is rejected": true,
+    "evidence created for the accepted segment": true,
+    "moderator correction recorded": true,
+    "worker ran the invalidation job": true,
+    "evidence on the rejected link is now ineligible": true,
+    "live A01 answered in the contract shape": true,
+    "live A01 cannot accept: the link stays in review": true,
+    "live A01 call recorded with the returned model and usage": true
+  },
+  "live_a01": {
+    "requested_model": "claude-sonnet-5",
+    "returned_model": "claude-sonnet-5",
+    "provider_request_id": "req_011CfXEafPEWnn73S41dskJ1",
+    "usage": {
+      "input_tokens": 3515,
+      "output_tokens": 1178,
+      "cache_read_input_tokens": 0,
+      "audio_seconds": null
+    },
+    "outcome": "completed",
+    "error": null,
+    "link_rationale": "A01 suggests match: The text names 'Quillon Residences' and 'Gurgaon' directly, and references the 'second phase' possession, which corresponds to the catalogue's Quillon Residences Phase 2 registration. | rules: named without enough place, developer or RERA context; signals: project_name, city; rule score 450 of 1000 (threshold 550, identity-rules.1.0); matched by 'Quillon Residences'; 'Quillon' ",
+    "alias_proposals": [
+      {
+        "alias": "QR Lakeside",
+        "outcome": "proposed",
+        "reason": null
+      }
+    ]
+  }
+}
