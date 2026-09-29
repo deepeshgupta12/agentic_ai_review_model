@@ -1,8 +1,4 @@
-"""Store one text source revision and its erasable payload (docs/02 item 1; SourceRevision).
-
-Collectors (Step 05) call this; Step 04 uses it for fixtures and the identity evaluation. A source keeps
-one ID across revisions; unchanged content does not create a new revision.
-"""
+"""Store one text source revision (kept for Step 04 callers; the general path is app.sources.store)."""
 
 from __future__ import annotations
 
@@ -11,10 +7,8 @@ from typing import Any
 from pymongo.client_session import ClientSession
 from pymongo.database import Database
 
-from app.db import utcnow
-from app.identity.text import nfc, sha256_text
-from app.ids import new_id
 from app.sources import policies
+from app.sources.store import UNKNOWN_DATE, Item, store_item
 
 TEXT_KINDS = {"forum_thread", "forum_post", "article", "blog_post", "news_article", "comment", "registration_record"}
 
@@ -40,42 +34,20 @@ def store_text_source(
     policy = policies.current(db, policy_family, session=session)
     if policy is None or not policy["collection_allowed"]:
         raise PermissionError(f"the {policy_family} policy does not allow collection")
-    text = nfc(text)
-    digest = sha256_text(text)
-    latest = db["ai_sources"].find_one(
-        {"connector_id": connector_id, "native_id": native_id}, sort=[("revision", -1)], session=session
+    item = Item(
+        connector_id=connector_id,
+        native_id=native_id,
+        canonical_url=canonical_url,
+        source_kind=source_kind,
+        capture_level="full_content",
+        title=title,
+        text=text,
+        publication_date=publication_date or dict(UNKNOWN_DATE),
+        language=language,
+        author=author,
+        parent=parent,
     )
-    if latest is not None and latest["content_sha256"] == digest:
-        return latest
-    source_id = latest["id"] if latest else new_id("src")
-    revision = latest["revision"] + 1 if latest else 1
-    now = utcnow()
-    key = f"{source_id}@{revision}"
-    db["ai_payloads"].insert_one({"_id": key, "text": text, "sha256": digest, "created_at": now}, session=session)
-    doc = {
-        "_id": key,
-        "id": source_id,
-        "revision": revision,
-        "connector_id": connector_id,
-        "native_id": native_id,
-        "canonical_url": canonical_url,
-        "source_kind": source_kind,
-        "parent": parent,
-        "title": title,
-        "author": author,
-        "publication_date": publication_date or {"status": "unknown", "value": None, "precision": None, "basis": None},
-        "collected_at": now,
-        "language": language,
-        "capture_level": "full_content",
-        "content_sha256": digest,
-        "payload_ref": {"store": "payload_store", "key": key},
-        "policy": policies.ref_of(policy),
-        "lifecycle": "active",
-        "media": None,
-        "created_at": now,
-    }
-    db["ai_sources"].insert_one(doc, session=session)
-    return doc
+    return store_item(db, item, policy, session).source
 
 
 def source_text(

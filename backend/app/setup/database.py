@@ -102,6 +102,47 @@ def _idempotency_validator() -> dict[str, Any]:
     }
 
 
+def _quota_validator() -> dict[str, Any]:
+    """Provider quota windows (app/sources/quota.py)."""
+    return {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["_id", "connector_id", "bucket", "window_start", "window_end", "limit", "used"],
+            "properties": {
+                "_id": {"bsonType": "string"},
+                "connector_id": {"bsonType": "string"},
+                "bucket": {"bsonType": "string"},
+                "window_start": {"bsonType": "date"},
+                "window_end": {"bsonType": "date"},
+                "limit": {"bsonType": ["int", "long"], "minimum": 0},
+                "used": {"bsonType": ["int", "long"], "minimum": 0},
+            },
+        }
+    }
+
+
+def _fetch_log_validator() -> dict[str, Any]:
+    """One record per fetch decision (docs/06 rule 2): policy basis, robots.txt basis and outcome, never content."""
+    return {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["connector_id", "url", "host", "outcome", "at"],
+            "properties": {
+                "connector_id": {"bsonType": "string"},
+                "url": {"bsonType": "string"},
+                "host": {"bsonType": "string"},
+                "family": {"bsonType": ["string", "null"]},
+                "policy_version": {"bsonType": ["int", "long", "null"]},
+                "robots": {"bsonType": ["string", "null"]},
+                "outcome": {"bsonType": "string"},
+                "status_code": {"bsonType": ["int", "long", "null"]},
+                "run_id": {"bsonType": ["string", "null"]},
+                "at": {"bsonType": "date"},
+            },
+        }
+    }
+
+
 def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
     string = {"bsonType": "string"}
     return [
@@ -256,6 +297,22 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
             "ai_evaluations",
             contracts.mongo_validator("operations.schema.json#/$defs/EvaluationRun"),
             [IndexSpec("by_dataset", [("dataset.name", ASCENDING), ("created_at", DESCENDING)])],
+        ),
+        CollectionSpec(
+            "ai_connector_state",
+            contracts.mongo_validator(
+                "sources.schema.json#/$defs/ConnectorState", id_field=None, extra={"_id": string}
+            ),
+            [IndexSpec("by_connector_project", [("connector_id", ASCENDING), ("project_id", ASCENDING)])],
+        ),
+        CollectionSpec("ai_connector_quota", _quota_validator(), []),
+        CollectionSpec(
+            "ai_fetch_log",
+            _fetch_log_validator(),
+            [
+                IndexSpec("ttl_at", [("at", ASCENDING)], {"expireAfterSeconds": 90 * 86400}),
+                IndexSpec("by_host_time", [("host", ASCENDING), ("at", DESCENDING)]),
+            ],
         ),
         CollectionSpec(
             "ai_idempotency_keys",

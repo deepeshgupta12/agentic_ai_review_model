@@ -60,6 +60,20 @@ class Settings(BaseSettings):
     job_poll_seconds: float = Field(default=2.0, gt=0)
     run_budget_usd: float = Field(default=5.0, ge=0)
 
+    # Collection (Step 05, docs/06). The crawler identifies itself honestly; limits are per host and per provider.
+    crawler_user_agent: str = "ProjectIntelligenceBot/0.1 (project research POC; respects robots.txt)"
+    crawler_min_seconds_per_host: float = Field(default=3.0, ge=0)
+    crawler_max_bytes: int = Field(default=3_000_000, ge=10_000)
+    crawler_max_redirects: int = Field(default=5, ge=0, le=10)
+    crawler_timeout_seconds: float = Field(default=20.0, gt=0)
+    brave_monthly_queries: int = Field(default=2000, ge=0)
+    brave_pages_per_query: int = Field(default=2, ge=1, le=10)
+    youtube_daily_searches: int = Field(default=100, ge=0)
+    youtube_daily_units: int = Field(default=10_000, ge=0)
+    youtube_searches_per_project: int = Field(default=4, ge=0)
+    youtube_comment_pages_per_video: int = Field(default=3, ge=0)
+    web_pages_per_run: int = Field(default=40, ge=0)
+
     public_base_url: str = "http://localhost:3000"
     revalidation_secret: SecretStr | None = None
 
