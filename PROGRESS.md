@@ -26,7 +26,7 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 ## Current handoff
 
 - Active step: 05 (text and social collection), not started. Step 04 is complete: P–T approved 29 Sep 2026 (D35–D39 accepted); the product owner ran both check scripts. M3M Antalya Hills Phase II confirmed ready to move (I16 closed).
-- Next action: start Step 05 (text and social collection): Brave Search discovery, the Crawl4AI web adapter, the YouTube Data API, and collection jobs feeding Step 04 identity. The Anthropic connector is live (29 Sep 2026). The Brave key is in `.env`; its live gate is demonstrated in Step 05. The YouTube key is still missing (I03, mandatory): the product owner adds it with `make set-secret NAME=YOUTUBE_API_KEY`, never in `.env.example`, which the pre-commit hook now guards.
+- Next action: start Step 05 (text and social collection): Brave Search discovery, the Crawl4AI web adapter, the YouTube Data API, and collection jobs feeding Step 04 identity. Anthropic is live (29 Sep 2026); the Brave and YouTube keys are in `.env` and their live gates are demonstrated in Step 05. Credentials go only in `.env`, never `.env.example`, which the pre-commit hook guards.
 - Collection tools and competitor portals decided 28 Sep 2026 (D33, D34; I05 settled): built in Steps 05–06 after Step 04. Account sign-in, bot-protection bypass and robots-disallowed paths are not built; 99acres, Housing.com and MagicBricks project pages stay `access_pending` under those rules.
 - Local stack: `make up` then `make seed`; sign in as `deepesh.gupta@client-site.example`. The password is only in the local `.env` (`SEED_USER_PASSWORD`, git-ignored, mode 600), never in the repository.
 - Running services: MongoDB 8.0 replica set `rs0`, API :8000, worker, scheduler and web :3000, all on 127.0.0.1. Fixture mode (explicit banner; nothing can be published).
@@ -35,10 +35,10 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 - Deferred inputs, asked at the step that needs them (product owner's request): moderator capacity I11 (Step 09), correction owner I10 (before Step 11), demo machine I12 (Step 13).
 - Project inputs: all 5 in `contracts/five-project-input-template.json` with developers and 10 RERA registrations (D15, D16); slugs per D19; seeded into MongoDB by `make seed`.
 - Repository: https://github.com/deepeshgupta12/agentic_ai_review_model (private), all work on `main` (D18). CI (`.github/workflows/ci.yml`) runs contracts, backend, web and Compose jobs on every push.
-- Credentials (names only): ANTHROPIC_API_KEY (workspace-scoped, live), BRAVE_SEARCH_API_KEY (present, not yet demonstrated). Missing: YOUTUBE_API_KEY (mandatory), Reddit (optional, needs approval).
+- Credentials (names only): ANTHROPIC_API_KEY (workspace-scoped, live); BRAVE_SEARCH_API_KEY and YOUTUBE_API_KEY (present in `.env` 29 Sep 2026, demonstrated in Step 05). Not configured: Reddit (optional, needs Reddit's approval), X, Meta, listening provider.
 - Fixture/live distinction: `contracts/client-data-example.json` is fictional and must not be presented as source evidence.
-- Last implemented commit: `5cc63a6` (Step 04 closed).
-- Last executed product checks: `bash scripts/run_step04_checks.sh` at `5cc63a6`, all 32 OK ([log](logs/step-04/checks-20260929T054524Z.log)); product owner's runs at `4606c3a`: 32/32 checks, 16/16 mutants.
+- Last implemented commit: `bc838ba` (Anthropic live; Steps 03–04 rechecked).
+- Last executed product checks: at `bc838ba`, `bash scripts/run_step03_checks.sh` 45/45 with a real model call ([log](logs/step-03/checks-20260929T061619Z.log)) and `bash scripts/run_step04_checks.sh` 32/32, 147 backend tests ([log](logs/step-04/checks-20260929T062144Z.log)).
 - Tooling: backend `cd backend && uv run …` (unset any `VIRTUAL_ENV` from another project; the Makefile does this); web `cd web && pnpm …`; contract checks in `.venv` (D26). `make help` lists everything.
 
 ## Session log
@@ -239,7 +239,7 @@ Checks actually run and results: the product owner pasted keys into .env.example
   'QR Lakeside' proposed through the backend check). Regression: 128 Step 01–02 tests OK; checker 13/13
 Live integrations verified (credential present + real query result): anthropic (live, 29 Sep 2026)
 Fixture-only behavior still awaiting live validation: source connectors (Step 05)
-Known defects / missing inputs / owner: YOUTUBE_API_KEY (product owner, mandatory for Step 05)
+Known defects / missing inputs / owner: none blocking Step 05; YOUTUBE_API_KEY added by the product owner the same day
 Remaining acceptance checks: Step 04 invalidation of findings/approvals joins at Steps 07–11
 Next executable action: start Step 05
 ```

@@ -135,6 +135,7 @@ The first run found two weak tests, both strengthened before the recorded run:
 | 2026-09-29 04:24 | `4606c3a` | Product owner, own terminal | `bash scripts/run_step04_mutations.sh` | ALL MUTANTS CAUGHT, 16/16 | [mutation-check-20260929T042446Z.log](mutation-check-20260929T042446Z.log) |
 | 2026-09-29 05:45 | `5cc63a6` | Implementer | `bash scripts/run_step04_checks.sh` after approval, with Antalya Phase II ready (8 status records) | ALL CHECKS OK, 32/32; 143 backend tests | [checks-20260929T054524Z.log](checks-20260929T054524Z.log) |
 | 2026-09-29 06:00 | `8265bcf` | Implementer, product owner's machine | `fixture-smoke-identity --live-a01` | 9/9 checks. First live A01 call (claude-sonnet-5, 3,515 in / 1,178 out tokens): the output fit the contract; it suggested a match and the phase, and the link stayed in review; it proposed "QR Lakeside", which passed the backend check. Fictional text only | [live-a01-check-20260929T060000Z.log](live-a01-check-20260929T060000Z.log) |
+| 2026-09-29 06:21 | `bc838ba` | Implementer | `bash scripts/run_step04_checks.sh` after the live-key changes | ALL CHECKS OK, 32/32; 147 backend tests | [checks-20260929T062144Z.log](checks-20260929T062144Z.log) |
 
 The runs above use a recorded fake client for A01. The live A01 call on 29 Sep 2026 is recorded separately. No source connector exists until Step 05.
 

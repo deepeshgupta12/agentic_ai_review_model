@@ -135,6 +135,7 @@ make down
 | 2026-09-28 09:02 | `929a4ac` | Product owner, own terminal | `bash scripts/run_step03_checks.sh` | ALL CHECKS OK, 45/45; independent confirmation before approval. Vitest warned that `vitest.config.ts` loads as CommonJS; renamed to `vitest.config.mts` afterwards (13/13 tests, no warning) | [checks-20260928T090216Z.log](checks-20260928T090216Z.log) |
 | 2026-09-28 09:04 | `929a4ac` | Product owner, own terminal | `bash scripts/run_step03_mutations.sh` | ALL MUTANTS CAUGHT, 12/12 | [mutation-check-20260928T090409Z.log](mutation-check-20260928T090409Z.log) |
 | 2026-09-29 06:00 | `8265bcf` | Implementer, product owner's machine | `make smoke-model` and one difficult-role call | First key (organisation-level) refused with 400; after replacing it with a workspace-scoped key: both model IDs available, structured outputs on Sonnet 5 and Opus 5.5 | [live-model-check-20260929T060000Z.log](live-model-check-20260929T060000Z.log) |
+| 2026-09-29 06:16 | `bc838ba` | Implementer | `bash scripts/run_step03_checks.sh` with the key configured | ALL CHECKS OK, 45/45; the smoke check made a real call (`claude-sonnet-5`); Operations shows statuses as in the registry (anthropic live) | [checks-20260929T061619Z.log](checks-20260929T061619Z.log) |
 
 The first runs found four problems, all fixed before these results:
 
