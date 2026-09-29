@@ -73,6 +73,7 @@ class Settings(BaseSettings):
     youtube_searches_per_project: int = Field(default=4, ge=0)
     youtube_comment_pages_per_video: int = Field(default=3, ge=0)
     web_pages_per_run: int = Field(default=40, ge=0)
+    identity_agent_tasks_per_run: int = Field(default=10, ge=0)
 
     public_base_url: str = "http://localhost:3000"
     revalidation_secret: SecretStr | None = None

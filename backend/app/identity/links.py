@@ -140,7 +140,31 @@ def transition(
     updated = {**link, **changes, "version": link["version"] + 1}
     if link["status"] in ACTIVE_STATUSES and to_status not in ACTIVE_STATUSES:
         enqueue_invalidation(db, updated, session)
+        _return_inherited(db, contracts, updated, session)
     return updated
+
+
+def _return_inherited(
+    db: Database[dict[str, Any]], contracts: ContractStore, link: dict[str, Any], session: ClientSession | None
+) -> None:
+    """Comments that inherited this link's match (same project, no signals of their own) return to review too."""
+    children = [
+        {"id": s["id"], "revision": s["revision"]}
+        for s in db["ai_sources"].find({"parent.id": link["source"]["id"]}, {"id": 1, "revision": 1}, session=session)
+    ]
+    if children:
+        return_to_review(
+            db,
+            contracts,
+            {
+                "project_id": link["project_id"],
+                "source": {"$in": children},
+                "match.method": "deterministic",
+                "match.signals": {"$size": 0},
+            },
+            f"the thread's match {link['_id']} left an accepted state",
+            session,
+        )
 
 
 def return_to_review(

@@ -11,7 +11,15 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response
 
-from app.api import routes_auth, routes_identity, routes_ops, routes_policies, routes_projects
+from app.api import (
+    routes_auth,
+    routes_identity,
+    routes_ops,
+    routes_policies,
+    routes_projects,
+    routes_runs,
+    routes_sources,
+)
 from app.config import get_settings
 from app.db import get_db
 from app.errors import envelope, install_error_handlers
@@ -59,6 +67,8 @@ def create_app() -> FastAPI:
     app.include_router(routes_projects.router)
     app.include_router(routes_identity.router)
     app.include_router(routes_policies.router)
+    app.include_router(routes_runs.router)
+    app.include_router(routes_sources.router)
 
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> dict[str, Any]:

@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
@@ -44,6 +45,14 @@ def normalise_url(url: str) -> str:
     if len(path) > 1 and path.endswith("/"):
         path = path[:-1]
     return urlunsplit((parts.scheme.lower(), host + port, path, query, ""))
+
+
+def dated_for_storage(value: dict[str, Any]) -> dict[str, Any]:
+    """DatedValue with its timestamp as a BSON date (contracts: Timestamp is stored as a date)."""
+    stored = dict(value)
+    if isinstance(stored.get("value"), str):
+        stored["value"] = datetime.fromisoformat(stored["value"].replace("Z", "+00:00"))
+    return stored
 
 
 @dataclass
@@ -110,7 +119,7 @@ def store_item(
         "parent": item.parent,
         "title": item.title,
         "author": item.author,
-        "publication_date": item.publication_date,
+        "publication_date": dated_for_storage(item.publication_date),
         "collected_at": now,
         "language": item.language,
         "capture_level": item.capture_level,

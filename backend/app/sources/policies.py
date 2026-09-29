@@ -191,9 +191,11 @@ def resolve(db: Database[dict[str, Any]], url: str, session: ClientSession | Non
 
 
 def narrowed(old: dict[str, Any], new: dict[str, Any]) -> list[str]:
-    """What a new version takes away: rights, allow-listed hosts, or retention."""
+    """What a new version takes away: rights, allow-listed hosts (counted), or retention."""
     lost = [r for r in RIGHTS if old[r] and not new[r]]
-    lost += [f"host {h}" for h in old["hosts"] if h not in new["hosts"]]
+    removed = [h for h in old["hosts"] if h not in new["hosts"]]
+    if removed:
+        lost.append(f"{len(removed)} host(s) removed")
     if old["retention_days"] and (new["retention_days"] or 0) < old["retention_days"]:
         lost.append("retention_days")
     return lost

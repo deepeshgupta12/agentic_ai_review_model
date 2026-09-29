@@ -91,22 +91,41 @@ def ops_summary(
 )
 def connector_health(
     _: Principal = Depends(require("getConnectorHealth")),
+    db: Database[dict[str, Any]] = Depends(db_dep),
     settings: Settings = Depends(settings_dep),
 ) -> dict[str, Any]:
+    """Status comes from the registry (live only after a recorded demonstration); success, errors and quota from
+    what the collectors actually did."""
+    from app.db import iso, utcnow
+    from app.sources import quota
+
     registry = json.loads((settings.seed_dir / "connectors.json").read_text(encoding="utf-8"))
-    return {
-        "connectors": [
+    buckets = {"brave_search": "requests", "youtube_data_api": "search"}
+    now = utcnow()
+    out = []
+    for item in registry["model_providers"] + registry["connectors"]:
+        states = list(
+            db["ai_connector_state"].find({"connector_id": item["id"]}, {"last_success_at": 1, "last_error": 1})
+        )
+        successes = [s["last_success_at"] for s in states if s.get("last_success_at")]
+        errors = [s["last_error"] for s in states if s.get("last_error")]
+        latest = max(errors, key=lambda e: e["at"]) if errors else None
+        usage = quota.usage(db, settings, item["id"], buckets[item["id"]], now) if item["id"] in buckets else None
+        out.append(
             {
                 "connector_id": item["id"],
                 "status": item["status"],
                 "last_verified": item["last_verified"],
-                "last_success_at": None,
-                "quota": {"limit": None, "used": None, "resets_at": None},
-                "last_error": None,
+                "last_success_at": iso(max(successes)) if successes else None,
+                "quota": {"limit": usage["limit"], "used": usage["used"], "resets_at": iso(usage["resets_at"])}
+                if usage
+                else {"limit": None, "used": None, "resets_at": None},
+                "last_error": {"code": latest["code"], "message": latest["message"][:300], "at": iso(latest["at"])}
+                if latest
+                else None,
             }
-            for item in registry["model_providers"] + registry["connectors"]
-        ]
-    }
+        )
+    return {"connectors": out}
 
 
 @router.get("/ops/jobs", operation_id="listJobs", summary="Durable jobs, filterable by status")

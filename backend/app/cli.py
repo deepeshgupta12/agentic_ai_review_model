@@ -197,6 +197,61 @@ def cmd_plan_queries(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_discover_hosts(args: argparse.Namespace) -> int:
+    """Live Brave discovery for the allow-list decision: which hosts come up, and what their policies say.
+    Nothing is stored except the quota reservation."""
+    from collections import Counter
+
+    from app.connectors.base import ProviderError
+    from app.connectors.registry import build
+    from app.identity.queries import build_query_plan
+    from app.sources.policies import resolve
+
+    db, settings = get_db(), get_settings()
+    brave = build("brave_search", db, settings)
+    if brave is None:
+        print("skipped: no BRAVE_SEARCH_API_KEY configured")
+        return 0
+    registry = json.loads((settings.seed_dir / "connectors.json").read_text(encoding="utf-8"))
+    connectors = {c["id"]: c for c in registry["connectors"]}
+    ids = [_slug_to_id(db, args.project)] if args.project else [p["_id"] for p in db["projects"].find({}, {"_id": 1})]
+    hosts: Counter[str] = Counter()
+    examples: dict[str, str] = {}
+    requests = 0
+    for project_id in ids:
+        queries = [
+            q
+            for q in build_query_plan(db, project_id, connectors)["plan"]["queries"]
+            if q["connector_id"] == "brave_search"
+        ]
+        for query in queries[: args.queries]:
+            try:
+                page = brave.discover(query, None)
+            except ProviderError as exc:
+                print(f"brave: {exc.code}: {exc.message}", file=sys.stderr)
+                return 1
+            requests += 1
+            for item in page.items:
+                host = resolve(db, item.canonical_url).host
+                hosts[host] += 1
+                examples.setdefault(host, item.canonical_url)
+    rows = []
+    for host, count in hosts.most_common():
+        r = resolve(db, examples[host])
+        rows.append(
+            {
+                "host": host,
+                "results": count,
+                "family": r.family,
+                "may_collect_now": r.may_collect,
+                "reason": r.reason,
+                "example": examples[host],
+            }
+        )
+    _print({"requests": requests, "distinct_hosts": len(rows), "hosts": rows})
+    return 0
+
+
 def cmd_eval_identity(args: argparse.Namespace) -> int:
     from app.db import utcnow
     from app.identity.evaluation import evaluate_dataset, load_dataset
@@ -386,6 +441,10 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("plan-queries", help="bounded search queries per project (approved aliases only)")
     p.add_argument("--project", help="project slug; all projects when omitted")
     p.set_defaults(func=cmd_plan_queries)
+    p = sub.add_parser("discover-hosts", help="live Brave discovery: hosts found and their policy (stores nothing)")
+    p.add_argument("--project", help="project slug; all projects when omitted")
+    p.add_argument("--queries", type=int, default=2, help="queries per project (each is one Brave request)")
+    p.set_defaults(func=cmd_discover_hosts)
     p = sub.add_parser("eval-identity", help="identity evaluation on the labelled dataset")
     p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
     p.set_defaults(func=cmd_eval_identity)

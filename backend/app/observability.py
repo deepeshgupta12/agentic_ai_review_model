@@ -66,6 +66,8 @@ def configure_logging(level: str = "INFO") -> None:
     root.handlers = [handler]
     root.setLevel(level.upper())
     logging.getLogger("uvicorn.access").handlers = [handler]
+    for noisy in ("httpx", "httpx2", "httpcore"):  # per-request lines carry full URLs; keep them out of logs
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 def log_event(logger: logging.Logger, message: str, level: int = logging.INFO, **fields: Any) -> None:

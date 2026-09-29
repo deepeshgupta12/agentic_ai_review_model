@@ -39,6 +39,7 @@ class Page:
     next_cursor: str | None
     attempted: int = 1  # provider requests made for this page
     skipped: dict[str, int] = field(default_factory=dict)  # reason -> count, for coverage notes
+    match_text: dict[str, str] = field(default_factory=dict)  # native_id -> text used only for identity matching
 
 
 @dataclass

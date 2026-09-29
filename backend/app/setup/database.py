@@ -307,6 +307,19 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
         ),
         CollectionSpec("ai_connector_quota", _quota_validator(), []),
         CollectionSpec(
+            "ai_runs",
+            contracts.mongo_validator("operations.schema.json#/$defs/WorkflowRun"),
+            [
+                IndexSpec("by_project_time", [("project_id", ASCENDING), ("_id", DESCENDING)]),
+                IndexSpec("by_stage", [("stage", ASCENDING)]),
+            ],
+        ),
+        CollectionSpec(
+            "ai_run_events",
+            contracts.mongo_validator("api.schema.json#/$defs/RunEvent", id_field="event_id"),
+            [IndexSpec("by_run", [("run_id", ASCENDING), ("_id", ASCENDING)])],
+        ),
+        CollectionSpec(
             "ai_fetch_log",
             _fetch_log_validator(),
             [

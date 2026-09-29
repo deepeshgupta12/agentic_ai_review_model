@@ -54,15 +54,12 @@ def test_expired_worker_cannot_complete_its_successors_job(db):
     assert status(db, job["_id"]) == "completed"
 
 
-def test_claimed_job_survives_a_worker_restart(db):
+def test_claimed_job_survives_a_worker_restart(db, monkeypatch):
     job, _ = queue.enqueue(db, "collect", "k3")
     queue.claim(db, "crashed-worker", 30)
     expire_lease(db, job["_id"])
-    worker.HANDLERS["collect"] = lambda _db, _job, _check: "ckpt-after-restart"
-    try:
-        assert worker.run_one(db, "new-worker", 30) == "completed"
-    finally:
-        worker.HANDLERS.pop("collect", None)
+    monkeypatch.setitem(worker.HANDLERS, "collect", lambda _db, _job, _check: "ckpt-after-restart")
+    assert worker.run_one(db, "new-worker", 30) == "completed"
     doc = db["ai_jobs"].find_one({"_id": job["_id"]})
     assert doc["status"] == "completed" and doc["attempts"] == 2 and doc["checkpoint_id"] == "ckpt-after-restart"
 
@@ -117,17 +114,14 @@ def test_worker_records_a_missing_handler_as_failed(db):
     assert db["ai_jobs"].find_one({"logical_key": "k10"})["error"]["code"] == "no_handler"
 
 
-def test_worker_retries_a_crashing_handler(db):
+def test_worker_retries_a_crashing_handler(db, monkeypatch):
     queue.enqueue(db, "analyse", "k11")
 
     def boom(_db, _job, _check):
         raise RuntimeError("temporary failure")
 
-    worker.HANDLERS["analyse"] = boom
-    try:
-        assert worker.run_one(db, "w", 30) == "retry_wait"
-    finally:
-        worker.HANDLERS.pop("analyse", None)
+    monkeypatch.setitem(worker.HANDLERS, "analyse", boom)
+    assert worker.run_one(db, "w", 30) == "retry_wait"
 
 
 def test_every_status_change_is_allowed_by_the_state_machine(db, contracts):

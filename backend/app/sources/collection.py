@@ -1,0 +1,555 @@
+"""Collection runs (WorkflowRun; Step 05.2-05.7; journeys J02, J16).
+
+A run belongs to one project. Starting it creates the run (stage `collecting`) and one durable `collect` job per
+connector group, so one provider's outage never stops the others:
+- `web`: Brave discovery, then the web reader for hits whose host policy allows reading;
+- `youtube_data_api`: video search and metadata, then comments on videos whose match is accepted.
+Connectors without a credential (or an adapter) never run and are reported `access_pending`. Each page's
+records are stored before its cursor moves, in one transaction, so a crash replays the page harmlessly.
+Coverage per connector is written to the run as each group finishes; when every group is done the run moves
+to `analysing` (Steps 07-08 do the analysis). Cancelling stops the jobs cooperatively and keeps what was found.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from datetime import timedelta
+from typing import Any
+
+from pymongo import MongoClient
+from pymongo.client_session import ClientSession
+from pymongo.database import Database
+from ulid import ULID
+
+from app import audit
+from app.agents.gateway import ModelGateway
+from app.config import Settings, get_settings
+from app.connectors.base import Page, ProviderError
+from app.connectors.registry import build
+from app.connectors.web import WebFetch
+from app.contracts import ContractStore, get_contracts, to_view
+from app.db import run_in_transaction, utcnow
+from app.errors import ApiError
+from app.identity.links import ACTIVE_STATUSES
+from app.identity.queries import build_query_plan
+from app.identity.service import identify_in_context, identify_metadata, identify_source
+from app.ids import new_id
+from app.jobs import queue
+from app.observability import log_event
+from app.sources import policies, state
+from app.sources.store import Item, Stored, store_item
+
+logger = logging.getLogger(__name__)
+RUNS = "ai_runs"
+EVENTS = "ai_run_events"
+GROUPS = {"web": ("brave_search", "web_fetch"), "youtube_data_api": ("youtube_data_api",)}
+TERMINAL_JOB = {"completed", "failed", "cancelled"}
+
+
+def run_view(doc: dict[str, Any]) -> dict[str, Any]:
+    view = to_view(doc)
+    assert view is not None
+    return view
+
+
+def emit(
+    db: Database[dict[str, Any]],
+    run_id: str,
+    kind: str,
+    stage: str,
+    *,
+    coverage: dict[str, Any] | None = None,
+    message: str | None = None,
+    session: ClientSession | None = None,
+) -> None:
+    db[EVENTS].insert_one(
+        {
+            "_id": str(ULID()),
+            "run_id": run_id,
+            "type": kind,
+            "at": utcnow(),
+            "stage": stage,
+            "coverage": coverage,
+            "message": message,
+        },
+        session=session,
+    )
+
+
+def _registry(settings: Settings) -> dict[str, dict[str, Any]]:
+    data = json.loads((settings.seed_dir / "connectors.json").read_text(encoding="utf-8"))
+    return {c["id"]: c for c in data["connectors"]}
+
+
+def _coverage(connector_id: str, status: str, note: str | None, **counts: int) -> dict[str, Any]:
+    entry = {
+        "connector_id": connector_id,
+        "status": status,
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "last_success_at": None,
+        "note": note,
+    }
+    entry.update(counts)
+    return entry
+
+
+def start_run(
+    client: MongoClient[dict[str, Any]],
+    db: Database[dict[str, Any]],
+    settings: Settings,
+    project_id: str,
+    body: dict[str, Any],
+    actor: dict[str, Any],
+) -> dict[str, Any]:
+    """Create the run and its collect jobs (RunRequest -> Accepted)."""
+    project = db["projects"].find_one({"_id": project_id})
+    config = db["ai_project_configs"].find_one({"_id": project_id})
+    if project is None or config is None:
+        raise ApiError(404, "not_found", "No such project")
+    enabled = [s["connector_id"] for s in config["sources"] if s["enabled"]]
+    chosen = body["connectors"] or enabled
+    unknown = [c for c in chosen if c not in enabled]
+    if unknown:
+        raise ApiError(
+            422,
+            "validation_failed",
+            "Connectors are not enabled for this project",
+            fields=[{"path": "connectors", "message": ", ".join(unknown)}],
+        )
+    window_days = body["window_days"] or config["refresh"]["lookback_days"]
+    if "brave_search" in chosen and "web_fetch" not in chosen and "web_fetch" in enabled:
+        chosen = [*chosen, "web_fetch"]  # discovery hits are read by the web reader
+    coverage, groups = [], []
+    runnable = {c for c in chosen if build(c, db, settings) is not None}
+    for connector_id in chosen:
+        if connector_id not in runnable:
+            coverage.append(_coverage(connector_id, "access_pending", "no credential or adapter configured; not run"))
+        elif connector_id == "web_fetch" and "brave_search" not in runnable:
+            coverage.append(_coverage(connector_id, "access_pending", "not run: no discovery source (brave_search)"))
+        else:
+            coverage.append(_coverage(connector_id, "partial", "collecting"))
+    for group, members in GROUPS.items():
+        if any(c["connector_id"] in members and c["status"] == "partial" for c in coverage):
+            groups.append(group)
+    now = utcnow()
+    run_id = new_id("run")
+    run = {
+        "_id": run_id,
+        "project_id": project_id,
+        "stage": "collecting",
+        "trigger": "manual",
+        "requested_by": actor,
+        "window": {"from": now - timedelta(days=window_days), "to": now},
+        "coverage": coverage,
+        "budget": {"max_usd": float(settings.run_budget_usd), "spent_usd": 0.0, "exhausted": False},
+        "content_revision_id": None,
+        "outcome_note": None,
+        "created_at": now,
+        "updated_at": now,
+    }
+
+    def write(session: ClientSession) -> list[str]:
+        db[RUNS].insert_one(run, session=session)
+        emit(
+            db, run_id, "stage_changed", "collecting", message=f"collecting with {len(groups)} job(s)", session=session
+        )
+        audit.record(
+            db, "run.started", "run", run_id, actor, details={"groups": ",".join(groups) or "none"}, session=session
+        )
+        job_ids = []
+        for group in groups:
+            job, _ = queue.enqueue(
+                db,
+                "collect",
+                f"collect:{run_id}:{group}",
+                run_id=run_id,
+                project_id=project_id,
+                max_attempts=3,
+                session=session,
+            )
+            job_ids.append(job["_id"])
+        return job_ids
+
+    job_ids = run_in_transaction(client, write)
+    if not groups:
+        finish_if_done(client, db, run_id)
+    return {
+        "job_id": job_ids[0] if job_ids else None,
+        "run_id": run_id,
+        "operation_id": None,
+        "status_path": f"/v1/runs/{run_id}",
+    }
+
+
+def update_coverage(
+    db: Database[dict[str, Any]], run_id: str, entry: dict[str, Any], session: ClientSession | None = None
+) -> None:
+    db[RUNS].update_one(
+        {"_id": run_id, "coverage.connector_id": entry["connector_id"]},
+        {"$set": {"coverage.$": entry, "updated_at": utcnow()}},
+        session=session,
+    )
+    run = db[RUNS].find_one({"_id": run_id}, {"stage": 1}, session=session)
+    emit(db, run_id, "coverage_updated", run["stage"] if run else "collecting", coverage=entry, session=session)
+
+
+def finish_if_done(
+    client: MongoClient[dict[str, Any]], db: Database[dict[str, Any]], run_id: str, exclude_job: str | None = None
+) -> bool:
+    """collecting -> analysing (system) once every collect job of the run has finished."""
+    open_jobs = db["ai_jobs"].count_documents(
+        {
+            "run_id": run_id,
+            "kind": "collect",
+            "status": {"$nin": sorted(TERMINAL_JOB)},
+            **({"_id": {"$ne": exclude_job}} if exclude_job else {}),
+        }
+    )
+    if open_jobs:
+        return False
+    contracts = get_contracts()
+    if not contracts.transition_allowed("workflow_stage", "collecting", "analysing", "system"):
+        raise RuntimeError("the contract no longer allows collecting -> analysing")
+    now = utcnow()
+    result = db[RUNS].update_one(
+        {"_id": run_id, "stage": "collecting"},
+        {
+            "$set": {
+                "stage": "analysing",
+                "updated_at": now,
+                "outcome_note": "Collection finished; analysis arrives in Steps 07-08",
+            }
+        },
+    )
+    if result.modified_count:
+        emit(db, run_id, "stage_changed", "analysing", message="collection finished")
+        emit(db, run_id, "completed", "analysing", message="collection stage complete")
+    return bool(result.modified_count)
+
+
+def cancel_run(
+    client: MongoClient[dict[str, Any]],
+    db: Database[dict[str, Any]],
+    contracts: ContractStore,
+    run_id: str,
+    reason: str,
+    actor: dict[str, Any],
+) -> dict[str, Any]:
+    run = db[RUNS].find_one({"_id": run_id})
+    if run is None:
+        raise ApiError(404, "not_found", "No such run")
+    if not contracts.transition_allowed("workflow_stage", run["stage"], "cancelled", actor["role"]):
+        raise ApiError(409, "invalid_transition", f"A run that is {run['stage']} cannot be cancelled")
+    for job in db["ai_jobs"].find({"run_id": run_id, "status": {"$nin": sorted(TERMINAL_JOB)}}):
+        queue.cancel(db, job["_id"])
+    db[RUNS].update_one(
+        {"_id": run_id, "stage": run["stage"]},
+        {"$set": {"stage": "cancelled", "updated_at": utcnow(), "outcome_note": f"Cancelled: {reason}"}},
+    )
+    emit(db, run_id, "stage_changed", "cancelled", message=f"cancelled: {reason}")
+    audit.record(db, "run.cancelled", "run", run_id, actor, details={"reason": reason[:300]})
+    return {"job_id": None, "run_id": run_id, "operation_id": None, "status_path": f"/v1/runs/{run_id}"}
+
+
+# --- The collect job ---------------------------------------------------------------------------------------
+
+
+class Collector:
+    def __init__(
+        self,
+        client: MongoClient[dict[str, Any]],
+        db: Database[dict[str, Any]],
+        job: dict[str, Any],
+        check: Any,
+        settings: Settings | None = None,
+        contracts: ContractStore | None = None,
+    ) -> None:
+        self.client, self.db, self.job, self.check = client, db, job, check
+        self.settings = settings or get_settings()
+        self.contracts = contracts or get_contracts()
+        self.run_id = job["run_id"]
+        self.project_id = job["project_id"]
+        gateway = ModelGateway(self.settings, self.contracts)
+        self._gateway = gateway if gateway.available else None
+        self.a01_left = self.settings.identity_agent_tasks_per_run
+
+    @property
+    def gateway(self) -> ModelGateway | None:
+        """A01 for review segments, while this run's task budget lasts (cost bound)."""
+        return self._gateway if self.a01_left > 0 else None
+
+    def spent(self, report: dict[str, Any]) -> None:
+        self.a01_left -= sum(1 for task in report.get("a01", []) if task.get("outcome") != "skipped")
+
+    def _state(self, connector_id: str, query_text: str) -> tuple[dict[str, Any], str | None]:
+        st = state.get(self.db, connector_id, self.project_id, query_text)
+        saved = json.loads(st["cursor"]) if st["cursor"] else None
+        cursor = saved["cursor"] if saved and saved.get("run") == self.run_id else None
+        return st, cursor
+
+    def _store_page(
+        self, connector_id: str, st: dict[str, Any], page: Page, items: list[tuple[Item, dict[str, Any]]], done: bool
+    ) -> list[Stored]:
+        """Store a page's items, then advance its cursor, in one transaction."""
+        cursor = None if done else json.dumps({"run": self.run_id, "cursor": page.next_cursor})
+
+        def write(session: ClientSession) -> list[Stored]:
+            stored = []
+            for item, policy in items:
+                if item.parent and "native_id" in item.parent:  # a reply: its top comment was stored just before
+                    top = self.db["ai_sources"].find_one(
+                        {"connector_id": item.connector_id, "native_id": item.parent["native_id"]},
+                        sort=[("revision", -1)],
+                        session=session,
+                    )
+                    item.parent = {"id": top["id"], "revision": top["revision"]} if top else None
+                stored.append(store_item(self.db, item, policy, session))
+            state.save(
+                self.db, st, cursor=cursor, coverage="complete_for_query" if done else "partial", session=session
+            )
+            return stored
+
+        return run_in_transaction(self.client, write)
+
+    def _store_one(self, item: Item, policy: dict[str, Any]) -> Stored:
+        def write(session: ClientSession) -> Stored:
+            return store_item(self.db, item, policy, session)
+
+        return run_in_transaction(self.client, write)
+
+    def _queries(self, connector_id: str) -> list[dict[str, Any]]:
+        plan = build_query_plan(self.db, self.project_id, _registry(self.settings))["plan"]["queries"]
+        return [q for q in plan if q["connector_id"] == connector_id]
+
+    # --- web group: Brave discovery, then the web reader ---
+
+    def run_web(self) -> None:
+        brave = build("brave_search", self.db, self.settings)
+        web = build("web_fetch", self.db, self.settings)
+        brave_cov = _coverage("brave_search", "complete_for_query", None)
+        web_cov = _coverage("web_fetch", "complete_for_query", None)
+        skipped: dict[str, int] = {}
+        outcomes: dict[str, int] = {}
+        to_read: list[str] = []
+        errors: list[str] = []
+        if brave is not None:
+            for query in self._queries("brave_search"):
+                self.check()
+                st, cursor = self._state("brave_search", query["query_text"])
+                while True:
+                    try:
+                        page = brave.discover(query, cursor)
+                    except ProviderError as exc:
+                        errors.append(exc.code)
+                        state.save(
+                            self.db,
+                            st,
+                            cursor=st["cursor"],
+                            coverage="partial",
+                            error={"code": exc.code, "message": exc.message, "retryable": exc.retryable},
+                        )
+                        brave_cov["status"] = "unavailable" if exc.code == "access_refused" else "partial"
+                        break
+                    brave_cov["attempted_queries"] += page.attempted
+                    keep: list[tuple[Item, dict[str, Any]]] = []
+                    for item in page.items:
+                        resolution = policies.resolve(self.db, item.canonical_url)
+                        if resolution.family == "youtube":
+                            skipped["youtube_left_to_youtube_connector"] = (
+                                skipped.get("youtube_left_to_youtube_connector", 0) + 1
+                            )
+                            continue
+                        if not resolution.may_collect or resolution.policy is None:
+                            key = f"not_collected:{resolution.family or 'unknown'}"
+                            skipped[key] = skipped.get(key, 0) + 1
+                            continue
+                        keep.append((item, resolution.policy))
+                        if resolution.family in policies.WEB_FETCH_FAMILIES:
+                            to_read.append(item.canonical_url)
+                    done = page.next_cursor is None
+                    stored = self._store_page("brave_search", st, page, keep, done)
+                    brave_cov["fetched"] += len(stored)
+                    brave_cov["metadata_only"] += len(stored)
+                    st = state.get(self.db, "brave_search", self.project_id, query["query_text"])
+                    if done:
+                        break
+                    cursor = page.next_cursor
+            brave_cov["last_success_at"] = utcnow() if brave_cov["attempted_queries"] else None
+        brave_cov["note"] = _note(skipped, errors)
+        # The web reader: each distinct URL once per run, within the page budget.
+        if web is not None:
+            seen: set[str] = set()
+            for url in to_read:
+                if url in seen or len(seen) >= self.settings.web_pages_per_run:
+                    continue
+                seen.add(url)
+                self.check()
+                existing = self.db["ai_sources"].find_one(
+                    {"connector_id": "web_fetch", "native_id": url, "lifecycle": "active"}, {"_id": 1}
+                )
+                if existing is not None:
+                    outcomes["already_read"] = outcomes.get("already_read", 0) + 1
+                    continue
+                assert isinstance(web, WebFetch)
+                outcome = web.fetch(url, run_id=self.run_id)
+                web_cov["attempted_queries"] += 1
+                outcomes[outcome.status] = outcomes.get(outcome.status, 0) + 1
+                if outcome.item is None or outcome.policy is None:
+                    continue
+                page_source = self._store_one(outcome.item, outcome.policy)
+                web_cov["fetched"] += 1
+                report = identify_source(
+                    self.client,
+                    self.db,
+                    self.contracts,
+                    page_source.source,
+                    focus_project_ids=[self.project_id],
+                    gateway=self.gateway,
+                )
+                self.spent(report)
+                if any(r["status"] != "rejected" and r["project_id"] == self.project_id for r in report["links"]):
+                    web_cov["matched"] += 1
+            web_cov["last_success_at"] = utcnow() if web_cov["fetched"] else None
+            web_cov["note"] = _note(outcomes, [])
+            if outcomes.get("error") and not web_cov["fetched"]:
+                web_cov["status"] = "partial"
+        if brave is not None:
+            update_coverage(self.db, self.run_id, brave_cov)
+        if web is not None and brave is not None:
+            update_coverage(self.db, self.run_id, web_cov)
+
+    # --- YouTube group: search and metadata, then comments on accepted videos ---
+
+    def run_youtube(self) -> None:
+        yt = build("youtube_data_api", self.db, self.settings)
+        cov = _coverage("youtube_data_api", "complete_for_query", None)
+        counts: dict[str, int] = {}
+        errors: list[str] = []
+        if yt is None:
+            return
+        policy = policies.current(self.db, "youtube")
+        if policy is None or not policy["collection_allowed"]:
+            cov.update(status="unavailable", note="the youtube policy does not allow collection")
+            update_coverage(self.db, self.run_id, cov)
+            return
+        videos: list[dict[str, Any]] = []
+        for query in self._queries("youtube_data_api")[: self.settings.youtube_searches_per_project]:
+            self.check()
+            st, cursor = self._state("youtube_data_api", query["query_text"])
+            try:
+                page = yt.discover(query, cursor)
+            except ProviderError as exc:
+                errors.append(exc.code)
+                state.save(
+                    self.db,
+                    st,
+                    cursor=st["cursor"],
+                    coverage="partial",
+                    error={"code": exc.code, "message": exc.message, "retryable": exc.retryable},
+                )
+                cov["status"] = "partial"
+                if exc.code in ("quota_exhausted", "quota_exceeded", "access_refused"):
+                    break
+                continue
+            cov["attempted_queries"] += 1
+            stored = self._store_page("youtube_data_api", st, page, [(i, policy) for i in page.items], True)
+            for s in stored:
+                cov["fetched"] += 1
+                cov["metadata_only"] += 1
+                links = identify_metadata(
+                    self.client,
+                    self.db,
+                    s.source,
+                    page.match_text.get(s.source["native_id"], s.source["title"] or ""),
+                    focus_project_ids=[self.project_id],
+                )
+                mine = [lk for lk in links if lk["project_id"] == self.project_id]
+                if any(lk["status"] != "rejected" for lk in mine):
+                    cov["matched"] += 1
+                active = next((lk for lk in mine if lk["status"] in ACTIVE_STATUSES), None)
+                if active is not None:
+                    videos.append({"source": s.source, "link": active})
+                elif mine and mine[0]["status"] == "needs_review":
+                    counts["videos_waiting_for_review"] = counts.get("videos_waiting_for_review", 0) + 1
+        for video in videos:
+            self.check()
+            self._comments(yt, video, policy, cov, counts, errors)
+        cov["last_success_at"] = utcnow() if cov["attempted_queries"] else None
+        cov["note"] = _note(counts, errors)
+        update_coverage(self.db, self.run_id, cov)
+
+    def _comments(
+        self,
+        yt: Any,
+        video: dict[str, Any],
+        policy: dict[str, Any],
+        cov: dict[str, Any],
+        counts: dict[str, int],
+        errors: list[str],
+    ) -> None:
+        st, cursor = self._state("youtube_data_api", f"comments:{video['source']['native_id']}")
+        top_links: dict[str, dict[str, Any]] = {}
+        for _ in range(self.settings.youtube_comment_pages_per_video):
+            try:
+                page = yt.fetch_thread(video["source"], cursor)
+            except ProviderError as exc:
+                if exc.code == "comments_disabled":
+                    counts["comments_disabled"] = counts.get("comments_disabled", 0) + 1
+                    state.save(self.db, st, cursor=None, coverage="complete_for_query")
+                else:
+                    errors.append(exc.code)
+                    cov["status"] = "partial"
+                return
+            items: list[tuple[Item, dict[str, Any]]] = [(item, policy) for item in page.items]
+            done = page.next_cursor is None
+            stored = self._store_page("youtube_data_api", st, page, items, done)
+            for s in stored:
+                cov["fetched"] += 1 if s.created else 0
+                if not s.created:
+                    continue
+                parent = s.source.get("parent") or {}
+                context = (
+                    video["link"] if parent.get("id") == video["source"]["id"] else top_links.get(parent.get("id", ""))
+                )
+                report = identify_in_context(self.client, self.db, self.contracts, s.source, context, self.gateway)
+                self.spent(report)
+                mine = [r for r in report["links"] if r["project_id"] == self.project_id and r["status"] != "rejected"]
+                if mine:
+                    cov["matched"] += 1
+                    link = self.db["ai_project_source_links"].find_one({"_id": mine[0]["link_id"]})
+                    if link is not None:
+                        top_links[s.source["id"]] = link
+            st = state.get(self.db, "youtube_data_api", self.project_id, f"comments:{video['source']['native_id']}")
+            if done:
+                return
+            cursor = page.next_cursor
+
+
+def _note(counts: dict[str, int], errors: list[str]) -> str | None:
+    parts = [f"{k}: {v}" for k, v in sorted(counts.items())]
+    if errors:
+        parts.append("errors: " + ", ".join(sorted(set(errors))))
+    return "; ".join(parts)[:500] or None
+
+
+def handle_collect(db: Database[dict[str, Any]], job: dict[str, Any], check: Any) -> str | None:
+    """Worker handler for `collect` jobs."""
+    group = job["logical_key"].rsplit(":", 1)[-1]
+    run = db[RUNS].find_one({"_id": job["run_id"]})
+    if run is None or run["stage"] != "collecting":
+        return None
+    collector = Collector(db.client, db, job, check)
+    log_event(logger, "collect started", run_id=job["run_id"], group=group)
+    if group == "web":
+        collector.run_web()
+    elif group == "youtube_data_api":
+        collector.run_youtube()
+    else:
+        raise ValueError(f"unknown collect group {group}")
+    finish_if_done(db.client, db, job["run_id"], exclude_job=job["_id"])
+    return None

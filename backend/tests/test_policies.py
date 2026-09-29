@@ -40,7 +40,9 @@ def version_request(family, **changes):
 def test_seeded_policies_are_current_and_match_the_contract(db, contracts):
     families = {p["family"] for p in db["ai_source_policies"].find()}
     assert len(families) == 11 and {"competitor_portals", "web_public_pages"} <= families
-    assert current(db, "web_public_pages")["policy_version"] == 3
+    web = current(db, "web_public_pages")
+    assert web["policy_version"] == 4 and {"dlf.in", "republicworld.com"} <= set(web["hosts"])
+    assert "client-site.example" not in web["hosts"], "own content is not independent evidence"
     assert current(db, "competitor_portals")["policy_version"] == 1
     for doc in db["ai_source_policies"].find():
         assert contracts.errors(policy_view(doc), "sources.schema.json#/$defs/SourcePolicy") == [], doc["family"]
@@ -68,6 +70,8 @@ def test_a_stored_version_cannot_change(db, contracts, tmp_path):
         ("https://www.99acres.com/some-project", "competitor_portals", True),
         ("https://haryanarera.gov.in/view_project/1", "official_records", True),
         ("https://forum.example.test/thread/1", "web_public_pages", False),
+        ("https://www.dlf.in/privana", "web_public_pages", True),
+        ("https://client-site.example/some-project", "web_public_pages", False),
     ],
 )
 def test_the_host_decides_the_family(db, url, family, may_collect):
@@ -89,7 +93,7 @@ def test_a_generic_web_host_needs_the_allow_list(api, db, make_user):
     )
     response = api.post("/v1/admin/source-policies", json=body, headers=headers)
     assert response.status_code == 201, response.text
-    assert response.json()["policy_version"] == 4 and response.json()["status"] == "accepted"
+    assert response.json()["policy_version"] == web["policy_version"] + 1 and response.json()["status"] == "accepted"
     assert resolve(db, "https://forum.example.test/t/1").may_collect
     assert not resolve(db, "https://other.example.test/t/1").may_collect
 
