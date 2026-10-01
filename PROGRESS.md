@@ -10,7 +10,7 @@
 | 02 | [UX, architecture and contracts](steps/02-ux-architecture-and-contracts.md) | complete (approved 28 Sep 2026) | `57c8e3e`, `fb6cf66`, `88685f6`: `contracts/v1/`, `docs/09`, `docs/10`, `scripts/contract_tools.py`, `scripts/check_contracts.py`, `scripts/build_openapi.py`, `scripts/build_fixtures.py`, `scripts/jcs_check.mjs`, `scripts/tests/test_contracts.py`, `scripts/run_step02_checks.sh`, `seed/`, `DECISIONS.md` | [logs/step-02](logs/step-02/README.md): all checks OK at `88685f6` (127/127 tests, checker 13/13, N1–N6 as expected); product owner's own run OK at `bec6225`; mutation checks OK |
 | 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | complete (approved 28 Sep 2026) | `0847027`, `54d3954`, `38be1be`, `174d6ae`: `backend/`, `web/`, `docker-compose.yml`, `.env.example`, `Makefile`, `.github/workflows/ci.yml`, `prompts/`, `scripts/init_env.py`, `scripts/run_step03_checks.sh`, `scripts/run_step03_mutations.sh`, `DECISIONS.md` | [logs/step-03](logs/step-03/README.md): all 45 checks OK at `174d6ae`; product owner's own run OK at `929a4ac` (45/45 checks, 12/12 mutants caught); CI green. Live model check done 29 Sep 2026: `claude-sonnet-5` and `claude-opus-5-5` confirmed, structured outputs on both ([log](logs/step-03/live-model-check-20260929T060000Z.log)) |
 | 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | complete (approved 29 Sep 2026) | `da76682`, `ed57fdf`, `5cc63a6`: `backend/app/identity/`, `backend/app/api/routes_projects.py`, `routes_identity.py`, `idempotency.py`, `backend/app/decisions.py`, `seed/construction_status.json`, `evals/identity/v1/`, `prompts/a01_project_identity.1.0.md`, `contracts/v1/state_machines.json` and `journeys.json` (1.1.0), `scripts/run_step04_*.sh`, `scripts/set_env_secret.py`, `DECISIONS.md` | [logs/step-04](logs/step-04/README.md): 32/32 at `5cc63a6` (143 backend tests); product owner's run 32/32 and 16/16 mutants at `4606c3a`; CI green. Live A01 verified 29 Sep 2026 ([log](logs/step-04/live-a01-check-20260929T060000Z.log)). Carried forward: invalidation of findings and approvals joins at Steps 07–11 |
-| 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | in_progress (built, live, awaiting approval of U–Y) | `6881ccd`, `bebbd76`, `0fa6640`, STEP05_COMMIT: `backend/app/sources/` (policies, http, robots, quota, state, store, collection, lifecycle, recheck, verify), `backend/app/connectors/` (brave, web, youtube, registry), `backend/app/api/routes_runs.py`, `routes_sources.py`, `routes_policies.py`, `contracts/v1/` (operations 1.1.0, state machines 1.2.0, sources 1.1.0), `seed/source_policies.json`, `seed/connectors.json`, `scripts/run_step05_*.sh`, `DECISIONS.md` (D40–D44), `docs/02`, `docs/06` | [logs/step-05](logs/step-05/README.md): live runs for all five projects 30 Sep 2026; `verify-collection` 12/12 on the real data; 223 backend tests; mutants and check script results in the log README |
+| 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | in_progress (built, live, awaiting approval of U–Y) | `6881ccd`, `bebbd76`, `0fa6640`, `5e0cfd6`, `aca3128`: `backend/app/sources/` (policies, http, robots, quota, state, store, collection, lifecycle, recheck, verify), `backend/app/connectors/` (brave, web, youtube, registry), `backend/app/api/routes_runs.py`, `routes_sources.py`, `routes_policies.py`, `contracts/v1/` (operations 1.1.0, state machines 1.2.0, sources 1.1.0), `seed/source_policies.json`, `seed/connectors.json`, `scripts/run_step05_*.sh`, `DECISIONS.md` (D40–D44), `docs/02`, `docs/06` | [logs/step-05](logs/step-05/README.md): live runs for all five projects 30 Sep 2026; at `aca3128` 29/29 checks (231 backend tests, `verify-collection` 13/13 on the real data) and 23/23 mutants; CI green |
 | 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | not_started | — | — |
 | 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | not_started | — | — |
 | 08 | [Agent development and master workflow](steps/08-agents-and-master-workflow.md) | not_started | — | — |
@@ -258,7 +258,7 @@ Next executable action: start Step 05
 ```
 
 ```text
-Date / tool / branch / commit: 2026-09-29 to 2026-10-01 / Claude Code (VS Code) / main / 32ed8a6 → STEP05_COMMIT
+Date / tool / branch / commit: 2026-09-29 to 2026-10-01 / Claude Code (VS Code) / main / 32ed8a6 → aca3128
 Step and scope completed: Step 05 built and live: source policies, safe fetching, Brave, web reader, YouTube, runs,
   lifecycle and re-checks, run/source APIs; live runs for the five projects; awaiting approval of U–Y
 Files changed: backend/app/sources/ (policies, http, robots, quota, state, store, collection, lifecycle, recheck,
@@ -275,8 +275,10 @@ Checks actually run and results: live collection for all five projects (logs/ste
   4 re-check passes, 799 checks; verify-collection 13/13 on 905 stored records. One full backend run had a
   fixture error in test_lifecycle (setup or teardown, details not captured); the test file alone and a full
   rerun with error reporting (230 passed) did not reproduce it, so watch for a recurrence. Backend suite, lint, mypy,
-  web gates, Step 01–02 suites and the contract checker (results of the recorded script runs in
-  logs/step-05/README.md)
+  web gates, Step 01–02 suites and the contract checker. run_step05_checks.sh at 5e0cfd6 gave 27/29: the
+  source-detail contract failed on a rule-rejected link, and health showed no web reader success. Both were
+  fixed (sources 1.1.0, D45). At aca3128: run_step05_checks.sh 29/29 (231 backend tests) and
+  run_step05_mutations.sh 23/23; CI green
 Live integrations verified (credential present + real query result): brave_search, web_fetch, youtube_data_api
   (live 30 Sep 2026, logs/step-05/live-connectors-20260930T110436Z.log); anthropic used live for 45 A01 calls
 Fixture-only behavior still awaiting live validation: none for Step 05's connectors; video transcripts are Step 06

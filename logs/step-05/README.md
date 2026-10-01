@@ -191,6 +191,9 @@ These rules are each disabled, one at a time, and must be caught by their own te
 | 2026-09-30 10:14 | same | Implementer | `verify-collection` | 13/13 on 905 records | [log](verify-collection-20260930T101422Z.log) |
 | 2026-09-30 11:04 | same | Implementer | go-live evidence | brave_search, web_fetch and youtube_data_api marked live | [log](live-connectors-20260930T110436Z.log) |
 | 2026-10-01 06:03 | `5e0cfd6` | Implementer | `bash scripts/run_step05_checks.sh` | 27/29. The source-detail contract failed on a rule-rejected link (item 9). The health check wrongly needed this month's Brave use above zero, after the monthly reset, and health showed no web reader success (item 10). All fixed | [log](checks-20261001T060323Z.log) |
+| 2026-10-01 06:23 | `aca3128` | Implementer | `bash scripts/run_step05_checks.sh` | ALL CHECKS OK, 29/29; 231 backend tests; N1–N6 as expected; verify-collection 13/13 on the real data | [log](checks-20261001T062322Z.log) |
+| 2026-10-01 06:28 | `aca3128` | Implementer | `bash scripts/run_step05_mutations.sh` | ALL MUTANTS CAUGHT, 23/23 | [log](mutation-check-20261001T062829Z.log) |
+| 2026-10-01 | `5e0cfd6`, `aca3128` | GitHub Actions | CI (contracts, backend, web, Compose) | Passed | `gh run list --branch main` |
 
 
 
@@ -205,7 +208,7 @@ These rules are each disabled, one at a time, and must be caught by their own te
   - live re-check results are in the table above.
 - [x] A metadata-only search hit cannot become an eligible content claim. Covered by UC-38, and on the live data "no evidence comes from a metadata-only record" holds for all 350 evidence spans.
 - [x] Each mandatory live connector has an actual authorised query result, separate from mocks. The Brave, web reader and YouTube runs for the five projects are listed above, with the evidence log ([live connectors](live-connectors-20260930T110436Z.log)). The registry marks them live with that log.
-- [x] Relevant repository checks were actually run and their results recorded (above).
+- [x] Relevant repository checks were actually run and their results recorded (above): 29/29 checks and 23/23 mutants at `aca3128`; CI green.
 - [x] PROGRESS.md records changed paths, decisions, evidence, unresolved dependencies and the next action.
 - [ ] The product owner approves items U–Y.
 
