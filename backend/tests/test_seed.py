@@ -81,6 +81,21 @@ def test_a_changed_input_updates_the_project_but_keeps_its_id_and_slug(db, contr
     assert project["alternate_names"] == ["Privana"] and project["version"] == 2
 
 
+def test_a_connector_added_later_joins_existing_configs_without_changing_choices(db, contracts):
+    seed_projects(db.client, db, contracts, INPUT, SEED)
+    project_id = db["projects"].find_one({"slug": EXPECTED_SLUGS[1]})["_id"]
+    config = db["ai_project_configs"].find_one({"_id": project_id})
+    older = [s for s in config["sources"] if s["connector_id"] != "web_fetch"]
+    older = [{**s, "enabled": False} if s["connector_id"] == "firecrawl" else s for s in older]
+    db["ai_project_configs"].update_one({"_id": project_id}, {"$set": {"sources": older}})
+    report = seed_projects(db.client, db, contracts, INPUT, SEED)
+    after = db["ai_project_configs"].find_one({"_id": project_id})
+    sources = {s["connector_id"]: s["enabled"] for s in after["sources"]}
+    assert sources["web_fetch"] is True and sources["firecrawl"] is False, "added with its default; choices kept"
+    assert after["version"] == config["version"] + 1 and report[1]["outcome"] == "updated"
+    assert [r["outcome"] for r in seed_projects(db.client, db, contracts, INPUT, SEED)] == ["unchanged"] * 5
+
+
 def test_an_invalid_input_file_is_refused(db, contracts, tmp_path):
     import json
 

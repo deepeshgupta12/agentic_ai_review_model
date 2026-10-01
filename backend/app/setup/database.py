@@ -121,6 +121,22 @@ def _quota_validator() -> dict[str, Any]:
     }
 
 
+def _availability_validator() -> dict[str, Any]:
+    """The last availability check per source revision and its consecutive 'gone' count (app/sources/lifecycle.py)."""
+    return {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["_id", "gone", "at", "last_outcome"],
+            "properties": {
+                "_id": {"bsonType": "string"},
+                "gone": {"bsonType": ["int", "long"], "minimum": 0},
+                "at": {"bsonType": "date"},
+                "last_outcome": {"enum": ["present", "gone", "unknown"]},
+            },
+        }
+    }
+
+
 def _fetch_log_validator() -> dict[str, Any]:
     """One record per fetch decision (docs/06 rule 2): policy basis, robots.txt basis and outcome, never content."""
     return {
@@ -130,6 +146,7 @@ def _fetch_log_validator() -> dict[str, Any]:
             "properties": {
                 "connector_id": {"bsonType": "string"},
                 "url": {"bsonType": "string"},
+                "final_url": {"bsonType": ["string", "null"]},
                 "host": {"bsonType": "string"},
                 "family": {"bsonType": ["string", "null"]},
                 "policy_version": {"bsonType": ["int", "long", "null"]},
@@ -327,6 +344,7 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
                 IndexSpec("by_host_time", [("host", ASCENDING), ("at", DESCENDING)]),
             ],
         ),
+        CollectionSpec("ai_availability_checks", _availability_validator(), []),
         CollectionSpec(
             "ai_idempotency_keys",
             _idempotency_validator(),

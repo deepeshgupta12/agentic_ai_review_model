@@ -1,7 +1,10 @@
 """robots.txt decisions (RFC 9309; docs/06 rule 2). Checked before every fetch; each decision is recorded.
 
 - 2xx: parsed and applied to our user-agent token;
-- 4xx (no robots.txt): everything is allowed;
+- 404 or 410 (there is no robots.txt): everything is allowed;
+- any other 4xx (401, 403, 429...): the site refused our crawler, so nothing is fetched from that host. RFC 9309
+  would allow crawling here, but a refusal is not worked around (docs/06 rule 1; D45). Found live on 30 Sep 2026:
+  sites behind bot protection answered robots.txt with 403 and a challenge page;
 - 5xx, timeout or a refused connection: nothing is fetched from that host for now (conservative);
 - results are cached per host for `ttl` seconds.
 """
@@ -20,7 +23,7 @@ from app.sources.http import FetchError, SafeClient
 @dataclass
 class RobotsDecision:
     allowed: bool
-    basis: str  # parsed | no_robots_file | robots_unreachable
+    basis: str  # parsed | no_robots_file | robots_refused | robots_unreachable
     robots_url: str
 
 
@@ -37,10 +40,12 @@ class RobotsCache:
             response = self.client.get(robots_url, accept=("text/plain", "text/html", ""))
         except FetchError:
             return None, "robots_unreachable"
-        if 400 <= response.status < 500:
+        if response.status in (404, 410):
             parser = urllib.robotparser.RobotFileParser()
             parser.parse([])
             return parser, "no_robots_file"
+        if 400 <= response.status < 500:
+            return None, "robots_refused"
         if response.status >= 500:
             return None, "robots_unreachable"
         parser = urllib.robotparser.RobotFileParser()

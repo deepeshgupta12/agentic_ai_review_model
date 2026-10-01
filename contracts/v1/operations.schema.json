@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Operations contracts",
   "description": "Durable jobs, workflow runs, agent runs, audit events, deletion requests, evaluations, users and public corrections (docs/04, docs/05).",
-  "x-contract-version": "1.0.0",
+  "x-contract-version": "1.1.0",
   "$defs": {
     "Lease": {
       "type": "object",
@@ -43,7 +43,8 @@
         "id": { "$ref": "common.schema.json#/$defs/JobId" },
         "logical_key": { "type": "string", "minLength": 1 },
         "kind": {
-          "enum": ["collect", "analyse", "resume_after_review", "generate_content", "deliver_publication", "invalidate_dependencies", "erase_payloads", "scheduled_refresh", "evaluate"]
+          "description": "check_availability re-checks stored sources for edits and deletions (Step 05.6, D44)",
+          "enum": ["collect", "analyse", "resume_after_review", "generate_content", "deliver_publication", "invalidate_dependencies", "erase_payloads", "scheduled_refresh", "evaluate", "check_availability"]
         },
         "run_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/RunId" }, { "type": "null" }] },
         "project_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/ProjectId" }, { "type": "null" }] },

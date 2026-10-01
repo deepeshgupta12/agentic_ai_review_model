@@ -175,6 +175,19 @@ def test_robots_rules_are_followed_conservatively():
     assert missing.allowed and missing.basis == "no_robots_file"
     down = RobotsCache(robots_client(503), "ProjectIntelligenceBot").decide("https://example.test/any")
     assert not down.allowed and down.basis == "robots_unreachable"
+    gone = RobotsCache(robots_client(410), "ProjectIntelligenceBot").decide("https://example.test/any")
+    assert gone.allowed and gone.basis == "no_robots_file"
+
+
+@pytest.mark.parametrize("status", [401, 403, 451])
+def test_a_robots_file_that_refuses_us_means_nothing_is_fetched(status):
+    """Found live on 30 Sep 2026: sites behind bot protection answer robots.txt with 403 and a challenge page."""
+    decision = RobotsCache(robots_client(status, "<html>challenge</html>"), "ProjectIntelligenceBot").decide(
+        "https://example.test/project/1"
+    )
+    assert not decision.allowed and decision.basis == "robots_refused"
+    limited = RobotsCache(robots_client(429), "ProjectIntelligenceBot").decide("https://example.test/project/1")
+    assert not limited.allowed, "rate-limited: retried, then nothing is fetched for now"
 
 
 def test_urls_are_normalised_before_they_become_ids():
@@ -225,6 +238,15 @@ def test_storing_the_same_page_again_makes_no_new_revision(db):
     assert db["ai_sources"].count_documents({}) == 1 and db["ai_payloads"].count_documents({}) == 1
 
 
+def test_a_search_hit_found_again_under_another_title_is_the_same_record(db):
+    """Found live on 30 Sep 2026: the same address came back from different queries with different titles."""
+    policy = current(db, "web_public_pages")
+    first = store_item(db, item(text=None, kind="search_result", capture="metadata_only", title="Title A"), policy)
+    again = store_item(db, item(text=None, kind="search_result", capture="metadata_only", title="Title B"), policy)
+    assert not again.created and again.source["_id"] == first.source["_id"]
+    assert db["ai_sources"].count_documents({}) == 1
+
+
 def test_an_edited_page_becomes_a_new_revision(db):
     policy = current(db, "web_public_pages")
     first = store_item(db, item(), policy)
@@ -247,6 +269,11 @@ def test_metadata_only_items_carry_no_payload(db):
     assert stored["payload_ref"] is None and stored["content_sha256"] is None
     with pytest.raises(ValueError):
         store_item(db, item(capture="metadata_only"), policy)
+    with pytest.raises(ValueError):  # a search hit may not smuggle text in
+        store_item(db, item(kind="search_result", capture="metadata_only"), policy)
+    with pytest.raises(ValueError):  # full content needs its text
+        store_item(db, item(text=None, kind="search_result"), policy)
+    assert db["ai_payloads"].count_documents({}) == 0
     with pytest.raises(PermissionError):
         store_item(db, item(), current(db, "reddit"))
 

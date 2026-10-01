@@ -7,10 +7,11 @@ import pytest
 from pydantic import SecretStr
 
 from app.connectors import registry
+from app.db import utcnow
 from app.errors import ApiError
 from app.identity.links import decide_link
 from app.ids import new_id
-from app.sources import collection
+from app.sources import collection, recheck
 from app.sources.collection import Collector, cancel_run, start_run
 from app.sources.policies import create_version, current
 from app.workers.worker import run_one
@@ -48,7 +49,7 @@ def allow_forum(db, contracts):
     )
 
 
-def internet(youtube_status=200):
+def internet(youtube_status=200, forum_status=200):
     net = FakeNet()
     net.json(
         "api.search.brave.com",
@@ -67,7 +68,7 @@ def internet(youtube_status=200):
             },
         ),
     )
-    net.html("forum.example.test", {"/t/1": (200, article("Quillon Residences review", PAGE_TEXT * 4))})
+    net.html("forum.example.test", {"/t/1": (forum_status, article("Quillon Residences review", PAGE_TEXT * 4))})
 
     def youtube(request):
         if youtube_status != 200:
@@ -137,6 +138,7 @@ def world(db, contracts, settings, fictional, monkeypatch):
     net = internet()
     monkeypatch.setattr(registry, "safe_client", lambda _s: net.client())
     monkeypatch.setattr(collection, "get_settings", lambda: settings)
+    monkeypatch.setattr(recheck, "get_settings", lambda: settings)
     return {"net": net, "q": fictional["Quillon Residences"], "fictional": fictional}
 
 
@@ -256,6 +258,48 @@ def test_one_provider_outage_leaves_the_others_complete(db, settings, world, mon
     assert db["ai_runs"].find_one({"_id": run_id})["stage"] == "analysing"
 
 
+@pytest.mark.parametrize(
+    ("status", "expected", "key"), [(503, "partial", "error_will_retry"), (410, "complete_for_query", "gone")]
+)
+def test_only_a_page_that_may_read_next_time_leaves_coverage_partial(
+    db, settings, world, monkeypatch, status, expected, key
+):
+    net = internet(forum_status=status)
+    monkeypatch.setattr(registry, "safe_client", lambda _s: net.client())
+    run_id = start(db, settings, world["q"])["run_id"]
+    run_all_jobs(db)
+    web = coverage(db, run_id)["web_fetch"]
+    assert web["status"] == expected and f"{key}: 1" in web["note"] and web["fetched"] == 0
+
+
+def test_a_redirected_page_is_not_read_again_on_the_next_run(db, settings, world, monkeypatch):
+    import httpx
+
+    net = internet()
+    body = article("Quillon Residences review", PAGE_TEXT * 4)
+    net.json(
+        "api.search.brave.com",
+        lambda r: (200, {"query": {}, "web": {"results": [{"url": "https://forum.example.test/old", "title": "x"}]}}),
+    )
+    net.route(
+        "forum.example.test",
+        lambda r: (
+            httpx.Response(200, headers={"content-type": "text/plain"}, text="")
+            if r.url.path == "/robots.txt"
+            else httpx.Response(301, headers={"location": "https://forum.example.test/t/1"})
+            if r.url.path == "/old"
+            else httpx.Response(200, headers={"content-type": "text/html"}, text=body)
+        ),
+    )
+    monkeypatch.setattr(registry, "safe_client", lambda _s: net.client())
+    start(db, settings, world["q"], connectors=["brave_search"])
+    run_all_jobs(db)
+    second = start(db, settings, world["q"], connectors=["brave_search"])["run_id"]
+    run_all_jobs(db)
+    assert "already_read: 1" in coverage(db, second)["web_fetch"]["note"]
+    assert [r.url.path for r in net.requests].count("/old") == 1, "read once, where it landed"
+
+
 def test_without_credentials_nothing_runs_and_coverage_says_so(db, settings, fictional, contracts, monkeypatch):
     monkeypatch.setattr(collection, "get_settings", lambda: settings)
     assert settings.brave_search_api_key is None and settings.youtube_api_key is None
@@ -276,6 +320,76 @@ def test_cancelling_stops_the_jobs_and_keeps_what_was_found(db, settings, contra
     with pytest.raises(ApiError) as info:
         cancel_run(db.client, db, contracts, run_id, "again", RESEARCHER)
     assert "cannot be cancelled" in str(info.value)
+
+
+def test_a_connector_the_run_did_not_plan_is_never_called(db, settings, world):
+    """Found live on 30 Sep 2026: the web reader ran for a project whose configuration did not enable it."""
+    q = world["q"]
+    config = db["ai_project_configs"].find_one({"_id": q})
+    off = [{**s, "enabled": False} if s["connector_id"] == "web_fetch" else s for s in config["sources"]]
+    db["ai_project_configs"].update_one({"_id": q}, {"$set": {"sources": off}})
+    run_id = start(db, settings, q)["run_id"]
+    run_all_jobs(db)
+    assert "web_fetch" not in coverage(db, run_id)
+    assert db["ai_sources"].count_documents({"connector_id": "web_fetch"}) == 0
+    assert "forum.example.test" not in world["net"].hosts_requested(), "no page was read"
+    assert db["ai_sources"].count_documents({"connector_id": "brave_search", "capture_level": "metadata_only"}) > 0
+    only_youtube = start(db, settings, q, connectors=["youtube_data_api"])["run_id"]
+    before = world["net"].hosts_requested().count("api.search.brave.com")
+    run_all_jobs(db)
+    assert world["net"].hosts_requested().count("api.search.brave.com") == before, "Brave was not asked"
+    assert set(coverage(db, only_youtube)) == {"youtube_data_api"}
+
+
+def test_the_collection_checks_pass_on_a_run_and_catch_planted_violations(db, settings, world):
+    from app.sources.verify import verify_collection
+
+    run_id = start(db, settings, world["q"])["run_id"]
+    run_all_jobs(db)
+    rows = {r["check"]: r for r in verify_collection(db, settings)}
+    assert all(r["ok"] for r in rows.values()), [r for r in rows.values() if not r["ok"]]
+    assert rows["every web page has its fetch decision logged"]["looked_at"] == 1
+    hit = db["ai_sources"].find_one({"connector_id": "brave_search"})
+    page = db["ai_sources"].find_one({"connector_id": "web_fetch"})
+    comment = db["ai_sources"].find_one({"source_kind": "comment"})
+    db["ai_sources"].update_one({"_id": hit["_id"]}, {"$set": {"payload_ref": {"store": "payload_store", "key": "x"}}})
+    db["ai_evidence"].update_one({}, {"$set": {"source": {"id": hit["id"], "revision": hit["revision"]}}})
+    db["ai_fetch_log"].delete_many({"url": page["native_id"]})
+    db["ai_fetch_log"].insert_one(
+        {
+            "connector_id": "firecrawl",
+            "url": "https://x.test/",
+            "host": "x.test",
+            "outcome": "fetched",
+            "robots": "disallowed (robots.txt)",
+            "run_id": run_id,
+            "at": utcnow(),
+        }
+    )
+    db["ai_fetch_log"].insert_one(  # the forum later refuses our crawler; the page read before must not be kept
+        {
+            "connector_id": "web_fetch",
+            "url": "https://forum.example.test/t/2",
+            "host": "forum.example.test",
+            "outcome": "robots_disallowed",
+            "robots": "disallowed (robots_refused)",
+            "run_id": None,
+            "at": utcnow(),
+        }
+    )
+    db["ai_sources"].update_one({"_id": comment["_id"]}, {"$set": {"parent": None}})
+    db["ai_connector_state"].update_one({}, {"$set": {"query_key": "q test-only-brave-key-0000"}})
+    failed = {r["check"] for r in verify_collection(db, settings) if not r["ok"]}
+    assert failed == {
+        "metadata-only records hold no text",
+        "no evidence comes from a metadata-only record",
+        "every web page has its fetch decision logged",
+        "nothing was fetched against robots.txt",
+        "no page is kept from a site whose robots.txt refused us",
+        "every comment belongs to a stored parent",
+        "every connector a run used is in its coverage",
+        "no configured secret is stored in collected records",
+    }
 
 
 def test_starting_needs_enabled_connectors(db, settings, world):

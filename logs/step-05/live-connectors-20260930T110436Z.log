@@ -1,0 +1,60 @@
+Go-live evidence for brave_search, web_fetch and youtube_data_api, read from the real runs' stored data
+commit 0fa6640 plus the uncommitted Step 05 changes; public metadata only (no comment text, no commenter names, no page text)
+$ docker compose exec -T api python - < live_evidence.py
+
+Generated 2026-09-30T11:04:37Z from database sy_poc; 6 runs
+  run_01M3R64S9W32NJ8CP9RDBPWB1Q  Conscient Parq       analysing  2026-09-30T03:36:15Z -> 2026-09-30T03:43:26Z
+  run_01M3R9H97BVT1J650HYE6ZBCAN  DLF Privana          analysing  2026-09-30T04:35:30Z -> 2026-09-30T04:42:57Z
+  run_01M3R9H98YKSQT42KCATNK3ATS  Conscient Parq       analysing  2026-09-30T04:35:30Z -> 2026-09-30T04:46:41Z
+  run_01M3R9H99JT4DQWR0XG27HX1PW  Sobha Crescent       analysing  2026-09-30T04:35:30Z -> 2026-09-30T04:54:46Z
+  run_01M3R9H9A78MHSVDND8E3B406H  M3M Forestia West    analysing  2026-09-30T04:35:30Z -> 2026-09-30T05:00:06Z
+  run_01M3R9H9B173A8EEPRR1AZFR0E  M3M Antalya Hills    analysing  2026-09-30T04:35:30Z -> 2026-09-30T05:06:36Z
+
+== brave_search (Brave Search API, X-Subscription-Token header)
+requests this month: 100 of 2000 (resets 2026-10-01T00:00:00Z)
+  query 'DLF Privana Gurgaon' for DLF Privana: last success 2026-09-30T04:35:34Z, coverage complete_for_query
+  query 'DLF Privana Sector 76' for DLF Privana: last success 2026-09-30T04:35:40Z, coverage complete_for_query
+  query 'DLF Privana review' for DLF Privana: last success 2026-09-30T04:35:44Z, coverage complete_for_query
+search results kept (metadata only, unique URLs): 264; families {'competitor_portals': 102, 'web_public_pages': 162}
+top hosts: magicbricks.com 88, conscient.in 20, sobha.com 17, realtyhunting.com 13, 99acres.com 11, dlf.in 9, hcorealestates.com 8, m3mpremium.in 7, realtypromoo.com 6, gurgaonfloors.in 5, luxuryroof.in 5, silverdomerealtors.com 4
+Brave returns no response ID; request times are the connector-state success times above
+
+== web_fetch (local HTTP + Trafilatura; allow-list, robots.txt, honest user agent)
+fetch decisions: {'fetched': 432, 'refused': 44, 'robots_disallowed': 7, 'error:too_large': 2, 'error:content_type_refused': 1, 'gone': 1, 'robots_rechecked': 15}
+robots.txt re-asked on 30 Sep 2026 (D45): {'disallowed (robots_refused)': 14, 'no_robots_file': 1}
+robots.txt basis on fetched pages: {'parsed': 258, 'no_robots_file': 174}
+page revisions by lifecycle: {'active': 87, 'withdrawn': 71} (withdrawn: robots.txt refused our crawler, D45)
+current pages kept: 87; families {'web_public_pages': 86, 'competitor_portals': 1}; publication date {'approximate': 74, 'unknown': 13}
+  https://conscient.in/
+    sha256:6be363186875e657... date approximate 2026-09-29 00:00:00+00:00 lang en-US policy {'family': 'web_public_pages', 'policy_version': 4}
+  https://conscient.in/about-us
+    sha256:414aacb2ebab0c48... date approximate 2026-09-02 00:00:00+00:00 lang en-US policy {'family': 'web_public_pages', 'policy_version': 4}
+  https://conscient.in/arborea-luxury-homes
+    sha256:8576c6fa29b28261... date approximate 2026-09-29 00:00:00+00:00 lang en-US policy {'family': 'web_public_pages', 'policy_version': 4}
+  https://conscient.in/central-102
+    sha256:a2a3504d216e0492... date approximate 2026-09-15 00:00:00+00:00 lang en-US policy {'family': 'web_public_pages', 'policy_version': 4}
+  https://conscient.in/commercial
+    sha256:25a6ad5537272391... date approximate 2026-09-02 00:00:00+00:00 lang en-US policy {'family': 'web_public_pages', 'policy_version': 4}
+
+== youtube_data_api (YouTube Data API v3, X-Goog-Api-Key header)
+search used today (Pacific day): 0 of 100 (resets 2026-10-01T07:00:00Z)
+units used today (Pacific day): 456 of 10000 (resets 2026-10-01T07:00:00Z)
+videos stored (metadata only): 203; comments stored: 280 (text not shown here)
+capture: {'metadata_only': 203} | transcript route: {'None': 203}
+  video:-5b8mdH68Ak | 'DLF Privana South: Under Construction, Already Looking Premium #dlf' | 'Dr Property Talks' | 12s | published 2026-09-04 12:30:24+00:00
+  video:-B5wzLnJNac | 'DLF PRIVANA WEST ON BOOKING PRICE? 4 BHK LUXURY APARTMENT GURGAON #892' | 'Gurgaon Property News' | 26s | published 2026-09-02 15:30:30+00:00
+  video:-JcNHfufdRQ | '3.5 BHK under 1.75 Cr in M3M Antalya Hills located in sector 79, Gurga' | 'Gopal Estate' | 12s | published 2026-08-31 12:30:04+00:00
+  video:05vDUpIu0Kw | 'Conscient Parq | 3 & 4BHK luxury Apartments in Sector 80 Gurgaon | Cal' | 'Praveen Chauhan' | 46s | published 2026-09-16 16:15:03+00:00
+  video:0_r5t4x1bGI | '2.5 BHK distress deal in M3M Antalya Hills' | 'Gopal Estate' | 16s | published 2026-09-12 04:30:33+00:00
+
+== project links and evidence
+  DLF Privana          links {'auto_accepted': 78, 'needs_review': 31, 'rejected': 23}; evidence spans 57
+  Conscient Parq       links {'auto_accepted': 43, 'needs_review': 10, 'rejected': 22}; evidence spans 25
+  Sobha Crescent       links {'auto_accepted': 168, 'needs_review': 21, 'rejected': 23}; evidence spans 156
+  M3M Forestia West    links {'auto_accepted': 10, 'needs_review': 16, 'rejected': 29}; evidence spans 9
+  M3M Antalya Hills    links {'auto_accepted': 123, 'needs_review': 20, 'rejected': 21}; evidence spans 103
+
+== A01 identity agent (advises on review segments only)
+calls 45; outcomes {'completed': 45}; models {'claude-sonnet-5': 45}
+tokens in 192935, out 35445
+alias proposals: {'proposed': 3}

@@ -229,9 +229,10 @@ class UC03ConnectorMatrix(unittest.TestCase):
             self.assertGreater(order[later], order["youtube_data_api"])
 
     def test_live_without_recorded_demonstration_rejected(self):
-        self.data["connectors"][0]["status"] = "live"
+        pending = next(c for c in self.data["connectors"] if c["status"] == "access_pending")
+        pending["status"] = "live"
         errors, _ = vi.validate_connectors(self.data, self.families)
-        assert_error(self, errors, "brave_search", "'live' requires")
+        assert_error(self, errors, pending["id"], "'live' requires")
 
     def test_live_with_recorded_demonstration_accepted(self):
         self.data["connectors"][0].update(status="live", last_verified="2026-10-01", verification_ref="logs/step-03/live-model-check-20260929T060000Z.log")
@@ -374,8 +375,9 @@ class UC06RegisterAndSecrets(unittest.TestCase):
         assert_error(self, vi.check_decisions_registry(text, self.connectors), "no row for `x_api`")
 
     def test_status_drift_detected(self):
-        self.connectors["connectors"][0].update(status="live", last_verified="2026-10-01", verification_ref="log")
-        assert_error(self, vi.check_decisions_registry(self.decisions, self.connectors), "`brave_search`", "'live'")
+        pending = next(c for c in self.connectors["connectors"] if c["status"] == "access_pending")
+        pending.update(status="live", last_verified="2026-10-01", verification_ref="log")
+        assert_error(self, vi.check_decisions_registry(self.decisions, self.connectors), f"`{pending['id']}`", "'live'")
 
     def test_seed_files_contain_no_secrets(self):
         texts = {key: vi.DEFAULT_PATHS[key].read_text(encoding="utf-8") for key in ("projects", "connectors", "policies", "defaults")}

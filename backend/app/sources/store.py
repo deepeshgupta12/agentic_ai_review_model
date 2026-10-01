@@ -96,7 +96,10 @@ def store_item(
         {"connector_id": item.connector_id, "native_id": item.native_id}, sort=[("revision", -1)], session=session
     )
     if latest is not None and latest["lifecycle"] in ("active", "stale", "unavailable"):
-        same = latest["content_sha256"] == digest and latest["title"] == item.title
+        # A search hit's title varies with the query that found it; that is not an edit of the page (D43).
+        same = latest["content_sha256"] == digest and (
+            latest["title"] == item.title or item.source_kind == "search_result"
+        )
         if same:
             if latest["lifecycle"] == "unavailable":  # fetch restored with unchanged content
                 db["ai_sources"].update_one({"_id": latest["_id"]}, {"$set": {"lifecycle": "active"}}, session=session)

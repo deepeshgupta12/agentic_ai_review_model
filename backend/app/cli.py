@@ -10,6 +10,10 @@ python -m app.cli match-text --text TEXT [--focus SLUG ...]   (dry run: nothing 
 python -m app.cli plan-queries [--project SLUG]
 python -m app.cli eval-identity [--save]
 python -m app.cli fixture-smoke-identity [--live-a01]   (fictional catalogue in a scratch database, dropped)
+python -m app.cli discover-hosts [--project SLUG] [--queries N]   (live Brave; stores nothing)
+python -m app.cli collect [--project SLUG] [--window-days N] [--wait SECONDS]   (a real collection run)
+python -m app.cli recheck-sources [--project SLUG] [--wait SECONDS]   (edits, deletions and stated dates)
+python -m app.cli verify-collection   (read-only checks over what collection stored)
 """
 
 from __future__ import annotations
@@ -252,6 +256,89 @@ def cmd_discover_hosts(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_collect(args: argparse.Namespace) -> int:
+    """Start a collection run per project as the seeded researcher (the audit event records `via: cli`), then wait
+    for the worker service to finish collecting. The worker must be running."""
+    import time
+
+    from app.errors import ApiError
+    from app.seed.users import seeded_users
+    from app.sources.collection import start_run
+
+    db, settings = get_db(), get_settings()
+    email = args.as_user or next(
+        (u["email"] for u in seeded_users(settings.seed_dir) if "researcher" in u["roles"]), ""
+    )
+    user = db["users"].find_one({"email": email.strip().lower(), "roles": "researcher", "active": True})
+    if user is None:
+        print(f"collect: no active researcher {email!r}; run seed-users first", file=sys.stderr)
+        return 1
+    actor = {"kind": "user", "user_id": user["_id"], "role": "researcher"}
+    ids = [_slug_to_id(db, args.project)] if args.project else [p["_id"] for p in db["projects"].find({}, {"_id": 1})]
+    started = []
+    for project_id in ids:
+        body = {"window_days": args.window_days, "connectors": None}
+        try:
+            started.append(start_run(db.client, db, settings, project_id, body, actor, via="cli")["run_id"])
+        except ApiError as exc:
+            print(f"collect: {project_id}: {exc.code}: {exc.message}", file=sys.stderr)
+            return 1
+    deadline = time.monotonic() + args.wait
+    while time.monotonic() < deadline:
+        if db["ai_runs"].count_documents({"_id": {"$in": started}, "stage": "collecting"}) == 0:
+            break
+        time.sleep(5)
+    rows = []
+    for run in db["ai_runs"].find({"_id": {"$in": started}}):
+        project = db["projects"].find_one({"_id": run["project_id"]}, {"project_name": 1})
+        errors = db["ai_run_events"].find({"run_id": run["_id"], "type": "error"}, {"message": 1}).limit(5)
+        rows.append(
+            {
+                "run_id": run["_id"],
+                "project": project["project_name"] if project else run["project_id"],
+                "stage": run["stage"],
+                "coverage": [{k: v for k, v in c.items() if k != "last_success_at"} for c in run["coverage"]],
+                "errors": [e["message"] for e in errors],
+            }
+        )
+    _print(rows)
+    still = [r["run_id"] for r in rows if r["stage"] == "collecting"]
+    if still:
+        print(
+            f"collect: still collecting after {args.wait}s (the worker keeps going): {', '.join(still)}",
+            file=sys.stderr,
+        )
+    return 0
+
+
+def cmd_recheck_sources(args: argparse.Namespace) -> int:
+    """Queue an availability re-check (edits, deletions, stated dates) and wait for the worker to finish it."""
+    import time
+
+    from app.sources.recheck import start_recheck
+
+    db = get_db()
+    project_id = _slug_to_id(db, args.project) if args.project else None
+    job_id = start_recheck(db, project_id)["job_id"]
+    deadline = time.monotonic() + args.wait
+    job = db["ai_jobs"].find_one({"_id": job_id}) or {}
+    while time.monotonic() < deadline and job.get("status") not in ("completed", "failed", "cancelled"):
+        time.sleep(5)
+        job = db["ai_jobs"].find_one({"_id": job_id}) or {}
+    event = db["ai_audit_events"].find_one({"action": "sources.rechecked", "target.id": job_id})
+    _print({"job_id": job_id, "status": job.get("status"), "result": event["details"] if event else None})
+    return 0 if job.get("status") == "completed" else 1
+
+
+def cmd_verify_collection(_: argparse.Namespace) -> int:
+    """Read-only checks over what collection stored: policies, robots, metadata-only, threads, quotas, coverage."""
+    from app.sources.verify import verify_collection
+
+    rows = verify_collection(get_db(), get_settings())
+    _print(rows)
+    return 0 if all(r["ok"] for r in rows) else 1
+
+
 def cmd_eval_identity(args: argparse.Namespace) -> int:
     from app.db import utcnow
     from app.identity.evaluation import evaluate_dataset, load_dataset
@@ -445,6 +532,19 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--project", help="project slug; all projects when omitted")
     p.add_argument("--queries", type=int, default=2, help="queries per project (each is one Brave request)")
     p.set_defaults(func=cmd_discover_hosts)
+    p = sub.add_parser("collect", help="start a real collection run per project and wait for the worker")
+    p.add_argument("--project", help="project slug; all projects when omitted")
+    p.add_argument("--window-days", type=int, default=None, help="look-back window; the project config when omitted")
+    p.add_argument("--wait", type=int, default=900, help="seconds to wait for collection to finish (0: do not wait)")
+    p.add_argument("--as", dest="as_user", help="researcher email; the seeded researcher when omitted")
+    p.set_defaults(func=cmd_collect)
+    p = sub.add_parser("recheck-sources", help="re-check stored sources for edits and deletions (worker job)")
+    p.add_argument("--project", help="project slug; every re-checkable source when omitted")
+    p.add_argument("--wait", type=int, default=1800, help="seconds to wait for the worker")
+    p.set_defaults(func=cmd_recheck_sources)
+    sub.add_parser("verify-collection", help="read-only checks over what collection stored").set_defaults(
+        func=cmd_verify_collection
+    )
     p = sub.add_parser("eval-identity", help="identity evaluation on the labelled dataset")
     p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
     p.set_defaults(func=cmd_eval_identity)

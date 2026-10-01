@@ -6,6 +6,7 @@
 - Availability checks tell a temporary failure (-> unavailable) from a deletion, which needs two consecutive
   'gone' results; an edited source becomes a new revision (app.sources.store).
 - Retention: a source older than its policy's `retention_days` expires.
+- Withdrawal, confirmed deletion and expiry reach older (superseded) revisions too, so no copy of the text stays (D45).
 """
 
 from __future__ import annotations
@@ -101,7 +102,7 @@ def withdraw(
         changed = [
             s
             for s in revisions
-            if s["lifecycle"] not in ("withdrawn", "superseded", "deleted", "expired")
+            if s["lifecycle"] not in ("withdrawn", "deleted", "expired")  # older revisions too (D45)
             and set_lifecycle(db, contracts, s, "withdrawn", actor, session, body["reason"])
         ]
         if body["scope"] == "source_revision" and not changed and revisions[0]["lifecycle"] != "withdrawn":
@@ -131,8 +132,14 @@ def record_check(
         current = db["ai_sources"].find_one({"_id": source["_id"]}, session=session) or source
         key = _ref(current)
         system = audit.SYSTEM_ACTOR
+        seen = {"at": utcnow(), "last_outcome": outcome}
+        if outcome == "present":  # resets the count of consecutive 'gone' results
+            db[CHECKS].update_one({"_id": key}, {"$set": {**seen, "gone": 0}}, upsert=True, session=session)
+        elif outcome == "unknown":  # a temporary failure leaves the count as it was
+            db[CHECKS].update_one(
+                {"_id": key}, {"$set": seen, "$setOnInsert": {"gone": 0}}, upsert=True, session=session
+            )
         if outcome == "present":
-            db[CHECKS].delete_one({"_id": key}, session=session)
             if current["lifecycle"] == "unavailable":
                 set_lifecycle(db, contracts, current, "active", system, session, "fetch restored")
                 return "active"
@@ -140,13 +147,17 @@ def record_check(
         if outcome == "gone":
             doc = db[CHECKS].find_one_and_update(
                 {"_id": key},
-                {"$inc": {"gone": 1}, "$set": {"at": utcnow()}},
+                {"$inc": {"gone": 1}, "$set": seen},
                 upsert=True,
                 return_document=True,
                 session=session,
             )
             if (doc or {}).get("gone", 1) >= 2:
                 set_lifecycle(db, contracts, current, "deleted", system, session, "gone on two consecutive checks")
+                for older in db["ai_sources"].find({"id": current["id"], "lifecycle": "superseded"}, session=session):
+                    set_lifecycle(
+                        db, contracts, older, "deleted", system, session, "the source's deletion was confirmed"
+                    )
                 return "deleted"
         if current["lifecycle"] in ("active", "stale"):
             set_lifecycle(
@@ -179,7 +190,11 @@ def expire_due(
             continue
         cutoff = now - timedelta(days=policy["retention_days"])
         for source in db["ai_sources"].find(
-            {"policy.family": family, "collected_at": {"$lt": cutoff}, "lifecycle": {"$in": ["active", "stale"]}}
+            {
+                "policy.family": family,
+                "collected_at": {"$lt": cutoff},
+                "lifecycle": {"$in": ["active", "stale", "superseded"]},
+            }
         ):
             reason = f"retention of {policy['retention_days']} days reached"
 

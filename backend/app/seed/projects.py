@@ -224,11 +224,18 @@ def import_projects(
                     for s in status_records
                 )
                 new_status = [] if have_export else status_records
-                if new_aliases or new_status:
+                # A connector added to the registry later joins with its default; existing choices are kept.
+                configured = {s["connector_id"] for s in config["sources"]}
+                new_sources = [s for s in defaults["sources"] if s["connector_id"] not in configured]
+                if new_aliases or new_status or new_sources:
                     db["ai_project_configs"].update_one(
                         {"_id": project_id},
                         {
-                            "$push": {"aliases": {"$each": new_aliases}, "construction_status": {"$each": new_status}},
+                            "$push": {
+                                "aliases": {"$each": new_aliases},
+                                "construction_status": {"$each": new_status},
+                                "sources": {"$each": new_sources},
+                            },
                             "$inc": {"version": 1},
                             "$set": {"updated_at": now, "updated_by": actor},
                         },

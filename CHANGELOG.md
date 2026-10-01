@@ -5,6 +5,40 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Text and social collection — 30 September 2026 (Step 05)
+
+- Source policies in the database (`ai_source_policies`, immutable versions). The host decides the policy family. The generic web family is an allow-list of 62 hosts; client-site.example is not on it (D41). Portals have their own family (D34).
+- Safe fetching:
+  - public addresses only, re-checked on every redirect hop;
+  - size and type caps;
+  - an honest user agent;
+  - per-host pacing and Retry-After;
+  - robots.txt (RFC 9309);
+  - atomic provider quotas;
+  - cursors that commit with their page;
+  - a fetch log.
+- Connectors, all live on 30 Sep 2026:
+  - Brave Search (discovery metadata only);
+  - the web reader, local HTTP plus Trafilatura without Crawl4AI (D40);
+  - YouTube Data API: videos as metadata only, and comments that keep their thread (D42).
+- Collection runs:
+  - one job per group;
+  - honest per-connector coverage;
+  - only the connectors the run planned (D43);
+  - an SSE event stream;
+  - run and source APIs with UTF-16 evidence offsets;
+  - withdrawal;
+  - real connector health.
+- Source lifecycle:
+  - temporary failures versus confirmed deletion;
+  - erasure only after invalidation;
+  - retention expiry;
+  - the new `check_availability` job for edits, deletions and stated dates. Contract: operations 1.1.0 (D44).
+- Publication dates come only from structured markup (D44).
+- `verify-collection` checks the collection rules on the stored data.
+- Tests no longer see real credentials from `.env` or the shell.
+- New commands: `make collect`, `make recheck`, `make verify-collection`, `make discover-hosts`, `make seed-policies`.
+
 ## Project identity — 28 September 2026 (Step 04)
 
 - Identity service in `backend/app/identity/`:

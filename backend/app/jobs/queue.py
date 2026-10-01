@@ -36,6 +36,7 @@ JOB_KINDS = {
     "erase_payloads",
     "scheduled_refresh",
     "evaluate",
+    "check_availability",
 }
 
 

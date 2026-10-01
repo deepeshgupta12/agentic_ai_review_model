@@ -1,6 +1,6 @@
 {
   "description": "State machines for contracts v1 (docs/05 'Separate state machines'). Each machine's states equal its enum in common.schema.json. actors: role names, 'system' (backend/worker) or 'public'. Models are never actors. The backend rejects any transition not listed (error invalid_transition).",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "machines": {
     "execution_job": {
       "enum": "common.schema.json#/$defs/JobStatus",
@@ -170,7 +170,7 @@
       "record": "evidence.schema.json#/$defs/Evidence",
       "field": "lifecycle",
       "initial": ["active"],
-      "terminal": ["superseded", "deleted", "withdrawn", "expired"],
+      "terminal": ["deleted", "withdrawn", "expired"],
       "transitions": [
         { "from": "active", "to": "stale", "actors": ["system"], "trigger": "Freshness threshold passed; still eligible, flagged for review" },
         { "from": "active", "to": "superseded", "actors": ["system"], "trigger": "The source was edited; a new revision exists" },
@@ -185,7 +185,10 @@
         { "from": "stale", "to": "withdrawn", "actors": ["moderator", "admin", "system"], "trigger": "Source or policy withdrawal" },
         { "from": "unavailable", "to": "withdrawn", "actors": ["moderator", "admin", "system"], "trigger": "Source or policy withdrawal" },
         { "from": "active", "to": "expired", "actors": ["system"], "trigger": "Retention period or policy expiry reached" },
-        { "from": "stale", "to": "expired", "actors": ["system"], "trigger": "Retention period or policy expiry reached" }
+        { "from": "stale", "to": "expired", "actors": ["system"], "trigger": "Retention period or policy expiry reached" },
+        { "from": "superseded", "to": "withdrawn", "actors": ["moderator", "admin", "system"], "trigger": "The source is withdrawn; older revisions' text goes too (D45)" },
+        { "from": "superseded", "to": "deleted", "actors": ["system"], "trigger": "Deletion of the source is confirmed; older revisions' text goes too (D45)" },
+        { "from": "superseded", "to": "expired", "actors": ["system"], "trigger": "Retention reached for an older revision (D45)" }
       ]
     },
     "media_access": {

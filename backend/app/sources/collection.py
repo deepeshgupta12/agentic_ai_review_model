@@ -105,8 +105,9 @@ def start_run(
     project_id: str,
     body: dict[str, Any],
     actor: dict[str, Any],
+    via: str = "api",
 ) -> dict[str, Any]:
-    """Create the run and its collect jobs (RunRequest -> Accepted)."""
+    """Create the run and its collect jobs (RunRequest -> Accepted). `via` records the entry point (api or cli)."""
     project = db["projects"].find_one({"_id": project_id})
     config = db["ai_project_configs"].find_one({"_id": project_id})
     if project is None or config is None:
@@ -159,7 +160,13 @@ def start_run(
             db, run_id, "stage_changed", "collecting", message=f"collecting with {len(groups)} job(s)", session=session
         )
         audit.record(
-            db, "run.started", "run", run_id, actor, details={"groups": ",".join(groups) or "none"}, session=session
+            db,
+            "run.started",
+            "run",
+            run_id,
+            actor,
+            details={"groups": ",".join(groups) or "none", "via": via},
+            session=session,
         )
         job_ids = []
         for group in groups:
@@ -274,6 +281,9 @@ class Collector:
         self.contracts = contracts or get_contracts()
         self.run_id = job["run_id"]
         self.project_id = job["project_id"]
+        run = db[RUNS].find_one({"_id": self.run_id}, {"coverage": 1}) or {"coverage": []}
+        # Only the connectors the run planned (enabled for the project, chosen and runnable at the start).
+        self.planned = {c["connector_id"] for c in run["coverage"] if c["status"] == "partial"}
         gateway = ModelGateway(self.settings, self.contracts)
         self._gateway = gateway if gateway.available else None
         self.a01_left = self.settings.identity_agent_tasks_per_run
@@ -285,6 +295,9 @@ class Collector:
 
     def spent(self, report: dict[str, Any]) -> None:
         self.a01_left -= sum(1 for task in report.get("a01", []) if task.get("outcome") != "skipped")
+
+    def _build(self, connector_id: str) -> Any:
+        return build(connector_id, self.db, self.settings) if connector_id in self.planned else None
 
     def _state(self, connector_id: str, query_text: str) -> tuple[dict[str, Any], str | None]:
         st = state.get(self.db, connector_id, self.project_id, query_text)
@@ -329,8 +342,8 @@ class Collector:
     # --- web group: Brave discovery, then the web reader ---
 
     def run_web(self) -> None:
-        brave = build("brave_search", self.db, self.settings)
-        web = build("web_fetch", self.db, self.settings)
+        brave = self._build("brave_search")
+        web = self._build("web_fetch")
         brave_cov = _coverage("brave_search", "complete_for_query", None)
         web_cov = _coverage("web_fetch", "complete_for_query", None)
         skipped: dict[str, int] = {}
@@ -389,8 +402,12 @@ class Collector:
                     continue
                 seen.add(url)
                 self.check()
+                landed = self.db["ai_fetch_log"].find_one(
+                    {"url": url, "outcome": "fetched", "final_url": {"$type": "string"}}, sort=[("at", -1)]
+                )
+                known = [url, landed["final_url"]] if landed else [url]  # a redirect is stored where it landed
                 existing = self.db["ai_sources"].find_one(
-                    {"connector_id": "web_fetch", "native_id": url, "lifecycle": "active"}, {"_id": 1}
+                    {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "active"}, {"_id": 1}
                 )
                 if existing is not None:
                     outcomes["already_read"] = outcomes.get("already_read", 0) + 1
@@ -398,7 +415,8 @@ class Collector:
                 assert isinstance(web, WebFetch)
                 outcome = web.fetch(url, run_id=self.run_id)
                 web_cov["attempted_queries"] += 1
-                outcomes[outcome.status] = outcomes.get(outcome.status, 0) + 1
+                key = "error_will_retry" if outcome.status == "error" and outcome.retryable else outcome.status
+                outcomes[key] = outcomes.get(key, 0) + 1
                 if outcome.item is None or outcome.policy is None:
                     continue
                 page_source = self._store_one(outcome.item, outcome.policy)
@@ -416,7 +434,7 @@ class Collector:
                     web_cov["matched"] += 1
             web_cov["last_success_at"] = utcnow() if web_cov["fetched"] else None
             web_cov["note"] = _note(outcomes, [])
-            if outcomes.get("error") and not web_cov["fetched"]:
+            if outcomes.get("error_will_retry"):  # a page that may read next time; permanent outcomes are decided
                 web_cov["status"] = "partial"
         if brave is not None:
             update_coverage(self.db, self.run_id, brave_cov)
@@ -426,7 +444,7 @@ class Collector:
     # --- YouTube group: search and metadata, then comments on accepted videos ---
 
     def run_youtube(self) -> None:
-        yt = build("youtube_data_api", self.db, self.settings)
+        yt = self._build("youtube_data_api")
         cov = _coverage("youtube_data_api", "complete_for_query", None)
         counts: dict[str, int] = {}
         errors: list[str] = []

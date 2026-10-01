@@ -10,7 +10,7 @@
 | 02 | [UX, architecture and contracts](steps/02-ux-architecture-and-contracts.md) | complete (approved 28 Sep 2026) | `57c8e3e`, `fb6cf66`, `88685f6`: `contracts/v1/`, `docs/09`, `docs/10`, `scripts/contract_tools.py`, `scripts/check_contracts.py`, `scripts/build_openapi.py`, `scripts/build_fixtures.py`, `scripts/jcs_check.mjs`, `scripts/tests/test_contracts.py`, `scripts/run_step02_checks.sh`, `seed/`, `DECISIONS.md` | [logs/step-02](logs/step-02/README.md): all checks OK at `88685f6` (127/127 tests, checker 13/13, N1–N6 as expected); product owner's own run OK at `bec6225`; mutation checks OK |
 | 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | complete (approved 28 Sep 2026) | `0847027`, `54d3954`, `38be1be`, `174d6ae`: `backend/`, `web/`, `docker-compose.yml`, `.env.example`, `Makefile`, `.github/workflows/ci.yml`, `prompts/`, `scripts/init_env.py`, `scripts/run_step03_checks.sh`, `scripts/run_step03_mutations.sh`, `DECISIONS.md` | [logs/step-03](logs/step-03/README.md): all 45 checks OK at `174d6ae`; product owner's own run OK at `929a4ac` (45/45 checks, 12/12 mutants caught); CI green. Live model check done 29 Sep 2026: `claude-sonnet-5` and `claude-opus-5-5` confirmed, structured outputs on both ([log](logs/step-03/live-model-check-20260929T060000Z.log)) |
 | 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | complete (approved 29 Sep 2026) | `da76682`, `ed57fdf`, `5cc63a6`: `backend/app/identity/`, `backend/app/api/routes_projects.py`, `routes_identity.py`, `idempotency.py`, `backend/app/decisions.py`, `seed/construction_status.json`, `evals/identity/v1/`, `prompts/a01_project_identity.1.0.md`, `contracts/v1/state_machines.json` and `journeys.json` (1.1.0), `scripts/run_step04_*.sh`, `scripts/set_env_secret.py`, `DECISIONS.md` | [logs/step-04](logs/step-04/README.md): 32/32 at `5cc63a6` (143 backend tests); product owner's run 32/32 and 16/16 mutants at `4606c3a`; CI green. Live A01 verified 29 Sep 2026 ([log](logs/step-04/live-a01-check-20260929T060000Z.log)). Carried forward: invalidation of findings and approvals joins at Steps 07–11 |
-| 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | not_started | — | — |
+| 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | in_progress (built, live, awaiting approval of U–Y) | `6881ccd`, `bebbd76`, `0fa6640`, STEP05_COMMIT: `backend/app/sources/` (policies, http, robots, quota, state, store, collection, lifecycle, recheck, verify), `backend/app/connectors/` (brave, web, youtube, registry), `backend/app/api/routes_runs.py`, `routes_sources.py`, `routes_policies.py`, `contracts/v1/operations.schema.json` (1.1.0), `seed/source_policies.json`, `seed/connectors.json`, `scripts/run_step05_*.sh`, `DECISIONS.md` (D40–D44), `docs/02`, `docs/06` | [logs/step-05](logs/step-05/README.md): live runs for all five projects 30 Sep 2026; `verify-collection` 12/12 on the real data; 223 backend tests; mutants and check script results in the log README |
 | 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | not_started | — | — |
 | 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | not_started | — | — |
 | 08 | [Agent development and master workflow](steps/08-agents-and-master-workflow.md) | not_started | — | — |
@@ -25,21 +25,34 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 
 ## Current handoff
 
-- Active step: 05 (text and social collection), not started. Step 04 is complete: P–T approved 29 Sep 2026 (D35–D39 accepted); the product owner ran both check scripts. M3M Antalya Hills Phase II confirmed ready to move (I16 closed).
-- Next action: start Step 05 (text and social collection): Brave Search discovery, the Crawl4AI web adapter, the YouTube Data API, and collection jobs feeding Step 04 identity. Anthropic is live (29 Sep 2026); the Brave and YouTube keys are in `.env` and their live gates are demonstrated in Step 05. Credentials go only in `.env`, never `.env.example`, which the pre-commit hook guards.
-- Collection tools and competitor portals decided 28 Sep 2026 (D33, D34; I05 settled): built in Steps 05–06 after Step 04. Account sign-in, bot-protection bypass and robots-disallowed paths are not built; 99acres, Housing.com and MagicBricks project pages stay `access_pending` under those rules.
-- Local stack: `make up` then `make seed`; sign in as `deepesh.gupta@client-site.example`. The password is only in the local `.env` (`SEED_USER_PASSWORD`, git-ignored, mode 600), never in the repository.
-- Running services: MongoDB 8.0 replica set `rs0`, API :8000, worker, scheduler and web :3000, all on 127.0.0.1. Fixture mode (explicit banner; nothing can be published).
-- Model gateway: built and unit-tested with a fake client. `make smoke-model` prints `skipped: no ANTHROPIC_API_KEY configured` until the key is added (I02). With a key it confirms the three configured model IDs through the Models API and makes one structured-output call, and the returned model ID is recorded here.
-- D21: the product owner will build the review-posting agent outside this repository; nothing in this repository supports it. Model-written first-person reviews were declined; the agreed form is D28 (reviews from real posts, one author each, credited, moderator-approved, never reposted through user accounts).
-- Deferred inputs, asked at the step that needs them (product owner's request): moderator capacity I11 (Step 09), correction owner I10 (before Step 11), demo machine I12 (Step 13).
-- Project inputs: all 5 in `contracts/five-project-input-template.json` with developers and 10 RERA registrations (D15, D16); slugs per D19; seeded into MongoDB by `make seed`.
-- Repository: https://github.com/deepeshgupta12/agentic_ai_review_model (private), all work on `main` (D18). CI (`.github/workflows/ci.yml`) runs contracts, backend, web and Compose jobs on every push.
-- Credentials (names only): ANTHROPIC_API_KEY (workspace-scoped, live); BRAVE_SEARCH_API_KEY and YOUTUBE_API_KEY (present in `.env` 29 Sep 2026, demonstrated in Step 05). Not configured: Reddit (optional, needs Reddit's approval), X, Meta, listening provider.
-- Fixture/live distinction: `contracts/client-data-example.json` is fictional and must not be presented as source evidence.
-- Last implemented commit: `bc838ba` (Anthropic live; Steps 03–04 rechecked).
-- Last executed product checks: at `bc838ba`, `bash scripts/run_step03_checks.sh` 45/45 with a real model call ([log](logs/step-03/checks-20260929T061619Z.log)) and `bash scripts/run_step04_checks.sh` 32/32, 147 backend tests ([log](logs/step-04/checks-20260929T062144Z.log)).
-- Tooling: backend `cd backend && uv run …` (unset any `VIRTUAL_ENV` from another project; the Makefile does this); web `cd web && pnpm …`; contract checks in `.venv` (D26). `make help` lists everything.
+- Active step: 05 (text and social collection), built and live; awaiting the product owner's approval of items U–Y (D40, D42, D43, D44, D45). D41 (allow-list v4) accepted 29 Sep 2026.
+- Live on 30 Sep 2026: `brave_search`, `web_fetch` and `youtube_data_api`, after real runs for all five projects. The evidence log is [live-connectors-20260930T110436Z.log](logs/step-05/live-connectors-20260930T110436Z.log). `anthropic` has been live since 29 Sep 2026.
+- Stored so far: 905 records, all passing `verify-collection` 13/13:
+  - 264 Brave hits (metadata only);
+  - 87 current pages; 71 MagicBricks revisions withdrawn and erased under D45;
+  - 203 videos (metadata only) and 280 comments.
+- Links: 422 auto-accepted, 98 in review, 118 rejected; 350 evidence spans.
+- Next action: the product owner runs `bash scripts/run_step05_checks.sh` and `bash scripts/run_step05_mutations.sh`, then approves or amends U–Y. After approval, start Step 06 (video transcripts: captions, then yt-dlp subtitles, then local faster-whisper, per D33).
+- Step 06 input from the product owner's earlier project (youtube-learning-copilot, reviewed 30 Sep 2026):
+  - adapt the fallback order, video-ID parsing, ffmpeg 16 kHz mono and loading Whisper once;
+  - do not reuse its cookie and proxy workarounds (D33) or its OpenAI and Ollama calls;
+  - avoid its ASCII-only tokenizer, which deletes Hindi text;
+  - the repository has no licence, so reimplement rather than copy.
+- Waiting for the Step 09 console:
+  - links in `needs_review`;
+  - 3 alias proposals from A01 (D17).
+- Refresh scheduling of collection and re-checks arrives at Step 13. Until then use `make collect` and `make recheck` by hand.
+- Collection tools and competitor portals: D33 and D34, with D40 replacing Crawl4AI. 99acres and Housing.com refuse automated requests, and MagicBricks' robots.txt disallows project pages, so they stay unread.
+- Local stack: `make up`, then `make seed`; sign in as `deepesh.gupta@client-site.example`. The password is only in the local `.env` (`SEED_USER_PASSWORD`, git-ignored). `APP_MODE` is `fixture`: it controls only the session secret and the API docs page. Fixture data never enters `sy_poc`; tests and smoke checks use their own databases.
+- Running services: MongoDB 8.0 replica set `rs0`, API :8000, worker (handlers `collect`, `check_availability`, `erase_payloads`, `invalidate_dependencies`), scheduler and web :3000, all on 127.0.0.1.
+- D21: the product owner will build the review-posting agent outside this repository; nothing here supports it. The agreed review form is D28.
+- Deferred inputs, asked at the step that needs them: moderator capacity I11 (Step 09), correction owner I10 (before Step 11), demo machine I12 (Step 13).
+- Repository: https://github.com/deepeshgupta12/agentic_ai_review_model (private), all work on `main` (D18). CI runs contracts, backend, web and Compose jobs on every push.
+- Credentials (names only), all in `.env`, never `.env.example`; the pre-commit hook guards this:
+  - live: ANTHROPIC_API_KEY (workspace-scoped), BRAVE_SEARCH_API_KEY, YOUTUBE_API_KEY;
+  - not configured: Firecrawl, Reddit, X, Meta, listening provider.
+- Not in this repository's commits: `AGENTS.md` has an uncommitted local vexp section, and `.codex/` and `.github/copilot-instructions.md` are untracked. They were added by another tool, so they are left out of the Step 05 commits for the product owner to keep or discard.
+- Tooling: backend `cd backend && uv run …` (unset any `VIRTUAL_ENV`); web `cd web && pnpm …`; contract checks in `.venv`. `make help` lists everything.
 
 ## Session log
 
@@ -242,6 +255,37 @@ Fixture-only behavior still awaiting live validation: source connectors (Step 05
 Known defects / missing inputs / owner: none blocking Step 05; YOUTUBE_API_KEY added by the product owner the same day
 Remaining acceptance checks: Step 04 invalidation of findings/approvals joins at Steps 07–11
 Next executable action: start Step 05
+```
+
+```text
+Date / tool / branch / commit: 2026-09-29 to 2026-10-01 / Claude Code (VS Code) / main / 32ed8a6 → STEP05_COMMIT
+Step and scope completed: Step 05 built and live: source policies, safe fetching, Brave, web reader, YouTube, runs,
+  lifecycle and re-checks, run/source APIs; live runs for the five projects; awaiting approval of U–Y
+Files changed: backend/app/sources/ (policies, http, robots, quota, state, store, collection, lifecycle, recheck,
+  verify), backend/app/connectors/ (base, brave, web, youtube, registry), backend/app/api/routes_runs.py,
+  routes_sources.py, routes_policies.py, routes_ops.py (health), cli.py (collect, recheck-sources,
+  verify-collection, discover-hosts, seed-policies), seed/projects.py (new connectors join configs), worker and
+  scheduler; contracts/v1 operations 1.1.0 (job kind check_availability) and state machines 1.2.0 (older
+  revisions); web/lib/api-schema.d.ts; seed/source_policies.json (web v4), seed/connectors.json (three live);
+  tests (+83, 230 in total; conftest hides real credentials); scripts/run_step05_checks.sh, run_step05_mutations.sh,
+  scripts/tests (registry tests order-independent); Makefile; DECISIONS (D40–D45, I03, registry, matrix);
+  docs/02, docs/06, docs/10 (generated); CHANGELOG; logs/step-05/
+Decisions made, with DECISIONS.md IDs: D41 accepted (29 Sep 2026); D40, D42, D43, D44, D45 proposed (items U–Y)
+Checks actually run and results: live collection for all five projects (logs/step-05/live-collect-*.log);
+  4 re-check passes, 799 checks; verify-collection 13/13 on 905 stored records. One full backend run had a
+  fixture error in test_lifecycle (setup or teardown, details not captured); the test file alone and a full
+  rerun with error reporting (230 passed) did not reproduce it, so watch for a recurrence. Backend suite, lint, mypy,
+  web gates, Step 01–02 suites and the contract checker (results of the recorded script runs in
+  logs/step-05/README.md)
+Live integrations verified (credential present + real query result): brave_search, web_fetch, youtube_data_api
+  (live 30 Sep 2026, logs/step-05/live-connectors-20260930T110436Z.log); anthropic used live for 45 A01 calls
+Fixture-only behavior still awaiting live validation: none for Step 05's connectors; video transcripts are Step 06
+Known defects / missing inputs / owner: 99acres, Housing.com, MagicBricks and 11 other sites refuse our crawler
+  (unread, D45); comments on generic web pages are not split per author; some homepages carry a markup date that
+  may be a modification date; links in review and 3 alias proposals wait for the Step 09 console (product owner)
+Remaining acceptance checks: product owner's runs of both Step 05 scripts and approval of U–Y
+Next executable action: product owner runs `bash scripts/run_step05_checks.sh` and
+  `bash scripts/run_step05_mutations.sh`, then approves or amends U–Y
 ```
 
 ## Session entry template

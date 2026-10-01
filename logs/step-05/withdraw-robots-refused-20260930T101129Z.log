@@ -1,0 +1,85 @@
+D45 clean-up, 2026-09-30T10:11:29Z; commit 0fa6640 plus uncommitted Step 05 fixes
+$ docker compose exec -T api python - < withdraw_refused.py
+--- code ---
+"""D45 clean-up (30 Sep 2026). Before the rule was corrected, a robots.txt answered with 401/403 and similar was
+read as "no robots.txt", so pages were read from sites that refuse our crawler. For every host logged that way,
+robots.txt is asked again once with the corrected rule and the answer is added to the fetch log. Where the site
+refuses us, every page read from it is withdrawn (all revisions); the worker then erases the text after dependency
+invalidation. Brave search hits (metadata from the Brave API, not our crawler) are kept. Safe to repeat."""
+
+from collections import Counter
+
+from app import audit
+from app.config import get_settings
+from app.connectors.registry import agent_token, safe_client
+from app.contracts import get_contracts
+from app.db import get_db
+from app.sources import policies
+from app.sources.lifecycle import withdraw
+from app.sources.robots import RobotsCache
+from app.sources.state import log_fetch
+
+db, settings, contracts = get_db(), get_settings(), get_contracts()
+robots = RobotsCache(safe_client(settings), agent_token(settings))
+REASON = (
+    "robots.txt refused our crawler when asked again on 30 Sep 2026; the page was read before the rule "
+    "treating that refusal as 'no robots.txt' was corrected (D45)"
+)
+hosts = sorted(db.ai_fetch_log.distinct("host", {"connector_id": "web_fetch", "robots": "no_robots_file"}))
+print(f"hosts logged with 'no_robots_file': {len(hosts)}")
+totals = Counter()
+for host in hosts:
+    sample = db.ai_fetch_log.find_one({"host": host, "robots": "no_robots_file"}, sort=[("at", -1)])
+    decision = robots.decide(sample["url"])
+    resolution = policies.resolve(db, sample["url"])
+    log_fetch(
+        db,
+        {
+            "connector_id": "web_fetch",
+            "url": decision.robots_url,
+            "host": host,
+            "family": resolution.family,
+            "policy_version": resolution.policy["policy_version"] if resolution.policy else None,
+            "robots": decision.basis if decision.allowed else f"disallowed ({decision.basis})",
+            "outcome": "robots_rechecked",
+            "status_code": None,
+            "run_id": None,
+        },
+    )
+    pages = [
+        s
+        for s in db.ai_sources.find({"connector_id": "web_fetch"}, {"id": 1, "canonical_url": 1, "lifecycle": 1})
+        if policies.host_of(s["canonical_url"]) == host
+    ]
+    ids = sorted({s["id"] for s in pages if s["lifecycle"] not in ("withdrawn", "deleted", "expired")})
+    action = "kept"
+    if decision.basis == "robots_refused":
+        for source_id in ids:
+            body = {"scope": "source_all_revisions", "revision": None, "reason": REASON}
+            withdraw(db.client, db, contracts, source_id, body, audit.SYSTEM_ACTOR)
+        action = f"withdrew {len(ids)} source(s), {len(pages)} revision(s)"
+        totals["withdrawn_sources"] += len(ids)
+        totals["refusing_hosts"] += 1
+    elif decision.basis == "robots_unreachable":
+        action = f"robots.txt unreachable now; {len(ids)} source(s) kept, to be re-checked"
+        totals["unreachable_hosts"] += 1
+    print(f"  {host:32} {decision.basis:20} {action}")
+print(dict(totals))
+--- output ---
+hosts logged with 'no_robots_file': 15
+  99acres.com                      robots_refused       withdrew 0 source(s), 0 revision(s)
+  bestluxuryresidences.in          robots_refused       withdrew 0 source(s), 0 revision(s)
+  conscienthineselevate.net        robots_refused       withdrew 0 source(s), 0 revision(s)
+  conscientparqgurgaon.com         robots_refused       withdrew 0 source(s), 0 revision(s)
+  gurgaonfloors.in                 robots_refused       withdrew 0 source(s), 0 revision(s)
+  gurgaonnewlaunch.in              robots_refused       withdrew 0 source(s), 0 revision(s)
+  m3mbigbillionsale.in             robots_refused       withdrew 0 source(s), 0 revision(s)
+  m3mproperty.com                  robots_refused       withdrew 0 source(s), 0 revision(s)
+  magicbricks.com                  robots_refused       withdrew 57 source(s), 71 revision(s)
+  propesatatenews.com              robots_refused       withdrew 0 source(s), 0 revision(s)
+  realtyhunting.com                robots_refused       withdrew 0 source(s), 0 revision(s)
+  realtysmartz.in                  robots_refused       withdrew 0 source(s), 0 revision(s)
+  respaceinfra.com                 robots_refused       withdrew 0 source(s), 0 revision(s)
+  silverdomerealtors.com           robots_refused       withdrew 0 source(s), 0 revision(s)
+  sobhagurgaonprojects.com         no_robots_file       kept
+{'withdrawn_sources': 57, 'refusing_hosts': 14}

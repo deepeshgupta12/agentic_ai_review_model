@@ -113,3 +113,55 @@ def test_retention_expires_old_sources_only(db, contracts, linked):
     assert expire_due(db.client, db, contracts) == 1
     assert lifecycle(db, source) == "expired" and lifecycle(db, fresh) == "active"
     assert db["ai_jobs"].find_one({"kind": "erase_payloads", "logical_key": {"$regex": source["id"]}})
+
+
+def edited(db, contracts, source):
+    """Store an edit of the linked page: revision 1 becomes superseded, revision 2 is active."""
+    from app.sources.policies import current
+    from app.sources.store import Item, store_item
+
+    item = Item(
+        connector_id="web_fetch",
+        native_id=source["native_id"],
+        canonical_url=source["canonical_url"],
+        source_kind="forum_post",
+        capture_level="full_content",
+        title=None,
+        text=TEXT + " Edited: the road is now repaired.",
+    )
+    new = store_item(db, item, current(db, "competitor_portals")).source
+    assert lifecycle(db, source) == "superseded" and new["revision"] == 2
+    return new
+
+
+def payloads_of(db, source):
+    return db["ai_payloads"].count_documents({"_id": {"$regex": f"^{source['id']}@"}})
+
+
+def test_withdrawing_a_source_erases_every_revision(db, contracts, linked):
+    source, _ = linked
+    edited(db, contracts, source)
+    body = {"scope": "source_all_revisions", "revision": None, "reason": "Author asked"}
+    withdraw(db.client, db, contracts, source["id"], body, MODERATOR)
+    while run_one(db, "test-worker", 60) is not None:
+        pass
+    states = {s["revision"]: s["lifecycle"] for s in db["ai_sources"].find({"id": source["id"]})}
+    assert states == {1: "withdrawn", 2: "withdrawn"} and payloads_of(db, source) == 0, "no copy of the text stays"
+
+
+def test_a_confirmed_deletion_reaches_older_revisions(db, contracts, linked):
+    source, _ = linked
+    new = edited(db, contracts, source)
+    record_check(db.client, db, contracts, new, "gone")
+    record_check(db.client, db, contracts, new, "gone")
+    while run_one(db, "test-worker", 60) is not None:
+        pass
+    states = {s["revision"]: s["lifecycle"] for s in db["ai_sources"].find({"id": source["id"]})}
+    assert states == {1: "deleted", 2: "deleted"} and payloads_of(db, source) == 0
+
+
+def test_an_old_superseded_revision_expires_with_retention(db, contracts, linked):
+    source, _ = linked
+    edited(db, contracts, source)
+    db["ai_sources"].update_one({"_id": source["_id"]}, {"$set": {"collected_at": utcnow() - timedelta(days=91)}})
+    assert expire_due(db.client, db, contracts) == 1 and lifecycle(db, source) == "expired"

@@ -1,0 +1,48 @@
+$ docker compose exec -T api python -m app.cli recheck-sources   (pass 1, 2026-09-30T06:46:44Z)
+{
+  "job_id": "job_01M3RH1P7310P57BBZYBPPSXDW",
+  "status": "completed",
+  "result": {
+    "present": 187,
+    "dates_corrected": 13,
+    "changed": 13,
+    "new_revisions": 13,
+    "left_for_later": 427
+  }
+}
+exit 0
+$ docker compose exec -T api python -m app.cli recheck-sources   (pass 2, 2026-09-30T07:00:12Z)
+{
+  "job_id": "job_01M3RHT8Y2BGCJJSW27XPY5YWY",
+  "status": "completed",
+  "result": {
+    "present": 200,
+    "dates_corrected": 0,
+    "left_for_later": 427
+  }
+}
+exit 0
+$ docker compose exec -T api python -m app.cli recheck-sources   (pass 3, 2026-09-30T07:11:43Z)
+{
+  "job_id": "job_01M3RJFC20890YG9W4W85G5BKK",
+  "status": "completed",
+  "result": {
+    "present": 200,
+    "left_for_later": 427
+  }
+}
+exit 0
+$ docker compose exec -T api python -m app.cli recheck-sources   (pass 4, 2026-09-30T07:28:46Z)
+{
+  "job_id": "job_01M3RKEM1E196CF4MB8CKRD6SM",
+  "status": "completed",
+  "result": {
+    "present": 199,
+    "dates_corrected": 0,
+    "changed": 1,
+    "new_revisions": 1,
+    "left_for_later": 427
+  }
+}
+exit 0
+finished 2026-09-30T07:42:18Z

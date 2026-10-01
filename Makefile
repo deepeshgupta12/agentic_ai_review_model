@@ -97,6 +97,18 @@ eval-identity: ## Identity evaluation on the synthetic labelled set, saved to ai
 smoke-identity: ## Whole identity path on the fictional catalogue in a scratch database
 	$(COMPOSE) exec -T api python -m app.cli fixture-smoke-identity
 
+discover-hosts: ## Live Brave discovery: hosts found and their policy (2 requests per project; stores nothing)
+	$(COMPOSE) exec -T api python -m app.cli discover-hosts
+
+collect: ## A real collection run for every project (worker must be up; uses Brave/YouTube quota)
+	$(COMPOSE) exec -T api python -m app.cli collect
+
+recheck: ## Re-check stored sources for edits, deletions and stated dates (worker job; uses YouTube units)
+	$(COMPOSE) exec -T api python -m app.cli recheck-sources
+
+verify-collection: ## Read-only checks over what collection stored (policies, robots, metadata-only, threads, quotas)
+	$(COMPOSE) exec -T api python -m app.cli verify-collection
+
 check-step04: ## Step 04 checks with a saved log
 	bash scripts/run_step04_checks.sh
 

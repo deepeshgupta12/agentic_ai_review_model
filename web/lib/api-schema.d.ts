@@ -2102,8 +2102,11 @@ export interface components {
         Job: {
             id: components["schemas"]["JobId"];
             logical_key: string;
-            /** @enum {unknown} */
-            kind: "collect" | "analyse" | "resume_after_review" | "generate_content" | "deliver_publication" | "invalidate_dependencies" | "erase_payloads" | "scheduled_refresh" | "evaluate";
+            /**
+             * @description check_availability re-checks stored sources for edits and deletions (Step 05.6, D44)
+             * @enum {unknown}
+             */
+            kind: "collect" | "analyse" | "resume_after_review" | "generate_content" | "deliver_publication" | "invalidate_dependencies" | "erase_payloads" | "scheduled_refresh" | "evaluate" | "check_availability";
             run_id: components["schemas"]["RunId"] | null;
             project_id: components["schemas"]["ProjectId"] | null;
             status: components["schemas"]["JobStatus"];

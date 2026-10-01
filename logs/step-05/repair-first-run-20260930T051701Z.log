@@ -1,0 +1,94 @@
+Record repairs after the first live run, 2026-09-30T05:17:01Z
+commit: 0fa6640 plus the Step 05 fixes in progress
+$ docker compose exec -T api python - < repair_first_run.py
+--- code ---
+"""Two record repairs after the first live run (30 Sep 2026). Both are computed from stored evidence; nothing is
+invented. Each writes an audit event. Safe to repeat: a repaired record is left alone."""
+
+from app import audit
+from app.db import get_db, run_in_transaction
+
+db = get_db()
+RUN = "run_01M3R64S9W32NJ8CP9RDBPWB1Q"
+FIXED = "fixed: a run now uses only the connectors it planned"
+
+# 1. The first Conscient Parq run read pages with the web reader, but its coverage omitted web_fetch.
+run = db.ai_runs.find_one({"_id": RUN})
+if any(c["connector_id"] == "web_fetch" for c in run["coverage"]):
+    print("1. run coverage: already repaired")
+else:
+    logs = list(db.ai_fetch_log.find({"run_id": RUN, "connector_id": "web_fetch"}))
+    fetched = [f for f in logs if f["outcome"] == "fetched"]
+    urls = {f.get("final_url") or f["url"] for f in fetched}
+    sources = list(db.ai_sources.find({"connector_id": "web_fetch", "native_id": {"$in": sorted(urls)}}, {"id": 1}))
+    matched = sum(
+        1
+        for s in sources
+        if db.ai_project_source_links.count_documents(
+            {"source.id": s["id"], "project_id": run["project_id"], "status": {"$ne": "rejected"}}
+        )
+    )
+    counts = {}
+    for f in logs:
+        key = f["outcome"].split(":", 1)[0]
+        counts[key] = counts.get(key, 0) + 1
+    outcomes = "; ".join(f"{k}: {v}" for k, v in sorted(counts.items()))
+    entry = {
+        "connector_id": "web_fetch",
+        "status": "complete_for_query",
+        "attempted_queries": len(logs),
+        "fetched": len(fetched),
+        "matched": matched,
+        "analysed": 0,
+        "metadata_only": 0,
+        "last_success_at": max(f["at"] for f in fetched),
+        "note": f"recorded on 2026-09-30 from the fetch log after the run: web_fetch was not in this run's plan, "
+        f"yet the web reader ran and coverage omitted it ({FIXED}). {outcomes}",
+    }
+
+    def write(session):
+        db.ai_runs.update_one({"_id": RUN}, {"$push": {"coverage": entry}}, session=session)
+        audit.record(
+            db, "run.coverage_repaired", "run", RUN, audit.SYSTEM_ACTOR,
+            details={"connector": "web_fetch", "basis": "ai_fetch_log", "fetched": len(fetched), "matched": matched},
+            session=session,
+        )
+
+    run_in_transaction(db.client, write)
+    print(f"1. run coverage: web_fetch added from {len(logs)} fetch records: fetched {len(fetched)}, "
+          f"matched {matched}; {outcomes}")
+
+# 2. A redirected developer page: the fetch record named only the address asked for.
+ASKED = "https://www.dlf.in/homes-blogs-dlf-privana-north-design"
+LANDED = "https://www.dlf.in/homes/blogs/dlf-privana-north-design"
+record = db.ai_fetch_log.find_one({"url": ASKED, "outcome": "fetched"})
+source = db.ai_sources.find_one({"connector_id": "web_fetch", "native_id": LANDED})
+if record is None or source is None:
+    print("2. fetch record: not found; nothing changed")
+elif record.get("final_url"):
+    print("2. fetch record: already repaired")
+else:
+    gap_ms = (source["collected_at"] - record["at"]).total_seconds() * 1000
+    between = db.ai_fetch_log.count_documents(
+        {"connector_id": "web_fetch", "outcome": "fetched", "at": {"$gt": record["at"], "$lte": source["collected_at"]}}
+    )
+    if not (0 <= gap_ms < 1000 and between == 0):
+        print(f"2. fetch record: the source is not unambiguously this fetch (gap {gap_ms:.0f} ms, {between} between)")
+    else:
+
+        def write2(session):
+            db.ai_fetch_log.update_one({"_id": record["_id"]}, {"$set": {"final_url": LANDED}}, session=session)
+            audit.record(
+                db, "fetch_log.final_url_backfilled", "source", source["id"], audit.SYSTEM_ACTOR,
+                details={"asked": ASKED, "landed": LANDED, "basis": f"source stored {gap_ms:.0f} ms after this fetch"},
+                revision=source["revision"], session=session,
+            )
+
+        run_in_transaction(db.client, write2)
+        print(f"2. fetch record: final_url set; the source was stored {gap_ms:.0f} ms after the fetch, none between")
+--- output ---
+1. run coverage: web_fetch added from 40 fetch records: fetched 29, matched 14; error: 1; fetched: 29; refused: 9; robots_disallowed: 1
+2. fetch record: final_url set; the source was stored 5 ms after the fetch, none between
+--- second run (must change nothing) ---
+1. run coverage: already repaired
+2. fetch record: already repaired

@@ -1,0 +1,16 @@
+$ docker compose exec -T api python -m app.cli collect --project conscient-parq-sector-80-gurgaon --wait 1200
+started 2026-09-30T03:36:13Z
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/srv/backend/app/cli.py", line 522, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "/srv/backend/app/cli.py", line 518, in main
+    return int(args.func(args))
+               ~~~~~~~~~^^^^^^
+  File "/srv/backend/app/cli.py", line 296, in cmd_collect
+    "project": project["name"] if project else run["project_id"],
+               ~~~~~~~^^^^^^^^
+KeyError: 'name'
+exit 1 at 2026-09-30T03:43:27Z

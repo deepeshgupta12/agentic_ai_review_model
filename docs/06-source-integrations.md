@@ -7,7 +7,7 @@ The production boundary is the five supplied projects. Source access is obtained
 | Order | Source / provider | Why first | What it yields |
 |---|---|---|---|
 | 1 | Brave Search API | Self-serve key; enables forum/blog/news discovery for all five projects | URLs + snippets (discovery metadata only) |
-| 2 | Firecrawl (or Playwright adapter) | Turns discovered public pages into full-content sources with provenance | Thread/article text, dates, author role where visible |
+| 2 | Web reader `web_fetch` (local HTTP + Trafilatura, D40); Firecrawl and Playwright optional | Turns discovered public pages into full-content sources with provenance | Thread/article text, dates stated in markup, author name where visible |
 | 3 | YouTube Data API v3 | Self-serve key; video/short discovery, metadata and public comments | Video library + comment sources (comments are legitimate text evidence) |
 | 4 | Reddit, X, Meta, Quora/LinkedIn, listening provider | Require commercial approval or contracts; add when obtained | Broader social coverage |
 | 5 | Spoken video content | Requires an acquisition route decided by the product owner (I05) | Transcript evidence |
@@ -20,7 +20,7 @@ Every platform/capability gets a row in DECISIONS.md: provider, enabled/mandator
 
 | Source family | Route | Demonstration |
 |---|---|---|
-| Public forums/blogs/news | Brave discovery → Firecrawl/Playwright adapter for permitted domains | Full thread context, dates, author role, pagination, deleted-content handling |
+| Public forums/blogs/news | Brave discovery → web reader for allow-listed hosts (D40, D41) | Full thread context, dates, author role, pagination, deleted-content handling |
 | YouTube videos/Shorts | YouTube Data API for discovery/metadata/comments | Query match, quota, comments disabled, removed video, unknown format |
 | Spoken video content | Creator-supplied files, licensed transcript/media feed, or content the team itself is authorised to process | Actual permitted transcript/media processed with timing preserved |
 | Reddit | Commercially approved API/provider agreement | Analysis and derived-content permissions plus required fields |
@@ -29,7 +29,7 @@ Every platform/capability gets a row in DECISIONS.md: provider, enabled/mandator
 | Quora/LinkedIn/other forums | Permitted indexed pages or licensed/partner feeds | Actual project-level coverage |
 | Official project facts | Public regulatory/developer pages fetched under policy; optional fields in the input file | Correct phase, effective date and authority of each record |
 
-## Scraping policy (applies to Firecrawl, Playwright and any custom adapter)
+## Scraping policy (applies to the web reader, Firecrawl, Playwright and any custom adapter)
 
 Scraping is permitted for the POC within these rules, enforced in code and recorded per source policy:
 
@@ -44,9 +44,17 @@ Scraping is permitted for the POC within these rules, enforced in code and recor
 
 Implement `capabilities`, `discover`, `fetch_item`, `fetch_thread`, `list_updates`, `check_availability`, and `health` where supported. Unsupported methods return explicit capability errors. Use versioned input/result types and persist provider request IDs, query/window, source-native ID, cursor and coverage.
 
-Return original publication time or an explicit unknown-date flag, collected time, canonical URL, content/metadata, parent relationships, access level, source role signals, permitted media references and policy version. Do not rely on arbitrary raw dictionaries in downstream agents.
+Return original publication time or an explicit unknown-date flag (the web reader takes dates only from structured markup; a date written in the page text is not a stated publication date, D44), collected time, canonical URL, content/metadata, parent relationships, access level, source role signals, permitted media references and policy version. Do not rely on arbitrary raw dictionaries in downstream agents.
 
 Commit a page's records before advancing its cursor/watermark. Replaying the page after a crash upserts the same identities. Use bounded retries, exponential backoff with jitter and Retry-After. Isolate a failing platform so other platforms can finish; mark the run partial. Token refresh, quota reservation and concurrency caps must work across workers.
+
+## As built in Step 05
+
+- **Web reader** (`backend/app/connectors/web.py`, D40). Before any request it checks the host's policy family and allow-list, then robots.txt. Every redirect hop is checked the same way. A redirected page is stored where it landed, and the fetch log keeps both addresses. Every decision goes to `ai_fetch_log`.
+- **Safe client** (`backend/app/sources/http.py`). It refuses non-public addresses, re-checked on every hop. It caps size (3 MB) and content type. It paces 3 seconds per host and honours Retry-After with backoff.
+- **Runs** (D43). A run uses only the connectors it planned. Coverage is per connector, and `partial` means some items may read next time.
+- **Re-checks** (D44). The `check_availability` job re-checks stored pages and YouTube records. It applies the lifecycle rules: temporary failure, two consecutive "gone" results for deletion, a new revision for an edit. It also corrects stated dates with an audit event.
+- **Checks on stored data.** `make verify-collection` checks the stored data against these rules.
 
 ## Media rules
 

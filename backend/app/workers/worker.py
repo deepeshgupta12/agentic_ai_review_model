@@ -21,7 +21,7 @@ from app.db import get_db
 from app.identity import invalidation
 from app.jobs import queue
 from app.observability import configure_logging, log_event, register_secrets
-from app.sources import collection, lifecycle
+from app.sources import collection, lifecycle, recheck
 
 logger = logging.getLogger("worker")
 Handler = Callable[[Database[dict[str, Any]], dict[str, Any], Callable[[], str]], str | None]
@@ -43,6 +43,7 @@ def register(kind: str) -> Callable[[Handler], Handler]:
 register("invalidate_dependencies")(invalidation.handle)
 register("collect")(collection.handle_collect)
 register("erase_payloads")(lifecycle.handle_erase)
+register("check_availability")(recheck.handle_recheck)
 
 
 def run_one(db: Database[dict[str, Any]], owner: str, lease_seconds: int) -> str | None:

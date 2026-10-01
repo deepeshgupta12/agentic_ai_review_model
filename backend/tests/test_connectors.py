@@ -125,6 +125,18 @@ def test_the_web_reader_reads_an_allowed_page_and_logs_the_decision(db, web_poli
     assert log["outcome"] == "fetched" and log["family"] == "web_public_pages" and log["robots"] == "parsed"
 
 
+def test_a_date_written_only_in_the_text_stays_unknown():
+    from app.connectors.web import extract, publication_date
+
+    body = "<p>" + "Quillon Residences in Sector 102 has large balconies. " * 8 + "</p>"
+    free_text = f"<html><body><article>{body}<p>Updated on 29 September 2026.</p></article></body></html>"
+    assert publication_date(extract(free_text, "https://forum.example.test/a")["date"])["status"] == "unknown"
+    marked = free_text.replace(
+        "<html>", '<html><head><meta property="article:published_time" content="2026-08-14T09:30"></head>'
+    )
+    assert publication_date(extract(marked, "https://forum.example.test/a")["date"])["value"] == "2026-08-14T00:00:00Z"
+
+
 def test_the_web_reader_never_requests_a_page_the_policy_does_not_allow(db):
     net = FakeNet()
     net.html("forum.example.test", {"/t/1": (200, article("x", "y"))})
@@ -174,6 +186,27 @@ def test_a_redirect_to_a_host_the_policy_does_not_allow_is_stopped(db, web_polic
     outcome = reader(net, db).fetch("https://forum.example.test/go")
     assert outcome.status == "error" and "redirect" in outcome.reason
     assert "evil.example.test" not in net.hosts_requested()
+
+
+def test_an_allowed_redirect_is_stored_where_it_landed_and_logged_with_both_addresses(db, web_policy):
+    """Found live on 30 Sep 2026: a developer blog redirected, and the fetch log named only the address asked for."""
+    import httpx
+
+    net = FakeNet()
+    body = article("Tower C update", "Quillon Residences in Sector 102 reached the 20th floor. " * 6)
+
+    def forum(request):
+        if request.url.path == "/robots.txt":
+            return httpx.Response(200, headers={"content-type": "text/plain"}, text="")
+        if request.url.path == "/old-post":
+            return httpx.Response(301, headers={"location": "https://forum.example.test/t/1"})
+        return httpx.Response(200, headers={"content-type": "text/html"}, text=body)
+
+    net.route("forum.example.test", forum)
+    outcome = reader(net, db).fetch("https://forum.example.test/old-post")
+    assert outcome.status == "fetched" and outcome.item.native_id == "https://forum.example.test/t/1"
+    log = db["ai_fetch_log"].find_one({"url": "https://forum.example.test/old-post"})
+    assert log["outcome"] == "fetched" and log["final_url"] == "https://forum.example.test/t/1"
 
 
 def youtube_net(comments_disabled=False):

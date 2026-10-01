@@ -49,8 +49,20 @@ def _language(html: str) -> str | None:
     return tag if LANGUAGE_TAG.match(tag) else None
 
 
+# Dates only from structured markup (meta tags, JSON-LD, <time>, the URL). The default "extensive" search also reads
+# free text such as "Updated on 29 September", which is not a stated publication date (found live, 30 Sep 2026).
+DATE_PARAMS = {"extensive_search": False, "original_date": True}
+
+
 def extract(html: str, url: str) -> dict[str, Any] | None:
-    doc = trafilatura.bare_extraction(html, url=url, with_metadata=True, include_comments=True, include_tables=True)
+    doc = trafilatura.bare_extraction(
+        html,
+        url=url,
+        with_metadata=True,
+        include_comments=True,
+        include_tables=True,
+        date_extraction_params=DATE_PARAMS,
+    )
     if doc is None:
         return None
     data: dict[str, Any] = doc.as_dict() if hasattr(doc, "as_dict") else dict(doc)
@@ -125,6 +137,9 @@ class WebFetch(Connector):
             log_fetch(self.db, {**entry, "outcome": outcome})
             return FetchOutcome(outcome, url, f"HTTP {response.status}; not worked around")
         final_url = normalise_url(response.url)
+        if final_url != url:  # every hop was checked; the page is governed by the policy where it landed
+            entry["final_url"] = final_url
+            resolution = self._allowed(final_url)[0]
         data = extract(response.text(), final_url)
         text = (data or {}).get("text") or ""
         if len(text) < MIN_TEXT_CHARS:

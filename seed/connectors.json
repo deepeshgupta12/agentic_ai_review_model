@@ -44,9 +44,9 @@
    "cursor_method": "query + freshness window + result offset",
    "deletion_method": "Not applicable: only discovery metadata is stored, and it expires with the run record",
    "demonstration": "A real query for one of the five projects returns results; query, result count, request time and response ID recorded in PROGRESS.md",
-   "status": "access_pending",
-   "last_verified": null,
-   "verification_ref": null
+   "status": "live",
+   "last_verified": "2026-09-30",
+   "verification_ref": "logs/step-05/live-connectors-20260930T110436Z.log"
   },
   {
    "id": "firecrawl",
@@ -107,9 +107,9 @@
    "cursor_method": "URL queue from discovery; per-URL content hash",
    "deletion_method": "Re-fetch returns 404/410 on two checks: confirmed deletion, stored payload erased after invalidation",
    "demonstration": "Fetch one allow-listed public page found by Brave for a supplied project; robots.txt decision, content hash and extracted publication date (or unknown) recorded",
-   "status": "access_pending",
-   "last_verified": null,
-   "verification_ref": null
+   "status": "live",
+   "last_verified": "2026-09-30",
+   "verification_ref": "logs/step-05/live-connectors-20260930T110436Z.log"
   },
   {
    "id": "playwright_fetch",
@@ -168,9 +168,9 @@
    "cursor_method": "search query + publishedAfter window + pageToken; commentThreads pageToken",
    "deletion_method": "videos.list returns no item: mark removed, erase stored metadata and comments",
    "demonstration": "A real search for a supplied project returns a video; one commentThreads page fetched (or comments-disabled status recorded); quota units used recorded",
-   "status": "access_pending",
-   "last_verified": null,
-   "verification_ref": null
+   "status": "live",
+   "last_verified": "2026-09-30",
+   "verification_ref": "logs/step-05/live-connectors-20260930T110436Z.log"
   },
   {
    "id": "harera_registry",

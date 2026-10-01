@@ -47,7 +47,12 @@ Version these changes as a new contract revision, update fixtures and adapters, 
 | `ai_publication_operations` | Unique operation ID and scoped idempotency key; receipts, delivery/retry states | Publisher |
 | `ai_jobs` | Unique logical job key; status/next-attempt/lease indexes | Scheduler and worker |
 | `ai_agent_runs` | Run/project/task IDs, versions, usage, outcome and errors | Worker |
-| `ai_connector_state` | Provider/project/query partition; cursor, watermark and last success | Connector worker |
+| `ai_connector_state` | Provider/project/query partition; cursor, watermark and last success. A page's records and its cursor commit in one transaction | Connector worker |
+| `ai_connector_quota` | One window per provider and bucket (Brave requests per month; YouTube searches and units per Pacific day); reserved atomically before each request (D43) | Connector worker |
+| `ai_fetch_log` | One record per web-reader decision: address asked for and where it landed, host, policy family and version, robots.txt basis, outcome and status code; never content. Kept 90 days | Web reader |
+| `ai_availability_checks` | Last availability check per source revision, its outcome and the count of consecutive "gone" results (D44) | Lifecycle service |
+| `ai_runs` | WorkflowRun: stage, window, per-connector coverage, budget, requester | Run API / collector |
+| `ai_run_events` | Run events (ULID keys) for the SSE stream and Last-Event-ID resume | Collector |
 | `ai_source_policies` | Immutable policy versions, scope and expiry; current eligibility pointer | Authorised administrator |
 | `ai_origin_clusters` | Cluster membership/version and provenance | Deduplication service |
 | `ai_audit_events` | Actor/action/target/time; no raw source payload | Backend services |

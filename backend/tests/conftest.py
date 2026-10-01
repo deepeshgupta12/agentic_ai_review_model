@@ -24,6 +24,25 @@ TEST_URI = os.environ.get("TEST_MONGODB_URI", "mongodb://localhost:27017/?replic
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 
+@pytest.fixture(autouse=True, scope="session")
+def no_real_credentials() -> Iterator[None]:
+    """Tests never see real credentials: code that calls get_settings() gets settings without the repository .env
+    and without credential variables from the shell. Found on 30 Sep 2026, when a handler read the real keys."""
+    from app import config
+
+    secret_names = [
+        name.upper() for name, field in Settings.model_fields.items() if "SecretStr" in str(field.annotation)
+    ]
+    saved = {name: os.environ.pop(name) for name in secret_names if name in os.environ}
+    env_file = Settings.model_config.get("env_file")
+    Settings.model_config["env_file"] = None
+    config.get_settings.cache_clear()
+    yield
+    Settings.model_config["env_file"] = env_file
+    config.get_settings.cache_clear()
+    os.environ.update(saved)
+
+
 @pytest.fixture(scope="session")
 def contracts() -> ContractStore:
     return ContractStore(REPO_ROOT / "contracts" / "v1")

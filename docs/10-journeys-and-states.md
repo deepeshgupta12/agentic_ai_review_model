@@ -374,7 +374,7 @@ States (`AliasProposalStatus`), field `status` of `AliasProposal`. Starts in `pr
 
 ### record_lifecycle
 
-States (`RecordLifecycle`), field `lifecycle` of `Evidence`. Starts in `active`; ends in `superseded`, `deleted`, `withdrawn`, `expired`.
+States (`RecordLifecycle`), field `lifecycle` of `Evidence`. Starts in `active`; ends in `deleted`, `withdrawn`, `expired`.
 
 | From | To | Who | Trigger |
 |---|---|---|---|
@@ -392,6 +392,9 @@ States (`RecordLifecycle`), field `lifecycle` of `Evidence`. Starts in `active`;
 | `unavailable` | `withdrawn` | moderator, admin, system | Source or policy withdrawal |
 | `active` | `expired` | system | Retention period or policy expiry reached |
 | `stale` | `expired` | system | Retention period or policy expiry reached |
+| `superseded` | `withdrawn` | moderator, admin, system | The source is withdrawn; older revisions' text goes too (D45) |
+| `superseded` | `deleted` | system | Deletion of the source is confirmed; older revisions' text goes too (D45) |
+| `superseded` | `expired` | system | Retention reached for an older revision (D45) |
 
 ### media_access
 
