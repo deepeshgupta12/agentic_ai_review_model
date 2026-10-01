@@ -245,6 +245,17 @@ def handle_erase(db: Database[dict[str, Any]], job: dict[str, Any], check: Any) 
         if source["payload_ref"]:
             db["ai_payloads"].delete_one({"_id": source["payload_ref"]["key"]}, session=session)
         db["ai_sources"].update_one({"_id": ref}, {"$set": {"payload_ref": None}}, session=session)
+        # A video's transcript and translations go too (Step 06); segment timing and flags stay as metadata.
+        segment_refs = [
+            text_ref
+            for seg in db["ai_media_segments"].find(
+                {"source.id": source["id"], "source.revision": source["revision"]}, session=session
+            )
+            for text_ref in (seg["original_text_ref"], (seg.get("translation") or {}).get("text_ref"))
+            if text_ref
+        ]
+        if segment_refs:
+            db["ai_payloads"].delete_many({"_id": {"$in": segment_refs}}, session=session)
         db["ai_evidence"].update_many(
             {"source.id": source["id"], "source.revision": source["revision"]},
             {"$set": {"excerpt_text": None, "lifecycle": source["lifecycle"]}},

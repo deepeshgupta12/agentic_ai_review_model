@@ -1,7 +1,7 @@
 {
  "version": 1,
  "updated": "2026-10-01",
- "note": "Initial source-policy set (Step 01.4, I06), accepted by the product owner on 2026-09-25; web_public_pages and youtube moved to version 2 on 2026-09-28 (D28). Conservative defaults: a family that needs an agreement we do not have is blocked. These are engineering defaults, not legal advice; each new host or platform is still checked against its current terms. A change is a new policy_version. Loaded into ai_source_policies by a seed script at Step 03; code never hard-codes them. 29 Sep 2026: competitor_portals added and web_public_pages moved to version 3 (D34). From Step 05 these are loaded into ai_source_policies by `make seed`. 1 Oct 2026: web_public_pages v5, competitor_portals v2 and official_records v2 record robots.txt without enforcing it (D46).",
+ "note": "Initial source-policy set (Step 01.4, I06), accepted by the product owner on 2026-09-25; web_public_pages and youtube moved to version 2 on 2026-09-28 (D28). Conservative defaults: a family that needs an agreement we do not have is blocked. These are engineering defaults, not legal advice; each new host or platform is still checked against its current terms. A change is a new policy_version. Loaded into ai_source_policies by a seed script at Step 03; code never hard-codes them. 29 Sep 2026: competitor_portals added and web_public_pages moved to version 3 (D34). From Step 05 these are loaded into ai_source_policies by `make seed`. 1 Oct 2026: web_public_pages v5, competitor_portals v2 and official_records v2 record robots.txt without enforcing it (D46). Step 06: spoken_video_content v2 and youtube v3 (D47).",
  "policies": [
   {
    "family": "web_public_pages",
@@ -144,7 +144,7 @@
   },
   {
    "family": "youtube",
-   "policy_version": 2,
+   "policy_version": 3,
    "collection_allowed": true,
    "ai_processing_allowed": true,
    "quotation_allowed": true,
@@ -156,33 +156,43 @@
     "youtu.be"
    ],
    "conditions": [
-    "Access through the YouTube Data API only; no downloading of video or audio",
+    "Video and Short metadata and comments through the YouTube Data API",
+    "Captions and audio for transcription are governed by spoken_video_content, not this family (D33, D47)",
     "Comments are separate sources attributed to the commenter, never to the creator",
     "Titles, descriptions and metadata never count as spoken-content evidence",
     "Quoted comments and spoken reviews are re-checked on refresh and withdrawn if removed"
    ],
-   "basis": "Conservative 30-day retention pending review of the YouTube API Services terms. Version 2 (product owner, 28 Sep 2026, D28): comments and authorised spoken content may be quoted as reviews with a credit line; published quotes are re-checked on every refresh and withdrawn if the comment or video is removed.",
+   "basis": "Conservative 30-day retention pending review of the YouTube API Services terms. Version 2 (product owner, 28 Sep 2026, D28): comments and authorised spoken content may be quoted as reviews with a credit line; published quotes are re-checked on every refresh and withdrawn if the comment or video is removed. Version 3 (Step 06, D47): the 'no downloading' condition moves to spoken_video_content, which governs captions and audio under D33; rights and retention unchanged.",
    "status": "accepted",
    "review_owner": "Product owner",
-   "accepted_on": "2026-09-28",
-   "accepted_by": "Product owner (GitHub: deepeshgupta12)"
+   "accepted_on": "2026-10-01",
+   "accepted_by": "Product owner (D33, 28 Sep 2026; applied at Step 06)"
   },
   {
    "family": "spoken_video_content",
-   "policy_version": 1,
-   "collection_allowed": false,
-   "ai_processing_allowed": false,
-   "quotation_allowed": false,
-   "derived_publication_allowed": false,
+   "policy_version": 2,
+   "collection_allowed": true,
+   "ai_processing_allowed": true,
+   "quotation_allowed": true,
+   "derived_publication_allowed": true,
    "attribution_required": true,
-   "retention_days": null,
+   "retention_days": 30,
    "hosts": [],
-   "conditions": [],
-   "basis": "No acquisition route decided (I05). Blocked until the product owner records one.",
+   "excluded_hosts": [],
+   "conditions": [
+    "Public videos only, and only videos linked to a catalogue project",
+    "Captions first (youtube-transcript-api); audio through yt-dlp only when no usable caption track exists (D33)",
+    "No sign-in, cookies, proxies or bot-check workarounds; a refusal or a bot check stops the attempt and is recorded",
+    "Audio is deleted after transcription; it is never stored, shared or republished",
+    "Transcripts keep the original timing and language; translations are stored separately",
+    "Speech is attributed to the video with the speaker unknown unless the platform states it; comments stay separate"
+   ],
+   "robots_txt": "obey",
+   "basis": "D33 (product owner, 28 Sep 2026) accepted the platforms' terms-of-service risk for public videos and captions (yt-dlp, youtube-transcript-api) and local transcription with faster-whisper, settling I05. Version 2 applies it at Step 06 (D47). Retention follows the youtube family (30 days). Quotation follows D28: spoken reviews in the speaker's words with a credit line.",
    "status": "accepted",
    "review_owner": "Product owner",
-   "accepted_on": "2026-09-25",
-   "accepted_by": "Product owner (GitHub: deepeshgupta12)"
+   "accepted_on": "2026-10-01",
+   "accepted_by": "Product owner (D33, 28 Sep 2026; applied at Step 06)"
   },
   {
    "family": "official_records",

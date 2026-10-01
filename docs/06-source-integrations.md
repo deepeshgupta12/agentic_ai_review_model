@@ -56,6 +56,20 @@ Commit a page's records before advancing its cursor/watermark. Replaying the pag
 - **Re-checks** (D44). The `check_availability` job re-checks stored pages and YouTube records. It applies the lifecycle rules: temporary failure, two consecutive "gone" results for deletion, a new revision for an edit. It also corrects stated dates with an audit event.
 - **Checks on stored data.** `make verify-collection` checks the stored data against these rules.
 
+## As built in Step 06
+
+- **Routes** (`backend/app/media/`, D47). The media worker processes only project videos whose match is accepted:
+  1. the published caption track, human-made before auto-generated;
+  2. otherwise, up to 10 minutes, the audio through yt-dlp, transcribed locally with faster-whisper;
+  3. otherwise the video stays metadata-only with the reason recorded.
+
+  A refusal (bot check, unavailable video, blocked network) stops the attempt. Audio is deleted after each job.
+- **Windows** of about 30 seconds on the original timeline are the stored segments, the matching unit and the speech evidence span. A window that names no project inherits the video's accepted match; if that match is undone, it returns to review.
+- **Language.** Machine-made numbers are flagged `numbers_uncertain`. A04 translations are kept only when numbers and negations survive (`backend/app/media/translate.py`).
+- **Media worker** (D48). It runs in its own container: 2 GB, 3 CPUs, in-memory scratch disk, and the kernel kills it first under memory pressure.
+- **Checks.** `make eval-media` runs the synthetic speech set; `make eval-language` checks A04 translations.
+- **Status.** Live acquisition is blocked while youtube.com is unreachable from the demo network (I17).
+
 ## Media rules
 
 Discovery, transcript availability and analysis completion are separate fields. A discovered video with no authorised transcript remains in the library with its status; it provides no speech evidence. Do not label a Short solely from duration.

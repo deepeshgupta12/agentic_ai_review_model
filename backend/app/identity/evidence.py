@@ -13,7 +13,7 @@ from pymongo.database import Database
 
 from app.db import utcnow
 from app.identity.rules import EVIDENCE_MAX_CHARS
-from app.identity.text import text_anchor
+from app.identity.text import sha256_text, text_anchor
 from app.ids import new_id
 from app.sources.policies import ai_processing_allowed
 
@@ -66,6 +66,44 @@ def create_link_evidence(
         "translation_of": None,
         "origin_cluster": None,
         "policy": source["policy"],
+        "lifecycle": "active",
+        "created_at": utcnow(),
+    }
+    db["ai_evidence"].insert_one(doc, session=session)
+    return doc
+
+
+def create_media_evidence(
+    db: Database[dict[str, Any]],
+    link: dict[str, Any],
+    source: dict[str, Any],
+    segment: dict[str, Any],
+    policy_ref: dict[str, Any],
+    session: ClientSession | None = None,
+) -> dict[str, Any]:
+    """Speech evidence for a linked transcript window (Step 06): the window's words on the original timeline,
+    governed by the spoken-content policy rather than the video's metadata policy."""
+    existing = db["ai_evidence"].find_one({"link_id": link["_id"]}, session=session)
+    if existing is not None:
+        return existing
+    excerpt = segment["text"][:EVIDENCE_MAX_CHARS]
+    evidence_id = new_id("evd")
+    doc = {
+        "_id": f"{evidence_id}@1",
+        "id": evidence_id,
+        "revision": 1,
+        "project_id": link["project_id"],
+        "source": {"id": source["id"], "revision": source["revision"]},
+        "link_id": link["_id"],
+        "anchor": segment["time"],
+        "context_anchor": None,
+        "excerpt_text": excerpt,
+        "excerpt_sha256": sha256_text(excerpt),
+        "language": segment["language"],
+        "modality": "speech",
+        "translation_of": None,
+        "origin_cluster": None,
+        "policy": policy_ref,
         "lifecycle": "active",
         "created_at": utcnow(),
     }

@@ -19,7 +19,7 @@ from app.contracts import ContractStore
 from app.db import run_in_transaction
 from app.identity.agent import run_identity_agent
 from app.identity.catalogue import load_identities
-from app.identity.evidence import create_link_evidence
+from app.identity.evidence import create_link_evidence, create_media_evidence
 from app.identity.intake import source_text
 from app.identity.links import ACTIVE_STATUSES, insert_outcomes, new_link
 from app.identity.matching import Segment, match_text
@@ -178,3 +178,96 @@ def identify_in_context(
             }
         )
     return report
+
+
+def identify_media(
+    client: MongoClient[dict[str, Any]],
+    db: Database[dict[str, Any]],
+    source: dict[str, Any],
+    segments: list[dict[str, Any]],
+    policy_ref: dict[str, Any],
+) -> dict[str, Any]:
+    """Transcript windows of an authorised video (Step 06, D47). Each item needs `segment_key`, `time`, `text` and
+    `language`. A window that names a project is matched on its own words, so a comparison video splits per
+    project. A window that names none inherits the video's accepted match, like a comment (D42): with one matched
+    project it is accepted, with several it goes to review. Inherited windows return to review if the video's
+    match is undone (links._return_inherited)."""
+    identities = load_identities(db)
+    parts = [Segment(s["segment_key"], s["text"], s["time"]) for s in segments]
+    named = match_text(identities, " ".join(p.text for p in parts), None, segments=parts) if parts else []
+    named_keys = {o.segment.key for o in named}
+    video_links = list(
+        db["ai_project_source_links"].find(
+            {
+                "source.id": source["id"],
+                "source.revision": source["revision"],
+                "segment_key": "whole",
+                "status": {"$in": sorted(ACTIVE_STATUSES)},
+            }
+        )
+    )
+    by_key = {s["segment_key"]: s for s in segments}
+
+    def write(session: ClientSession) -> list[tuple[dict[str, Any], bool]]:
+        rows = list(insert_outcomes(db, source, named, session))
+        for segment in segments:
+            if segment["segment_key"] in named_keys:
+                continue
+            for parent in video_links:
+                key = {
+                    "project_id": parent["project_id"],
+                    "source.id": source["id"],
+                    "source.revision": source["revision"],
+                    "segment_key": segment["segment_key"],
+                }
+                existing = db["ai_project_source_links"].find_one(key, session=session)
+                if existing is not None:
+                    rows.append((existing, False))
+                    continue
+                doc = new_link(
+                    parent["project_id"],
+                    source,
+                    segment["segment_key"],
+                    segment["time"],
+                    "auto_accepted" if len(video_links) == 1 else "needs_review",
+                    parent["phase"],
+                    {
+                        "method": "deterministic",
+                        "rule_score": None,
+                        "signals": [],
+                        "matched_alias": parent["match"]["matched_alias"],
+                        "rationale": f"inherited from the video's match {parent['_id']}; this part names no project",
+                    },
+                )
+                db["ai_project_source_links"].insert_one(doc, session=session)
+                rows.append((doc, True))
+        for link, created in rows:
+            if link["status"] not in ("rejected", "superseded") and link["segment_key"] in by_key:
+                create_media_evidence(db, link, source, by_key[link["segment_key"]], policy_ref, session)
+            if created:
+                audit.record(
+                    db,
+                    "source_link.created",
+                    "project_source_link",
+                    link["_id"],
+                    audit.SYSTEM_ACTOR,
+                    details={"status": link["status"], "segment": link["segment_key"], "modality": "speech"},
+                    session=session,
+                )
+        return rows
+
+    rows = run_in_transaction(client, write)
+    return {
+        "source": {"id": source["id"], "revision": source["revision"]},
+        "links": [
+            {
+                "link_id": link["_id"],
+                "project_id": link["project_id"],
+                "segment_key": link["segment_key"],
+                "status": link["status"],
+                "inherited": not link["match"]["signals"],
+                "created": created,
+            }
+            for link, created in rows
+        ],
+    }

@@ -5,6 +5,26 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Videos and languages — 1 October 2026 (Step 06)
+
+- **Transcripts** for project videos whose match is accepted (D47). The route order is:
+  1. published captions;
+  2. otherwise, up to 10 minutes, public audio transcribed locally with faster-whisper `large-v3-turbo`;
+  3. otherwise metadata-only, with the reason recorded.
+
+  A refusal stops the attempt and is never worked around, and audio is deleted after each job.
+- **Windows** of about 30 seconds on the original timeline become media segments and speech evidence. Windows that name a project are matched on their own words; the others inherit the video's match and return to review if it is undone. Erasing a video erases its transcript.
+- **Language.** Language tags and quality flags are added. Every number in machine-made text is flagged for a person. A04 translations are kept only when numbers and negations survive, and Hindi negation markers respect Devanagari word edges.
+- **Media worker** in its own image and container (D48): ffmpeg and the media libraries, 2 GB, the first to be killed under memory pressure, with MongoDB protected.
+- **APIs and commands:**
+  - `listMedia`;
+  - `make transcribe`, `make eval-media` and `make eval-language`;
+  - transcript rules in `verify-collection`.
+- **Measurement:** a synthetic speech set (`evals/media/v1`, eight text-to-speech clips with known text).
+- **Contracts:** sources 1.3.0 and operations 1.2.0. **Policies:** spoken_video_content v2 and youtube v3.
+- **Frames and on-screen text** are not extracted in Release 1.0 (D49, proposed).
+- **Blocked:** live acquisition, while youtube.com is unreachable from the demo network (I17).
+
 ## Text and social collection — 30 September 2026 (Step 05)
 
 - Source policies in the database (`ai_source_policies`, immutable versions). The host decides the policy family. The generic web family is an allow-list of 62 hosts; client-site.example is not on it (D41). Portals have their own family (D34).

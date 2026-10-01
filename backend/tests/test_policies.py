@@ -141,10 +141,11 @@ def test_policy_api_roles_and_the_rights_chain(api, db, make_user, contracts):
     analyst = sign_in(api, make_user, ["analyst"])
     assert api.get("/v1/admin/source-policies", headers=analyst).status_code == 403
     admin = sign_in(api, make_user, ["admin"])
+    before = current(db, "youtube")["policy_version"]
     broken = version_request("youtube", derived_publication_allowed=False)  # quotation needs derived publication
     response = api.post("/v1/admin/source-policies", json=broken, headers=admin)
     assert response.status_code == 422 and response.json()["error"]["code"] == "validation_failed"
-    assert current(db, "youtube")["policy_version"] == 2, "a refused version is not stored"
+    assert current(db, "youtube")["policy_version"] == before, "a refused version is not stored"
 
 
 def test_robots_txt_handling_is_part_of_each_version(api, db, make_user, contracts):

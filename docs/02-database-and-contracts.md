@@ -37,7 +37,7 @@ Version these changes as a new contract revision, update fixtures and adapters, 
 | `ai_sources` | Unique `(platform, native_id, revision)`; source identity, dates, hash, policy version and permitted payload reference | Ingestion service |
 | `ai_payloads` | Erasable source text keyed by source revision (`payload_ref.key`); erasure deletes it and leaves the metadata (D38) | Ingestion service |
 | `ai_project_source_links` | Unique `(project_id, source_id, source_revision, segment_key)`; match status and rationale | Identity service / moderator |
-| `ai_media_segments` | Unique `(source_id, revision, segment_key)`; time range, language, modality and permitted file reference | Media worker |
+| `ai_media_segments` | Unique `(source.id, source.revision, segment_key, modality)`; a transcript window on the original timeline (D47): time anchor, language, modality, how it was transcribed (captions or faster-whisper), quality flags, and references to the original words and any translation in the erasable payload store. Erasing the video erases those payloads; timing stays | Media worker |
 | `ai_evidence` | Source revision and anchor; indexes for source/dependency invalidation | Evidence service |
 | `ai_claims` | Unique `(project_id, claim_id, revision)`; aspect, type, immutable evidence refs | Analysis service |
 | `ai_findings` | Unique `(project_id, finding_id, revision)`; exact claim refs and wording | Synthesis / revision service |

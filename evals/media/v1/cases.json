@@ -1,0 +1,244 @@
+{
+ "dataset": {
+  "name": "media-speech",
+  "version": "1",
+  "synthetic": true,
+  "note": "Synthetic speech: macOS text-to-speech voices (Lekha hi_IN, Rishi en_IN) reading sentences written for this test. The text is the ground truth. It measures the transcription path and how numbers, dates, areas and negation come through; it does not measure accuracy on real videos, where accents, music and noise make it harder (real samples at Step 12). Non-English cases also list the facts their English translation must keep (A04 check)."
+ },
+ "cases": [
+  {
+   "id": "m01",
+   "voice": "Lekha",
+   "language": "hi",
+   "aspects": [
+    "price",
+    "unit_size"
+   ],
+   "text": "इस प्रोजेक्ट में तीन बीएचके फ्लैट की कीमत एक करोड़ पचहत्तर लाख रुपये है।",
+   "must_keep": [
+    [
+     "तीन",
+     "3"
+    ],
+    [
+     "करोड़",
+     "crore"
+    ],
+    [
+     "पचहत्तर",
+     "75",
+     "1.75"
+    ]
+   ],
+   "english_must_keep": [
+    [
+     "3 BHK",
+     "three BHK",
+     "3-BHK"
+    ],
+    [
+     "1.75 crore",
+     "1 crore 75 lakh"
+    ]
+   ]
+  },
+  {
+   "id": "m02",
+   "voice": "Lekha",
+   "language": "hi",
+   "aspects": [
+    "possession_date"
+   ],
+   "text": "पज़ेशन मार्च दो हज़ार सत्ताईस में मिलने का वादा किया गया है।",
+   "must_keep": [
+    [
+     "मार्च",
+     "march"
+    ],
+    [
+     "सत्ताईस",
+     "2027",
+     "27"
+    ]
+   ],
+   "english_must_keep": [
+    [
+     "March"
+    ],
+    [
+     "2027"
+    ]
+   ]
+  },
+  {
+   "id": "m03",
+   "voice": "Lekha",
+   "language": "hi",
+   "aspects": [
+    "negation",
+    "amenities"
+   ],
+   "text": "क्लबहाउस अभी तैयार नहीं है, और लिफ्ट भी नहीं लगी है।",
+   "must_keep": [
+    [
+     "नहीं"
+    ],
+    [
+     "क्लब",
+     "club"
+    ],
+    [
+     "लिफ्ट",
+     "lift"
+    ]
+   ],
+   "english_must_keep": [
+    [
+     "not"
+    ],
+    [
+     "club"
+    ],
+    [
+     "lift"
+    ]
+   ]
+  },
+  {
+   "id": "m04",
+   "voice": "Lekha",
+   "language": "hi",
+   "aspects": [
+    "area"
+   ],
+   "text": "कारपेट एरिया सत्रह सौ पचास स्क्वायर फीट है।",
+   "must_keep": [
+    [
+     "सत्रह सौ पचास",
+     "1750",
+     "1,750"
+    ],
+    [
+     "फीट",
+     "feet",
+     "फुट",
+     "ft"
+    ]
+   ],
+   "english_must_keep": [
+    [
+     "1750",
+     "1,750"
+    ],
+    [
+     "square feet",
+     "sq ft",
+     "square foot"
+    ]
+   ]
+  },
+  {
+   "id": "m05",
+   "voice": "Rishi",
+   "language": "en",
+   "aspects": [
+    "possession_date",
+    "negation"
+   ],
+   "text": "The possession date has been pushed to December 2026, not June.",
+   "must_keep": [
+    [
+     "december"
+    ],
+    [
+     "2026"
+    ],
+    [
+     "not june"
+    ]
+   ]
+  },
+  {
+   "id": "m06",
+   "voice": "Rishi",
+   "language": "en",
+   "aspects": [
+    "price",
+    "unit_size",
+    "area"
+   ],
+   "text": "A four BHK here costs around 3.2 crore, which is 18,500 rupees per square foot.",
+   "must_keep": [
+    [
+     "four",
+     "4"
+    ],
+    [
+     "3.2"
+    ],
+    [
+     "crore"
+    ],
+    [
+     "18,500",
+     "18500",
+     "18 500"
+    ]
+   ]
+  },
+  {
+   "id": "m07",
+   "voice": "Rishi",
+   "language": "en",
+   "aspects": [
+    "negation",
+    "infrastructure"
+   ],
+   "text": "The road to Sector 79 is not complete yet.",
+   "must_keep": [
+    [
+     "79"
+    ],
+    [
+     "not complete"
+    ]
+   ]
+  },
+  {
+   "id": "m08",
+   "voice": "Rishi",
+   "language": "hi-Latn",
+   "aspects": [
+    "price",
+    "code_switching"
+   ],
+   "text": "Bhai, yahan maintenance charges 4 rupaye per square foot hain, jo bahut zyada hai.",
+   "must_keep": [
+    [
+     "4",
+     "four",
+     "char"
+    ],
+    [
+     "maintenance"
+    ],
+    [
+     "square"
+    ]
+   ],
+   "english_must_keep": [
+    [
+     "4"
+    ],
+    [
+     "maintenance"
+    ],
+    [
+     "square foot",
+     "sq ft",
+     "square feet"
+    ]
+   ]
+  }
+ ]
+}

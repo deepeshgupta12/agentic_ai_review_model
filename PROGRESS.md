@@ -11,7 +11,7 @@
 | 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | complete (approved 28 Sep 2026) | `0847027`, `54d3954`, `38be1be`, `174d6ae`: `backend/`, `web/`, `docker-compose.yml`, `.env.example`, `Makefile`, `.github/workflows/ci.yml`, `prompts/`, `scripts/init_env.py`, `scripts/run_step03_checks.sh`, `scripts/run_step03_mutations.sh`, `DECISIONS.md` | [logs/step-03](logs/step-03/README.md): all 45 checks OK at `174d6ae`; product owner's own run OK at `929a4ac` (45/45 checks, 12/12 mutants caught); CI green. Live model check done 29 Sep 2026: `claude-sonnet-5` and `claude-opus-5-5` confirmed, structured outputs on both ([log](logs/step-03/live-model-check-20260929T060000Z.log)) |
 | 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | complete (approved 29 Sep 2026) | `da76682`, `ed57fdf`, `5cc63a6`: `backend/app/identity/`, `backend/app/api/routes_projects.py`, `routes_identity.py`, `idempotency.py`, `backend/app/decisions.py`, `seed/construction_status.json`, `evals/identity/v1/`, `prompts/a01_project_identity.1.0.md`, `contracts/v1/state_machines.json` and `journeys.json` (1.1.0), `scripts/run_step04_*.sh`, `scripts/set_env_secret.py`, `DECISIONS.md` | [logs/step-04](logs/step-04/README.md): 32/32 at `5cc63a6` (143 backend tests); product owner's run 32/32 and 16/16 mutants at `4606c3a`; CI green. Live A01 verified 29 Sep 2026 ([log](logs/step-04/live-a01-check-20260929T060000Z.log)). Carried forward: invalidation of findings and approvals joins at Steps 07–11 |
 | 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | complete (approved 1 Oct 2026: U–X; Y points 2–4; Y point 1 replaced by D46) | `6881ccd`, `bebbd76`, `0fa6640`, `5e0cfd6`, `aca3128`, `38716a0`: `backend/app/sources/` (policies, http, robots, quota, state, store, collection, lifecycle, recheck, verify), `backend/app/connectors/` (brave, web, youtube, registry), `backend/app/api/routes_runs.py`, `routes_sources.py`, `routes_policies.py`, `contracts/v1/` (operations 1.1.0, state machines 1.2.0, sources 1.1.0), `seed/source_policies.json`, `seed/connectors.json`, `scripts/run_step05_*.sh`, `DECISIONS.md` (D40–D44), `docs/02`, `docs/06` | [logs/step-05](logs/step-05/README.md): live runs for all five projects 30 Sep 2026; at `38716a0` (after D46) 29/29 checks (236 backend tests, `verify-collection` 13/13 on 1,010 records) and 25/25 mutants; CI green |
-| 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | not_started | — | — |
+| 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | blocked (built and checked; live acquisition blocked by I17; Z1–Z3 awaiting approval) | STEP06_COMMIT: `backend/app/media/` (windows, language, fetch, pipeline, translate, evaluation), `backend/app/api/routes_media.py`, `backend/Dockerfile.media`, `docker-compose.yml` (media-worker; MongoDB protected), `prompts/a04_language_context.1.0.md`, `evals/media/v1/`, contracts (sources 1.3.0, operations 1.2.0), `seed/source_policies.json` (spoken_video_content v2, youtube v3), `scripts/run_step06_*.sh`, `DECISIONS.md` (D47–D49, I17) | [logs/step-06](logs/step-06/README.md) |
 | 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | not_started | — | — |
 | 08 | [Agent development and master workflow](steps/08-agents-and-master-workflow.md) | not_started | — | — |
 | 09 | [Moderator console](steps/09-cms-moderation.md) | not_started | — | — |
@@ -25,9 +25,13 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 
 ## Current handoff
 
-- Active step: 06 (videos, shorts and multilingual processing). Step 05 is complete: the product owner approved U–X (D40, D42, D43, D44) and Y points 2–4 (D45) on 1 Oct 2026. They declined D45 point 1 and decided D46: robots.txt is recorded, not enforced, for the web reader's families. D41 accepted 29 Sep 2026.
-- Live on 30 Sep 2026: `brave_search`, `web_fetch` and `youtube_data_api`, after real runs for all five projects. The evidence log is [live-connectors-20260930T110436Z.log](logs/step-05/live-connectors-20260930T110436Z.log). `anthropic` has been live since 29 Sep 2026.
-- Next action: Step 06, built in a separate git worktree so the product owner's runs in the main folder are not disturbed. On 1 Oct 2026 both of their Step 05 runs started while D46 was being edited in the same folder and were disrupted; they re-run at the D46 commit.
+- Active step: 06 (videos, shorts and multilingual processing). Built and checked; awaiting the product owner's approval of Z1–Z3 (D47–D49) and an answer on I17. Step 05 is complete: U–X and Y points 2–4 approved on 1 Oct 2026, and D46 (robots.txt recorded, not enforced) decided.
+- **Blocked (I17):** live captions and audio. From this machine's network, youtube.com is unreachable: the TLS handshake is reset by name, while DNS, googleapis.com and google.com work. Videos tried end metadata-only with `network_refused`; nothing works around it. The YouTube Data API (discovery) still works.
+- Proven:
+  - real Whisper `large-v3-turbo` in the media worker on the synthetic speech set: 20/22 key facts;
+  - real A04 on its sentences: 5/5 kept, 12/12 facts;
+  - the whole pipeline with fakes.
+- Next action: the product owner answers I17 (can the media worker reach youtube.com?) and approves or amends Z1–Z3. After that, `make transcribe` processes the accepted project videos and the live gate can close; then Step 07 (evidence storage, deduplication and retrieval).
 - Step 06 input from the product owner's earlier project (youtube-learning-copilot, reviewed 30 Sep 2026):
   - adapt the fallback order, video-ID parsing, ffmpeg 16 kHz mono and loading Whisper once;
   - do not reuse its cookie and proxy workarounds (D33) or its OpenAI and Ollama calls;
@@ -39,7 +43,7 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 - Refresh scheduling of collection and re-checks arrives at Step 13. Until then use `make collect` and `make recheck` by hand.
 - Collection tools and competitor portals: D33 and D34, with D40 replacing Crawl4AI and D46 for robots.txt (recorded, not enforced). 99acres and Housing.com refuse the pages themselves (403, 406), which is not worked around, so they stay unread. MagicBricks, NoBroker, Houseiy and HomznSpace pages are read.
 - Local stack: `make up`, then `make seed`; sign in as `deepesh.gupta@client-site.example`. The password is only in the local `.env` (`SEED_USER_PASSWORD`, git-ignored). `APP_MODE` is `fixture`: it controls only the session secret and the API docs page. Fixture data never enters `sy_poc`; tests and smoke checks use their own databases.
-- Running services: MongoDB 8.0 replica set `rs0`, API :8000, worker (handlers `collect`, `check_availability`, `erase_payloads`, `invalidate_dependencies`), scheduler and web :3000, all on 127.0.0.1.
+- Running services: MongoDB 8.0 replica set `rs0` (protected from the kernel's out-of-memory killer), API :8000, worker (`WORKER_ROLE=general`: `collect`, `check_availability`, `erase_payloads`, `invalidate_dependencies`), media-worker (`WORKER_ROLE=media`: `process_media`; 2 GB, killed first under memory pressure), scheduler and web :3000, all on 127.0.0.1. The Docker VM has 4 GB, shared with the product owner's other stacks.
 - D21: the product owner will build the review-posting agent outside this repository; nothing here supports it. The agreed review form is D28.
 - Deferred inputs, asked at the step that needs them: moderator capacity I11 (Step 09), correction owner I10 (before Step 11), demo machine I12 (Step 13).
 - Repository: https://github.com/deepeshgupta12/agentic_ai_review_model (private), all work on `main` (D18). CI runs contracts, backend, web and Compose jobs on every push.
@@ -309,6 +313,33 @@ Known defects / missing inputs / owner: 99acres and Housing.com refuse their pag
 Remaining acceptance checks: none for Step 05. At 38716a0: run_step05_checks.sh 29/29, run_step05_mutations.sh
   25/25. The product owner re-runs both scripts at that commit
 Next executable action: Step 06 in a separate worktree
+```
+
+```text
+Date / tool / branch / commit: 2026-10-01 / Claude Code (VS Code) / step-06 worktree, pushed to main / bba19cd → STEP06_COMMIT
+Step and scope completed: Step 06 built: spoken-content policy v2, transcript routes, windows, speech evidence and
+  matching, language flags, A04 translation with backend checks, media library API, media worker, speech set
+Files changed: backend/app/media/ (new), routes_media.py, identity (identify_media, create_media_evidence,
+  window inheritance cascade), lifecycle (transcript erasure), verify (transcript rules), worker (roles), jobs
+  (process_media), config, setup (ai_media_segments), cli (transcribe-videos, eval-media, eval-language);
+  backend/Dockerfile.media, pyproject + uv.lock (group media), docker-compose.yml (media-worker, oom_score_adj);
+  contracts (sources 1.3.0, operations 1.2.0), fixtures, web types; seed (spoken_video_content v2, youtube v3,
+  spoken_video_transcripts connector); prompts/a04_language_context.1.0.md; evals/media/v1; tests (test_media.py,
+  policy/seed test updates); scripts/run_step06_*.sh; Makefile; DECISIONS (D47–D49, I17, registry, matrix);
+  docs/02, docs/06; CHANGELOG; logs/step-06
+Decisions made, with DECISIONS.md IDs: D47, D48, D49 proposed (Z1–Z3); I17 opened
+Checks actually run and results: see logs/step-06/README.md. During the work: the speech set with small
+  (13/22 facts) and large-v3-turbo (19/22 natively, 20/22 in the media worker); live A04 (first run found a false
+  Hindi negation, "कीमत"; fixed; then 5/5 kept, 12/12 facts)
+Incident: at 08:23 UTC a 3 GB model test container in the 4 GB Docker VM got MongoDB killed for lack of memory
+  (exit 137, OOMKilled). Restarted at once with no data lost (1,010 sources, 731 links, 368 evidence, 11 runs);
+  the API and worker reconnected. Safeguards: media worker capped at 2 GB and killed first; MongoDB protected (D48)
+Live integrations verified (credential present + real query result): A04 on Claude (live); youtube.com captions
+  and audio blocked by the network (I17)
+Fixture-only behavior still awaiting live validation: caption and audio acquisition for real project videos
+Known defects / missing inputs / owner: I17 (product owner); transcription in Docker runs at about 3–11x real time
+Remaining acceptance checks: live media analysis on a permitted real sample (I17); approval of Z1–Z3
+Next executable action: product owner answers I17 and decides Z1–Z3
 ```
 
 ## Session entry template

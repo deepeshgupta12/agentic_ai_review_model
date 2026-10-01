@@ -14,6 +14,9 @@ python -m app.cli discover-hosts [--project SLUG] [--queries N]   (live Brave; s
 python -m app.cli collect [--project SLUG] [--window-days N] [--wait SECONDS]   (a real collection run)
 python -m app.cli recheck-sources [--project SLUG] [--wait SECONDS]   (edits, deletions and stated dates)
 python -m app.cli verify-collection   (read-only checks over what collection stored)
+python -m app.cli transcribe-videos [--project SLUG] [--limit N] [--wait SECONDS]   (media worker)
+python -m app.cli eval-media [--model NAME] [--save]   (synthetic speech check; media worker image)
+python -m app.cli eval-language [--save]   (A04 translation check; one Claude call)
 """
 
 from __future__ import annotations
@@ -311,6 +314,124 @@ def cmd_collect(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_transcribe_videos(args: argparse.Namespace) -> int:
+    """Queue transcription for project-matched videos without a transcript; the media worker processes them."""
+    import time
+
+    from app.media.pipeline import start_media
+
+    db, settings = get_db(), get_settings()
+    project_id = _slug_to_id(db, args.project) if args.project else None
+    report = start_media(db, project_id, args.limit if args.limit is not None else settings.media_videos_per_start)
+    deadline = time.monotonic() + args.wait
+    while time.monotonic() < deadline:
+        if (
+            db["ai_jobs"].count_documents(
+                {"kind": "process_media", "status": {"$in": ["queued", "running", "retry_wait"]}}
+            )
+            == 0
+        ):
+            break
+        time.sleep(10)
+    statuses: dict[str, int] = {}
+    for video in db["ai_sources"].find({"connector_id": "youtube_data_api", "source_kind": "video"}, {"media": 1}):
+        key = f"{video['media']['access_status']} ({video['media'].get('transcript_route') or 'no route'})"
+        statuses[key] = statuses.get(key, 0) + 1
+    reasons: dict[str, int] = {}
+    for event in db["ai_audit_events"].find(
+        {"action": "media_access.changed", "details.to": {"$in": ["metadata_only", "error"]}}
+    ):
+        reason = str(event["details"].get("reason", "")).split(":")[0]
+        reasons[reason] = reasons.get(reason, 0) + 1
+    _print(
+        {
+            "queued": report,
+            "videos_by_status": statuses,
+            "refusal_or_error_reasons": reasons,
+            "segments": db["ai_media_segments"].count_documents({}),
+            "speech_evidence": db["ai_evidence"].count_documents({"modality": "speech"}),
+        }
+    )
+    return 0
+
+
+def cmd_eval_media(args: argparse.Namespace) -> int:
+    """The synthetic speech check (evals/media/v1) with the configured Whisper model. Needs the media dependencies."""
+    from app.db import utcnow
+    from app.ids import new_id
+    from app.media.evaluation import evaluate, evaluation_record
+    from app.media.fetch import WhisperTranscriber
+
+    settings = get_settings()
+    model = args.model or settings.whisper_model
+    result = evaluate(
+        REPO_ROOT / "evals" / "media" / "v1",
+        WhisperTranscriber(model, settings.whisper_compute_type, settings.whisper_models_dir),
+        model,
+    )
+    record = evaluation_record(result)
+    if args.save:
+        record = {"_id": new_id("evl"), **record, "created_at": utcnow()}
+        get_db()["ai_evaluations"].insert_one(record)
+    _print(
+        {
+            **{k: v for k, v in result.items() if k != "rows"},
+            "saved_as": record.get("_id"),
+            "rows": [
+                {k: r[k] for k in ("id", "language", "wer", "facts_kept", "facts", "real_time_factor", "transcript")}
+                for r in result["rows"]
+            ],
+        }
+    )
+    return 0
+
+
+def cmd_eval_language(args: argparse.Namespace) -> int:
+    """A04 on the known text of the non-English speech cases (one Claude call); numbers and negation must survive."""
+    from app.agents.gateway import ModelGateway
+    from app.db import utcnow
+    from app.ids import new_id
+    from app.media.evaluation import evaluate_translation
+
+    settings, contracts = get_settings(), get_contracts()
+    gateway = ModelGateway(settings, contracts)
+    if not gateway.available:
+        print("skipped: no ANTHROPIC_API_KEY configured")
+        return 0
+    result = evaluate_translation(REPO_ROOT / "evals" / "media" / "v1", gateway)
+    rows = result["rows"]
+    facts = sum(r["facts"] for r in rows)
+    record: dict[str, Any] = {
+        "dataset": result["dataset"],
+        "config": {
+            "agent": "A04_language_context",
+            "model": result["model"],
+            "prompt_version": "a04_language_context.1.0",
+            "schema_version": "1.0.0",
+        },
+        "status": "completed" if result["outcome"] == "completed" else "failed",
+        "metrics": [
+            {
+                "name": "translations_kept_by_backend",
+                "value": round(sum(r["kept_by_backend"] for r in rows) / len(rows), 3) if rows else None,
+                "sample_size": len(rows),
+                "note": "numbers and negation in the original must survive the translation",
+            },
+            {
+                "name": "english_facts_kept",
+                "value": round(sum(r["facts_kept"] for r in rows) / facts, 3) if facts else None,
+                "sample_size": facts,
+                "note": "synthetic sentences written for this check; real transcripts are harder",
+            },
+        ],
+    }
+    if args.save:
+        record = {"_id": new_id("evl"), **record, "created_at": utcnow()}
+        get_db()["ai_evaluations"].insert_one(record)
+    _print({**result, "saved_as": record.get("_id")})
+    return 0 if result["outcome"] == "completed" else 1
+
+
 def cmd_recheck_sources(args: argparse.Namespace) -> int:
     """Queue an availability re-check (edits, deletions, stated dates) and wait for the worker to finish it."""
     import time
@@ -538,6 +659,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--wait", type=int, default=900, help="seconds to wait for collection to finish (0: do not wait)")
     p.add_argument("--as", dest="as_user", help="researcher email; the seeded researcher when omitted")
     p.set_defaults(func=cmd_collect)
+    p = sub.add_parser("transcribe-videos", help="queue transcription of project-matched videos (media worker)")
+    p.add_argument("--project", help="project slug; all projects when omitted")
+    p.add_argument("--limit", type=int, default=None, help="videos to queue; MEDIA_VIDEOS_PER_START when omitted")
+    p.add_argument("--wait", type=int, default=0, help="seconds to wait for the media worker")
+    p.set_defaults(func=cmd_transcribe_videos)
+    p = sub.add_parser("eval-media", help="synthetic speech check with the Whisper model (media worker image)")
+    p.add_argument("--model", help="Whisper model; WHISPER_MODEL when omitted")
+    p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
+    p.set_defaults(func=cmd_eval_media)
+    p = sub.add_parser("eval-language", help="A04 translation check on the synthetic speech cases (one Claude call)")
+    p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
+    p.set_defaults(func=cmd_eval_language)
     p = sub.add_parser("recheck-sources", help="re-check stored sources for edits and deletions (worker job)")
     p.add_argument("--project", help="project slug; every re-checkable source when omitted")
     p.add_argument("--wait", type=int, default=1800, help="seconds to wait for the worker")

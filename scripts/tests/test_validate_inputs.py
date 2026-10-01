@@ -281,11 +281,19 @@ class UC04SourcePolicies(unittest.TestCase):
         self.assertEqual(families - policy_families(), set())
 
     def test_families_without_an_agreement_are_blocked(self):
-        for family in ("spoken_video_content", "reddit", "x", "meta", "quora", "linkedin", "listening_provider"):
+        # spoken_video_content left this list with D33 (product owner, 28 Sep 2026), applied as version 2 (D47).
+        for family in ("reddit", "x", "meta", "quora", "linkedin", "listening_provider"):
             with self.subTest(family=family):
                 policy = self.policy(family)
                 self.assertFalse(policy["collection_allowed"])
                 self.assertFalse(policy["ai_processing_allowed"])
+
+    def test_spoken_content_is_allowed_only_under_its_recorded_decision(self):
+        policy = self.policy("spoken_video_content")
+        self.assertGreaterEqual(policy["policy_version"], 2)
+        self.assertTrue(policy["collection_allowed"] and policy["ai_processing_allowed"])
+        self.assertIn("D33", policy["basis"])
+        self.assertTrue(any("cookies" in c for c in policy["conditions"]), "no sign-in or bot-check workarounds")
 
     def test_generic_web_route_excludes_hosts_owned_by_other_families(self):
         self.policy("web_public_pages")["excluded_hosts"].remove("reddit.com")

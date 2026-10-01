@@ -37,6 +37,7 @@ JOB_KINDS = {
     "scheduled_refresh",
     "evaluate",
     "check_availability",
+    "process_media",
 }
 
 

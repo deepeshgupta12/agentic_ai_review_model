@@ -95,11 +95,36 @@ def verify_collection(db: Database[dict[str, Any]], settings: Settings) -> list[
     rows.append(_row("metadata-only records hold no text", len(metadata), broken))
 
     metadata_ids = {s["_id"] for s in metadata}
-    evidence = list(db["ai_evidence"].find({}, {"source": 1}))
-    broken = [e["_id"] for e in evidence if f"{e['source']['id']}@{e['source']['revision']}" in metadata_ids]
+    videos = [s for s in sources if s["source_kind"] in ("video", "short")]
+    transcribed = {
+        s["_id"] for s in videos if (s.get("media") or {}).get("access_status") in ("transcribed", "analysed")
+    }
+    evidence = list(db["ai_evidence"].find({}, {"source": 1, "modality": 1, "policy": 1}))
+
+    def key_of(item: dict[str, Any]) -> str:
+        return f"{item['source']['id']}@{item['source']['revision']}"
+
+    # A video's own record stays metadata-only; speech evidence comes from its transcript (Step 06), not its metadata.
+    broken = [
+        e["_id"]
+        for e in evidence
+        if key_of(e) in metadata_ids and not (e.get("modality") == "speech" and key_of(e) in transcribed)
+    ]
     rows.append(_row("no evidence comes from a metadata-only record", len(evidence), broken))
 
-    videos = [s for s in sources if s["source_kind"] in ("video", "short")]
+    segments = list(db["ai_media_segments"].find({}, {"source": 1, "original_text_ref": 1}))
+    broken = [s["_id"] for s in segments if key_of(s) not in transcribed]
+    rows.append(_row("transcript segments exist only for transcribed videos", len(segments), broken))
+
+    erased = {s["_id"] for s in sources if s["lifecycle"] in ("withdrawn", "deleted", "expired")}
+    stored_refs = set(db["ai_payloads"].distinct("_id", {"_id": {"$in": [s["original_text_ref"] for s in segments]}}))
+    broken = [s["_id"] for s in segments if key_of(s) not in erased and s["original_text_ref"] not in stored_refs]
+    rows.append(_row("every transcript window keeps its words unless its video was erased", len(segments), broken))
+
+    speech = [e for e in evidence if e.get("modality") == "speech"]
+    broken = [e["_id"] for e in speech if e["policy"]["family"] != "spoken_video_content"]
+    rows.append(_row("speech evidence is governed by the spoken-content policy", len(speech), broken))
+
     broken = [
         s["_id"]
         for s in videos

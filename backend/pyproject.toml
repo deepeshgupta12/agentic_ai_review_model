@@ -27,6 +27,12 @@ dev = [
     "ruff>=0.6",
     "mypy>=1.11",
 ]
+# Step 06 (D47): installed only in the media worker image. Captions, public audio and local speech-to-text.
+media = [
+    "youtube-transcript-api>=1.2.4,<1.3",
+    "yt-dlp>=2026.8.19",
+    "faster-whisper>=1.2.1,<1.3",
+]
 
 [build-system]
 requires = ["hatchling>=1.25"]

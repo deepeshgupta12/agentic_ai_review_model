@@ -1604,7 +1604,8 @@ export interface components {
              */
             format_basis: "platform_metadata" | "url_pattern" | "unknown";
             access_status: components["schemas"]["MediaAccessStatus"];
-            transcript_route: ("creator_supplied" | "licensed_feed" | "platform_captions_authorised") | null;
+            /** @description public_captions and public_audio_transcription are the D33 routes for public videos (spoken_video_content v2, D47). */
+            transcript_route: ("creator_supplied" | "licensed_feed" | "platform_captions_authorised" | "public_captions" | "public_audio_transcription") | null;
             channel: {
                 native_id: string;
                 title: string | null;
@@ -1739,12 +1740,16 @@ export interface components {
             language: components["schemas"]["LanguageTag"];
             /** @enum {unknown} */
             modality: "speech" | "on_screen_text" | "frame";
-            transcription: {
-                /** @constant */
-                engine: "faster-whisper";
-                model_size: string;
+            transcription: ({
+                /**
+                 * @description faster-whisper: local speech-to-text; platform_captions: the platform's caption track (D47)
+                 * @enum {unknown}
+                 */
+                engine: "faster-whisper" | "platform_captions";
+                model_size: string | null;
                 language_hint: components["schemas"]["LanguageTag"] | null;
-            } | null;
+                caption_kind: ("manual" | "auto_generated") | null;
+            } & unknown) | null;
             original_text_ref: string;
             translation: {
                 language: components["schemas"]["LanguageTag"];
@@ -1752,7 +1757,7 @@ export interface components {
                 /** @enum {unknown} */
                 method: "language_agent" | "moderator";
             } | null;
-            quality_flags: ("low_audio_quality" | "code_switching" | "numbers_uncertain" | "overlapping_speech" | "music")[];
+            quality_flags: ("low_audio_quality" | "code_switching" | "numbers_uncertain" | "overlapping_speech" | "music" | "auto_generated_captions" | "low_confidence")[];
         } & unknown;
         MediaItemView: {
             source: components["schemas"]["SourceRevision"];
@@ -2113,10 +2118,10 @@ export interface components {
             id: components["schemas"]["JobId"];
             logical_key: string;
             /**
-             * @description check_availability re-checks stored sources for edits and deletions (Step 05.6, D44)
+             * @description check_availability re-checks stored sources for edits and deletions (Step 05.6, D44); process_media acquires and transcribes an authorised video (Step 06, D47)
              * @enum {unknown}
              */
-            kind: "collect" | "analyse" | "resume_after_review" | "generate_content" | "deliver_publication" | "invalidate_dependencies" | "erase_payloads" | "scheduled_refresh" | "evaluate" | "check_availability";
+            kind: "collect" | "analyse" | "resume_after_review" | "generate_content" | "deliver_publication" | "invalidate_dependencies" | "erase_payloads" | "scheduled_refresh" | "evaluate" | "check_availability" | "process_media";
             run_id: components["schemas"]["RunId"] | null;
             project_id: components["schemas"]["ProjectId"] | null;
             status: components["schemas"]["JobStatus"];

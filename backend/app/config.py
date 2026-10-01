@@ -76,6 +76,19 @@ class Settings(BaseSettings):
     identity_agent_tasks_per_run: int = Field(default=10, ge=0)
     recheck_per_job: int = Field(default=200, ge=0)
 
+    # Media (Step 06, D47). Only project-linked public videos; audio is deleted after transcription.
+    worker_role: str = Field(default="all", pattern="^(all|general|media)$")  # media: only process_media jobs
+    media_caption_languages: str = "hi,en,en-IN"
+    media_max_duration_seconds: int = Field(default=600, ge=10)
+    media_max_audio_bytes: int = Field(default=60_000_000, ge=100_000)
+    media_window_target_ms: int = Field(default=30_000, ge=5_000)
+    media_window_max_ms: int = Field(default=45_000, ge=10_000)
+    media_videos_per_start: int = Field(default=50, ge=0)
+    media_work_dir: Path = Path("/tmp/media")  # noqa: S108  (a tmpfs in the media worker; emptied after each job)
+    whisper_model: str = "large-v3-turbo"  # evals/media/v1: far better Hindi than small; about 1-2x real time on an M1
+    whisper_compute_type: str = "int8"
+    whisper_models_dir: Path = Path("/srv/models")
+
     public_base_url: str = "http://localhost:3000"
     revalidation_secret: SecretStr | None = None
 

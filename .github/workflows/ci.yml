@@ -92,6 +92,8 @@ jobs:
         run: docker compose exec -T api python -m app.cli fixture-smoke-identity
       - name: Identity evaluation (synthetic labelled set)
         run: docker compose exec -T api python -m app.cli eval-identity
+      - name: Media worker has ffmpeg and the media libraries (no model download)
+        run: docker compose exec -T media-worker sh -c 'ffmpeg -version | head -1 && python -c "import faster_whisper, yt_dlp, youtube_transcript_api; print(\"media libraries import\")"'
       - name: Logs on failure
         if: failure()
         run: docker compose logs --no-color | tail -200

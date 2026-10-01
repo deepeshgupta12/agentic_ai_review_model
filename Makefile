@@ -109,8 +109,23 @@ recheck: ## Re-check stored sources for edits, deletions and stated dates (worke
 verify-collection: ## Read-only checks over what collection stored (policies, robots, metadata-only, threads, quotas)
 	$(COMPOSE) exec -T api python -m app.cli verify-collection
 
+transcribe: ## Queue transcription of project-matched videos and wait (media worker; needs youtube.com reachable)
+	$(COMPOSE) exec -T api python -m app.cli transcribe-videos --wait 1800
+
+eval-media: ## Synthetic speech check with the configured Whisper model, saved (media worker; several minutes)
+	$(COMPOSE) exec -T media-worker python -m app.cli eval-media --save
+
+eval-language: ## A04 translation check on the synthetic speech cases, saved (one Claude call)
+	$(COMPOSE) exec -T api python -m app.cli eval-language --save
+
 check-step04: ## Step 04 checks with a saved log
 	bash scripts/run_step04_checks.sh
 
 mutations-step04: ## Step 04 mutation check: each identity rule disabled must be caught (stack up)
 	bash scripts/run_step04_mutations.sh
+
+check-step06: ## Step 06 checks with a saved log
+	bash scripts/run_step06_checks.sh
+
+mutations-step06: ## Step 06 mutation check: each media rule disabled must be caught (stack up)
+	bash scripts/run_step06_mutations.sh

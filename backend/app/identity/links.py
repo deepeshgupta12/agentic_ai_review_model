@@ -147,7 +147,23 @@ def transition(
 def _return_inherited(
     db: Database[dict[str, Any]], contracts: ContractStore, link: dict[str, Any], session: ClientSession | None
 ) -> None:
-    """Comments that inherited this link's match (same project, no signals of their own) return to review too."""
+    """Comments, and a video's transcript windows (Step 06), that inherited this link's match (same project, no
+    signals of their own) return to review too."""
+    if link["segment_key"] == "whole":
+        return_to_review(
+            db,
+            contracts,
+            {
+                "project_id": link["project_id"],
+                "source.id": link["source"]["id"],
+                "source.revision": link["source"]["revision"],
+                "segment_key": {"$regex": "^t:"},
+                "match.method": "deterministic",
+                "match.signals": {"$size": 0},
+            },
+            f"the video's match {link['_id']} left an accepted state",
+            session,
+        )
     children = [
         {"id": s["id"], "revision": s["revision"]}
         for s in db["ai_sources"].find({"parent.id": link["source"]["id"]}, {"id": 1, "revision": 1}, session=session)

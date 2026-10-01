@@ -1,6 +1,8 @@
 """Worker process: recovers expired leases, claims jobs, heartbeats and runs handlers.
 
-Registered: invalidate_dependencies (Step 04), collect and erase_payloads (Step 05); later steps add more.
+Registered: invalidate_dependencies (Step 04); collect, erase_payloads, check_availability (Step 05); process_media
+(Step 06). WORKER_ROLE splits them: "media" takes only process_media (the media worker image), "general" takes
+everything else, "all" (the default, and tests) takes every kind.
 A job without a handler fails visibly instead of silently disappearing.
 """
 
@@ -20,6 +22,7 @@ from app.config import get_settings
 from app.db import get_db
 from app.identity import invalidation
 from app.jobs import queue
+from app.media import pipeline as media
 from app.observability import configure_logging, log_event, register_secrets
 from app.sources import collection, lifecycle, recheck
 
@@ -44,12 +47,22 @@ register("invalidate_dependencies")(invalidation.handle)
 register("collect")(collection.handle_collect)
 register("erase_payloads")(lifecycle.handle_erase)
 register("check_availability")(recheck.handle_recheck)
+register("process_media")(media.handle_process_media)
+MEDIA_KINDS = ("process_media",)
 
 
-def run_one(db: Database[dict[str, Any]], owner: str, lease_seconds: int) -> str | None:
+def kinds_for(role: str) -> list[str] | None:
+    if role == "media":
+        return list(MEDIA_KINDS)
+    if role == "general":
+        return [kind for kind in queue.JOB_KINDS if kind not in MEDIA_KINDS]
+    return None
+
+
+def run_one(db: Database[dict[str, Any]], owner: str, lease_seconds: int, kinds: list[str] | None = None) -> str | None:
     """Claim and run one job. Returns the job's final status, or None when nothing was claimable."""
     queue.recover_expired(db)
-    claimed = queue.claim(db, owner, lease_seconds)
+    claimed = queue.claim(db, owner, lease_seconds, kinds)
     if claimed is None:
         return None
     job = claimed.job
@@ -100,11 +113,12 @@ def main() -> None:
     stopping = threading.Event()
     signal.signal(signal.SIGTERM, lambda *_: stopping.set())
     signal.signal(signal.SIGINT, lambda *_: stopping.set())
-    log_event(logger, "worker started", owner=owner, handlers=sorted(HANDLERS))
+    kinds = kinds_for(settings.worker_role)
+    log_event(logger, "worker started", owner=owner, role=settings.worker_role, kinds=sorted(kinds or HANDLERS))
     db = get_db()
     while not stopping.is_set():
         try:
-            if run_one(db, owner, settings.job_lease_seconds) is None:
+            if run_one(db, owner, settings.job_lease_seconds, kinds) is None:
                 stopping.wait(settings.job_poll_seconds)
         except Exception:
             logger.exception("worker loop error")

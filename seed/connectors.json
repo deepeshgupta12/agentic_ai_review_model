@@ -201,7 +201,7 @@
   },
   {
    "id": "spoken_video_transcripts",
-   "provider": "Undecided (I05): creator-supplied files, licensed transcript/media feed, or none",
+   "provider": "Public captions (youtube-transcript-api), else public audio (yt-dlp) transcribed locally with faster-whisper (D33, D47)",
    "policy_family": "spoken_video_content",
    "acquisition_order": 6,
    "demo_requirement": "optional",
@@ -213,15 +213,15 @@
     "search": false,
     "archive": false,
     "comments": false,
-    "transcripts": null,
-    "deletion_check": null
+    "transcripts": true,
+    "deletion_check": true
    },
    "credential_env": [],
-   "no_credential_reason": "Depends on the acquisition route chosen for I05",
+   "no_credential_reason": "Public videos without sign-in (D33); no key. Needs network access to youtube.com (I17)",
    "quota": null,
    "cursor_method": "per media item",
-   "deletion_method": "Per route; erase media, transcript and segments on withdrawal",
-   "demonstration": "An actually permitted transcript or media file is processed with original timing preserved (Step 06)",
+   "deletion_method": "Withdrawal, confirmed deletion or expiry of the video erases its transcript windows and translations after invalidation (D45, D47)",
+   "demonstration": "A real project video's captions or audio processed with original timing preserved (Step 06); a synthetic speech set alone does not count",
    "status": "access_pending",
    "last_verified": null,
    "verification_ref": null

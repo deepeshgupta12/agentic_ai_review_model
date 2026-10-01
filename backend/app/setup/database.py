@@ -346,6 +346,22 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
         ),
         CollectionSpec("ai_availability_checks", _availability_validator(), []),
         CollectionSpec(
+            "ai_media_segments",
+            contracts.mongo_validator("sources.schema.json#/$defs/MediaSegment"),
+            [
+                IndexSpec(
+                    "uniq_source_segment",
+                    [
+                        ("source.id", ASCENDING),
+                        ("source.revision", ASCENDING),
+                        ("segment_key", ASCENDING),
+                        ("modality", ASCENDING),
+                    ],
+                    {"unique": True},
+                ),
+            ],
+        ),
+        CollectionSpec(
             "ai_idempotency_keys",
             _idempotency_validator(),
             [IndexSpec("ttl_created_at", [("created_at", ASCENDING)], {"expireAfterSeconds": 7 * 86400})],

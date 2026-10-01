@@ -636,7 +636,89 @@
         "transcription": {
           "engine": "faster-whisper",
           "model_size": "small",
-          "language_hint": "hi"
+          "language_hint": "hi",
+          "caption_kind": null
+        },
+        "original_text_ref": "seg/1/original",
+        "translation": {
+          "language": "en",
+          "text_ref": "seg/1/en",
+          "method": "language_agent"
+        },
+        "quality_flags": [
+          "code_switching"
+        ]
+      }
+    },
+    {
+      "name": "media_segment_from_captions",
+      "schema": "sources.schema.json#/$defs/MediaSegment",
+      "expect": "valid",
+      "tags": [
+        "multi_project_video"
+      ],
+      "why": "Speech from the platform caption track: no Whisper model, the caption kind recorded (D47)",
+      "instance": {
+        "id": "seg_01JB0000000000000000000002",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "segment_key": "t:0-240000",
+        "time": {
+          "kind": "time",
+          "start_ms": 0,
+          "end_ms": 240000,
+          "precision": "approximate",
+          "method": "transcript_segment"
+        },
+        "language": "hi-Latn",
+        "modality": "speech",
+        "transcription": {
+          "engine": "platform_captions",
+          "model_size": null,
+          "language_hint": null,
+          "caption_kind": "auto_generated"
+        },
+        "original_text_ref": "seg/1/original",
+        "translation": {
+          "language": "en",
+          "text_ref": "seg/1/en",
+          "method": "language_agent"
+        },
+        "quality_flags": [
+          "auto_generated_captions"
+        ]
+      }
+    },
+    {
+      "name": "media_segment_captions_with_model",
+      "schema": "sources.schema.json#/$defs/MediaSegment",
+      "expect": "invalid",
+      "tags": [],
+      "why": "Captions are not a Whisper run, so they name no model size",
+      "error_contains": "is not of type 'null'",
+      "instance": {
+        "id": "seg_01JB0000000000000000000003",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "segment_key": "t:0-240000",
+        "time": {
+          "kind": "time",
+          "start_ms": 0,
+          "end_ms": 240000,
+          "precision": "approximate",
+          "method": "transcript_segment"
+        },
+        "language": "hi-Latn",
+        "modality": "speech",
+        "transcription": {
+          "engine": "platform_captions",
+          "model_size": "small",
+          "language_hint": null,
+          "caption_kind": "manual"
         },
         "original_text_ref": "seg/1/original",
         "translation": {
