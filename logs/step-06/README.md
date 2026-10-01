@@ -107,6 +107,8 @@ Hindi number words are where Whisper errs ("पच्छाहेतर" for प
 | 2026-10-01 09:31 | `fb5ce62` (before commit) | Implementer | `bash scripts/run_step06_mutations.sh` | ALL MUTANTS CAUGHT, 16/16; 258 backend tests | [log](mutation-check-20261001T093120Z.log) |
 | 2026-10-01 09:53 | `fb5ce62` | Implementer | `bash scripts/run_step06_checks.sh` | 22/23. The seeding check wrongly required "unchanged" on the first pass after the upgrade, which correctly created spoken_video_content v2 and youtube v3 (script fixed). Speech set 20/22; A04 5/5 and 12/12; live attempt: 137 eligible videos, 5 tried, all `network_refused` (I17); verify-collection 16/16 | [log](checks-20261001T095344Z.log) |
 | 2026-10-01 10:12 | `982028c` | Implementer | `bash scripts/run_step06_checks.sh` | **ALL CHECKS OK, 23/23.** 258 backend tests; media worker role, 2 GB cap and kill priority; speech set 20/22 (saved); A04 5/5 and 12/12 (saved); live: 137 eligible videos, the day's 5 attempts all `network_refused` (I17), no job left running; verify-collection 16/16; MongoDB about 390 MB with its cache capped. The seeding check's informational line failed on its quoting (its assertion ran and passed); fixed in the next commit and run on its own: second pass unchanged | [log](checks-20261001T101210Z.log) |
+| 2026-10-01 10:35 | `f574c5f` | GitHub Actions | CI | Compose job failed: the runner has 2 CPUs and the media worker asked for 3 (`range of CPUs is from 0.01 to 2.00`). The other three jobs passed. Fixed with `MEDIA_WORKER_CPUS`, default 2 | `gh run list --branch main` |
+| 2026-10-01 10:50 | `2ecdf3c` | GitHub Actions | CI, including the new media worker step (ffmpeg and the media libraries) | All four jobs passed | `gh run list --branch main` |
 
 ## Step 06 acceptance checks
 
