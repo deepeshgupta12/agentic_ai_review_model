@@ -106,6 +106,7 @@ Hindi number words are where Whisper errs ("पच्छाहेतर" for प
 | 2026-10-01 09:12 | worktree | Implementer | `bash scripts/run_step06_mutations.sh` | 14/16. One weak test (window overlap at a boundary, strengthened) and one mutant whose text didn't match the file (fixed) | [log](mutation-check-20261001T091209Z.log) |
 | 2026-10-01 09:31 | `fb5ce62` (before commit) | Implementer | `bash scripts/run_step06_mutations.sh` | ALL MUTANTS CAUGHT, 16/16; 258 backend tests | [log](mutation-check-20261001T093120Z.log) |
 | 2026-10-01 09:53 | `fb5ce62` | Implementer | `bash scripts/run_step06_checks.sh` | 22/23. The seeding check wrongly required "unchanged" on the first pass after the upgrade, which correctly created spoken_video_content v2 and youtube v3 (script fixed). Speech set 20/22; A04 5/5 and 12/12; live attempt: 137 eligible videos, 5 tried, all `network_refused` (I17); verify-collection 16/16 | [log](checks-20261001T095344Z.log) |
+| 2026-10-01 10:12 | `982028c` | Implementer | `bash scripts/run_step06_checks.sh` | **ALL CHECKS OK, 23/23.** 258 backend tests; media worker role, 2 GB cap and kill priority; speech set 20/22 (saved); A04 5/5 and 12/12 (saved); live: 137 eligible videos, the day's 5 attempts all `network_refused` (I17), no job left running; verify-collection 16/16; MongoDB about 390 MB with its cache capped. The seeding check's informational line failed on its quoting (its assertion ran and passed); fixed in the next commit and run on its own: second pass unchanged | [log](checks-20261001T101210Z.log) |
 
 ## Step 06 acceptance checks
 
@@ -114,7 +115,7 @@ Hindi number words are where Whisper errs ("पच्छाहेतर" for प
 - [x] Timestamp jumps resolve the correct original segment within documented precision (UC-41). Precision: approximate, within the roughly 30-second window.
 - [x] Hindi/English/Hinglish numerical and negation errors are measured and flagged. Measured above: Whisper's Hindi number words are the weak point, and A04 kept every number and negation. Flagged by UC-42 and UC-46.
 - [x] Comments, descriptions, spoken content and frame observations remain distinguishable. Comments are separate sources (Step 05). Descriptions are metadata, never evidence. Speech evidence has modality `speech`. No frames are extracted (D49).
-- [x] Relevant repository checks were actually run and their results recorded (above).
+- [x] Relevant repository checks were actually run and their results recorded (above): 23/23 checks at `982028c`, 16/16 mutants, 258 backend tests.
 - [x] PROGRESS.md records changed paths, decisions, evidence, unresolved dependencies and the next action.
 - [ ] Live media analysis on a permitted real sample. **Blocked by I17:** youtube.com is unreachable from the demo network.
 - [ ] The product owner approves items Z1–Z3.

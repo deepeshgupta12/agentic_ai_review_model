@@ -119,7 +119,11 @@ EOF
 seeding_is_repeatable() {
   docker compose exec -T api python -m app.cli seed-projects > /dev/null || return 1
   docker compose exec -T api python -m app.cli seed-policies > "$T/first.json" || return 1
-  "$PY" -c 'import json, sys; c = [f"{p[\"family\"]} v{p[\"policy_version\"]}" for p in json.load(open(sys.argv[1])) if p["outcome"] == "created"]; print("first pass created:", c or "nothing (already seeded)")' "$T/first.json"
+  "$PY" - "$T/first.json" <<'EOF'
+import json, sys
+created = [f"{p['family']} v{p['policy_version']}" for p in json.load(open(sys.argv[1])) if p["outcome"] == "created"]
+print("first pass created:", created or "nothing (already seeded)")
+EOF
   docker compose exec -T api python -m app.cli seed-projects > "$T/seed.json" || return 1
   docker compose exec -T api python -m app.cli seed-policies > "$T/policies.json" || return 1
   "$PY" - "$T/seed.json" "$T/policies.json" <<'EOF'
