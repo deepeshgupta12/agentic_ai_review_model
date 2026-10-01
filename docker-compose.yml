@@ -116,7 +116,7 @@ services:
     # database. Found on 1 Oct 2026, when a 3 GB model test got MongoDB killed for lack of memory.
     mem_limit: 2g
     oom_score_adj: 1000
-    cpus: 3
+    cpus: ${MEDIA_WORKER_CPUS:-2}  # CI runners have 2 CPUs; raise it in .env on a machine with more cores
     stop_grace_period: 60s
 
   scheduler:

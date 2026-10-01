@@ -66,7 +66,7 @@ Commit a page's records before advancing its cursor/watermark. Replaying the pag
   A refusal (bot check, unavailable video, blocked network) stops the attempt. Audio is deleted after each job.
 - **Windows** of about 30 seconds on the original timeline are the stored segments, the matching unit and the speech evidence span. A window that names no project inherits the video's accepted match; if that match is undone, it returns to review.
 - **Language.** Machine-made numbers are flagged `numbers_uncertain`. A04 translations are kept only when numbers and negations survive (`backend/app/media/translate.py`).
-- **Media worker** (D48). It runs in its own container: 2 GB, 3 CPUs, in-memory scratch disk, and the kernel kills it first under memory pressure.
+- **Media worker** (D48). It runs in its own container: 2 GB, `MEDIA_WORKER_CPUS` CPUs (default 2), in-memory scratch disk, and the kernel kills it first under memory pressure.
 - **Checks.** `make eval-media` runs the synthetic speech set; `make eval-language` checks A04 translations.
 - **Status.** Live acquisition is blocked while youtube.com is unreachable from the demo network (I17).
 
