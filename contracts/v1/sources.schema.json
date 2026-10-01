@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Source contracts",
   "description": "Source policies, global source revisions, project-source links, media segments, connector state and origin clusters (docs/02 items 1, 4, 5, 9; docs/06).",
-  "x-contract-version": "1.0.0",
+  "x-contract-version": "1.1.0",
   "$defs": {
     "SourcePolicy": {
       "description": "ai_source_policies record. Immutable per policy_version; a change is a new version. Rights form a chain: each needs the one before it.",
@@ -268,7 +268,8 @@
           "else": { "properties": { "segment_anchor": { "$ref": "common.schema.json#/$defs/Anchor" } } }
         },
         {
-          "if": { "properties": { "status": { "enum": ["accepted", "rejected"] } } },
+          "description": "Only a moderator reaches accepted, so it names the decision. rejected can be set by the matching rules at creation (state machine initial state), with no decision (D45).",
+          "if": { "properties": { "status": { "const": "accepted" } } },
           "then": { "properties": { "decided_by": { "$ref": "common.schema.json#/$defs/DecisionId" } } }
         },
         {

@@ -982,6 +982,12 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
             case("link_video_project_one", src + "ProjectSourceLink", LINK_VIDEO_P, "First segment of a comparison video, linked to Fixture Towers", ["multi_project_video"]),
             case("link_video_project_two", src + "ProjectSourceLink", LINK_VIDEO_P2, "Second segment of the same video revision, linked to Sample Greens", ["multi_project_video"]),
             case(
+                "link_rejected_by_rule",
+                src + "ProjectSourceLink",
+                variant(LINK_VIDEO_P2, lambda l: l.update(status="rejected")),
+                "The matching rules can create a link as rejected (same name in another city); no moderator decided it (D45)",
+            ),
+            case(
                 "link_whole_with_anchor",
                 src + "ProjectSourceLink",
                 variant(LINK_FORUM, lambda l: l.update(segment_anchor=time_anchor(0, 1000))),

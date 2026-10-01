@@ -243,8 +243,9 @@ rows = {r["connector_id"]: r for r in json.load(open(sys.argv[1]))["connectors"]
 for cid in ("anthropic", "brave_search", "web_fetch", "youtube_data_api", "firecrawl", "reddit_api"):
     r = rows[cid]
     print(f"  {cid:18} {r['status']:15} last success {r['last_success_at']} quota {r['quota']['used']}/{r['quota']['limit']}")
-live = all(rows[c]["status"] == "live" for c in ("anthropic", "brave_search", "web_fetch", "youtube_data_api"))
-sys.exit(0 if live and rows["brave_search"]["quota"]["used"] and rows["firecrawl"]["status"] == "access_pending" else 1)
+live = ("anthropic", "brave_search", "web_fetch", "youtube_data_api")
+ok = all(rows[c]["status"] == "live" and rows[c]["last_success_at"] for c in live)  # quotas reset; successes stay
+sys.exit(0 if ok and rows["firecrawl"]["status"] == "access_pending" else 1)
 EOF
 }
 
@@ -414,7 +415,7 @@ expect "UC-33: source policies (contract); web allow-list v4 with 62 hosts, clie
 expect "UC-40: runs for DLF Privana (contract) and the latest run's coverage (contract)" 0 runs_listed_and_read
 expect "UC-40: run events as a server-sent stream, resumed with Last-Event-ID" 0 run_events_stream_and_resume
 expect "UC-40: web pages for M3M Antalya Hills (contract) and one revision with its evidence (contract)" 0 sources_listed_with_detail
-expect "UC-40: connector health (contract); anthropic, brave_search, web_fetch, youtube_data_api live" 0 connector_health
+expect "UC-40: connector health (contract); four connectors live, each with a recorded success" 0 connector_health
 
 expect "N1: a run needs an Idempotency-Key (422)" 0 run_needs_an_idempotency_key
 expect "N2: a run naming a connector the project does not enable is refused (422)" 0 run_refuses_a_connector_not_enabled

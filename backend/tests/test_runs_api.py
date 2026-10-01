@@ -161,4 +161,24 @@ def test_connector_health_reports_real_activity(api, db, make_user, contracts, s
     )
     rows = {r["connector_id"]: r for r in health.json()["connectors"]}
     assert rows["brave_search"]["quota"]["used"] > 0 and rows["brave_search"]["last_success_at"] is not None
+    assert rows["web_fetch"]["last_success_at"] is not None, "the web reader's record is the fetch log"
     assert rows["youtube_data_api"]["quota"]["limit"] == settings.youtube_daily_searches
+
+
+def test_a_source_whose_link_the_rules_rejected_still_matches_the_contract(api, db, make_user, contracts, fictional):
+    """Found by the Step 05 check on real data: rule-rejected links carry no decision (D45)."""
+    source = store_text_source(
+        db,
+        connector_id="web_fetch",
+        native_id="https://nobroker.in/p",
+        canonical_url="https://nobroker.in/p",
+        source_kind="forum_post",
+        text="Quillon Residences in Pune has a lovely clubhouse.",
+        policy_family="competitor_portals",
+    )
+    report = identify_source(db.client, db, contracts, source, focus_project_ids=[fictional["Quillon Residences"]])
+    assert [r["status"] for r in report["links"]] == ["rejected"]
+    analyst = sign_in(api, make_user, ["analyst"])
+    detail = api.get(f"/v1/sources/{source['id']}/revisions/1", headers=analyst)
+    assert detail.status_code == 200 and detail.json()["links"][0]["decided_by"] is None
+    assert contracts.errors(detail.json(), "api.schema.json#/$defs/SourceRevisionDetail") == []

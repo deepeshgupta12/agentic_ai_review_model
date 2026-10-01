@@ -108,6 +108,15 @@ def connector_health(
             db["ai_connector_state"].find({"connector_id": item["id"]}, {"last_success_at": 1, "last_error": 1})
         )
         successes = [s["last_success_at"] for s in states if s.get("last_success_at")]
+        # The web reader and the model provider keep no cursor state: their record is the fetch log and agent runs.
+        if item["id"] == "web_fetch":
+            fetched = db["ai_fetch_log"].find_one(
+                {"connector_id": "web_fetch", "outcome": "fetched"}, sort=[("at", -1)]
+            )
+            successes += [fetched["at"]] if fetched else []
+        elif item["id"] == "anthropic":
+            call = db["ai_agent_runs"].find_one({"outcome": "completed"}, sort=[("created_at", -1)])
+            successes += [call["created_at"]] if call else []
         errors = [s["last_error"] for s in states if s.get("last_error")]
         latest = max(errors, key=lambda e: e["at"]) if errors else None
         usage = quota.usage(db, settings, item["id"], buckets[item["id"]], now) if item["id"] in buckets else None
