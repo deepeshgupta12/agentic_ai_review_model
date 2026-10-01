@@ -80,6 +80,14 @@ class Stored:
     changed: bool  # a new revision of an existing source
 
 
+def withdrawn_on_request(db: Database[dict[str, Any]], source_id: str, session: ClientSession | None = None) -> bool:
+    """A person (moderator or admin) withdrew this source, for example at the author's request. Such a source is
+    never collected again. A withdrawal by the system under a policy rule does not block a later collection that
+    the current policy allows (D46)."""
+    query = {"action": "source.withdrawn", "target.id": source_id, "actor.kind": "user"}
+    return db["ai_audit_events"].count_documents(query, limit=1, session=session) > 0
+
+
 def store_item(
     db: Database[dict[str, Any]], item: Item, policy: dict[str, Any], session: ClientSession | None = None
 ) -> Stored:
@@ -105,6 +113,8 @@ def store_item(
                 db["ai_sources"].update_one({"_id": latest["_id"]}, {"$set": {"lifecycle": "active"}}, session=session)
                 latest["lifecycle"] = "active"
             return Stored(latest, created=False, changed=False)
+    if latest is not None and latest["lifecycle"] == "withdrawn" and withdrawn_on_request(db, latest["id"], session):
+        return Stored(latest, created=False, changed=False)  # never collected again; callers skip it (D46)
     source_id = latest["id"] if latest else new_id("src")
     revision = latest["revision"] + 1 if latest else 1
     now = utcnow()

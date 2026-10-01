@@ -1,0 +1,75 @@
+Step 05 mutation check: each collection rule is disabled on a scratch copy; its own test must fail.
+date (UTC): 2026-10-01T06:46:22Z
+commit:     6b7a4a3 (plus uncommitted backend changes)
+
+== baseline: the unchanged copy imports its own code and the Step 05 test files pass
+imports the scratch copy
+test_policies.py             2 failed, 13 passed in 32.59s
+test_fetching.py             25 passed in 5.88s
+test_connectors.py           10 passed in 13.95s
+test_collection.py           13 passed in 29.27s
+test_lifecycle.py            8 passed in 10.77s
+test_recheck.py              5 passed in 9.65s
+test_runs_api.py             7 passed in 10.54s
+
+== rule disabled: a host's policy is checked before any request
+   in backend/app/connectors/web.py
+FAILED tests/test_connectors.py::test_the_web_reader_never_requests_a_page_the_policy_does_not_allow
+1 failed, 11 passed in 11.90s
+--> OK (caught by test_the_web_reader_never_requests_a_page_the_policy_does_not_allow)
+
+== rule disabled: robots.txt is obeyed
+   in backend/app/connectors/web.py
+expected exactly one match in /private/var/folders/yh/bbt78hgx5p5345y3w9k6r3xm0000gn/T/tmp.Psss6IKTsb/repo/backend/app/connectors/web.py, found 0
+--> NOT OK (could not apply the change)
+
+== rule disabled: every redirect hop is checked against the policy
+   in backend/app/connectors/web.py
+FAILED tests/test_connectors.py::test_a_redirect_to_a_host_the_policy_does_not_allow_is_stopped
+1 failed, 11 passed in 16.81s
+--> OK (caught by test_a_redirect_to_a_host_the_policy_does_not_allow_is_stopped)
+
+== rule disabled: the fetch log keeps where a redirect landed
+   in backend/app/connectors/web.py
+FAILED tests/test_connectors.py::test_an_allowed_redirect_is_stored_where_it_landed_and_logged_with_both_addresses
+1 failed, 11 passed in 11.71s
+--> OK (caught by test_an_allowed_redirect_is_stored_where_it_landed_and_logged_with_both_addresses)
+
+== rule disabled: dates only from structured markup (D44)
+   in backend/app/connectors/web.py
+FAILED tests/test_connectors.py::test_a_date_written_only_in_the_text_stays_unknown
+1 failed, 11 passed in 15.55s
+--> OK (caught by test_a_date_written_only_in_the_text_stays_unknown)
+
+== rule disabled: non-public addresses are refused (SSRF)
+   in backend/app/sources/http.py
+FAILED tests/test_fetching.py::test_non_public_targets_and_odd_urls_are_refused[http://localhost/x-table0-address_refused]
+FAILED tests/test_fetching.py::test_non_public_targets_and_odd_urls_are_refused[http://metadata.test/latest-table1-address_refused]
+FAILED tests/test_fetching.py::test_non_public_targets_and_odd_urls_are_refused[http://intranet.test/-table2-address_refused]
+FAILED tests/test_fetching.py::test_non_public_targets_and_odd_urls_are_refused[http://v6.test/-table3-address_refused]
+FAILED tests/test_fetching.py::test_non_public_targets_and_odd_urls_are_refused[http://mixed.test/-table4-address_refused]
+FAILED tests/test_fetching.py::test_every_redirect_hop_is_checked_again
+6 failed, 19 passed in 5.49s
+--> OK (caught by test_non_public_targets_and_odd_urls_are_refused)
+
+== rule disabled: a robots.txt that refuses us means nothing is fetched (D45)
+   in backend/app/sources/robots.py
+FAILED tests/test_fetching.py::test_a_robots_file_that_refuses_us_means_nothing_is_fetched[401]
+FAILED tests/test_fetching.py::test_a_robots_file_that_refuses_us_means_nothing_is_fetched[403]
+FAILED tests/test_fetching.py::test_a_robots_file_that_refuses_us_means_nothing_is_fetched[451]
+3 failed, 22 passed in 5.47s
+--> OK (caught by test_a_robots_file_that_refuses_us_means_nothing_is_fetched)
+
+== rule disabled: withdrawal erases older revisions too (D45)
+   in backend/app/sources/lifecycle.py
+FAILED tests/test_lifecycle.py::test_withdrawing_a_source_erases_every_revision
+1 failed, 9 passed in 12.51s
+--> OK (caught by test_withdrawing_a_source_erases_every_revision)
+
+== rule disabled: a confirmed deletion reaches older revisions (D45)
+   in backend/app/sources/lifecycle.py
+FAILED tests/test_lifecycle.py::test_a_confirmed_deletion_reaches_older_revisions
+1 failed, 9 passed in 12.70s
+--> OK (caught by test_a_confirmed_deletion_reaches_older_revisions)
+scripts/run_step05_mutations.sh: line 115: syntax error near unexpected token `)'
+scripts/run_step05_mutations.sh: line 115: `, 410):' \'

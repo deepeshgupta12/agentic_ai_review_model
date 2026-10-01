@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Source contracts",
   "description": "Source policies, global source revisions, project-source links, media segments, connector state and origin clusters (docs/02 items 1, 4, 5, 9; docs/06).",
-  "x-contract-version": "1.1.0",
+  "x-contract-version": "1.2.0",
   "$defs": {
     "SourcePolicy": {
       "description": "ai_source_policies record. Immutable per policy_version; a change is a new version. Rights form a chain: each needs the one before it.",
@@ -21,6 +21,7 @@
         "hosts",
         "excluded_hosts",
         "conditions",
+        "robots_txt",
         "basis",
         "status",
         "effective_from",
@@ -41,6 +42,10 @@
         "hosts": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9.-]+$" } },
         "excluded_hosts": { "type": "array", "items": { "type": "string", "pattern": "^[a-z0-9.-]+$" } },
         "conditions": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "robots_txt": {
+          "description": "obey: a page robots.txt disallows (or a refused robots.txt) is not fetched. record_only: robots.txt is fetched and its verdict logged for every page, but does not block the fetch (D46). Versions stored before this field existed were obeyed.",
+          "enum": ["obey", "record_only"]
+        },
         "basis": { "type": "string", "minLength": 1 },
         "status": { "enum": ["proposed", "accepted"] },
         "effective_from": { "$ref": "common.schema.json#/$defs/Timestamp" },

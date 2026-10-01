@@ -41,9 +41,10 @@ def test_seeded_policies_are_current_and_match_the_contract(db, contracts):
     families = {p["family"] for p in db["ai_source_policies"].find()}
     assert len(families) == 11 and {"competitor_portals", "web_public_pages"} <= families
     web = current(db, "web_public_pages")
-    assert web["policy_version"] == 4 and {"dlf.in", "republicworld.com"} <= set(web["hosts"])
+    assert web["policy_version"] == 5 and {"dlf.in", "republicworld.com"} <= set(web["hosts"])
+    assert web["robots_txt"] == "record_only", "D46"
     assert "client-site.example" not in web["hosts"], "own content is not independent evidence"
-    assert current(db, "competitor_portals")["policy_version"] == 1
+    assert current(db, "competitor_portals")["policy_version"] == 2
     for doc in db["ai_source_policies"].find():
         assert contracts.errors(policy_view(doc), "sources.schema.json#/$defs/SourcePolicy") == [], doc["family"]
 
@@ -124,9 +125,9 @@ def test_narrowing_a_policy_applies_at_once_and_is_rechecked(api, db, contracts,
     assert api.post("/v1/admin/source-policies", json=body, headers=headers).status_code == 201
     assert not usable_for_identity(db, evidence), "the current version governs stored evidence"
     job = db["ai_jobs"].find_one({"kind": "invalidate_dependencies"})
-    assert job is not None and job["logical_key"] == "invalidate_dependencies:policy:competitor_portals:v2"
+    assert job is not None and job["logical_key"] == "invalidate_dependencies:policy:competitor_portals:v3"
     audit = db["ai_audit_events"].find_one(
-        {"action": "source_policy.created", "details.family": "competitor_portals", "details.policy_version": 2}
+        {"action": "source_policy.created", "details.family": "competitor_portals", "details.policy_version": 3}
     )
     assert "ai_processing_allowed" in audit["details"]["narrowed"]
 
@@ -144,3 +145,23 @@ def test_policy_api_roles_and_the_rights_chain(api, db, make_user, contracts):
     response = api.post("/v1/admin/source-policies", json=broken, headers=admin)
     assert response.status_code == 422 and response.json()["error"]["code"] == "validation_failed"
     assert current(db, "youtube")["policy_version"] == 2, "a refused version is not stored"
+
+
+def test_robots_txt_handling_is_part_of_each_version(api, db, make_user, contracts):
+    """D46: obey unless a version says record_only; versions stored before the field existed read as obey."""
+    from .conftest import sign_in
+
+    admin = sign_in(api, make_user, ["admin"])
+    seeded = {p["family"]: p for p in api.get("/v1/admin/source-policies?limit=100", headers=admin).json()["items"]}
+    assert seeded["web_public_pages"]["robots_txt"] == "record_only" and seeded["youtube"]["robots_txt"] == "obey"
+    db["ai_source_policies"].update_one(  # as stored before the field existed; the validator now requires it
+        {"family": "reddit"}, {"$unset": {"robots_txt": ""}}, bypass_document_validation=True
+    )
+    old = next(
+        p
+        for p in api.get("/v1/admin/source-policies?limit=100", headers=admin).json()["items"]
+        if p["family"] == "reddit"
+    )
+    assert old["robots_txt"] == "obey" and contracts.errors(old, "sources.schema.json#/$defs/SourcePolicy") == []
+    made = api.post("/v1/admin/source-policies", json=version_request("quora"), headers=admin)
+    assert made.status_code == 201 and made.json()["robots_txt"] == "obey", "omitted means obey"

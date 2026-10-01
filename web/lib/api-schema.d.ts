@@ -1031,6 +1031,11 @@ export interface components {
             hosts: string[];
             excluded_hosts: string[];
             conditions: string[];
+            /**
+             * @description Optional; obey when omitted (D46)
+             * @enum {unknown}
+             */
+            robots_txt?: "obey" | "record_only";
             basis: string;
             effective_from: components["schemas"]["Timestamp"];
             expires_at: components["schemas"]["Timestamp"] | null;
@@ -1285,6 +1290,11 @@ export interface components {
             hosts: string[];
             excluded_hosts: string[];
             conditions: string[];
+            /**
+             * @description obey: a page robots.txt disallows (or a refused robots.txt) is not fetched. record_only: robots.txt is fetched and its verdict logged for every page, but does not block the fetch (D46). Versions stored before this field existed were obeyed.
+             * @enum {unknown}
+             */
+            robots_txt: "obey" | "record_only";
             basis: string;
             /** @enum {unknown} */
             status: "proposed" | "accepted";

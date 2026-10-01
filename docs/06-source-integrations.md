@@ -34,7 +34,7 @@ Every platform/capability gets a row in DECISIONS.md: provider, enabled/mandator
 Scraping is permitted for the POC within these rules, enforced in code and recorded per source policy:
 
 1. Public pages only. Never bypass login, paywalls, CAPTCHAs, rate limits, private groups or disabled access; never use a personal account session to reach non-public content.
-2. Respect `robots.txt` and platform terms for the fetch; record the policy basis in `ai_source_policies` before storage or AI use. A fetching tool does not confer data rights.
+2. Ask `robots.txt` for every page and record its verdict in the fetch log. It blocks the fetch only where the family's policy version says `robots_txt: obey`; the web reader's families record it without enforcing it (product owner, 1 Oct 2026, D46). Platform terms are reviewed when a host is added; record the policy basis in `ai_source_policies` before storage or AI use. A fetching tool does not confer data rights.
 3. Allow-listed hosts only, with SSRF protection, redirect limits, size/type caps and a per-host concurrency/rate cap. Identify the client honestly in the user agent.
 4. Store the minimum author metadata; do not build cross-platform profiles or infer identities.
 5. Quotation and derived publication follow the source policy; where quotation is not allowed, publish only paraphrased, attributed findings with a link. Version 2 of the web and YouTube policies (product owner, 28 Sep 2026, D28) allows first-person reviews in the author's words with a credit line naming platform and date; no public link is required.
@@ -50,7 +50,7 @@ Commit a page's records before advancing its cursor/watermark. Replaying the pag
 
 ## As built in Step 05
 
-- **Web reader** (`backend/app/connectors/web.py`, D40). Before any request it checks the host's policy family and allow-list, then robots.txt. Every redirect hop is checked the same way. A redirected page is stored where it landed, and the fetch log keeps both addresses. Every decision goes to `ai_fetch_log`.
+- **Web reader** (`backend/app/connectors/web.py`, D40). Before any request it checks the host's policy family and allow-list, then asks robots.txt and logs the verdict (enforced only under `obey`, D46). Every redirect hop is checked the same way. A redirected page is stored where it landed, and the fetch log keeps both addresses. Every decision goes to `ai_fetch_log`.
 - **Safe client** (`backend/app/sources/http.py`). It refuses non-public addresses, re-checked on every hop. It caps size (3 MB) and content type. It paces 3 seconds per host and honours Retry-After with backoff.
 - **Runs** (D43). A run uses only the connectors it planned. Coverage is per connector, and `partial` means some items may read next time.
 - **Re-checks** (D44). The `check_availability` job re-checks stored pages and YouTube records. It applies the lifecycle rules: temporary failure, two consecutive "gone" results for deletion, a new revision for an edit. It also corrects stated dates with an audit event.

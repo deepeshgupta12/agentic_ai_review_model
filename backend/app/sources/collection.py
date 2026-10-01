@@ -38,7 +38,7 @@ from app.ids import new_id
 from app.jobs import queue
 from app.observability import log_event
 from app.sources import policies, state
-from app.sources.store import Item, Stored, store_item
+from app.sources.store import Item, Stored, store_item, withdrawn_on_request
 
 logger = logging.getLogger(__name__)
 RUNS = "ai_runs"
@@ -412,6 +412,12 @@ class Collector:
                 if existing is not None:
                     outcomes["already_read"] = outcomes.get("already_read", 0) + 1
                     continue
+                withdrawn = self.db["ai_sources"].distinct(
+                    "id", {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "withdrawn"}
+                )
+                if any(withdrawn_on_request(self.db, source_id) for source_id in withdrawn):
+                    outcomes["withdrawn_on_request"] = outcomes.get("withdrawn_on_request", 0) + 1
+                    continue  # not even requested again
                 assert isinstance(web, WebFetch)
                 outcome = web.fetch(url, run_id=self.run_id)
                 web_cov["attempted_queries"] += 1
@@ -420,6 +426,8 @@ class Collector:
                 if outcome.item is None or outcome.policy is None:
                     continue
                 page_source = self._store_one(outcome.item, outcome.policy)
+                if page_source.source["lifecycle"] == "withdrawn":
+                    continue
                 web_cov["fetched"] += 1
                 report = identify_source(
                     self.client,
@@ -477,6 +485,9 @@ class Collector:
             cov["attempted_queries"] += 1
             stored = self._store_page("youtube_data_api", st, page, [(i, policy) for i in page.items], True)
             for s in stored:
+                if s.source["lifecycle"] == "withdrawn":  # withdrawn on request: never collected again
+                    counts["withdrawn_on_request"] = counts.get("withdrawn_on_request", 0) + 1
+                    continue
                 cov["fetched"] += 1
                 cov["metadata_only"] += 1
                 links = identify_metadata(

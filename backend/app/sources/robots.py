@@ -1,10 +1,10 @@
-"""robots.txt decisions (RFC 9309; docs/06 rule 2). Checked before every fetch; each decision is recorded.
+"""robots.txt decisions (RFC 9309; docs/06 rule 2). Asked before every fetch; each verdict is recorded. Whether a
+verdict blocks the fetch is the source policy's choice (`robots_txt`: obey or record_only, D46).
 
 - 2xx: parsed and applied to our user-agent token;
 - 404 or 410 (there is no robots.txt): everything is allowed;
-- any other 4xx (401, 403, 429...): the site refused our crawler, so nothing is fetched from that host. RFC 9309
-  would allow crawling here, but a refusal is not worked around (docs/06 rule 1; D45). Found live on 30 Sep 2026:
-  sites behind bot protection answered robots.txt with 403 and a challenge page;
+- any other 4xx (401, 403, 429...): the verdict is `robots_refused` (disallow everything). Found live on 30 Sep
+  2026: sites behind bot protection answered robots.txt with 403 and a challenge page;
 - 5xx, timeout or a refused connection: nothing is fetched from that host for now (conservative);
 - results are cached per host for `ttl` seconds.
 """

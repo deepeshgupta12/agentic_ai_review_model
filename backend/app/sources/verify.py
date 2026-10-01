@@ -54,14 +54,37 @@ def verify_collection(db: Database[dict[str, Any]], settings: Settings) -> list[
     ]
     rows.append(_row("every web page has its fetch decision logged", len(recent), broken))
 
-    fetched = list(db["ai_fetch_log"].find({"outcome": "fetched"}, {"url": 1, "robots": 1}))
-    broken = [f"{f['url']}: {f['robots']}" for f in fetched if str(f.get("robots") or "").startswith("disallowed")]
-    rows.append(_row("nothing was fetched against robots.txt", len(fetched), broken))
+    # robots.txt binds only under a policy version that obeys it; record_only versions log the verdict (D46).
+    obeyed: dict[tuple[str, int], bool] = {}
+
+    def obeys(family: str | None, version: int | None) -> bool:
+        if family is None or version is None:
+            return True
+        if (family, version) not in obeyed:
+            obeyed[(family, version)] = policies.obeys_robots(
+                policies.version(db, {"family": family, "policy_version": version})
+            )
+        return obeyed[(family, version)]
+
+    fetched = list(
+        db["ai_fetch_log"].find({"outcome": "fetched"}, {"url": 1, "robots": 1, "family": 1, "policy_version": 1})
+    )
+    broken = [
+        f"{f['url']}: {f['robots']}"
+        for f in fetched
+        if str(f.get("robots") or "").startswith("disallowed") and obeys(f.get("family"), f.get("policy_version"))
+    ]
+    rows.append(_row("nothing was fetched against robots.txt where the policy obeys it", len(fetched), broken))
 
     refused = set(db["ai_fetch_log"].distinct("host", {"robots": {"$regex": "robots_refused"}}))
     kept = [s for s in web if s["lifecycle"] not in ("withdrawn", "deleted", "expired")]
-    broken = [s["_id"] for s in kept if policies.host_of(s["canonical_url"]) in refused]
-    rows.append(_row("no page is kept from a site whose robots.txt refused us", len(kept), broken))
+    broken = [
+        s["_id"]
+        for s in kept
+        if policies.host_of(s["canonical_url"]) in refused
+        and obeys(s["policy"]["family"], s["policy"]["policy_version"])
+    ]
+    rows.append(_row("no page kept from a site that refused us, where the policy obeys robots.txt", len(kept), broken))
 
     metadata = [s for s in sources if s["capture_level"] == "metadata_only"]
     broken = [

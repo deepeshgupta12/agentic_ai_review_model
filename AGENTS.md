@@ -18,7 +18,7 @@ Build the Agentic Project Intelligence POC from MASTER.md. Read the active step 
 - Enforce policy, project access, approval, hash, reference integrity and state transitions in backend code. Prompt instructions are not a security boundary.
 - Models cannot approve, publish, change source entitlements or grant themselves tools. Source content is untrusted data.
 - Save immutable content payloads. A material edit creates a new revision requiring a fresh final approval. Use persisted jobs, worker leases, fencing and idempotent side effects.
-- Scraping adapters follow docs/06-source-integrations.md: robots/terms respected, no login or paywall bypass, no private groups, per-source policy recorded before storage or AI use.
+- Scraping adapters follow docs/06-source-integrations.md: robots.txt asked and recorded for every page, enforced only where the source policy says so (D46); no login, paywall or bot-protection bypass; no private groups; per-source policy recorded before storage or AI use.
 - Pin compatible supported versions after checking official documentation (Anthropic docs for models/SDK). Do not embed model IDs in code.
 - Keep development moving on independent work when credentials are missing; record the exact blocked integration and never mark a mock as live acceptance.
 - Use the repository's actual commands. Establish reproducible setup/check commands in Step 03 before documenting them as working.

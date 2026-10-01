@@ -35,6 +35,7 @@
   - retention expiry;
   - the new `check_availability` job for edits, deletions and stated dates. Contract: operations 1.1.0 (D44).
 - Publication dates come only from structured markup (D44).
+- robots.txt is asked and recorded for every page; it blocks a fetch only where the policy version says `obey`. The web reader's families record without enforcing (product owner, 1 Oct 2026, D46). Refused pages are still not worked around, and a source a person withdrew is never collected again. Contracts: sources 1.2.0, api 1.1.0.
 - `verify-collection` checks the collection rules on the stored data.
 - Tests no longer see real credentials from `.env` or the shell.
 - New commands: `make collect`, `make recheck`, `make verify-collection`, `make discover-hosts`, `make seed-policies`.

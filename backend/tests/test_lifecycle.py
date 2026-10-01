@@ -165,3 +165,38 @@ def test_an_old_superseded_revision_expires_with_retention(db, contracts, linked
     edited(db, contracts, source)
     db["ai_sources"].update_one({"_id": source["_id"]}, {"$set": {"collected_at": utcnow() - timedelta(days=91)}})
     assert expire_due(db.client, db, contracts) == 1 and lifecycle(db, source) == "expired"
+
+
+def recollect(db, source, text):
+    from app.sources.policies import current
+    from app.sources.store import Item, store_item
+
+    item = Item(
+        connector_id="web_fetch",
+        native_id=source["native_id"],
+        canonical_url=source["canonical_url"],
+        source_kind="forum_post",
+        capture_level="full_content",
+        title=None,
+        text=text,
+    )
+    return store_item(db, item, current(db, "competitor_portals"))
+
+
+def test_a_source_withdrawn_on_request_is_never_collected_again(db, contracts, linked):
+    source, _ = linked
+    body = {"scope": "source_all_revisions", "revision": None, "reason": "Author asked"}
+    withdraw(db.client, db, contracts, source["id"], body, MODERATOR)
+    again = recollect(db, source, TEXT)
+    assert not again.created and again.source["lifecycle"] == "withdrawn"
+    assert db["ai_sources"].count_documents({"id": source["id"]}) == 1
+
+
+def test_a_system_withdrawal_under_an_old_rule_does_not_block_a_later_collection(db, contracts, linked):
+    from app import audit
+
+    source, _ = linked
+    body = {"scope": "source_all_revisions", "revision": None, "reason": "policy rule at the time"}
+    withdraw(db.client, db, contracts, source["id"], body, audit.SYSTEM_ACTOR)
+    again = recollect(db, source, TEXT)
+    assert again.created and again.source["revision"] == 2 and again.source["lifecycle"] == "active"

@@ -157,9 +157,11 @@ for p in items:
     if p["family"] not in latest or p["policy_version"] > latest[p["family"]]["policy_version"]:
         latest[p["family"]] = p
 for family, p in sorted(latest.items()):
-    print(f"  {family:22} v{p['policy_version']} collect={p['collection_allowed']} ai={p['ai_processing_allowed']} hosts={len(p['hosts'])}")
+    print(f"  {family:22} v{p['policy_version']} collect={p['collection_allowed']} ai={p['ai_processing_allowed']} robots={p['robots_txt']} hosts={len(p['hosts'])}")
 web = latest["web_public_pages"]
-ok = web["policy_version"] == 4 and len(web["hosts"]) == 62 and "client-site.example" not in web["hosts"] and "competitor_portals" in latest
+ok = web["policy_version"] == 5 and len(web["hosts"]) == 62 and "client-site.example" not in web["hosts"] and "competitor_portals" in latest
+ok = ok and all(latest[f]["robots_txt"] == "record_only" for f in ("web_public_pages", "competitor_portals", "official_records"))
+ok = ok and latest["youtube"]["robots_txt"] == "obey"  # D46 applies to the web reader's families
 sys.exit(0 if ok else 1)
 EOF
 }
@@ -411,7 +413,7 @@ expect "UC-33: seeding projects and policies again changes nothing" 0 seeding_is
 expect "Hygiene: the real data holds the five projects and no fixture data" 0 real_data_has_no_fixture_data
 
 expect "Sign in through the web app" 0 sign_in
-expect "UC-33: source policies (contract); web allow-list v4 with 62 hosts, client-site.example not on it (D41)" 0 policies_listed
+expect "UC-33: source policies (contract); web allow-list v5 with 62 hosts (D41); web families record robots.txt only (D46)" 0 policies_listed
 expect "UC-40: runs for DLF Privana (contract) and the latest run's coverage (contract)" 0 runs_listed_and_read
 expect "UC-40: run events as a server-sent stream, resumed with Last-Event-ID" 0 run_events_stream_and_resume
 expect "UC-40: web pages for M3M Antalya Hills (contract) and one revision with its evidence (contract)" 0 sources_listed_with_detail

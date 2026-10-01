@@ -25,6 +25,7 @@
         "conditions": [
           "Public pages only"
         ],
+        "robots_txt": "obey",
         "basis": "docs/06 scraping policy; verbatim review quotes with a credit line (D28)",
         "status": "accepted",
         "effective_from": "2026-09-25T10:00:00Z",
@@ -60,6 +61,7 @@
         "conditions": [
           "Public pages only"
         ],
+        "robots_txt": "obey",
         "basis": "docs/06 scraping policy; verbatim review quotes with a credit line (D28)",
         "status": "accepted",
         "effective_from": "2026-09-25T10:00:00Z",
@@ -95,6 +97,7 @@
         "conditions": [
           "Public pages only"
         ],
+        "robots_txt": "obey",
         "basis": "docs/06 scraping policy; verbatim review quotes with a credit line (D28)",
         "status": "accepted",
         "effective_from": "2026-09-25T10:00:00Z",

@@ -34,7 +34,7 @@ The first script covers:
 
 It starts no collection and uses no Brave or YouTube quota. It saves `logs/step-05/checks-<UTC time>.log` and ends with `ALL CHECKS OK`.
 
-The second script disables twenty-three collection rules one at a time; each must be caught by its own test, ending with `ALL MUTANTS CAUGHT`.
+The second script disables twenty-five collection rules one at a time; each must be caught by its own test, ending with `ALL MUTANTS CAUGHT`.
 
 ## Try it yourself
 
@@ -60,16 +60,16 @@ In the console, http://localhost:3000/console still shows the dashboard. The rev
 
 | ID | Use case | What it proves | Tests |
 |---|---|---|---|
-| UC-33 | Source policies | Seeded versions are current and match the contract. A stored version cannot change; a new one is created. The host decides the family, and a generic web host must be on the allow-list. Narrowing rights applies at once and is re-checked. Roles, and the chain of rights (collection, then AI use, then quotation and derived publication), are enforced | 15 |
-| UC-34 | Safe fetching and storage | Refused, each hop re-checked: private, loopback and link-local addresses, odd URLs, too many redirects, oversized or wrong-type responses. An honest user agent is sent. Retry-After and backoff are respected. Hosts are paced. robots.txt follows RFC 9309, except that a robots.txt that refuses us (401, 403, 451; 429 after retries) means nothing is fetched (D45). URLs are normalised. Quotas are reserved atomically. The same page makes no new revision, and neither does a search hit found under another title; an edit makes one. Metadata-only items carry no text, and full content needs its text | 25 |
+| UC-33 | Source policies | Seeded versions are current and match the contract. A stored version cannot change; a new one is created. The host decides the family, and a generic web host must be on the allow-list. Narrowing rights applies at once and is re-checked. Roles, and the chain of rights (collection, then AI use, then quotation and derived publication), are enforced. Each version says whether robots.txt is obeyed or only recorded; older versions read as obeyed (D46) | 16 |
+| UC-34 | Safe fetching and storage | Refused, each hop re-checked: private, loopback and link-local addresses, odd URLs, too many redirects, oversized or wrong-type responses. An honest user agent is sent. Retry-After and backoff are respected. Hosts are paced. robots.txt is read per RFC 9309, except that a robots.txt that refuses us (401, 403, 451; 429 after retries) gives the verdict "refused" rather than "no file"; whether a verdict blocks depends on the policy (D46). URLs are normalised. Quotas are reserved atomically. The same page makes no new revision, and neither does a search hit found under another title; an edit makes one. Metadata-only items carry no text, and full content needs its text | 25 |
 | UC-35 | Brave discovery | Hits are metadata only, never evidence. Paging stays in budget. A refusal is explicit. No request is made without quota | 2 |
-| UC-36 | Web reader | These pages are never requested: not allowed by policy, disallowed by robots.txt, or reached through a redirect to a host that isn't allowed. Refusals are recorded and not worked around. Thin pages are counted. An allowed redirect is stored where it landed, with both addresses logged. Dates come only from markup | 6 |
+| UC-36 | Web reader | These pages are never requested: not allowed by policy, disallowed by robots.txt, or reached through a redirect to a host that isn't allowed. Refusals are recorded and not worked around. Thin pages are counted. An allowed redirect is stored where it landed, with both addresses logged. Dates come only from markup. Under a `record_only` policy, a robots.txt refusal or disallow is logged but doesn't block, and a refused page is still not worked around (D46) | 8 |
 | UC-37 | YouTube | Videos are metadata only, and titles are not evidence. Comments keep their thread: a reply belongs to its top comment. Search and units are separate quota buckets. Comments turned off is recorded as a fact | 2 |
 | UC-38 | Collection runs | A run collects from each planned connector and reports honest coverage. Metadata never becomes evidence. Comments inherit their thread and follow it back to review. Replay creates no duplicates. One provider's outage leaves the others complete. Without credentials, nothing runs and coverage says so. Cancelling stops the jobs and keeps what was found. A connector the run didn't plan is never called. Only a page that may read next time leaves coverage partial. A redirected page isn't read twice. `verify-collection` catches planted violations. A connector added later joins existing configurations | 14 |
-| UC-39 | Lifecycle and re-checks | One failure is temporary. Deletion needs two consecutive "gone" results. Erasure waits for invalidation. Withdrawal is idempotent. Retention expires old sources. A re-check turns an edit into a new revision linked to the same project, recovers from a temporary failure, corrects a stated date with an audit event, and deletes a removed video. Without a key, nothing is checked. Withdrawal, confirmed deletion and expiry reach older revisions too (D45) | 13 |
+| UC-39 | Lifecycle and re-checks | One failure is temporary. Deletion needs two consecutive "gone" results. Erasure waits for invalidation. Withdrawal is idempotent. Retention expires old sources. A re-check turns an edit into a new revision linked to the same project, recovers from a temporary failure, corrects a stated date with an audit event, and deletes a removed video. Without a key, nothing is checked. Withdrawal, confirmed deletion and expiry reach older revisions too (D45). A source a person withdrew is never collected again; a system withdrawal under an earlier rule doesn't block re-collection (D46) | 15 |
 | UC-40 | Run, source and health APIs | Starting a run needs an Idempotency-Key and the researcher role, and replays. A source whose link the rules rejected matches the contract. Runs can be listed, read and cancelled. The event stream resumes from Last-Event-ID. Sources are filtered. Revision detail gives UTF-16 offsets, where each emoji counts as two. Withdrawal works through the API. Health shows real activity, including the web reader's | 7 |
 
-Backend total: 231 tests (147 from Steps 03–04 plus 84 new), run against the Compose MongoDB replica set. Tests never see real credentials: the repository `.env` and credential variables in the shell are hidden from them.
+Backend total: 236 tests (147 from Steps 03–04 plus 89 new), run against the Compose MongoDB replica set. Tests never see real credentials: the repository `.env` and credential variables in the shell are hidden from them.
 
 ## Live runs (30 Sep 2026)
 
@@ -119,6 +119,27 @@ Re-checks: 4 passes and 799 checks over 627 re-checkable records.
 
 `verify-collection` passes all 13 rules on the stored data ([log](verify-collection-20260930T101422Z.log)). The go-live evidence for the three connectors is in [live-connectors](live-connectors-20260930T110436Z.log). Collection logs: [first run](live-collect-parq-20260930T033613Z.log), [five projects](live-collect-all-20260930T043528Z.log), [re-checks](live-recheck-20260930T064644Z.log).
 
+### After D46 (1 Oct 2026)
+
+A second five-project run used the `record_only` policy versions (07:03–07:29 UTC, [log](live-collect-d46-20261001T070309Z.log)).
+
+- **Read, with the robots verdict kept in the fetch log:**
+  - 57 MagicBricks pages, whose robots.txt refused us (the pages withdrawn under D45 are back as new revisions);
+  - 3 pages on paths a parsed robots.txt disallows.
+- **Still refused:** 30 page requests that the sites refused (99acres and broker sites). They were recorded, not worked around.
+- **New pages:** 70; pages already read were skipped.
+- **Spend:** 77 Brave requests, 20 YouTube searches (238 units) and 16 A01 calls.
+
+**Stored now: 1,010 records, with 157 current web pages.**
+
+| Link status | Links |
+|---|---|
+| auto-accepted | 437 |
+| in review | 117 |
+| rejected | 177 |
+
+`verify-collection` passes 13/13 on the stored data ([log](verify-collection-20261001T073014Z.log)).
+
 ## What the live runs found, and what changed
 
 Running against real sites found ten problems that the tests had missed. Each is now fixed and covered by a test:
@@ -129,7 +150,7 @@ Running against real sites found ten problems that the tests had missed. Each is
 4. **Coverage status depended on luck.** The same permanent error made coverage `partial` for one project and `complete` for another. Now only a page that may read next time (a retryable error) makes coverage partial.
 5. **A code path read the real keys in tests.** The new re-check handler asked the global settings for credentials, and in tests those came from the repository `.env`. No request left the machine, because tests use a fake internet. Tests now run without the `.env` file and without credential variables.
 
-6. **Sites that refused our crawler were read.** Sites behind bot protection answered robots.txt with 403 and a challenge page, and the code read that as "no robots.txt" (RFC 9309 allows that reading). Asked again, 14 of 15 such hosts refuse us, including MagicBricks, whose project pages D34 had already recorded as off-limits. A refusal now means nothing is fetched from that site (D45). All 57 MagicBricks pages (71 revisions) were withdrawn, their text erased and their evidence made ineligible ([clean-up log](withdraw-robots-refused-20260930T101129Z.log)). `verify-collection` now checks that no page is kept from a site that refused us.
+6. **Sites that refused our crawler were read.** Sites behind bot protection answered robots.txt with 403 and a challenge page, and the code read that as "no robots.txt" (RFC 9309 allows that reading). Asked again, 14 of 15 such hosts refuse us, including MagicBricks, whose project pages D34 had already recorded as off-limits. D45 proposed that a refusal means nothing is fetched from that site, and all 57 MagicBricks pages (71 revisions) were withdrawn, their text erased and their evidence made ineligible ([clean-up log](withdraw-robots-refused-20260930T101129Z.log)). **The product owner declined that rule on 1 Oct 2026 (D46):** robots.txt is now asked and recorded for every page but does not block the fetch for the web reader's families. The refusal is still visible in the fetch log, and pages that refuse us are still not worked around. The withdrawn pages are collected again by the next run ([run after D46](live-collect-d46-20261001T070309Z.log)).
 7. **Older revisions kept their text.** Withdrawal, confirmed deletion and retention expiry changed only the current revision; the contract gave a superseded revision no way to be withdrawn. State machines 1.2.0 adds those transitions, and the lifecycle applies them to every revision (D45).
 8. **Search hits multiplied.** The same address found by different queries under slightly different titles became revisions 2, 3 and 4. A search hit's title is not content, so it is now the same record.
 
@@ -155,7 +176,7 @@ These rules are each disabled, one at a time, and must be caught by their own te
 
 - **Policy and fetching:**
   - policy before any request;
-  - robots.txt;
+  - robots.txt where the policy says `obey`, and only logged where it says `record_only` (D46);
   - the policy check on every redirect hop;
   - both addresses in the fetch log;
   - dates from markup only;
@@ -172,6 +193,7 @@ These rules are each disabled, one at a time, and must be caught by their own te
   - two consecutive "gone" results before deletion;
   - erasure only after invalidation;
   - edits becoming new revisions;
+  - a source withdrawn on request is never collected again (D46);
   - date corrections;
   - `verify-collection` catching evidence from metadata-only records;
   - the Idempotency-Key on runs.
@@ -194,6 +216,10 @@ These rules are each disabled, one at a time, and must be caught by their own te
 | 2026-10-01 06:23 | `aca3128` | Implementer | `bash scripts/run_step05_checks.sh` | ALL CHECKS OK, 29/29; 231 backend tests; N1–N6 as expected; verify-collection 13/13 on the real data | [log](checks-20261001T062322Z.log) |
 | 2026-10-01 06:28 | `aca3128` | Implementer | `bash scripts/run_step05_mutations.sh` | ALL MUTANTS CAUGHT, 23/23 | [log](mutation-check-20261001T062829Z.log) |
 | 2026-10-01 | `5e0cfd6`, `aca3128` | GitHub Actions | CI (contracts, backend, web, Compose) | Passed | `gh run list --branch main` |
+| 2026-10-01 06:40 | `6b7a4a3` + D46 being edited | Product owner, own terminal | `bash scripts/run_step05_checks.sh` | 28/29. Not a valid result: the run built the stack while the D46 contract was half applied (policies needed `robots_txt` before the code filled it in) | [log](checks-20261001T064046Z.log) |
+| 2026-10-01 06:46 | `6b7a4a3` + D46 being edited | Product owner, own terminal | `bash scripts/run_step05_mutations.sh` | Not a valid result: the script file was edited while bash was reading it (syntax error at line 115), and the seed change was half applied | [log](mutation-check-20261001T064622Z.log) |
+| 2026-10-01 07:03 | D46, before commit | Implementer | `collect` (five projects) under the `record_only` policies | 5 runs completed in 26 minutes; 70 new pages, including 57 MagicBricks pages | [log](live-collect-d46-20261001T070309Z.log) |
+| 2026-10-01 07:30 | same | Implementer | `verify-collection` | 13/13 on 1,010 records | [log](verify-collection-20261001T073014Z.log) |
 
 
 
@@ -210,25 +236,25 @@ These rules are each disabled, one at a time, and must be caught by their own te
 - [x] Each mandatory live connector has an actual authorised query result, separate from mocks. The Brave, web reader and YouTube runs for the five projects are listed above, with the evidence log ([live connectors](live-connectors-20260930T110436Z.log)). The registry marks them live with that log.
 - [x] Relevant repository checks were actually run and their results recorded (above): 29/29 checks and 23/23 mutants at `aca3128`; CI green.
 - [x] PROGRESS.md records changed paths, decisions, evidence, unresolved dependencies and the next action.
-- [ ] The product owner approves items U–Y.
+- [x] The product owner approved U–X and Y points 2–4 on 1 Oct 2026. Y point 1 (robots.txt refusals block fetching) was declined and replaced by D46.
 
-## Approvals (U–Y), for the product owner
+## Approvals (U–Y), decided by the product owner on 1 Oct 2026
 
-| Item | Decision | Where |
-|---|---|---|
-| U | The web reader is plain HTTP plus Trafilatura, not Crawl4AI, whose stealth modes exist to get past bot protection. Script-rendered pages are counted as thin; Playwright stays optional and without stealth | D40 |
-| V | YouTube comments are fetched only for videos matched to a project. A comment that names no project inherits its video's (or top comment's) match. If that match is undone, the comment goes back to review | D42 |
-| W | Run rules and budgets: <ul><li>only the connectors a run planned;</li><li>coverage `partial` only when something may read next time;</li><li>Brave hits are discovery only;</li><li>redirects are stored where they land;</li><li>Brave 2 pages per query;</li><li>YouTube 4 searches per project and 3 comment pages per video;</li><li>40 web pages per run, 3 seconds per host;</li><li>A01 10 calls per run;</li><li>new connectors join existing configurations with their default</li></ul> | D43 |
-| X | Re-checks and dates: <ul><li>a new job kind `check_availability` (contract amendment, operations 1.1.0);</li><li>two consecutive "gone" results mean deleted, and an edit becomes a new revision;</li><li>publication dates only from structured markup, with stored dates corrected and audited;</li><li>daily scheduling at Step 13, `make recheck` until then</li></ul> | D44 |
-| Y | <ul><li>A robots.txt that refuses our crawler (401, 403 and the like) means nothing is fetched from that site; only 404 or 410 means there is no robots.txt. The 57 MagicBricks pages read before this fix were withdrawn and erased.</li><li>Withdrawal, deletion and expiry reach older revisions too (contract amendment, state machines 1.2.0).</li><li>A Brave hit found again under another title is the same record.</li></ul> | D45 |
+| Item | Decision | Where | Outcome |
+|---|---|---|---|
+| U | The web reader is plain HTTP plus Trafilatura, not Crawl4AI, whose stealth modes exist to get past bot protection. Script-rendered pages are counted as thin; Playwright stays optional and without stealth | D40 | Approved |
+| V | YouTube comments are fetched only for videos matched to a project. A comment that names no project inherits its video's (or top comment's) match. If that match is undone, the comment goes back to review | D42 | Approved |
+| W | Run rules and budgets: <ul><li>only the connectors a run planned;</li><li>coverage `partial` only when something may read next time;</li><li>Brave hits are discovery only;</li><li>redirects are stored where they land;</li><li>Brave 2 pages per query;</li><li>YouTube 4 searches per project and 3 comment pages per video;</li><li>40 web pages per run, 3 seconds per host;</li><li>A01 10 calls per run;</li><li>new connectors join existing configurations with their default</li></ul> | D43 | Approved |
+| X | Re-checks and dates: <ul><li>a new job kind `check_availability` (contract amendment, operations 1.1.0);</li><li>two consecutive "gone" results mean deleted, and an edit becomes a new revision;</li><li>publication dates only from structured markup, with stored dates corrected and audited;</li><li>daily scheduling at Step 13, `make recheck` until then</li></ul> | D44 | Approved |
+| Y | <ul><li>A robots.txt that refuses our crawler (401, 403 and the like) means nothing is fetched from that site; only 404 or 410 means there is no robots.txt. The 57 MagicBricks pages read before this fix were withdrawn and erased.</li><li>Withdrawal, deletion and expiry reach older revisions too (contract amendment, state machines 1.2.0).</li><li>A Brave hit found again under another title is the same record.</li></ul> | D45 | Points 2 and 3 and the link-schema fix approved; point 1 declined: "we can bypass robots.txt", recorded as D46 |
 
 D41 (the allow-list: developer, broker and news sites; not client-site.example) was accepted on 29 Sep 2026.
 
 ## Known limits (honest coverage)
 
 - **Portals:**
-  - 99acres and Housing.com refuse automated requests (403 and 406), and MagicBricks' robots.txt disallows project pages. They stay unread; D34's route needs a data agreement.
-  - NoBroker, Houseiy and HomznSpace pages are read where robots.txt allows.
+  - 99acres and Housing.com refuse the pages themselves to automated requests (403 and 406). That refusal is not worked around (D33), so they stay unread unless a data agreement is made.
+  - MagicBricks, NoBroker, Houseiy and HomznSpace pages are read; robots.txt verdicts are recorded, not enforced (D46).
 - **Web comments:** comments on generic web pages are kept inside the page text ("Comments on this page"). They are not split per author yet.
 - **Brave hits:** hits are discovery only, so a hit whose page was refused or not read has no project match.
 - **YouTube videos** are metadata only. What is said in them needs transcripts (Step 06).

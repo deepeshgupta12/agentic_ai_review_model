@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     run_budget_usd: float = Field(default=5.0, ge=0)
 
     # Collection (Step 05, docs/06). The crawler identifies itself honestly; limits are per host and per provider.
-    crawler_user_agent: str = "ProjectIntelligenceBot/0.1 (project research POC; respects robots.txt)"
+    crawler_user_agent: str = "ProjectIntelligenceBot/0.1 (project research POC)"  # no claim it cannot keep (D46)
     crawler_min_seconds_per_host: float = Field(default=3.0, ge=0)
     crawler_max_bytes: int = Field(default=3_000_000, ge=10_000)
     crawler_max_redirects: int = Field(default=5, ge=0, le=10)

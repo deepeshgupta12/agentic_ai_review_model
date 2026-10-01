@@ -41,9 +41,12 @@ IMMUTABLE_FIELDS = (
     "hosts",
     "excluded_hosts",
     "conditions",
+    "robots_txt",
     "basis",
     "status",
 )
+# Versions stored before a field existed read as its default: robots.txt was obeyed until D46.
+DEFAULTS = {"robots_txt": "obey"}
 RIGHTS = ("collection_allowed", "ai_processing_allowed", "quotation_allowed", "derived_publication_allowed")
 
 
@@ -56,7 +59,7 @@ def _as_datetime(day: str) -> datetime:
 
 
 def policy_view(doc: dict[str, Any]) -> dict[str, Any]:
-    view = to_view(doc)
+    view = to_view({**DEFAULTS, **doc})
     assert view is not None
     return view
 
@@ -68,14 +71,14 @@ def seed_policies(
     data = json.loads(path.read_text(encoding="utf-8"))
     report: list[dict[str, Any]] = []
     for raw in data["policies"]:
-        item = {"hosts": [], "excluded_hosts": [], "conditions": [], **raw}  # optional lists in the seed file
+        item = {"hosts": [], "excluded_hosts": [], "conditions": [], **DEFAULTS, **raw}  # optional in the seed file
 
         def write(session: ClientSession, item: dict[str, Any] = item) -> dict[str, Any]:
             existing = db[COLLECTION].find_one(
                 {"family": item["family"], "policy_version": item["policy_version"]}, session=session
             )
             if existing is not None:
-                changed = [f for f in IMMUTABLE_FIELDS if existing[f] != item[f]]
+                changed = [f for f in IMMUTABLE_FIELDS if {**DEFAULTS, **existing}[f] != item[f]]
                 if changed:
                     raise PolicyError(
                         f"{item['family']} v{item['policy_version']} is stored and immutable; changed {changed}. "
@@ -232,6 +235,7 @@ def create_version(
                     "expires_at",
                 )
             },
+            "robots_txt": body.get("robots_txt", "obey"),
             "status": "accepted",
             "effective_from": datetime.fromisoformat(body["effective_from"].replace("Z", "+00:00")),
             "accepted_on": utcnow().date().isoformat(),
@@ -272,3 +276,8 @@ def create_version(
         return doc
 
     return policy_view(run_in_transaction(client, write))
+
+
+def obeys_robots(policy: dict[str, Any] | None) -> bool:
+    """Whether robots.txt blocks a fetch under this policy version (D46: record_only logs the verdict only)."""
+    return (policy or {}).get("robots_txt", "obey") == "obey"

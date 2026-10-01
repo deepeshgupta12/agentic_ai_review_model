@@ -73,10 +73,20 @@ mutant "a host's policy is checked before any request" test_connectors.py test_t
   '        if refusal:' \
   '        if False:'
 
-mutant "robots.txt is obeyed" test_connectors.py test_robots_refusal_and_http_outcomes \
+mutant "robots.txt is obeyed where the policy says obey" test_connectors.py test_robots_refusal_and_http_outcomes \
   app/connectors/web.py \
-  '        if not decision.allowed:' \
+  '        if not decision.allowed and policies.obeys_robots(resolution.policy):' \
   '        if False:'
+
+mutant "record_only logs robots.txt without blocking (D46)" test_connectors.py test_under_record_only_robots_txt_is_logged_but_does_not_block \
+  app/sources/policies.py \
+  '    return (policy or {}).get("robots_txt", "obey") == "obey"' \
+  '    return True'
+
+mutant "a source withdrawn on request is never collected again (D46)" test_lifecycle.py test_a_source_withdrawn_on_request_is_never_collected_again \
+  app/sources/store.py \
+  'if latest is not None and latest["lifecycle"] == "withdrawn" and withdrawn_on_request(db, latest["id"], session):' \
+  'if False:'
 
 mutant "every redirect hop is checked against the policy" test_connectors.py test_a_redirect_to_a_host_the_policy_does_not_allow_is_stopped \
   app/connectors/web.py \

@@ -10,7 +10,7 @@
 | 02 | [UX, architecture and contracts](steps/02-ux-architecture-and-contracts.md) | complete (approved 28 Sep 2026) | `57c8e3e`, `fb6cf66`, `88685f6`: `contracts/v1/`, `docs/09`, `docs/10`, `scripts/contract_tools.py`, `scripts/check_contracts.py`, `scripts/build_openapi.py`, `scripts/build_fixtures.py`, `scripts/jcs_check.mjs`, `scripts/tests/test_contracts.py`, `scripts/run_step02_checks.sh`, `seed/`, `DECISIONS.md` | [logs/step-02](logs/step-02/README.md): all checks OK at `88685f6` (127/127 tests, checker 13/13, N1–N6 as expected); product owner's own run OK at `bec6225`; mutation checks OK |
 | 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | complete (approved 28 Sep 2026) | `0847027`, `54d3954`, `38be1be`, `174d6ae`: `backend/`, `web/`, `docker-compose.yml`, `.env.example`, `Makefile`, `.github/workflows/ci.yml`, `prompts/`, `scripts/init_env.py`, `scripts/run_step03_checks.sh`, `scripts/run_step03_mutations.sh`, `DECISIONS.md` | [logs/step-03](logs/step-03/README.md): all 45 checks OK at `174d6ae`; product owner's own run OK at `929a4ac` (45/45 checks, 12/12 mutants caught); CI green. Live model check done 29 Sep 2026: `claude-sonnet-5` and `claude-opus-5-5` confirmed, structured outputs on both ([log](logs/step-03/live-model-check-20260929T060000Z.log)) |
 | 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | complete (approved 29 Sep 2026) | `da76682`, `ed57fdf`, `5cc63a6`: `backend/app/identity/`, `backend/app/api/routes_projects.py`, `routes_identity.py`, `idempotency.py`, `backend/app/decisions.py`, `seed/construction_status.json`, `evals/identity/v1/`, `prompts/a01_project_identity.1.0.md`, `contracts/v1/state_machines.json` and `journeys.json` (1.1.0), `scripts/run_step04_*.sh`, `scripts/set_env_secret.py`, `DECISIONS.md` | [logs/step-04](logs/step-04/README.md): 32/32 at `5cc63a6` (143 backend tests); product owner's run 32/32 and 16/16 mutants at `4606c3a`; CI green. Live A01 verified 29 Sep 2026 ([log](logs/step-04/live-a01-check-20260929T060000Z.log)). Carried forward: invalidation of findings and approvals joins at Steps 07–11 |
-| 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | in_progress (built, live, awaiting approval of U–Y) | `6881ccd`, `bebbd76`, `0fa6640`, `5e0cfd6`, `aca3128`: `backend/app/sources/` (policies, http, robots, quota, state, store, collection, lifecycle, recheck, verify), `backend/app/connectors/` (brave, web, youtube, registry), `backend/app/api/routes_runs.py`, `routes_sources.py`, `routes_policies.py`, `contracts/v1/` (operations 1.1.0, state machines 1.2.0, sources 1.1.0), `seed/source_policies.json`, `seed/connectors.json`, `scripts/run_step05_*.sh`, `DECISIONS.md` (D40–D44), `docs/02`, `docs/06` | [logs/step-05](logs/step-05/README.md): live runs for all five projects 30 Sep 2026; at `aca3128` 29/29 checks (231 backend tests, `verify-collection` 13/13 on the real data) and 23/23 mutants; CI green |
+| 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | complete (approved 1 Oct 2026: U–X; Y points 2–4; Y point 1 replaced by D46) | `6881ccd`, `bebbd76`, `0fa6640`, `5e0cfd6`, `aca3128`: `backend/app/sources/` (policies, http, robots, quota, state, store, collection, lifecycle, recheck, verify), `backend/app/connectors/` (brave, web, youtube, registry), `backend/app/api/routes_runs.py`, `routes_sources.py`, `routes_policies.py`, `contracts/v1/` (operations 1.1.0, state machines 1.2.0, sources 1.1.0), `seed/source_policies.json`, `seed/connectors.json`, `scripts/run_step05_*.sh`, `DECISIONS.md` (D40–D44), `docs/02`, `docs/06` | [logs/step-05](logs/step-05/README.md): live runs for all five projects 30 Sep 2026; at `aca3128` 29/29 checks (231 backend tests, `verify-collection` 13/13 on the real data) and 23/23 mutants; CI green |
 | 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | not_started | — | — |
 | 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | not_started | — | — |
 | 08 | [Agent development and master workflow](steps/08-agents-and-master-workflow.md) | not_started | — | — |
@@ -25,14 +25,9 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 
 ## Current handoff
 
-- Active step: 05 (text and social collection), built and live; awaiting the product owner's approval of items U–Y (D40, D42, D43, D44, D45). D41 (allow-list v4) accepted 29 Sep 2026.
+- Active step: 06 (videos, shorts and multilingual processing). Step 05 is complete: the product owner approved U–X (D40, D42, D43, D44) and Y points 2–4 (D45) on 1 Oct 2026. They declined D45 point 1 and decided D46: robots.txt is recorded, not enforced, for the web reader's families. D41 accepted 29 Sep 2026.
 - Live on 30 Sep 2026: `brave_search`, `web_fetch` and `youtube_data_api`, after real runs for all five projects. The evidence log is [live-connectors-20260930T110436Z.log](logs/step-05/live-connectors-20260930T110436Z.log). `anthropic` has been live since 29 Sep 2026.
-- Stored so far: 905 records, all passing `verify-collection` 13/13:
-  - 264 Brave hits (metadata only);
-  - 87 current pages; 71 MagicBricks revisions withdrawn and erased under D45;
-  - 203 videos (metadata only) and 280 comments.
-- Links: 422 auto-accepted, 98 in review, 118 rejected; 350 evidence spans.
-- Next action: the product owner runs `bash scripts/run_step05_checks.sh` and `bash scripts/run_step05_mutations.sh`, then approves or amends U–Y. After approval, start Step 06 (video transcripts: captions, then yt-dlp subtitles, then local faster-whisper, per D33).
+- Next action: Step 06, built in a separate git worktree so the product owner's runs in the main folder are not disturbed. On 1 Oct 2026 both of their Step 05 runs started while D46 was being edited in the same folder and were disrupted; they re-run at the D46 commit.
 - Step 06 input from the product owner's earlier project (youtube-learning-copilot, reviewed 30 Sep 2026):
   - adapt the fallback order, video-ID parsing, ffmpeg 16 kHz mono and loading Whisper once;
   - do not reuse its cookie and proxy workarounds (D33) or its OpenAI and Ollama calls;
@@ -42,7 +37,7 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
   - links in `needs_review`;
   - 3 alias proposals from A01 (D17).
 - Refresh scheduling of collection and re-checks arrives at Step 13. Until then use `make collect` and `make recheck` by hand.
-- Collection tools and competitor portals: D33 and D34, with D40 replacing Crawl4AI. 99acres and Housing.com refuse automated requests, and MagicBricks' robots.txt disallows project pages, so they stay unread.
+- Collection tools and competitor portals: D33 and D34, with D40 replacing Crawl4AI and D46 for robots.txt (recorded, not enforced). 99acres and Housing.com refuse the pages themselves (403, 406), which is not worked around, so they stay unread. MagicBricks, NoBroker, Houseiy and HomznSpace pages are read.
 - Local stack: `make up`, then `make seed`; sign in as `deepesh.gupta@client-site.example`. The password is only in the local `.env` (`SEED_USER_PASSWORD`, git-ignored). `APP_MODE` is `fixture`: it controls only the session secret and the API docs page. Fixture data never enters `sy_poc`; tests and smoke checks use their own databases.
 - Running services: MongoDB 8.0 replica set `rs0`, API :8000, worker (handlers `collect`, `check_availability`, `erase_payloads`, `invalidate_dependencies`), scheduler and web :3000, all on 127.0.0.1.
 - D21: the product owner will build the review-posting agent outside this repository; nothing here supports it. The agreed review form is D28.
@@ -288,6 +283,31 @@ Known defects / missing inputs / owner: 99acres, Housing.com, MagicBricks and 11
 Remaining acceptance checks: product owner's runs of both Step 05 scripts and approval of U–Y
 Next executable action: product owner runs `bash scripts/run_step05_checks.sh` and
   `bash scripts/run_step05_mutations.sh`, then approves or amends U–Y
+```
+
+```text
+Date / tool / branch / commit: 2026-10-01 / Claude Code (VS Code) / main / 6b7a4a3 → (D46 commit)
+Step and scope completed: Step 05 closed. The product owner approved U–X and Y points 2–4, and declined Y point 1:
+  "we can bypass robots.txt" (D46)
+Files changed: contracts (sources 1.2.0 and api 1.1.0: SourcePolicy.robots_txt), fixtures, web/lib/api-schema.d.ts;
+  backend: policies (robots_txt, obeys_robots), web reader (robots.txt blocks only under obey), robots.py notes,
+  config (user agent no longer claims to respect robots.txt), verify (robots rules apply where the policy obeys),
+  store/collection (a source a person withdrew is never collected again); tests (+5, 236 in total);
+  seed/source_policies.json (web_public_pages v5, competitor_portals v2, official_records v2: record_only);
+  scripts/run_step05_*.sh (2 new mutants, 25 in total); DECISIONS (U–X accepted, D45 points, D46, D33 note);
+  AGENTS.md rule line (only that line committed); docs/06 rule 2; logs/step-05
+Decisions made, with DECISIONS.md IDs: D40, D42, D43, D44 accepted; D45 points 2–4 accepted, point 1 replaced by D46
+Checks actually run and results: backend 236 passed; contracts 13/13; Step 01–02 suites OK. Live run under D46:
+  5 runs, 70 new pages (57 MagicBricks; 3 on robots-disallowed paths); 30 refused pages not worked around;
+  verify-collection 13/13 on 1,010 records. The product owner's own runs at 06:40 and 06:46 were disrupted by
+  concurrent edits in the same folder (recorded as not valid)
+Live integrations verified (credential present + real query result): unchanged (anthropic, brave_search, web_fetch,
+  youtube_data_api)
+Fixture-only behavior still awaiting live validation: none for Step 05
+Known defects / missing inputs / owner: 99acres and Housing.com refuse their pages (not worked around); generic
+  web comments are not split per author; markup dates on some homepages may be modification dates
+Remaining acceptance checks: none for Step 05; the product owner re-runs both scripts at the D46 commit
+Next executable action: Step 06 in a separate worktree
 ```
 
 ## Session entry template

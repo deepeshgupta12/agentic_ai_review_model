@@ -1,0 +1,295 @@
+$ docker compose exec -T api python -m app.cli collect --wait 3600   (after D46: robots.txt recorded, not enforced)
+started 2026-10-01T07:03:09Z
+[
+  {
+    "run_id": "run_01M3V4CE4Q7KZ5G1C1R7G4ZHAZ",
+    "project": "DLF Privana",
+    "stage": "analysing",
+    "coverage": [
+      {
+        "connector_id": "brave_search",
+        "status": "complete_for_query",
+        "attempted_queries": 18,
+        "fetched": 150,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 150,
+        "note": "not_collected:web_public_pages: 197"
+      },
+      {
+        "connector_id": "firecrawl",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "no credential or adapter configured; not run"
+      },
+      {
+        "connector_id": "playwright_fetch",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "no credential or adapter configured; not run"
+      },
+      {
+        "connector_id": "youtube_data_api",
+        "status": "complete_for_query",
+        "attempted_queries": 4,
+        "fetched": 76,
+        "matched": 70,
+        "analysed": 0,
+        "metadata_only": 76,
+        "note": "videos_waiting_for_review: 15"
+      },
+      {
+        "connector_id": "web_fetch",
+        "status": "complete_for_query",
+        "attempted_queries": 22,
+        "fetched": 16,
+        "matched": 1,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "already_read: 18; error: 1; fetched: 16; refused: 5"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "run_id": "run_01M3V4CE979ZP6H7PRSHG20WSB",
+    "project": "Conscient Parq",
+    "stage": "analysing",
+    "coverage": [
+      {
+        "connector_id": "brave_search",
+        "status": "complete_for_query",
+        "attempted_queries": 12,
+        "fetched": 108,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 108,
+        "note": "not_collected:meta: 1; not_collected:web_public_pages: 123; youtube_left_to_youtube_connector: 2"
+      },
+      {
+        "connector_id": "firecrawl",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "no credential or adapter configured; not run"
+      },
+      {
+        "connector_id": "playwright_fetch",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "no credential or adapter configured; not run"
+      },
+      {
+        "connector_id": "youtube_data_api",
+        "status": "complete_for_query",
+        "attempted_queries": 4,
+        "fetched": 61,
+        "matched": 52,
+        "analysed": 0,
+        "metadata_only": 61,
+        "note": "videos_waiting_for_review: 5"
+      },
+      {
+        "connector_id": "web_fetch",
+        "status": "partial",
+        "attempted_queries": 14,
+        "fetched": 3,
+        "matched": 1,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "already_read: 26; error: 1; error_will_retry: 1; fetched: 3; refused: 9"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "run_id": "run_01M3V4CEAT4HFRRS4MNWSMX6VW",
+    "project": "Sobha Crescent",
+    "stage": "analysing",
+    "coverage": [
+      {
+        "connector_id": "brave_search",
+        "status": "complete_for_query",
+        "attempted_queries": 12,
+        "fetched": 137,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 137,
+        "note": "not_collected:linkedin: 5; not_collected:reddit: 2; not_collected:web_public_pages: 96"
+      },
+      {
+        "connector_id": "firecrawl",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "no credential or adapter configured; not run"
+      },
+      {
+        "connector_id": "playwright_fetch",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "no credential or adapter configured; not run"
+      },
+      {
+        "connector_id": "youtube_data_api",
+        "status": "complete_for_query",
+        "attempted_queries": 4,
+        "fetched": 76,
+        "matched": 65,
+        "analysed": 0,
+        "metadata_only": 76,
+        "note": "videos_waiting_for_review: 21"
+      },
+      {
+        "connector_id": "web_fetch",
+        "status": "partial",
+        "attempted_queries": 16,
+        "fetched": 11,
+        "matched": 5,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "already_read: 24; error_will_retry: 1; fetched: 11; refused: 4"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "run_id": "run_01M3V4CEC2E5V1A30BHVJNPMHK",
+    "project": "M3M Forestia West",
+    "stage": "analysing",
+    "coverage": [
+      {
+        "connector_id": "brave_search",
+        "status": "complete_for_query",
+        "attempted_queries": 11,
+        "fetched": 118,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 118,
+        "note": "not_collected:linkedin: 1; not_collected:web_public_pages: 98; youtube_left_to_youtube_connector: 1"
+      },
+      {
+        "connector_id": "firecrawl",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "no credential or adapter configured; not run"
+      },
+      {
+        "connector_id": "playwright_fetch",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "no credential or adapter configured; not run"
+      },
+      {
+        "connector_id": "youtube_data_api",
+        "status": "complete_for_query",
+        "attempted_queries": 4,
+        "fetched": 35,
+        "matched": 23,
+        "analysed": 0,
+        "metadata_only": 35,
+        "note": "videos_waiting_for_review: 11"
+      },
+      {
+        "connector_id": "web_fetch",
+        "status": "complete_for_query",
+        "attempted_queries": 30,
+        "fetched": 23,
+        "matched": 7,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "already_read: 10; fetched: 23; refused: 7"
+      }
+    ],
+    "errors": []
+  },
+  {
+    "run_id": "run_01M3V4CEDERGJMVDCQQRM2YXCJ",
+    "project": "M3M Antalya Hills",
+    "stage": "analysing",
+    "coverage": [
+      {
+        "connector_id": "brave_search",
+        "status": "complete_for_query",
+        "attempted_queries": 24,
+        "fetched": 224,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 224,
+        "note": "not_collected:meta: 9; not_collected:web_public_pages: 237"
+      },
+      {
+        "connector_id": "firecrawl",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "no credential or adapter configured; not run"
+      },
+      {
+        "connector_id": "playwright_fetch",
+        "status": "access_pending",
+        "attempted_queries": 0,
+        "fetched": 0,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "no credential or adapter configured; not run"
+      },
+      {
+        "connector_id": "youtube_data_api",
+        "status": "complete_for_query",
+        "attempted_queries": 4,
+        "fetched": 76,
+        "matched": 72,
+        "analysed": 0,
+        "metadata_only": 75,
+        "note": "videos_waiting_for_review: 10"
+      },
+      {
+        "connector_id": "web_fetch",
+        "status": "partial",
+        "attempted_queries": 23,
+        "fetched": 17,
+        "matched": 0,
+        "analysed": 0,
+        "metadata_only": 0,
+        "note": "already_read: 17; error_will_retry: 1; fetched: 17; refused: 5"
+      }
+    ],
+    "errors": []
+  }
+]
+exit 0 at 2026-10-01T07:29:43Z

@@ -304,3 +304,60 @@ def test_youtube_comments_turned_off_is_a_fact_not_a_failure(db, settings):
         )
     assert info.value.code == "comments_disabled" and not info.value.retryable
     assert duration_ms("PT1H2M3S") == 3_723_000 and duration_ms("P1D") == 86_400_000 and duration_ms("") is None
+
+
+@pytest.fixture
+def record_only_policy(db, contracts, api, make_user):
+    """The forum allow-listed under a version that records robots.txt without enforcing it (D46)."""
+    from app.sources.policies import current
+
+    from .conftest import sign_in
+    from .test_policies import version_request
+
+    web = current(db, "web_public_pages")
+    body = version_request(
+        "web_public_pages",
+        hosts=[*web["hosts"], "forum.example.test"],
+        excluded_hosts=web["excluded_hosts"],
+        conditions=web["conditions"],
+        basis="test allow-list, robots.txt recorded only",
+        robots_txt="record_only",
+    )
+    assert (
+        api.post("/v1/admin/source-policies", json=body, headers=sign_in(api, make_user, ["admin"])).status_code == 201
+    )
+
+
+def test_under_record_only_robots_txt_is_logged_but_does_not_block(db, record_only_policy):
+    net = FakeNet()
+    text = "Quillon Residences in Sector 102 update. " * 10
+    net.html(
+        "forum.example.test",
+        {"/private/x": (200, article("t", text)), "/blocked": (403, "")},
+        robots="User-agent: *\nDisallow: /private\n",
+    )
+    web = reader(net, db)
+    assert web.fetch("https://forum.example.test/private/x").status == "fetched"
+    log = db["ai_fetch_log"].find_one({"url": "https://forum.example.test/private/x"})
+    assert log["outcome"] == "fetched" and log["robots"] == "disallowed (parsed)", "the verdict is kept"
+    blocked = web.fetch("https://forum.example.test/blocked")
+    assert blocked.status == "refused" and "not worked around" in blocked.reason, "a refused page still is (D33)"
+
+
+def test_under_record_only_a_refused_robots_txt_does_not_block_either(db, record_only_policy):
+    import httpx
+
+    net = FakeNet()
+    body = article("Tower C update", "Quillon Residences in Sector 102 reached the 20th floor. " * 6)
+    net.route(
+        "forum.example.test",
+        lambda r: (
+            httpx.Response(403, headers={"content-type": "text/html"}, text="challenge")
+            if r.url.path == "/robots.txt"
+            else httpx.Response(200, headers={"content-type": "text/html"}, text=body)
+        ),
+    )
+    outcome = reader(net, db).fetch("https://forum.example.test/t/1")
+    assert outcome.status == "fetched"
+    log = db["ai_fetch_log"].find_one({"url": "https://forum.example.test/t/1"})
+    assert log["robots"] == "disallowed (robots_refused)"

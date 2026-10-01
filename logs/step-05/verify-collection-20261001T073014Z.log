@@ -1,0 +1,95 @@
+$ docker compose exec -T api python -m app.cli verify-collection   (2026-10-01T07:30:14Z, after D46)
+[
+  {
+    "check": "every source records a policy version that allowed its collection",
+    "ok": true,
+    "looked_at": 1010,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "every web page's host is on its policy's allow-list",
+    "ok": true,
+    "looked_at": 228,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "every web page has its fetch decision logged",
+    "ok": true,
+    "looked_at": 228,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "nothing was fetched against robots.txt where the policy obeys it",
+    "ok": true,
+    "looked_at": 502,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "no page kept from a site that refused us, where the policy obeys robots.txt",
+    "ok": true,
+    "looked_at": 157,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "metadata-only records hold no text",
+    "ok": true,
+    "looked_at": 501,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "no evidence comes from a metadata-only record",
+    "ok": true,
+    "looked_at": 368,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "no video carries spoken content without a transcript route",
+    "ok": true,
+    "looked_at": 222,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "every comment belongs to a stored parent",
+    "ok": true,
+    "looked_at": 281,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "one record per source revision",
+    "ok": true,
+    "looked_at": 1010,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "provider quotas were not exceeded",
+    "ok": true,
+    "looked_at": 7,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "every connector a run used is in its coverage",
+    "ok": true,
+    "looked_at": 11,
+    "broken": 0,
+    "examples": []
+  },
+  {
+    "check": "no configured secret is stored in collected records",
+    "ok": true,
+    "looked_at": 5,
+    "broken": 0,
+    "examples": []
+  }
+]
+exit 0

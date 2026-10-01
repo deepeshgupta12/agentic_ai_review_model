@@ -1,8 +1,10 @@
 """Reading allow-listed public pages (connector web_fetch; D33 with D40: static fetch + Trafilatura, no stealth).
 
 Before a page is requested: its host's policy family must allow collection and be one the web reader serves
-(generic web allow-list, competitor portals, official records), and robots.txt must allow the path; every
-redirect hop is checked the same way. A refusal (401/403/406/451) is recorded as refused, never worked around.
+(generic web allow-list, competitor portals, official records). robots.txt is asked for every page and its verdict
+logged; it blocks the fetch only where the family's policy version says `obey` (D46: the product owner set the
+web families to `record_only` on 1 Oct 2026). Every redirect hop is checked the same way. A refused page
+(401/403/406/451) is recorded as refused and never worked around: no stealth, no disguised user agent (D33).
 The page's main text, title, author name and the date the markup states are kept; pages with too little text
 (often script-rendered) are counted as thin rather than stored. Every decision goes to the fetch log.
 """
@@ -110,17 +112,17 @@ class WebFetch(Connector):
             return FetchOutcome("not_allowed", url, refusal)
         decision = self.robots.decide(url)
         entry["robots"] = decision.basis if decision.allowed else f"disallowed ({decision.basis})"
-        if not decision.allowed:
+        if not decision.allowed and policies.obeys_robots(resolution.policy):
             log_fetch(self.db, {**entry, "outcome": "robots_disallowed"})
             return FetchOutcome("robots_disallowed", url, f"robots.txt: {decision.basis}")
 
         def check_hop(hop: str) -> None:
             if normalise_url(hop) == url:
                 return
-            _, hop_refusal = self._allowed(hop)
+            hop_resolution, hop_refusal = self._allowed(hop)
             if hop_refusal:
                 raise FetchError("redirect_not_allowed", f"redirect to a page the policy does not allow: {hop_refusal}")
-            if not self.robots.decide(hop).allowed:
+            if not self.robots.decide(hop).allowed and policies.obeys_robots(hop_resolution.policy):
                 raise FetchError("redirect_robots_disallowed", "redirect to a path robots.txt disallows")
 
         try:
