@@ -346,6 +346,11 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
         ),
         CollectionSpec("ai_availability_checks", _availability_validator(), []),
         CollectionSpec(
+            "ai_origin_clusters",
+            contracts.mongo_validator("sources.schema.json#/$defs/OriginCluster"),
+            [IndexSpec("by_member", [("members.id", ASCENDING), ("members.revision", ASCENDING)])],
+        ),
+        CollectionSpec(
             "ai_media_segments",
             contracts.mongo_validator("sources.schema.json#/$defs/MediaSegment"),
             [
