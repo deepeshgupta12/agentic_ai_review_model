@@ -220,6 +220,8 @@ These rules are each disabled, one at a time, and must be caught by their own te
 | 2026-10-01 06:46 | `6b7a4a3` + D46 being edited | Product owner, own terminal | `bash scripts/run_step05_mutations.sh` | Not a valid result: the script file was edited while bash was reading it (syntax error at line 115), and the seed change was half applied | [log](mutation-check-20261001T064622Z.log) |
 | 2026-10-01 07:03 | D46, before commit | Implementer | `collect` (five projects) under the `record_only` policies | 5 runs completed in 26 minutes; 70 new pages, including 57 MagicBricks pages | [log](live-collect-d46-20261001T070309Z.log) |
 | 2026-10-01 07:30 | same | Implementer | `verify-collection` | 13/13 on 1,010 records | [log](verify-collection-20261001T073014Z.log) |
+| 2026-10-01 07:31 | `38716a0` | Implementer | `bash scripts/run_step05_checks.sh` | ALL CHECKS OK, 29/29; 236 backend tests; web families record robots.txt only (D46) | [log](checks-20261001T073127Z.log) |
+| 2026-10-01 07:41 | `38716a0` | Implementer | `bash scripts/run_step05_mutations.sh` | ALL MUTANTS CAUGHT, 25/25 | [log](mutation-check-20261001T074131Z.log) |
 
 
 
@@ -234,7 +236,7 @@ These rules are each disabled, one at a time, and must be caught by their own te
   - live re-check results are in the table above.
 - [x] A metadata-only search hit cannot become an eligible content claim. Covered by UC-38, and on the live data "no evidence comes from a metadata-only record" holds for all 350 evidence spans.
 - [x] Each mandatory live connector has an actual authorised query result, separate from mocks. The Brave, web reader and YouTube runs for the five projects are listed above, with the evidence log ([live connectors](live-connectors-20260930T110436Z.log)). The registry marks them live with that log.
-- [x] Relevant repository checks were actually run and their results recorded (above): 29/29 checks and 23/23 mutants at `aca3128`; CI green.
+- [x] Relevant repository checks were actually run and their results recorded (above): 29/29 checks and 25/25 mutants at `38716a0`, after D46; CI green.
 - [x] PROGRESS.md records changed paths, decisions, evidence, unresolved dependencies and the next action.
 - [x] The product owner approved U–X and Y points 2–4 on 1 Oct 2026. Y point 1 (robots.txt refusals block fetching) was declined and replaced by D46.
 

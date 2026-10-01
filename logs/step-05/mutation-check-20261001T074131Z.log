@@ -1,0 +1,178 @@
+Step 05 mutation check: each collection rule is disabled on a scratch copy; its own test must fail.
+date (UTC): 2026-10-01T07:41:31Z
+commit:     38716a0
+
+== baseline: the unchanged copy imports its own code and the Step 05 test files pass
+imports the scratch copy
+test_policies.py             16 passed in 14.90s
+test_fetching.py             25 passed in 6.57s
+test_connectors.py           12 passed in 11.89s
+test_collection.py           13 passed in 17.37s
+test_lifecycle.py            10 passed in 13.27s
+test_recheck.py              5 passed in 8.81s
+test_runs_api.py             7 passed in 9.05s
+
+== rule disabled: a host's policy is checked before any request
+   in backend/app/connectors/web.py
+FAILED tests/test_connectors.py::test_the_web_reader_never_requests_a_page_the_policy_does_not_allow
+1 failed, 11 passed in 11.06s
+--> OK (caught by test_the_web_reader_never_requests_a_page_the_policy_does_not_allow)
+
+== rule disabled: robots.txt is obeyed where the policy says obey
+   in backend/app/connectors/web.py
+FAILED tests/test_connectors.py::test_robots_refusal_and_http_outcomes
+1 failed, 11 passed in 11.89s
+--> OK (caught by test_robots_refusal_and_http_outcomes)
+
+== rule disabled: record_only logs robots.txt without blocking (D46)
+   in backend/app/sources/policies.py
+FAILED tests/test_connectors.py::test_under_record_only_robots_txt_is_logged_but_does_not_block
+FAILED tests/test_connectors.py::test_under_record_only_a_refused_robots_txt_does_not_block_either
+2 failed, 10 passed in 17.46s
+--> OK (caught by test_under_record_only_robots_txt_is_logged_but_does_not_block)
+
+== rule disabled: a source withdrawn on request is never collected again (D46)
+   in backend/app/sources/store.py
+FAILED tests/test_lifecycle.py::test_a_source_withdrawn_on_request_is_never_collected_again
+1 failed, 9 passed in 11.80s
+--> OK (caught by test_a_source_withdrawn_on_request_is_never_collected_again)
+
+== rule disabled: every redirect hop is checked against the policy
+   in backend/app/connectors/web.py
+FAILED tests/test_connectors.py::test_a_redirect_to_a_host_the_policy_does_not_allow_is_stopped
+1 failed, 11 passed in 19.77s
+--> OK (caught by test_a_redirect_to_a_host_the_policy_does_not_allow_is_stopped)
+
+== rule disabled: the fetch log keeps where a redirect landed
+   in backend/app/connectors/web.py
+FAILED tests/test_connectors.py::test_an_allowed_redirect_is_stored_where_it_landed_and_logged_with_both_addresses
+1 failed, 11 passed in 32.28s
+--> OK (caught by test_an_allowed_redirect_is_stored_where_it_landed_and_logged_with_both_addresses)
+
+== rule disabled: dates only from structured markup (D44)
+   in backend/app/connectors/web.py
+FAILED tests/test_connectors.py::test_a_date_written_only_in_the_text_stays_unknown
+1 failed, 11 passed in 18.89s
+--> OK (caught by test_a_date_written_only_in_the_text_stays_unknown)
+
+== rule disabled: non-public addresses are refused (SSRF)
+   in backend/app/sources/http.py
+FAILED tests/test_fetching.py::test_non_public_targets_and_odd_urls_are_refused[http://localhost/x-table0-address_refused]
+FAILED tests/test_fetching.py::test_non_public_targets_and_odd_urls_are_refused[http://metadata.test/latest-table1-address_refused]
+FAILED tests/test_fetching.py::test_non_public_targets_and_odd_urls_are_refused[http://intranet.test/-table2-address_refused]
+FAILED tests/test_fetching.py::test_non_public_targets_and_odd_urls_are_refused[http://v6.test/-table3-address_refused]
+FAILED tests/test_fetching.py::test_non_public_targets_and_odd_urls_are_refused[http://mixed.test/-table4-address_refused]
+FAILED tests/test_fetching.py::test_every_redirect_hop_is_checked_again
+6 failed, 19 passed in 6.02s
+--> OK (caught by test_non_public_targets_and_odd_urls_are_refused)
+
+== rule disabled: a robots.txt that refuses us means nothing is fetched (D45)
+   in backend/app/sources/robots.py
+FAILED tests/test_fetching.py::test_a_robots_file_that_refuses_us_means_nothing_is_fetched[401]
+FAILED tests/test_fetching.py::test_a_robots_file_that_refuses_us_means_nothing_is_fetched[403]
+FAILED tests/test_fetching.py::test_a_robots_file_that_refuses_us_means_nothing_is_fetched[451]
+3 failed, 22 passed in 6.25s
+--> OK (caught by test_a_robots_file_that_refuses_us_means_nothing_is_fetched)
+
+== rule disabled: withdrawal erases older revisions too (D45)
+   in backend/app/sources/lifecycle.py
+FAILED tests/test_lifecycle.py::test_withdrawing_a_source_erases_every_revision
+1 failed, 9 passed in 11.40s
+--> OK (caught by test_withdrawing_a_source_erases_every_revision)
+
+== rule disabled: a confirmed deletion reaches older revisions (D45)
+   in backend/app/sources/lifecycle.py
+FAILED tests/test_lifecycle.py::test_a_confirmed_deletion_reaches_older_revisions
+1 failed, 9 passed in 10.59s
+--> OK (caught by test_a_confirmed_deletion_reaches_older_revisions)
+
+== rule disabled: a search hit found under another title is the same record (D43)
+   in backend/app/sources/store.py
+FAILED tests/test_fetching.py::test_a_search_hit_found_again_under_another_title_is_the_same_record
+1 failed, 24 passed in 11.15s
+--> OK (caught by test_a_search_hit_found_again_under_another_title_is_the_same_record)
+
+== rule disabled: no Brave request without a quota reservation
+   in backend/app/connectors/brave.py
+FAILED tests/test_connectors.py::test_brave_refusal_and_quota_are_explicit
+1 failed, 11 passed in 11.28s
+--> OK (caught by test_brave_refusal_and_quota_are_explicit)
+
+== rule disabled: a generic web host must be on the allow-list
+   in backend/app/sources/policies.py
+FAILED tests/test_policies.py::test_the_host_decides_the_family[https://forum.example.test/thread/1-web_public_pages-False]
+FAILED tests/test_policies.py::test_the_host_decides_the_family[https://client-site.example/some-project-web_public_pages-False]
+FAILED tests/test_policies.py::test_a_generic_web_host_needs_the_allow_list
+3 failed, 13 passed in 23.59s
+--> OK (caught by test_a_generic_web_host_needs_the_allow_list)
+
+== rule disabled: metadata-only items carry no text
+   in backend/app/sources/store.py
+FAILED tests/test_fetching.py::test_metadata_only_items_carry_no_payload
+1 failed, 24 passed in 9.82s
+--> OK (caught by test_metadata_only_items_carry_no_payload)
+
+== rule disabled: an unchanged page makes no new revision
+   in backend/app/sources/store.py
+FAILED tests/test_fetching.py::test_storing_the_same_page_again_makes_no_new_revision
+FAILED tests/test_fetching.py::test_a_search_hit_found_again_under_another_title_is_the_same_record
+2 failed, 23 passed in 5.79s
+--> OK (caught by test_storing_the_same_page_again_makes_no_new_revision)
+
+== rule disabled: a run uses only the connectors it planned (D43)
+   in backend/app/sources/collection.py
+FAILED tests/test_collection.py::test_a_connector_the_run_did_not_plan_is_never_called
+1 failed, 12 passed in 31.60s
+--> OK (caught by test_a_connector_the_run_did_not_plan_is_never_called)
+
+== rule disabled: coverage is partial only when a page may read next time
+   in backend/app/sources/collection.py
+FAILED tests/test_collection.py::test_only_a_page_that_may_read_next_time_leaves_coverage_partial[410-complete_for_query-gone]
+1 failed, 12 passed in 19.33s
+--> OK (caught by test_only_a_page_that_may_read_next_time_leaves_coverage_partial)
+
+== rule disabled: inherited comment links return to review with their parent (D42)
+   in backend/app/identity/links.py
+FAILED tests/test_collection.py::test_comments_inherit_their_thread_and_follow_it_back_to_review
+1 failed, 12 passed in 19.70s
+--> OK (caught by test_comments_inherit_their_thread_and_follow_it_back_to_review)
+
+== rule disabled: deletion needs two consecutive 'gone' results
+   in backend/app/sources/lifecycle.py
+FAILED tests/test_lifecycle.py::test_deletion_needs_two_consecutive_gone_checks
+1 failed, 9 passed in 12.85s
+--> OK (caught by test_deletion_needs_two_consecutive_gone_checks)
+
+== rule disabled: erasure waits for dependency invalidation
+   in backend/app/sources/lifecycle.py
+FAILED tests/test_lifecycle.py::test_erasure_waits_for_invalidation_then_removes_the_text
+1 failed, 9 passed in 9.67s
+--> OK (caught by test_erasure_waits_for_invalidation_then_removes_the_text)
+
+== rule disabled: a re-check stores an edited page as a new revision (D44)
+   in backend/app/sources/recheck.py
+FAILED tests/test_recheck.py::test_an_edited_page_becomes_a_new_revision_linked_to_the_same_project
+1 failed, 4 passed in 9.52s
+--> OK (caught by test_an_edited_page_becomes_a_new_revision_linked_to_the_same_project)
+
+== rule disabled: a re-check corrects a stated date the markup does not support (D44)
+   in backend/app/sources/recheck.py
+FAILED tests/test_recheck.py::test_a_stated_date_the_markup_does_not_support_is_corrected_with_an_audit_event
+1 failed, 4 passed in 8.55s
+--> OK (caught by test_a_stated_date_the_markup_does_not_support_is_corrected_with_an_audit_event)
+
+== rule disabled: verify-collection catches evidence from metadata-only records
+   in backend/app/sources/verify.py
+FAILED tests/test_collection.py::test_the_collection_checks_pass_on_a_run_and_catch_planted_violations
+1 failed, 12 passed in 18.20s
+--> OK (caught by test_the_collection_checks_pass_on_a_run_and_catch_planted_violations)
+
+== rule disabled: a run needs an Idempotency-Key
+   in backend/app/api/idempotency.py
+FAILED tests/test_runs_api.py::test_start_run_needs_a_key_a_researcher_and_replays
+FAILED tests/test_runs_api.py::test_withdrawal_through_the_api
+2 failed, 5 passed in 16.80s
+--> OK (caught by test_start_run_needs_a_key_a_researcher_and_replays)
+
+ALL MUTANTS CAUGHT
+log: logs/step-05/mutation-check-20261001T074131Z.log
