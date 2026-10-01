@@ -117,6 +117,9 @@ EOF
 }
 
 seeding_is_repeatable() {
+  docker compose exec -T api python -m app.cli seed-projects > /dev/null || return 1
+  docker compose exec -T api python -m app.cli seed-policies > "$T/first.json" || return 1
+  "$PY" -c 'import json, sys; c = [f"{p[\"family\"]} v{p[\"policy_version\"]}" for p in json.load(open(sys.argv[1])) if p["outcome"] == "created"]; print("first pass created:", c or "nothing (already seeded)")' "$T/first.json"
   docker compose exec -T api python -m app.cli seed-projects > "$T/seed.json" || return 1
   docker compose exec -T api python -m app.cli seed-policies > "$T/policies.json" || return 1
   "$PY" - "$T/seed.json" "$T/policies.json" <<'EOF'
@@ -312,7 +315,7 @@ expect "Stack builds (including the media worker image) and every service is hea
 expect "Long-running services up, including media-worker" 0 services_running
 expect "D48: worker roles, the media worker's 2 GB cap and kill priority; MongoDB protected" 0 worker_roles
 expect "Repeating database setup changes nothing (ai_media_segments present)" 0 setup_db_is_a_no_op
-expect "Seeding again changes nothing; spoken_video_content v2 and youtube v3" 0 seeding_is_repeatable
+expect "Seeding twice: the second pass changes nothing; spoken_video_content v2 and youtube v3" 0 seeding_is_repeatable
 
 expect "Sign in through the web app" 0 sign_in
 expect "D47: spoken_video_content v2 applies D33; youtube v3" 0 spoken_policy

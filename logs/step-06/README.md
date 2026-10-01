@@ -97,7 +97,15 @@ Hindi number words are where Whisper errs ("पच्छाहेतर" for प
 
 ## Recorded results
 
-RECORDED_RESULTS
+| Date (UTC) | Commit | Run by | Command | Result | Log |
+|---|---|---|---|---|---|
+| 2026-10-01 07:50–08:20 | worktree, before commit | Implementer | Whisper `small` and `large-v3-turbo` natively on the speech set | small 13/22 facts; turbo 19/22 at about 1–2× real time; turbo chosen | (console; numbers in the table above) |
+| 2026-10-01 08:23 | worktree | Implementer | turbo inside a 3 GB test container | **Incident.** The 4 GB Docker VM ran out of memory and MongoDB was killed (exit 137, OOMKilled). Restarted with no data lost; the API and worker reconnected. Led to the D48 safeguards | (PROGRESS session entry) |
+| 2026-10-01 08:30 | worktree | Implementer | turbo inside the media worker image, 2 GB cap | 20/22 facts at about 3–11× real time; MongoDB untouched | (console) |
+| 2026-10-01 08:55 | worktree | Implementer | live A04 on the five non-English sentences | 4/5 kept: the backend wrongly read "कीमत" as a negation (fixed); after the fix 5/5 kept, 12/12 facts | (console) |
+| 2026-10-01 09:12 | worktree | Implementer | `bash scripts/run_step06_mutations.sh` | 14/16. One weak test (window overlap at a boundary, strengthened) and one mutant whose text didn't match the file (fixed) | [log](mutation-check-20261001T091209Z.log) |
+| 2026-10-01 09:31 | `fb5ce62` (before commit) | Implementer | `bash scripts/run_step06_mutations.sh` | ALL MUTANTS CAUGHT, 16/16; 258 backend tests | [log](mutation-check-20261001T093120Z.log) |
+| 2026-10-01 09:53 | `fb5ce62` | Implementer | `bash scripts/run_step06_checks.sh` | 22/23. The seeding check wrongly required "unchanged" on the first pass after the upgrade, which correctly created spoken_video_content v2 and youtube v3 (script fixed). Speech set 20/22; A04 5/5 and 12/12; live attempt: 137 eligible videos, 5 tried, all `network_refused` (I17); verify-collection 16/16 | [log](checks-20261001T095344Z.log) |
 
 ## Step 06 acceptance checks
 
