@@ -81,8 +81,9 @@ def create_media_evidence(
     policy_ref: dict[str, Any],
     session: ClientSession | None = None,
 ) -> dict[str, Any]:
-    """Speech evidence for a linked transcript window (Step 06): the window's words on the original timeline,
-    governed by the spoken-content policy rather than the video's metadata policy."""
+    """Media evidence for a linked segment (Step 06): a transcript window's words, or a frame's on-screen text or
+    description (D49), on the original timeline, governed by the spoken-content policy rather than the video's
+    metadata policy."""
     existing = db["ai_evidence"].find_one({"link_id": link["_id"]}, session=session)
     if existing is not None:
         return existing
@@ -100,7 +101,7 @@ def create_media_evidence(
         "excerpt_text": excerpt,
         "excerpt_sha256": sha256_text(excerpt),
         "language": segment["language"],
-        "modality": "speech",
+        "modality": segment["modality"],
         "translation_of": None,
         "origin_cluster": None,
         "policy": policy_ref,

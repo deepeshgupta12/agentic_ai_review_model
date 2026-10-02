@@ -187,11 +187,11 @@ def identify_media(
     segments: list[dict[str, Any]],
     policy_ref: dict[str, Any],
 ) -> dict[str, Any]:
-    """Transcript windows of an authorised video (Step 06, D47). Each item needs `segment_key`, `time`, `text` and
-    `language`. A window that names a project is matched on its own words, so a comparison video splits per
-    project. A window that names none inherits the video's accepted match, like a comment (D42): with one matched
-    project it is accepted, with several it goes to review. Inherited windows return to review if the video's
-    match is undone (links._return_inherited)."""
+    """Transcript windows and frame observations of an authorised video (Step 06, D47, D49). Each item needs
+    `segment_key`, `time`, `text`, `language` and `modality`. A segment that names a project is matched on its own
+    words, so a comparison video splits per project. A segment that names none inherits the video's accepted match,
+    like a comment (D42): with one matched project it is accepted, with several it goes to review. Inherited
+    segments return to review if the video's match is undone (links._return_inherited)."""
     identities = load_identities(db)
     parts = [Segment(s["segment_key"], s["text"], s["time"]) for s in segments]
     named = match_text(identities, " ".join(p.text for p in parts), None, segments=parts) if parts else []
@@ -251,7 +251,11 @@ def identify_media(
                     "project_source_link",
                     link["_id"],
                     audit.SYSTEM_ACTOR,
-                    details={"status": link["status"], "segment": link["segment_key"], "modality": "speech"},
+                    details={
+                        "status": link["status"],
+                        "segment": link["segment_key"],
+                        "modality": by_key[link["segment_key"]]["modality"] if link["segment_key"] in by_key else None,
+                    },
                     session=session,
                 )
         return rows

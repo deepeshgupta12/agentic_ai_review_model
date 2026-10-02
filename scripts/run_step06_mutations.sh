@@ -73,8 +73,8 @@ mutant "only videos with an accepted match are processed" test_media.py test_onl
 
 mutant "captions come before audio" test_media.py test_captions_come_first_and_become_segments_on_the_original_timeline \
   app/media/pipeline.py \
-  '        if track is not None and track.cues:' \
-  '        if False:'
+  '        has_captions = track is not None and bool(track.cues)' \
+  '        has_captions = False'
 
 mutant "a refusal stops the attempt and is recorded" test_media.py test_a_refusal_is_recorded_not_worked_around \
   app/media/pipeline.py \
@@ -83,12 +83,12 @@ mutant "a refusal stops the attempt and is recorded" test_media.py test_a_refusa
 
 mutant "a long video without captions is not downloaded" test_media.py test_a_long_video_without_captions_is_not_downloaded \
   app/media/pipeline.py \
-  'if duration is None or duration > settings.media_max_duration_seconds * 1000:' \
-  'if duration is None:'
+  'within_cap = duration is not None and duration <= settings.media_max_duration_seconds * 1000' \
+  'within_cap = duration is not None'
 
 mutant "the audio is deleted after transcription" test_media.py test_without_captions_the_audio_is_transcribed_locally_and_then_deleted \
   app/media/pipeline.py \
-  '                shutil.rmtree(workdir, ignore_errors=True)  # the audio is never kept' \
+  '                shutil.rmtree(workdir, ignore_errors=True)  # the audio, the video and the frames are never kept' \
   '                pass'
 
 mutant "media states follow the contract" test_media.py test_media_state_changes_follow_the_contract \
@@ -143,8 +143,60 @@ mutant "the general worker never takes media jobs" test_media.py test_the_media_
 
 mutant "the verifier rejects speech evidence under another policy" test_media.py test_the_collection_checks_accept_transcripts_and_catch_broken_ones \
   app/sources/verify.py \
-  'broken = [e["_id"] for e in speech if e["policy"]["family"] != "spoken_video_content"]' \
+  'broken = [e["_id"] for e in spoken if e["policy"]["family"] != "spoken_video_content"]' \
   'broken = []'
+
+printf '\n-- frames and on-screen text (Step 06.5; Z3, D49)\n'
+
+mutant "frames carry no speech" test_media.py test_one_download_serves_speech_and_frames_and_nothing_is_kept \
+  app/media/frames.py \
+  '            if frame is None or item["modality"] not in MODALITIES or not text:' \
+  '            if frame is None or not text:'
+
+mutant "a frame keeps its own time, not the model's" test_media.py test_one_download_serves_speech_and_frames_and_nothing_is_kept \
+  app/media/frames.py \
+  '                "frame_ms": frame.ms,' \
+  '                "frame_ms": item["start_ms"],'
+
+mutant "anything not clearly real footage may be a render" test_media.py test_one_download_serves_speech_and_frames_and_nothing_is_kept \
+  app/media/language.py \
+  '    if imagery != "real_footage":' \
+  '    if imagery == "render_or_graphic":'
+
+mutant "a refused frame download keeps the captions" test_media.py test_a_refused_frame_download_keeps_the_captions \
+  app/media/pipeline.py \
+  '        if not has_captions:' \
+  '        if True:'
+
+mutant "a video too large at 480p falls back to its audio" test_media.py test_a_video_too_large_at_480p_falls_back_to_its_audio \
+  app/media/pipeline.py \
+  '        return fetch(False), reason' \
+  '        raise'
+
+mutant "a failed frame analysis is not called analysed" test_media.py test_a_failed_frame_analysis_keeps_the_speech_and_is_recorded \
+  app/media/pipeline.py \
+  '                        if outcome == "failed":' \
+  '                        if False:'
+
+mutant "frames need a policy that covers them" test_media.py test_frames_need_the_policy_the_switch_and_a_video_file \
+  app/media/pipeline.py \
+  '    elif policy["policy_version"] < FRAMES_FROM_POLICY_VERSION:' \
+  '    elif False:'
+
+mutant "inherited frame links return to review with the video's match" test_media.py test_on_screen_text_naming_a_project_is_matched_on_its_own_words \
+  app/identity/links.py \
+  '                "segment_key": {"$regex": "^[tf]:"},' \
+  '                "segment_key": {"$regex": "^t:"},'
+
+mutant "frame evidence keeps its modality" test_media.py test_on_screen_text_naming_a_project_is_matched_on_its_own_words \
+  app/identity/evidence.py \
+  '        "modality": segment["modality"],' \
+  '        "modality": "speech",'
+
+mutant "the verifier catches a frame posing as transcribed speech" test_media.py test_the_collection_checks_cover_frames \
+  app/sources/verify.py \
+  '        or s["transcription"] is not None' \
+  '        or False'
 
 echo
 if [ "$FAILED" -eq 0 ]; then echo "ALL MUTANTS CAUGHT"; else echo "SOME MUTANTS NOT CAUGHT"; fi

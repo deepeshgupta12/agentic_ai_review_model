@@ -58,3 +58,19 @@ def quality_flags(window: Window, *, origin: str) -> list[str]:
     if auto_captions:
         flags.append("auto_generated_captions")
     return flags
+
+
+def frame_flags(text: str, *, imagery: str, uncertain: bool) -> list[str]:
+    """Flags for a frame observation (D49). Anything not clearly real footage may be a render, which never proves
+    what has been built; numbers read by the model off a frame are checked by a person, like machine transcripts."""
+    flags: list[str] = []
+    if imagery != "real_footage":
+        flags.append("possible_render")
+    if NUMBER.search(text):
+        flags.append("numbers_uncertain")
+    if uncertain:
+        flags.append("low_confidence")
+    deva, latin = script_counts(text)
+    if min(deva, latin) >= 2:
+        flags.append("code_switching")
+    return flags

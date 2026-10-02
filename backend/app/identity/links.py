@@ -147,8 +147,8 @@ def transition(
 def _return_inherited(
     db: Database[dict[str, Any]], contracts: ContractStore, link: dict[str, Any], session: ClientSession | None
 ) -> None:
-    """Comments, and a video's transcript windows (Step 06), that inherited this link's match (same project, no
-    signals of their own) return to review too."""
+    """Comments, and a video's transcript windows and frame observations (Step 06, D49), that inherited this link's
+    match (same project, no signals of their own) return to review too."""
     if link["segment_key"] == "whole":
         return_to_review(
             db,
@@ -157,7 +157,7 @@ def _return_inherited(
                 "project_id": link["project_id"],
                 "source.id": link["source"]["id"],
                 "source.revision": link["source"]["revision"],
-                "segment_key": {"$regex": "^t:"},
+                "segment_key": {"$regex": "^[tf]:"},
                 "match.method": "deterministic",
                 "match.signals": {"$size": 0},
             },

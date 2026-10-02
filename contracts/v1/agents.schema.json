@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Agent contracts",
   "description": "Task envelope and the structured output of each model-backed specialist (docs/04). Output schemas use only the Claude structured-output subset: closed objects, every property required, null instead of optional, no numeric/string/array constraints, no recursion. The gateway bundles them (inlining common refs) before sending. The backend then validates business rules, including that every returned ID was in the task's input set. A00 is deterministic and has no model output.",
-  "x-contract-version": "1.0.0",
+  "x-contract-version": "1.1.0",
   "x-agent-outputs": {
     "A01_project_identity": "IdentityResult",
     "A02_discovery_planner": "DiscoveryPlan",
@@ -132,7 +132,7 @@
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["segment_id", "modality", "observation", "speaker", "start_ms", "end_ms", "uncertainty"],
+            "required": ["segment_id", "modality", "observation", "speaker", "start_ms", "end_ms", "uncertainty", "imagery"],
             "properties": {
               "segment_id": { "type": "string" },
               "modality": { "enum": ["speech", "on_screen_text", "frame"] },
@@ -140,7 +140,11 @@
               "speaker": { "enum": ["creator", "interviewee", "voiceover", "unknown"] },
               "start_ms": { "type": "integer" },
               "end_ms": { "type": "integer" },
-              "uncertainty": { "$ref": "#/$defs/NullableString" }
+              "uncertainty": { "$ref": "#/$defs/NullableString" },
+              "imagery": {
+                "description": "For frames: whether the image is camera footage or a render, graphic or advertisement (renders never prove construction status, docs/06). Null for speech.",
+                "anyOf": [{ "enum": ["real_footage", "render_or_graphic", "unclear"] }, { "type": "null" }]
+              }
             }
           }
         }

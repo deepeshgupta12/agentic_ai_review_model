@@ -343,6 +343,10 @@ def cmd_transcribe_videos(args: argparse.Namespace) -> int:
     ):
         reason = str(event["details"].get("reason", "")).split(":")[0]
         reasons[reason] = reasons.get(reason, 0) + 1
+    frames_skipped: dict[str, int] = {}
+    for event in db["ai_audit_events"].find({"action": "media_frames.skipped"}):
+        reason = str(event["details"].get("reason", "")).split(":")[0]
+        frames_skipped[reason] = frames_skipped.get(reason, 0) + 1
     _print(
         {
             "queued": report,
@@ -350,6 +354,8 @@ def cmd_transcribe_videos(args: argparse.Namespace) -> int:
             "refusal_or_error_reasons": reasons,
             "segments": db["ai_media_segments"].count_documents({}),
             "speech_evidence": db["ai_evidence"].count_documents({"modality": "speech"}),
+            "frame_evidence": db["ai_evidence"].count_documents({"modality": {"$in": ["on_screen_text", "frame"]}}),
+            "frames_skipped": frames_skipped,
         }
     )
     return 0
@@ -366,7 +372,7 @@ def cmd_eval_media(args: argparse.Namespace) -> int:
     model = args.model or settings.whisper_model
     result = evaluate(
         REPO_ROOT / "evals" / "media" / "v1",
-        WhisperTranscriber(model, settings.whisper_compute_type, settings.whisper_models_dir),
+        WhisperTranscriber(model, settings.whisper_compute_type, settings.whisper_models_dir, max_seconds=120),
         model,
     )
     record = evaluation_record(result)
@@ -422,6 +428,54 @@ def cmd_eval_language(args: argparse.Namespace) -> int:
                 "value": round(sum(r["facts_kept"] for r in rows) / facts, 3) if facts else None,
                 "sample_size": facts,
                 "note": "synthetic sentences written for this check; real transcripts are harder",
+            },
+        ],
+    }
+    if args.save:
+        record = {"_id": new_id("evl"), **record, "created_at": utcnow()}
+        get_db()["ai_evaluations"].insert_one(record)
+    _print({**result, "saved_as": record.get("_id")})
+    return 0 if result["outcome"] == "completed" else 1
+
+
+def cmd_eval_frames(args: argparse.Namespace) -> int:
+    """A03 on the synthetic frames (one Claude vision call): each frame's text read verbatim, no render called real
+    footage."""
+    from app.agents.gateway import ModelGateway
+    from app.db import utcnow
+    from app.ids import new_id
+    from app.media.evaluation import evaluate_frames
+    from app.media.frames import PROMPT_VERSION, SCHEMA_VERSION
+
+    settings, contracts = get_settings(), get_contracts()
+    gateway = ModelGateway(settings, contracts)
+    if not gateway.available:
+        print("skipped: no ANTHROPIC_API_KEY configured")
+        return 0
+    result = evaluate_frames(REPO_ROOT / "evals" / "media" / "v1", gateway)
+    rows = result["rows"]
+    read, total = (int(x) for x in result["phrases_read"].split("/"))
+    record: dict[str, Any] = {
+        "dataset": result["dataset"],
+        "config": {
+            "agent": "A03_video_understanding",
+            "model": result["model"],
+            "prompt_version": PROMPT_VERSION,
+            "schema_version": SCHEMA_VERSION,
+        },
+        "status": "completed" if result["outcome"] == "completed" else "failed",
+        "metrics": [
+            {
+                "name": "on_screen_phrases_read",
+                "value": round(read / total, 3) if total else None,
+                "sample_size": total,
+                "note": "synthetic text slides with a fictional code; real video frames are harder",
+            },
+            {
+                "name": "renders_not_called_real_footage",
+                "value": round(sum(r["imagery_ok"] for r in rows) / len(rows), 3) if rows else None,
+                "sample_size": len(rows),
+                "note": "every synthetic frame is a graphic",
             },
         ],
     }
@@ -671,6 +725,9 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("eval-language", help="A04 translation check on the synthetic speech cases (one Claude call)")
     p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
     p.set_defaults(func=cmd_eval_language)
+    p = sub.add_parser("eval-frames", help="A03 frame check on the synthetic frames (one Claude vision call)")
+    p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
+    p.set_defaults(func=cmd_eval_frames)
     p = sub.add_parser("recheck-sources", help="re-check stored sources for edits and deletions (worker job)")
     p.add_argument("--project", help="project slug; every re-checkable source when omitted")
     p.add_argument("--wait", type=int, default=1800, help="seconds to wait for the worker")

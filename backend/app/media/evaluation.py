@@ -7,12 +7,13 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import tempfile
 import time
 from pathlib import Path
 from typing import Any
 
-from app.media.fetch import Transcriber, to_wav
+from app.media.fetch import Transcriber
 
 PUNCTUATION = re.compile(r"[^\w\s.,]|(?<!\d)[.,]|[.,](?!\d)", re.UNICODE)
 
@@ -49,10 +50,11 @@ def evaluate(directory: Path, transcriber: Transcriber, model_size: str) -> dict
     rows = []
     for case in cases:
         with tempfile.TemporaryDirectory() as tmp:
-            wav = to_wav(directory / "audio" / f"{case['id']}.opus", Path(tmp) / "audio.wav", max_seconds=120)
+            clip = Path(tmp) / "clip.opus"  # the transcriber writes its 16 kHz copy beside the file it is given
+            shutil.copyfile(directory / "audio" / f"{case['id']}.opus", clip)
             hint = case["language"].split("-")[0]
             started = time.monotonic()
-            transcript = transcriber.transcribe(wav, hint)
+            transcript = transcriber.transcribe(clip, hint)
             elapsed = time.monotonic() - started
         text = " ".join(c.text.strip() for c in transcript.cues)
         duration = max((c.end_ms for c in transcript.cues), default=1) / 1000
@@ -182,5 +184,44 @@ def evaluate_translation(directory: Path, gateway: Any) -> dict[str, Any]:
         "usage": result.usage,
         "kept_by_backend": f"{sum(r['kept_by_backend'] for r in rows)}/{len(rows)}",
         "facts_kept": f"{sum(r['facts_kept'] for r in rows)}/{facts_total}",
+        "rows": rows,
+    }
+
+
+def evaluate_frames(directory: Path, gateway: Any) -> dict[str, Any]:
+    """A03 on the synthetic frames: one vision call. Each frame's text must be read verbatim, and none of these
+    graphics may be called real footage."""
+    from app.media.fetch import Frame
+    from app.media.frames import PROMPT_PATH, SCHEMA_REF, build_content
+
+    dataset, _ = load_cases(directory)
+    cases = json.loads((directory / "cases.json").read_text(encoding="utf-8"))["frames"]["cases"]
+    frames = [Frame(directory / "frames" / f"{c['id']}.jpg", c["ms"]) for c in cases]
+    video = {"title": "Synthetic test frames", "media": {"channel": {"title": "test"}}, "publication_date": None}
+    result = gateway.run("routine", SCHEMA_REF, PROMPT_PATH.read_text(encoding="utf-8"), build_content(frames, video))
+    observations = (result.data or {}).get("observations", []) if result.data else []
+    rows = []
+    for index, case in enumerate(cases):
+        mine = [o for o in observations if o["segment_id"] == f"fr{index}"]
+        text = " ".join(o["observation"] for o in mine if o["modality"] == "on_screen_text")
+        read = [phrase for phrase in case["must_read"] if phrase.lower() in text.lower()]
+        rows.append(
+            {
+                "id": case["id"],
+                "read": f"{len(read)}/{len(case['must_read'])}",
+                "imagery": sorted({o.get("imagery") for o in mine}),
+                "imagery_ok": all(o.get("imagery") != case["imagery_not"] for o in mine),
+                "on_screen_text": text,
+                "frame": " ".join(o["observation"] for o in mine if o["modality"] == "frame"),
+            }
+        )
+    total = sum(len(c["must_read"]) for c in cases)
+    return {
+        "dataset": dataset,
+        "model": result.returned_model or result.requested_model,
+        "outcome": result.outcome,
+        "usage": result.usage,
+        "phrases_read": f"{sum(int(r['read'].split('/')[0]) for r in rows)}/{total}",
+        "renders_recognised": f"{sum(r['imagery_ok'] for r in rows)}/{len(rows)}",
         "rows": rows,
     }

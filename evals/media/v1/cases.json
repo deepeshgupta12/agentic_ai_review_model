@@ -240,5 +240,37 @@
     ]
    ]
   }
- ]
+ ],
+ "frames": {
+  "note": "Synthetic frames rendered with ffmpeg text overlays on flat colour (fictional project, fictional registry code TST). They test on-screen text reading and render detection; they are graphics, so imagery must not be called real footage.",
+  "cases": [
+   {
+    "id": "f1",
+    "ms": 0,
+    "must_read": [
+     "QUILLON RESIDENCES",
+     "Sector 102"
+    ],
+    "imagery_not": "real_footage"
+   },
+   {
+    "id": "f2",
+    "ms": 10000,
+    "must_read": [
+     "Tower C",
+     "20th floor"
+    ],
+    "imagery_not": "real_footage"
+   },
+   {
+    "id": "f3",
+    "ms": 20000,
+    "must_read": [
+     "Possession December 2027",
+     "TST/102/2026/07"
+    ],
+    "imagery_not": "real_footage"
+   }
+  ]
+ }
 }

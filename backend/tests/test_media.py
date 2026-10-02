@@ -1,4 +1,5 @@
-"""UC-41..UC-45: video transcripts (Step 06; D47). Fake caption, audio and Whisper adapters; fictional projects."""
+"""UC-41..UC-46: video transcripts and frames (Step 06; D47, D49). Fake caption, download, Whisper, frame and model
+adapters; fictional projects."""
 
 from __future__ import annotations
 
@@ -10,7 +11,7 @@ import pytest
 from app.contracts import to_view
 from app.identity.links import decide_link
 from app.media import pipeline
-from app.media.fetch import CaptionTrack, MediaError, MediaRefused, Transcript
+from app.media.fetch import CaptionTrack, Frame, MediaError, MediaRefused, MediaUnavailable, Transcript
 from app.media.language import language_tag, quality_flags
 from app.media.windows import Cue, Window, build_windows, window_at
 from app.sources.lifecycle import withdraw
@@ -96,23 +97,46 @@ class FakeCaptions:
         return self.track
 
 
-class FakeAudio:
-    def __init__(self, error=None):
-        self.error, self.calls, self.workdirs = error, 0, []
+class FakeDownload:
+    """yt-dlp stand-in: `error` refuses every download, `video_error` only the 480p video."""
 
-    def fetch(self, video_id, workdir, *, max_seconds, max_bytes):
+    def __init__(self, error=None, video_error=None):
+        self.error, self.video_error = error, video_error
+        self.calls, self.workdirs, self.with_video = 0, [], []
+
+    def fetch(self, video_id, workdir, *, max_seconds, max_bytes, with_video):
         self.calls += 1
         self.workdirs.append(workdir)
+        self.with_video.append(with_video)
+        if with_video and self.video_error:
+            raise self.video_error
         if self.error:
             raise self.error
-        wav = Path(workdir) / "audio.wav"
-        wav.write_bytes(b"RIFF fake")
-        return wav
+        path = Path(workdir) / ("source.mp4" if with_video else "source.webm")
+        path.write_bytes(b"fake media")
+        return path
 
 
 class FakeWhisper:
-    def transcribe(self, wav, language_hint):
+    def transcribe(self, media, language_hint):
         return Transcript("en", 0.98, "small", [Cue(c.start_ms, c.end_ms, c.text, -0.3, 0.05) for c in SPEECH])
+
+
+class FakeSampler:
+    def __init__(self, times=(0, 10_000, 20_000), error=None):
+        self.times, self.error, self.calls, self.paths = times, error, 0, []
+
+    def __call__(self, media, workdir, *, max_frames, width):
+        self.calls += 1
+        if self.error:
+            raise self.error
+        frames = []
+        for i, ms in enumerate(self.times[:max_frames]):
+            path = Path(workdir) / f"frame-{i}.jpg"
+            path.write_bytes(b"fake jpeg")
+            frames.append(Frame(path, ms))
+        self.paths += [f.path for f in frames]
+        return frames
 
 
 @pytest.fixture
@@ -126,17 +150,21 @@ def video(db, settings, world, tmp_path):  # noqa: F811
     return source
 
 
-def process(db, settings, contracts, source, *, captions=None, audio=None, final_attempt=True):
+def process(
+    db, settings, contracts, source, *, captions=None, audio=None, final_attempt=True, gateway=None, sampler=None
+):
     return pipeline.process_video(
         db.client,
         db,
         db["ai_sources"].find_one({"_id": source["_id"]}),
         captions=captions or FakeCaptions(),
-        audio=audio or FakeAudio(),
+        download=audio or FakeDownload(),
         transcriber=FakeWhisper,
         settings=settings,
         contracts=contracts,
         final_attempt=final_attempt,
+        gateway=gateway,
+        sampler=sampler or FakeSampler(),
     )
 
 
@@ -149,7 +177,7 @@ def media(db, source):
 
 def test_captions_come_first_and_become_segments_on_the_original_timeline(db, settings, contracts, video):
     track = CaptionTrack("en", generated=True, cues=SPEECH)
-    audio = FakeAudio()
+    audio = FakeDownload()
     result = process(db, settings, contracts, video, captions=FakeCaptions(track), audio=audio)
     assert result["outcome"] == "transcribed" and audio.calls == 0, "no audio when a caption track exists"
     info = media(db, video)
@@ -170,9 +198,10 @@ def test_captions_come_first_and_become_segments_on_the_original_timeline(db, se
 
 
 def test_without_captions_the_audio_is_transcribed_locally_and_then_deleted(db, settings, contracts, video):
-    audio = FakeAudio()
+    audio = FakeDownload()
     result = process(db, settings, contracts, video, audio=audio)
     assert result["outcome"] == "transcribed" and audio.calls == 1
+    assert audio.with_video == [False], "no model to read frames, so only the audio is fetched"
     assert media(db, video)["transcript_route"] == "public_audio_transcription"
     seg = db["ai_media_segments"].find_one({"source.id": video["id"]})
     assert seg["transcription"] == {
@@ -187,7 +216,7 @@ def test_without_captions_the_audio_is_transcribed_locally_and_then_deleted(db, 
 
 def test_a_refusal_is_recorded_not_worked_around(db, settings, contracts, video):
     captions = FakeCaptions(error=MediaRefused("network_refused", "the connection to YouTube was refused"))
-    audio = FakeAudio()
+    audio = FakeDownload()
     result = process(db, settings, contracts, video, captions=captions, audio=audio)
     assert result == {"outcome": "metadata_only", "reason": "network_refused"} and audio.calls == 0
     assert media(db, video)["access_status"] == "metadata_only" and media(db, video)["transcript_route"] is None
@@ -199,7 +228,7 @@ def test_a_refusal_is_recorded_not_worked_around(db, settings, contracts, video)
 
 def test_a_long_video_without_captions_is_not_downloaded(db, settings, contracts, video):
     settings.media_max_duration_seconds = 60  # the fake video lasts 9 minutes
-    audio = FakeAudio()
+    audio = FakeDownload()
     result = process(db, settings, contracts, video, audio=audio)
     assert result["reason"] == "too_long" and audio.calls == 0
 
@@ -415,7 +444,7 @@ def test_the_collection_checks_accept_transcripts_and_catch_broken_ones(db, sett
     process(db, settings, contracts, video, captions=FakeCaptions(CaptionTrack("en", False, SPEECH)))
     rows = {r["check"]: r for r in verify_collection(db, settings)}
     assert all(r["ok"] for r in rows.values()), [r for r in rows.values() if not r["ok"]]
-    assert rows["speech evidence is governed by the spoken-content policy"]["looked_at"] > 0
+    assert rows["speech and frame evidence is governed by the spoken-content policy"]["looked_at"] > 0
     segment = db["ai_media_segments"].find_one({"source.id": video["id"]})
     db["ai_payloads"].delete_one({"_id": segment["original_text_ref"]})
     db["ai_evidence"].update_one(
@@ -425,9 +454,9 @@ def test_the_collection_checks_accept_transcripts_and_catch_broken_ones(db, sett
     failed = {r["check"] for r in verify_collection(db, settings) if not r["ok"]}
     assert failed == {
         "no evidence comes from a metadata-only record",
-        "transcript segments exist only for transcribed videos",
-        "every transcript window keeps its words unless its video was erased",
-        "speech evidence is governed by the spoken-content policy",
+        "media segments exist only for transcribed or analysed videos",
+        "every media segment keeps its words unless its video was erased",
+        "speech and frame evidence is governed by the spoken-content policy",
     }
 
 
@@ -437,3 +466,206 @@ def test_media_state_changes_follow_the_contract(db, settings, contracts, video)
     with pytest.raises(ValueError):
         pipeline.set_media_status(db, contracts, transcribed, "metadata_only", "not allowed by media_access")
     assert media(db, video)["access_status"] == "transcribed"
+
+
+# --- UC-46b: frames and on-screen text (Step 06.5; Z3, D49) --------------------------------------------------------
+
+
+def observation(frame_id, modality, text, imagery="real_footage", uncertainty=None, start_ms=999_999):
+    return {
+        "segment_id": frame_id,
+        "modality": modality,
+        "observation": text,
+        "speaker": "unknown",
+        "start_ms": start_ms,
+        "end_ms": start_ms + 1,
+        "uncertainty": uncertainty,
+        "imagery": imagery,
+    }
+
+
+A03_OUTPUT = {
+    "outcome": "completed",
+    "observations": [
+        observation("fr0", "on_screen_text", "Possession December 2027", imagery="render_or_graphic"),
+        observation("fr0", "frame", "A computer render of two towers beside a pool.", imagery="render_or_graphic"),
+        observation("fr1", "frame", "Two towers with scaffolding and a tower crane; the top floors have no facade."),
+        observation("fr2", "on_screen_text", "TAVIRA VISTA Sector 88", imagery="unclear", uncertainty="small text"),
+        observation("fr2", "speech", "The presenter says it is ready."),  # frames carry no speech
+        observation("fr9", "frame", "A frame that was never sent."),
+    ],
+}
+
+
+def a03(settings, contracts, *outcomes):
+    from app.agents.gateway import ModelGateway
+
+    from .test_gateway import FakeClient, response
+
+    client = FakeClient(*(outcomes or (response(A03_OUTPUT),)))
+    return client, ModelGateway(settings, contracts, client=client, sleep=lambda _s: None)
+
+
+def frame_segments(db, video):
+    return list(db["ai_media_segments"].find({"source.id": video["id"], "segment_key": {"$regex": "^f:"}}))
+
+
+def test_one_download_serves_speech_and_frames_and_nothing_is_kept(db, settings, contracts, video, world):  # noqa: F811
+    client, gateway = a03(settings, contracts)
+    audio, sampler = FakeDownload(), FakeSampler()
+    result = process(db, settings, contracts, video, audio=audio, gateway=gateway, sampler=sampler)
+    assert result["outcome"] == "analysed" and result["frames_skipped"] is None
+    assert audio.calls == 1 and audio.with_video == [True], "one 480p download for both"
+    assert media(db, video)["access_status"] == "analysed"
+    assert media(db, video)["transcript_route"] == "public_audio_transcription"
+    assert not any(Path(w).exists() for w in audio.workdirs) and not any(p.exists() for p in sampler.paths)
+    content = client.calls[0]["messages"][0]["content"]
+    assert [b["type"] for b in content].count("image") == 3 and "untrusted" in content[0]["text"]
+    segments = {s["segment_key"]: s for s in frame_segments(db, video)}
+    assert sorted(segments) == ["f:0:scene", "f:0:text", "f:10000:scene", "f:20000:text"], "unknown frames dropped"
+    for seg in segments.values():
+        assert contracts.errors(to_view(seg), "sources.schema.json#/$defs/MediaSegment") == []
+        assert seg["transcription"] is None and seg["time"]["method"] == "frame_sample"
+    assert segments["f:20000:text"]["time"]["start_ms"] == 20_000, "our frame time, not the model's"
+    text = db["ai_payloads"].find_one({"_id": segments["f:0:text"]["original_text_ref"]})["text"]
+    assert text == "Possession December 2027", "on-screen text is kept verbatim"
+    assert segments["f:0:text"]["modality"] == "on_screen_text" and segments["f:0:scene"]["modality"] == "frame"
+    assert set(segments["f:0:text"]["quality_flags"]) == {"possible_render", "numbers_uncertain"}
+    assert "possible_render" in segments["f:20000:text"]["quality_flags"], "unclear imagery may be a render"
+    assert "low_confidence" in segments["f:20000:text"]["quality_flags"]
+    assert "possible_render" not in segments["f:10000:scene"]["quality_flags"]
+    run = db["ai_agent_runs"].find_one({"agent": "A03_video_understanding"})
+    assert run["outcome"] == "completed" and run["input_refs"] == [{"id": video["id"], "revision": video["revision"]}]
+    assert run["project_id"] == world["q"]
+    changes = [e["details"]["to"] for e in db["ai_audit_events"].find({"action": "media_access.changed"})]
+    assert changes == ["access_pending", "transcribed", "analysed"]
+
+
+def test_on_screen_text_naming_a_project_is_matched_on_its_own_words(db, settings, contracts, video, world):  # noqa: F811
+    _, gateway = a03(settings, contracts)
+    process(db, settings, contracts, video, gateway=gateway)
+    links = {
+        (lk["segment_key"], lk["project_id"]): lk
+        for lk in db["ai_project_source_links"].find({"source.id": video["id"], "segment_key": {"$regex": "^f:"}})
+    }
+    tavira = world["fictional"]["Tavira Vista"]
+    assert links[("f:20000:text", tavira)]["match"]["signals"], "the signboard names its own project"
+    assert ("f:20000:text", world["q"]) not in links, "and inherits nothing"
+    inherited = links[("f:10000:scene", world["q"])]
+    assert inherited["status"] == "auto_accepted" and inherited["match"]["signals"] == []
+    for link in links.values():
+        if link["status"] == "rejected":
+            continue
+        evidence = db["ai_evidence"].find_one({"link_id": link["_id"]})
+        assert evidence["modality"] in ("on_screen_text", "frame") and evidence["anchor"]["method"] == "frame_sample"
+        assert evidence["policy"]["family"] == "spoken_video_content"
+        view = to_view(evidence, id_field=None) | {"id": evidence["id"]}
+        assert contracts.errors(view, "evidence.schema.json#/$defs/Evidence") == []
+    parent = db["ai_project_source_links"].find_one({"source.id": video["id"], "segment_key": "whole"})
+    body = {
+        "action": "reject",
+        "expected_version": parent["version"],
+        "reason": "wrong project",
+        "split_segments": None,
+        "remap_project_id": None,
+        "phase_rera_id": None,
+    }
+    decide_link(db.client, db, contracts, parent["_id"], body, MODERATOR)
+    assert db["ai_project_source_links"].find_one({"_id": inherited["_id"]})["status"] == "needs_review"
+
+
+def test_a_refused_frame_download_keeps_the_captions(db, settings, contracts, video):
+    client, gateway = a03(settings, contracts)
+    audio = FakeDownload(error=MediaRefused("bot_check", "YouTube asked to confirm a human"))
+    track = CaptionTrack("en", generated=False, cues=SPEECH)
+    result = process(db, settings, contracts, video, captions=FakeCaptions(track), audio=audio, gateway=gateway)
+    assert result["outcome"] == "transcribed" and result["frames_skipped"].startswith("bot_check")
+    assert (
+        media(db, video)["access_status"] == "transcribed" and media(db, video)["transcript_route"] == "public_captions"
+    )
+    assert result["segments"] == 2 and frame_segments(db, video) == [] and client.calls == []
+    event = db["ai_audit_events"].find_one({"action": "media_frames.skipped"})
+    assert event["target"]["id"] == video["id"] and "bot_check" in event["details"]["reason"]
+
+
+def test_a_video_too_large_at_480p_falls_back_to_its_audio(db, settings, contracts, video):
+    _, gateway = a03(settings, contracts)
+    audio = FakeDownload(video_error=MediaUnavailable("not_downloaded", "larger than the size cap"))
+    result = process(db, settings, contracts, video, audio=audio, gateway=gateway)
+    assert audio.with_video == [True, False] and result["outcome"] == "transcribed" and result["segments"] == 2
+    assert media(db, video)["transcript_route"] == "public_audio_transcription"
+    assert "not_downloaded" in result["frames_skipped"]
+
+
+def test_a_failed_frame_analysis_keeps_the_speech_and_is_recorded(db, settings, contracts, video):
+    import anthropic
+
+    from .test_gateway import api_error
+
+    _, gateway = a03(settings, contracts, api_error(anthropic.BadRequestError, 400))
+    track = CaptionTrack("en", generated=False, cues=SPEECH)
+    result = process(db, settings, contracts, video, captions=FakeCaptions(track), gateway=gateway)
+    assert result["outcome"] == "transcribed" and result["frames_skipped"].startswith("a03_failed")
+    assert db["ai_agent_runs"].find_one({"agent": "A03_video_understanding"})["outcome"] == "failed"
+    assert media(db, video)["access_status"] == "transcribed" and frame_segments(db, video) == []
+
+
+def test_frames_need_the_policy_the_switch_and_a_video_file(db, settings, contracts, video, monkeypatch):
+    client, gateway = a03(settings, contracts)
+
+    def again():
+        db["ai_sources"].update_one({"_id": video["_id"]}, {"$set": {"media.access_status": "metadata_only"}})
+        db["ai_media_segments"].delete_many({})
+
+    monkeypatch.setattr(pipeline, "FRAMES_FROM_POLICY_VERSION", 4)  # as if the accepted policy did not cover frames
+    audio = FakeDownload()
+    result = process(db, settings, contracts, video, audio=audio, gateway=gateway)
+    assert audio.with_video == [False] and "does not cover frames" in result["frames_skipped"] and not client.calls
+    monkeypatch.undo()
+    again()
+    settings.media_frames_enabled = False
+    audio = FakeDownload()
+    result = process(db, settings, contracts, video, audio=audio, gateway=gateway)
+    assert audio.with_video == [False] and "switched off" in result["frames_skipped"] and client.calls == []
+    again()
+    settings.media_frames_enabled = True
+    sampler = FakeSampler(error=MediaUnavailable("no_video", "ffmpeg could not read video frames"))
+    result = process(db, settings, contracts, video, gateway=gateway, sampler=sampler)
+    assert result["outcome"] == "transcribed" and result["frames_skipped"].startswith("no_video") and not client.calls
+
+
+def test_withdrawing_a_video_erases_its_frame_text(db, settings, contracts, video):
+    _, gateway = a03(settings, contracts)
+    process(db, settings, contracts, video, gateway=gateway)
+    refs = [s["original_text_ref"] for s in frame_segments(db, video)]
+    assert refs and db["ai_payloads"].count_documents({"_id": {"$in": refs}}) == len(refs)
+    withdraw(
+        db.client, db, contracts, video["id"], {"scope": "source_revision", "revision": 1, "reason": "asked"}, MODERATOR
+    )
+    run_all_jobs(db)
+    assert db["ai_payloads"].count_documents({"_id": {"$in": refs}}) == 0
+    assert (
+        db["ai_evidence"].count_documents(
+            {"modality": {"$in": ["on_screen_text", "frame"]}, "excerpt_text": {"$ne": None}}
+        )
+        == 0
+    )
+
+
+def test_the_collection_checks_cover_frames(db, settings, contracts, video):
+    from app.sources.verify import verify_collection
+
+    _, gateway = a03(settings, contracts)
+    process(db, settings, contracts, video, gateway=gateway)
+    rows = {r["check"]: r for r in verify_collection(db, settings)}
+    assert all(r["ok"] for r in rows.values()), [r for r in rows.values() if not r["ok"]]
+    assert rows["frame observations are never speech and exist only for analysed videos"]["looked_at"] == 4
+    frame = frame_segments(db, video)[0]
+    whisper = {"engine": "faster-whisper", "model_size": "small", "language_hint": None, "caption_kind": None}
+    db["ai_media_segments"].update_one({"_id": frame["_id"]}, {"$set": {"transcription": whisper}})
+    failed = {r["check"] for r in verify_collection(db, settings) if not r["ok"]}
+    assert failed == {"frame observations are never speech and exist only for analysed videos"}
+    db["ai_media_segments"].update_one({"_id": frame["_id"]}, {"$set": {"transcription": None}})
+    db["ai_sources"].update_one({"_id": video["_id"]}, {"$set": {"media.access_status": "transcribed"}})
+    failed = {r["check"] for r in verify_collection(db, settings) if not r["ok"]}
+    assert failed == {"frame observations are never speech and exist only for analysed videos"}

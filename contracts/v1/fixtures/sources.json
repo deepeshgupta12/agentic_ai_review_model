@@ -730,6 +730,71 @@
           "code_switching"
         ]
       }
+    },
+    {
+      "name": "media_segment_on_screen_text",
+      "schema": "sources.schema.json#/$defs/MediaSegment",
+      "expect": "valid",
+      "tags": [],
+      "why": "Text read from one sampled frame of a render: kept verbatim, flagged so it never proves construction (D49)",
+      "instance": {
+        "id": "seg_01JB0000000000000000000004",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "segment_key": "f:120000:text",
+        "time": {
+          "kind": "time",
+          "start_ms": 120000,
+          "end_ms": 120001,
+          "precision": "exact",
+          "method": "frame_sample"
+        },
+        "language": "en",
+        "modality": "on_screen_text",
+        "transcription": null,
+        "original_text_ref": "seg/4/original",
+        "translation": null,
+        "quality_flags": [
+          "possible_render",
+          "numbers_uncertain"
+        ]
+      }
+    },
+    {
+      "name": "media_segment_frame_claims_transcription",
+      "schema": "sources.schema.json#/$defs/MediaSegment",
+      "expect": "invalid",
+      "tags": [],
+      "why": "A frame description is not transcribed speech",
+      "error_contains": "is not of type 'null'",
+      "instance": {
+        "id": "seg_01JB0000000000000000000005",
+        "source": {
+          "id": "src_01JB0000000000000000000002",
+          "revision": 1
+        },
+        "segment_key": "f:120000:scene",
+        "time": {
+          "kind": "time",
+          "start_ms": 120000,
+          "end_ms": 120001,
+          "precision": "exact",
+          "method": "frame_sample"
+        },
+        "language": "en",
+        "modality": "frame",
+        "transcription": {
+          "engine": "faster-whisper",
+          "model_size": "small",
+          "language_hint": null,
+          "caption_kind": null
+        },
+        "original_text_ref": "seg/5/original",
+        "translation": null,
+        "quality_flags": []
+      }
     }
   ]
 }

@@ -18,12 +18,20 @@
 - **Media worker** in its own image and container (D48): ffmpeg and the media libraries, 2 GB, the first to be killed under memory pressure, with MongoDB protected.
 - **APIs and commands:**
   - `listMedia`;
-  - `make transcribe`, `make eval-media` and `make eval-language`;
+  - `make transcribe`, `make eval-media`, `make eval-language` and `make eval-frames`;
   - transcript rules in `verify-collection`.
 - **Measurement:** a synthetic speech set (`evals/media/v1`, eight text-to-speech clips with known text).
-- **Contracts:** sources 1.3.0 and operations 1.2.0. **Policies:** spoken_video_content v2 and youtube v3.
-- **Frames and on-screen text** are not extracted in Release 1.0 (D49, proposed).
-- **Blocked:** live acquisition, while youtube.com is unreachable from the demo network (I17).
+- **Frames and on-screen text** (D49, the product owner's Z3 decision). The video is downloaded once at 480p or lower, and that one download serves both the speech and the frames:
+  - up to 12 frames are sampled at scene changes and at least every 10 seconds;
+  - A03 (one Claude vision call per video) copies on-screen text verbatim and describes visible facts;
+  - each observation becomes an `on_screen_text` or `frame` segment and evidence at its frame's time;
+  - renders, and anything not clearly real footage, are flagged `possible_render`;
+  - images are never stored;
+  - a refused video download keeps the captions, and the skip is audited.
+
+  Synthetic frame check: 6 of 6 phrases read, and 3 of 3 graphics recognised as graphics (`make eval-frames`).
+- **Contracts:** sources 1.4.0, common 1.1.0, agents 1.1.0 and operations 1.2.0. **Policies:** spoken_video_content v3 and youtube v3.
+- **Blocked:** live acquisition, because an office firewall blocks youtube.com (I17). The product owner will run the end-to-end video test later from another network.
 
 ## Text and social collection — 30 September 2026 (Step 05)
 

@@ -257,7 +257,18 @@
             "speaker": "creator",
             "start_ms": 12000,
             "end_ms": 19000,
-            "uncertainty": "Approximate timing"
+            "uncertainty": "Approximate timing",
+            "imagery": null
+          },
+          {
+            "segment_id": "seg_01JB0000000000000000000002",
+            "modality": "on_screen_text",
+            "observation": "Possession December 2027",
+            "speaker": "unknown",
+            "start_ms": 30000,
+            "end_ms": 30001,
+            "uncertainty": null,
+            "imagery": "render_or_graphic"
           }
         ]
       }

@@ -1091,6 +1091,7 @@ export interface components {
             id: components["schemas"]["SourceLinkId"];
             project_id: components["schemas"]["ProjectId"];
             source: components["schemas"]["SourceRevisionRef"];
+            /** @description whole; c: code-point range; t: transcript window in ms; f: one sampled frame at ms, its on-screen text or its scene (D49) */
             segment_key: string;
             segment_anchor: components["schemas"]["Anchor"] | null;
             status: components["schemas"]["SourceLinkStatus"];
@@ -1673,8 +1674,11 @@ export interface components {
             start_ms: number;
             end_ms: number;
             precision: components["schemas"]["TimestampPrecision"];
-            /** @enum {unknown} */
-            method: "caption_timing" | "transcript_segment" | "platform_chapter" | "manual";
+            /**
+             * @description frame_sample: one sampled video frame (Step 06.5, D49)
+             * @enum {unknown}
+             */
+            method: "caption_timing" | "transcript_segment" | "platform_chapter" | "manual" | "frame_sample";
         };
         Anchor: components["schemas"]["TextAnchor"] | components["schemas"]["TimeAnchor"];
         DecisionId: string;
@@ -1757,7 +1761,7 @@ export interface components {
                 /** @enum {unknown} */
                 method: "language_agent" | "moderator";
             } | null;
-            quality_flags: ("low_audio_quality" | "code_switching" | "numbers_uncertain" | "overlapping_speech" | "music" | "auto_generated_captions" | "low_confidence")[];
+            quality_flags: ("low_audio_quality" | "code_switching" | "numbers_uncertain" | "overlapping_speech" | "music" | "auto_generated_captions" | "low_confidence" | "possible_render")[];
         } & unknown;
         MediaItemView: {
             source: components["schemas"]["SourceRevision"];

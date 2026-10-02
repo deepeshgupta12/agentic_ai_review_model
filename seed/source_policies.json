@@ -1,7 +1,7 @@
 {
  "version": 1,
  "updated": "2026-10-01",
- "note": "Initial source-policy set (Step 01.4, I06), accepted by the product owner on 2026-09-25; web_public_pages and youtube moved to version 2 on 2026-09-28 (D28). Conservative defaults: a family that needs an agreement we do not have is blocked. These are engineering defaults, not legal advice; each new host or platform is still checked against its current terms. A change is a new policy_version. Loaded into ai_source_policies by a seed script at Step 03; code never hard-codes them. 29 Sep 2026: competitor_portals added and web_public_pages moved to version 3 (D34). From Step 05 these are loaded into ai_source_policies by `make seed`. 1 Oct 2026: web_public_pages v5, competitor_portals v2 and official_records v2 record robots.txt without enforcing it (D46). Step 06: spoken_video_content v2 and youtube v3 (D47).",
+ "note": "Initial source-policy set (Step 01.4, I06), accepted by the product owner on 2026-09-25; web_public_pages and youtube moved to version 2 on 2026-09-28 (D28). Conservative defaults: a family that needs an agreement we do not have is blocked. These are engineering defaults, not legal advice; each new host or platform is still checked against its current terms. A change is a new policy_version. Loaded into ai_source_policies by a seed script at Step 03; code never hard-codes them. 29 Sep 2026: competitor_portals added and web_public_pages moved to version 3 (D34). From Step 05 these are loaded into ai_source_policies by `make seed`. 1 Oct 2026: web_public_pages v5, competitor_portals v2 and official_records v2 record robots.txt without enforcing it (D46). Step 06: spoken_video_content v2 and youtube v3 (D47). spoken_video_content v3 adds frames (D49).",
  "policies": [
   {
    "family": "web_public_pages",
@@ -170,7 +170,7 @@
   },
   {
    "family": "spoken_video_content",
-   "policy_version": 2,
+   "policy_version": 3,
    "collection_allowed": true,
    "ai_processing_allowed": true,
    "quotation_allowed": true,
@@ -181,18 +181,20 @@
    "excluded_hosts": [],
    "conditions": [
     "Public videos only, and only videos linked to a catalogue project",
-    "Captions first (youtube-transcript-api); audio through yt-dlp only when no usable caption track exists (D33)",
+    "Captions first (youtube-transcript-api); otherwise the video (480p or lower) through yt-dlp, for speech-to-text and sampled frames (D33)",
     "No sign-in, cookies, proxies or bot-check workarounds; a refusal or a bot check stops the attempt and is recorded",
-    "Audio is deleted after transcription; it is never stored, shared or republished",
+    "Video and audio are deleted after each job; frames are never stored, shared or republished",
+    "Frames are read for on-screen text and visible facts only; people are not identified",
+    "Renders, graphics and undated footage never prove construction status; frame observations carry the video's date",
     "Transcripts keep the original timing and language; translations are stored separately",
     "Speech is attributed to the video with the speaker unknown unless the platform states it; comments stay separate"
    ],
    "robots_txt": "obey",
-   "basis": "D33 (product owner, 28 Sep 2026) accepted the platforms' terms-of-service risk for public videos and captions (yt-dlp, youtube-transcript-api) and local transcription with faster-whisper, settling I05. Version 2 applies it at Step 06 (D47). Retention follows the youtube family (30 days). Quotation follows D28: spoken reviews in the speaker's words with a credit line.",
+   "basis": "D33 (product owner, 28 Sep 2026) accepted the platforms' terms-of-service risk for public videos and captions (yt-dlp, youtube-transcript-api) and local transcription with faster-whisper, settling I05. Version 2 applies it at Step 06 (D47). Retention follows the youtube family (30 days). Quotation follows D28: spoken reviews in the speaker's words with a credit line. Version 3 (product owner, 1 Oct 2026, Z3): frames and on-screen text are analysed too (D49).",
    "status": "accepted",
    "review_owner": "Product owner",
    "accepted_on": "2026-10-01",
-   "accepted_by": "Product owner (D33, 28 Sep 2026; applied at Step 06)"
+   "accepted_by": "Product owner (Z3 decision, 1 Oct 2026)"
   },
   {
    "family": "official_records",

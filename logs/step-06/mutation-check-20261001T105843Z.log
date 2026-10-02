@@ -1,0 +1,109 @@
+Step 06 mutation check: each media rule is disabled on a scratch copy; its own test must fail.
+date (UTC): 2026-10-01T10:58:43Z
+commit:     5028a5a
+
+== baseline: the unchanged copy imports its own code and the Step 06 test file passes
+imports the scratch copy
+test_media.py                22 passed in 25.05s
+
+== rule disabled: only videos with an accepted match are processed
+   in backend/app/media/pipeline.py
+FAILED tests/test_media.py::test_only_videos_with_an_accepted_match_are_queued_once
+1 failed, 21 passed in 24.12s
+--> OK (caught by test_only_videos_with_an_accepted_match_are_queued_once)
+
+== rule disabled: captions come before audio
+   in backend/app/media/pipeline.py
+FAILED tests/test_media.py::test_captions_come_first_and_become_segments_on_the_original_timeline
+FAILED tests/test_media.py::test_a04_translations_are_kept_only_when_numbers_and_negations_survive
+2 failed, 20 passed in 24.53s
+--> OK (caught by test_captions_come_first_and_become_segments_on_the_original_timeline)
+
+== rule disabled: a refusal stops the attempt and is recorded
+   in backend/app/media/pipeline.py
+FAILED tests/test_media.py::test_a_refusal_is_recorded_not_worked_around
+1 failed, 21 passed in 24.67s
+--> OK (caught by test_a_refusal_is_recorded_not_worked_around)
+
+== rule disabled: a long video without captions is not downloaded
+   in backend/app/media/pipeline.py
+FAILED tests/test_media.py::test_a_long_video_without_captions_is_not_downloaded
+1 failed, 21 passed in 23.74s
+--> OK (caught by test_a_long_video_without_captions_is_not_downloaded)
+
+== rule disabled: the audio is deleted after transcription
+   in backend/app/media/pipeline.py
+FAILED tests/test_media.py::test_without_captions_the_audio_is_transcribed_locally_and_then_deleted
+1 failed, 21 passed in 24.80s
+--> OK (caught by test_without_captions_the_audio_is_transcribed_locally_and_then_deleted)
+
+== rule disabled: media states follow the contract
+   in backend/app/media/pipeline.py
+FAILED tests/test_media.py::test_media_state_changes_follow_the_contract
+1 failed, 21 passed in 23.11s
+--> OK (caught by test_media_state_changes_follow_the_contract)
+
+== rule disabled: windows never overlap
+   in backend/app/media/windows.py
+FAILED tests/test_media.py::test_a_long_pause_closes_a_window_and_overlapping_captions_are_clipped
+1 failed, 21 passed in 24.66s
+--> OK (caught by test_a_long_pause_closes_a_window_and_overlapping_captions_are_clipped)
+
+== rule disabled: a window naming a project does not also inherit
+   in backend/app/identity/service.py
+FAILED tests/test_media.py::test_windows_inherit_the_videos_match_and_a_named_project_gets_its_own
+1 failed, 21 passed in 27.13s
+--> OK (caught by test_windows_inherit_the_videos_match_and_a_named_project_gets_its_own)
+
+== rule disabled: speech evidence is governed by the spoken-content policy
+   in backend/app/identity/evidence.py
+FAILED tests/test_media.py::test_windows_inherit_the_videos_match_and_a_named_project_gets_its_own
+FAILED tests/test_media.py::test_the_collection_checks_accept_transcripts_and_catch_broken_ones
+2 failed, 20 passed in 24.97s
+--> OK (caught by test_windows_inherit_the_videos_match_and_a_named_project_gets_its_own)
+
+== rule disabled: inherited windows return to review with the video's match
+   in backend/app/identity/links.py
+FAILED tests/test_media.py::test_undoing_the_videos_match_sends_inherited_windows_back_to_review
+1 failed, 21 passed in 26.52s
+--> OK (caught by test_undoing_the_videos_match_sends_inherited_windows_back_to_review)
+
+== rule disabled: withdrawing a video erases its transcript
+   in backend/app/sources/lifecycle.py
+FAILED tests/test_media.py::test_withdrawing_a_video_erases_its_transcript
+1 failed, 21 passed in 23.40s
+--> OK (caught by test_withdrawing_a_video_erases_its_transcript)
+
+== rule disabled: machine-made numbers are flagged
+   in backend/app/media/language.py
+FAILED tests/test_media.py::test_flags_mark_code_switching_numbers_music_and_low_confidence
+1 failed, 21 passed in 25.72s
+--> OK (caught by test_flags_mark_code_switching_numbers_music_and_low_confidence)
+
+== rule disabled: a translation must keep every number
+   in backend/app/media/translate.py
+FAILED tests/test_media.py::test_a04_translations_are_kept_only_when_numbers_and_negations_survive
+1 failed, 21 passed in 23.75s
+--> OK (caught by test_a04_translations_are_kept_only_when_numbers_and_negations_survive)
+
+== rule disabled: Hindi negation markers need Devanagari word edges
+   in backend/app/media/translate.py
+FAILED tests/test_media.py::test_a04_translations_are_kept_only_when_numbers_and_negations_survive
+FAILED tests/test_media.py::test_negation_markers_respect_devanagari_word_edges
+2 failed, 20 passed in 23.34s
+--> OK (caught by test_negation_markers_respect_devanagari_word_edges)
+
+== rule disabled: the general worker never takes media jobs
+   in backend/app/workers/worker.py
+FAILED tests/test_media.py::test_the_media_worker_takes_only_media_jobs
+1 failed, 21 passed in 27.11s
+--> OK (caught by test_the_media_worker_takes_only_media_jobs)
+
+== rule disabled: the verifier rejects speech evidence under another policy
+   in backend/app/sources/verify.py
+FAILED tests/test_media.py::test_the_collection_checks_accept_transcripts_and_catch_broken_ones
+1 failed, 21 passed in 35.15s
+--> OK (caught by test_the_collection_checks_accept_transcripts_and_catch_broken_ones)
+
+ALL MUTANTS CAUGHT
+log: logs/step-06/mutation-check-20261001T105843Z.log

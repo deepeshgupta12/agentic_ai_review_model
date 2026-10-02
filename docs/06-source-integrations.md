@@ -64,11 +64,18 @@ Commit a page's records before advancing its cursor/watermark. Replaying the pag
   3. otherwise the video stays metadata-only with the reason recorded.
 
   A refusal (bot check, unavailable video, blocked network) stops the attempt. Audio is deleted after each job.
+- **Frames** (D49, `spoken_video_content` v3). For a video within the length cap, one download at 480p or lower serves both the speech (when there are no captions) and the frames:
+  - ffmpeg samples up to 12 frames, at scene changes and at least every 10 seconds;
+  - A03 (one Claude vision call per video) copies on-screen text verbatim and describes visible facts, without identifying people;
+  - each observation becomes its own segment at its frame's time (`f:<ms>:text` or `f:<ms>:scene`) and `on_screen_text` or `frame` evidence;
+  - anything not clearly real footage is flagged `possible_render` and never proves construction status;
+  - frame images are never stored;
+  - with captions, a refused video download costs only the frames, and the skip is audited.
 - **Windows** of about 30 seconds on the original timeline are the stored segments, the matching unit and the speech evidence span. A window that names no project inherits the video's accepted match; if that match is undone, it returns to review.
 - **Language.** Machine-made numbers are flagged `numbers_uncertain`. A04 translations are kept only when numbers and negations survive (`backend/app/media/translate.py`).
 - **Media worker** (D48). It runs in its own container: 2 GB, `MEDIA_WORKER_CPUS` CPUs (default 2), in-memory scratch disk, and the kernel kills it first under memory pressure.
-- **Checks.** `make eval-media` runs the synthetic speech set; `make eval-language` checks A04 translations.
-- **Status.** Live acquisition is blocked while youtube.com is unreachable from the demo network (I17).
+- **Checks.** `make eval-media` runs the synthetic speech set; `make eval-language` checks A04 translations; `make eval-frames` checks A03 on synthetic frames.
+- **Status.** Live acquisition is blocked while youtube.com is unreachable from the demo network: an office firewall (I17). The end-to-end video run will be done later from another network.
 
 ## Media rules
 

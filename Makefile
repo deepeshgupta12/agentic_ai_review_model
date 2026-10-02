@@ -118,6 +118,9 @@ eval-media: ## Synthetic speech check with the configured Whisper model, saved (
 eval-language: ## A04 translation check on the synthetic speech cases, saved (one Claude call)
 	$(COMPOSE) exec -T api python -m app.cli eval-language --save
 
+eval-frames: ## A03 frame check on the synthetic frames, saved (one Claude vision call, media worker)
+	$(COMPOSE) exec -T media-worker python -m app.cli eval-frames --save
+
 check-step04: ## Step 04 checks with a saved log
 	bash scripts/run_step04_checks.sh
 

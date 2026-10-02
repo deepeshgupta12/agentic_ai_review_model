@@ -134,7 +134,7 @@ print("projects:", [p["outcome"] for p in projects])
 print("policies:", {p["family"]: f"v{p['policy_version']} {p['outcome']}" for p in policies})
 versions = {p["family"]: p["policy_version"] for p in policies}
 ok = all(p["outcome"] == "unchanged" for p in projects + policies)
-sys.exit(0 if ok and versions["spoken_video_content"] == 2 and versions["youtube"] == 3 else 1)
+sys.exit(0 if ok and versions["spoken_video_content"] == 3 and versions["youtube"] == 3 else 1)
 EOF
 }
 
@@ -164,7 +164,8 @@ print(f"  spoken_video_content v{spoken['policy_version']}: collect={spoken['col
 for c in spoken["conditions"]:
     print("   -", c)
 print(f"  youtube v{youtube['policy_version']}: {youtube['conditions'][1]}")
-ok = spoken["policy_version"] == 2 and spoken["collection_allowed"] and "D33" in spoken["basis"] and youtube["policy_version"] == 3
+frames = any("frames" in c for c in spoken["conditions"]) and "Z3" in spoken["basis"]
+ok = spoken["policy_version"] == 3 and frames and spoken["collection_allowed"] and "D33" in spoken["basis"] and youtube["policy_version"] == 3
 sys.exit(0 if ok else 1)
 EOF
 }
@@ -217,6 +218,20 @@ sys.exit(0 if r["outcome"] == "completed" and kept / total >= 0.8 and facts / al
 EOF
 }
 
+frame_check() {
+  docker compose exec -T media-worker python -m app.cli eval-frames --save > "$T/eval-frames.json" || return 1
+  "$PY" - "$T/eval-frames.json" <<'EOF'
+import json, sys
+r = json.load(open(sys.argv[1]))
+print(f"  model {r['model']}; outcome {r['outcome']}; synthetic: {r['dataset']['synthetic']}; phrases read {r['phrases_read']}; renders recognised {r['renders_recognised']}; saved as {r['saved_as']}")
+for row in r["rows"]:
+    print(f"  {row['id']} read {row['read']} imagery {row['imagery']} | {row['on_screen_text'][:70]!r}")
+read, total = (int(x) for x in r["phrases_read"].split("/"))
+renders, frames = (int(x) for x in r["renders_recognised"].split("/"))
+sys.exit(0 if r["outcome"] == "completed" and r["saved_as"] and read == total and renders == frames else 1)
+EOF
+}
+
 live_transcription_attempt() {
   docker compose exec -T api python -m app.cli transcribe-videos --limit 5 --wait 900 > "$T/transcribe.json" || return 1
   "$PY" - "$T/transcribe.json" <<'EOF'
@@ -225,7 +240,8 @@ r = json.load(open(sys.argv[1]))
 print("  queued:", r["queued"])
 print("  videos by status:", r["videos_by_status"])
 print("  refusal or error reasons so far:", r["refusal_or_error_reasons"])
-print("  transcript windows:", r["segments"], "| speech evidence:", r["speech_evidence"])
+print("  transcript windows:", r["segments"], "| speech evidence:", r["speech_evidence"], "| frame evidence:", r["frame_evidence"])
+print("  frames skipped:", r["frames_skipped"])
 pending = [k for k in r["videos_by_status"] if k.startswith("access_pending")]
 sys.exit(1 if pending else 0)
 EOF
@@ -308,7 +324,7 @@ echo "node:       $(node --version 2>/dev/null) | pnpm $(pnpm --version 2>/dev/n
 
 expect "Regression: Step 01 validator" 0 python3 scripts/validate_inputs.py
 expect "Regression: Step 01-02 use-case suites" 0 "$PY" -m unittest discover -s scripts/tests -q
-expect "Regression: contract checker (sources 1.3.0, operations 1.2.0, D47)" 0 "$PY" scripts/check_contracts.py
+expect "Regression: contract checker (sources 1.4.0, common 1.1.0, agents 1.1.0, operations 1.2.0; D47, D49)" 0 "$PY" scripts/check_contracts.py
 
 expect "Backend: ruff lint and format" 0 bash -c "cd backend && $UV run ruff check . && $UV run ruff format --check ."
 expect "Backend: mypy" 0 bash -c "cd backend && $UV run mypy"
@@ -319,14 +335,15 @@ expect "Stack builds (including the media worker image) and every service is hea
 expect "Long-running services up, including media-worker" 0 services_running
 expect "D48: worker roles, the media worker's 2 GB cap and kill priority; MongoDB protected" 0 worker_roles
 expect "Repeating database setup changes nothing (ai_media_segments present)" 0 setup_db_is_a_no_op
-expect "Seeding twice: the second pass changes nothing; spoken_video_content v2 and youtube v3" 0 seeding_is_repeatable
+expect "Seeding twice: the second pass changes nothing; spoken_video_content v3 and youtube v3" 0 seeding_is_repeatable
 
 expect "Sign in through the web app" 0 sign_in
-expect "D47: spoken_video_content v2 applies D33; youtube v3" 0 spoken_policy
+expect "D47, D49: spoken_video_content v3 covers captions, audio and frames (Z3); youtube v3" 0 spoken_policy
 expect "UC-45: media library for M3M Antalya Hills (contract); unknown filter refused (422)" 0 media_library
 
 expect "UC-42: synthetic speech check with the real Whisper model in the media worker (saved)" 0 speech_check
 expect "UC-46: A04 translation check, numbers and negation kept (one Claude call, saved)" 0 language_check
+expect "UC-46b: A03 reads on-screen text verbatim and calls no render real footage (one vision call in the media worker, saved)" 0 frame_check
 expect "UC-43 live: bounded transcription attempt on real project videos; every video ends with a recorded state" 0 live_transcription_attempt
 expect "UC-43 live: no media job left running, queued or failed" 0 media_jobs_settled
 expect "The collection and transcript rules hold on the real stored data (verify-collection)" 0 collection_rules_hold

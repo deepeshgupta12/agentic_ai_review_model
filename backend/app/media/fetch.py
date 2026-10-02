@@ -1,4 +1,5 @@
-"""Getting a public video's speech (D33, D47): its caption track, or else its audio for local transcription.
+"""Getting a public video's speech and frames (D33, D47, D49): its caption track, its audio for local
+transcription, and the video at 480p or lower for sampled frames.
 
 No sign-in, cookies, proxies or bot-check workarounds. A refusal (a bot check, a private or removed video, a blocked
 network) is recorded and stops the attempt. The media libraries are imported only here, inside the media worker.
@@ -8,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -58,12 +60,24 @@ class Captions(Protocol):
     def fetch(self, video_id: str, languages: list[str]) -> CaptionTrack | None: ...
 
 
-class Audio(Protocol):
-    def fetch(self, video_id: str, workdir: Path, *, max_seconds: int, max_bytes: int) -> Path: ...
+class Download(Protocol):
+    def fetch(self, video_id: str, workdir: Path, *, max_seconds: int, max_bytes: int, with_video: bool) -> Path: ...
+
+
+@dataclass
+class Frame:
+    path: Path
+    ms: int  # position on the original timeline
 
 
 class Transcriber(Protocol):
-    def transcribe(self, wav: Path, language_hint: str | None) -> Transcript: ...
+    def transcribe(self, media: Path, language_hint: str | None) -> Transcript:
+        """`media` is the downloaded audio or video file; the transcriber converts it as it needs."""
+        ...
+
+
+class FrameSampler(Protocol):
+    def __call__(self, media: Path, workdir: Path, *, max_frames: int, width: int) -> list[Frame]: ...
 
 
 class YouTubeCaptions:
@@ -110,10 +124,11 @@ class YouTubeCaptions:
         return CaptionTrack(track.language_code, bool(track.is_generated), cues)
 
 
-class YtDlpAudio:
-    """yt-dlp best audio within the size and length caps, then ffmpeg to 16 kHz mono WAV. Nothing is kept."""
+class YtDlpMedia:
+    """yt-dlp within the size and length caps: the audio, or the video at 480p or lower when frames are wanted
+    (it carries the audio too). Returns the downloaded file; the job's working folder is deleted afterwards."""
 
-    def fetch(self, video_id: str, workdir: Path, *, max_seconds: int, max_bytes: int) -> Path:
+    def fetch(self, video_id: str, workdir: Path, *, max_seconds: int, max_bytes: int, with_video: bool) -> Path:
         import yt_dlp
 
         def within_limits(info: dict[str, Any], *, incomplete: bool = False) -> str | None:
@@ -123,7 +138,7 @@ class YtDlpAudio:
             return None
 
         options = {
-            "format": "bestaudio/best",
+            "format": "best[height<=480]/bestvideo[height<=480]+bestaudio/worst" if with_video else "bestaudio/best",
             "outtmpl": str(workdir / "source.%(ext)s"),
             "noplaylist": True,
             "quiet": True,
@@ -148,11 +163,11 @@ class YtDlpAudio:
                 raise MediaRefused("video_unavailable", "the video cannot be downloaded: unavailable") from exc
             if "ssl" in text or "connection reset" in text or "eof occurred" in text:
                 raise MediaRefused("network_refused", "the connection to YouTube was refused on this network") from exc
-            raise MediaError(f"audio download failed: {str(exc)[:200]}") from exc
-        downloaded = [p for p in workdir.iterdir() if p.name.startswith("source.")]
+            raise MediaError(f"download failed: {str(exc)[:200]}") from exc
+        downloaded = [p for p in workdir.iterdir() if p.name.startswith("source.") and not p.name.endswith(".part")]
         if not downloaded:
             raise MediaUnavailable("not_downloaded", "longer than the limit or larger than the size cap")
-        return to_wav(downloaded[0], workdir / "audio.wav", max_seconds=max_seconds)
+        return downloaded[0]
 
 
 def ffmpeg_binary(name: str) -> str:
@@ -216,6 +231,46 @@ def to_wav(source: Path, target: Path, *, max_seconds: int, timeout: int = 600) 
     return target
 
 
+PTS_TIME = re.compile(r"pts_time:\s*([0-9.]+)")
+
+
+def sample_frames(
+    media: Path, workdir: Path, *, max_frames: int, width: int, min_interval_s: int = 10, scene: float = 0.3
+) -> list[Frame]:
+    """Frames at scene changes and at least every `min_interval_s` seconds, scaled to at most `width` pixels wide,
+    capped at `max_frames` (evenly spaced when there are more). Each keeps its time on the original timeline."""
+    out = workdir / "frames"
+    out.mkdir(exist_ok=True)
+    pick = f"select='gt(scene,{scene})+isnan(prev_selected_t)+gte(t-prev_selected_t,{min_interval_s})'"
+    command = [
+        ffmpeg_binary("ffmpeg"),
+        "-nostdin",
+        "-hide_banner",
+        "-i",
+        str(media),
+        "-vf",
+        f"{pick},showinfo,scale='min({width},iw)':-2",
+        "-fps_mode",
+        "vfr",
+        "-q:v",
+        "4",
+        str(out / "frame-%04d.jpg"),
+    ]
+    try:
+        done = subprocess.run(command, check=True, capture_output=True, timeout=600)  # noqa: S603
+    except subprocess.CalledProcessError as exc:
+        raise MediaUnavailable("no_video", f"ffmpeg could not read video frames: {exc.stderr[-200:]!r}") from exc
+    except subprocess.TimeoutExpired as exc:
+        raise MediaError("frame sampling timed out") from exc
+    times = [round(float(t) * 1000) for t in PTS_TIME.findall(done.stderr.decode("utf-8", "replace"))]
+    files = sorted(out.glob("frame-*.jpg"))
+    frames = [Frame(path, ms) for path, ms in zip(files, times, strict=False)]
+    if len(frames) > max_frames:
+        step = len(frames) / max_frames
+        frames = [frames[int(i * step)] for i in range(max_frames)]
+    return frames
+
+
 def read_wav(path: Path) -> Any:
     """Samples of our own 16 kHz mono 16-bit WAV as float32. faster-whisper's decoder is bypassed: it calls PyAV
     with an argument that av 19 removed, and ffmpeg has already produced and checked this file."""
@@ -235,8 +290,9 @@ class WhisperTranscriber:
 
     _models: dict[tuple[str, str], Any] = {}  # noqa: RUF012  (process-wide cache by design)
 
-    def __init__(self, model_size: str, compute_type: str, models_dir: Path) -> None:
+    def __init__(self, model_size: str, compute_type: str, models_dir: Path, max_seconds: int) -> None:
         self.model_size, self.compute_type, self.models_dir = model_size, compute_type, models_dir
+        self.max_seconds = max_seconds
 
     def _model(self) -> Any:
         key = (self.model_size, self.compute_type)
@@ -248,7 +304,8 @@ class WhisperTranscriber:
             )
         return self._models[key]
 
-    def transcribe(self, wav: Path, language_hint: str | None) -> Transcript:
+    def transcribe(self, media: Path, language_hint: str | None) -> Transcript:
+        wav = to_wav(media, media.with_name("speech-16k.wav"), max_seconds=self.max_seconds)  # in the job folder
         hint = (language_hint or "").split("-")[0].lower() or None
         segments, info = self._model().transcribe(
             read_wav(wav),

@@ -85,6 +85,11 @@ class Settings(BaseSettings):
     media_window_max_ms: int = Field(default=45_000, ge=10_000)
     media_videos_per_start: int = Field(default=50, ge=0)
     media_work_dir: Path = Path("/tmp/media")  # noqa: S108  (a tmpfs in the media worker; emptied after each job)
+    # Frames (Step 06.5, D49): the video at 480p or lower, sampled frames read by A03; never stored.
+    media_frames_enabled: bool = True
+    media_frames_per_video: int = Field(default=12, ge=1, le=20)
+    media_frame_width: int = Field(default=768, ge=256, le=1568)
+    media_max_video_bytes: int = Field(default=150_000_000, ge=1_000_000)
     whisper_model: str = "large-v3-turbo"  # evals/media/v1: far better Hindi than small; about 1-2x real time on an M1
     whisper_compute_type: str = "int8"
     whisper_models_dir: Path = Path("/srv/models")

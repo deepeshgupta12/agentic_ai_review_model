@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Common definitions",
   "description": "Shared vocabulary for contracts v1: IDs, revisions, hashes, time, anchors, confidence and every status enum. Backend, web and agent schemas reference these; none redefines them (D22).",
-  "x-contract-version": "1.0.0",
+  "x-contract-version": "1.1.0",
   "$defs": {
     "Ulid": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$" },
     "ProjectId": { "type": "string", "pattern": "^prj_[0-9A-HJKMNP-TV-Z]{26}$" },
@@ -183,7 +183,7 @@
         "start_ms": { "type": "integer", "minimum": 0 },
         "end_ms": { "type": "integer", "minimum": 1 },
         "precision": { "$ref": "#/$defs/TimestampPrecision" },
-        "method": { "enum": ["caption_timing", "transcript_segment", "platform_chapter", "manual"] }
+        "method": { "description": "frame_sample: one sampled video frame (Step 06.5, D49)", "enum": ["caption_timing", "transcript_segment", "platform_chapter", "manual", "frame_sample"] }
       }
     },
     "Anchor": { "oneOf": [{ "$ref": "#/$defs/TextAnchor" }, { "$ref": "#/$defs/TimeAnchor" }] },

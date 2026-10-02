@@ -13,6 +13,7 @@ from app.config import Settings
 from app.db import utcnow
 from app.sources import policies
 
+MEDIA_MODALITIES = ("speech", "on_screen_text", "frame")
 FETCH_LOG_DAYS = 89  # the fetch log keeps 90 days (ai_fetch_log TTL); older pages cannot be matched to it
 
 
@@ -104,26 +105,44 @@ def verify_collection(db: Database[dict[str, Any]], settings: Settings) -> list[
     def key_of(item: dict[str, Any]) -> str:
         return f"{item['source']['id']}@{item['source']['revision']}"
 
-    # A video's own record stays metadata-only; speech evidence comes from its transcript (Step 06), not its metadata.
+    # A video's own record stays metadata-only; its evidence comes from its transcript and frames (Step 06), never
+    # from its metadata.
     broken = [
         e["_id"]
         for e in evidence
-        if key_of(e) in metadata_ids and not (e.get("modality") == "speech" and key_of(e) in transcribed)
+        if key_of(e) in metadata_ids and not (e.get("modality") in MEDIA_MODALITIES and key_of(e) in transcribed)
     ]
     rows.append(_row("no evidence comes from a metadata-only record", len(evidence), broken))
 
-    segments = list(db["ai_media_segments"].find({}, {"source": 1, "original_text_ref": 1}))
+    segments = list(
+        db["ai_media_segments"].find(
+            {}, {"source": 1, "original_text_ref": 1, "segment_key": 1, "modality": 1, "transcription": 1, "time": 1}
+        )
+    )
     broken = [s["_id"] for s in segments if key_of(s) not in transcribed]
-    rows.append(_row("transcript segments exist only for transcribed videos", len(segments), broken))
+    rows.append(_row("media segments exist only for transcribed or analysed videos", len(segments), broken))
+
+    analysed = {s["_id"] for s in videos if (s.get("media") or {}).get("access_status") == "analysed"}
+    frames = [s for s in segments if s["modality"] != "speech" or s["segment_key"].startswith("f:")]
+    broken = [
+        s["_id"]
+        for s in frames
+        if key_of(s) not in analysed
+        or s["modality"] == "speech"
+        or not s["segment_key"].startswith("f:")
+        or s["transcription"] is not None
+        or s["time"]["method"] != "frame_sample"
+    ]
+    rows.append(_row("frame observations are never speech and exist only for analysed videos", len(frames), broken))
 
     erased = {s["_id"] for s in sources if s["lifecycle"] in ("withdrawn", "deleted", "expired")}
     stored_refs = set(db["ai_payloads"].distinct("_id", {"_id": {"$in": [s["original_text_ref"] for s in segments]}}))
     broken = [s["_id"] for s in segments if key_of(s) not in erased and s["original_text_ref"] not in stored_refs]
-    rows.append(_row("every transcript window keeps its words unless its video was erased", len(segments), broken))
+    rows.append(_row("every media segment keeps its words unless its video was erased", len(segments), broken))
 
-    speech = [e for e in evidence if e.get("modality") == "speech"]
-    broken = [e["_id"] for e in speech if e["policy"]["family"] != "spoken_video_content"]
-    rows.append(_row("speech evidence is governed by the spoken-content policy", len(speech), broken))
+    spoken = [e for e in evidence if e.get("modality") in MEDIA_MODALITIES]
+    broken = [e["_id"] for e in spoken if e["policy"]["family"] != "spoken_video_content"]
+    rows.append(_row("speech and frame evidence is governed by the spoken-content policy", len(spoken), broken))
 
     broken = [
         s["_id"]

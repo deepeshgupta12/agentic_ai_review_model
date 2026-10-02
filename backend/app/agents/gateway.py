@@ -124,8 +124,15 @@ class ModelGateway:
         }
 
     def run(
-        self, role: str, schema_ref: str, system: str, user_content: str, *, max_tokens: int | None = None
+        self,
+        role: str,
+        schema_ref: str,
+        system: str,
+        user_content: str | list[dict[str, Any]],
+        *,
+        max_tokens: int | None = None,
     ) -> GatewayResult:
+        """`user_content` is text, or content blocks (text and images) for the vision agent A03 (Step 06.5)."""
         model = self.settings.model_for_role(role)
         result = GatewayResult(outcome="failed", data=None, requested_model=model)
         if not self.available:

@@ -11,8 +11,8 @@
 | 03 | [Engineering foundation and MongoDB setup](steps/03-foundation-and-mongodb.md) | complete (approved 28 Sep 2026) | `0847027`, `54d3954`, `38be1be`, `174d6ae`: `backend/`, `web/`, `docker-compose.yml`, `.env.example`, `Makefile`, `.github/workflows/ci.yml`, `prompts/`, `scripts/init_env.py`, `scripts/run_step03_checks.sh`, `scripts/run_step03_mutations.sh`, `DECISIONS.md` | [logs/step-03](logs/step-03/README.md): all 45 checks OK at `174d6ae`; product owner's own run OK at `929a4ac` (45/45 checks, 12/12 mutants caught); CI green. Live model check done 29 Sep 2026: `claude-sonnet-5` and `claude-opus-5-5` confirmed, structured outputs on both ([log](logs/step-03/live-model-check-20260929T060000Z.log)) |
 | 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | complete (approved 29 Sep 2026) | `da76682`, `ed57fdf`, `5cc63a6`: `backend/app/identity/`, `backend/app/api/routes_projects.py`, `routes_identity.py`, `idempotency.py`, `backend/app/decisions.py`, `seed/construction_status.json`, `evals/identity/v1/`, `prompts/a01_project_identity.1.0.md`, `contracts/v1/state_machines.json` and `journeys.json` (1.1.0), `scripts/run_step04_*.sh`, `scripts/set_env_secret.py`, `DECISIONS.md` | [logs/step-04](logs/step-04/README.md): 32/32 at `5cc63a6` (143 backend tests); product owner's run 32/32 and 16/16 mutants at `4606c3a`; CI green. Live A01 verified 29 Sep 2026 ([log](logs/step-04/live-a01-check-20260929T060000Z.log)). Carried forward: invalidation of findings and approvals joins at Steps 07–11 |
 | 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | complete (approved 1 Oct 2026: U–X; Y points 2–4; Y point 1 replaced by D46) | `6881ccd`, `bebbd76`, `0fa6640`, `5e0cfd6`, `aca3128`, `38716a0`: `backend/app/sources/` (policies, http, robots, quota, state, store, collection, lifecycle, recheck, verify), `backend/app/connectors/` (brave, web, youtube, registry), `backend/app/api/routes_runs.py`, `routes_sources.py`, `routes_policies.py`, `contracts/v1/` (operations 1.1.0, state machines 1.2.0, sources 1.1.0), `seed/source_policies.json`, `seed/connectors.json`, `scripts/run_step05_*.sh`, `DECISIONS.md` (D40–D44), `docs/02`, `docs/06` | [logs/step-05](logs/step-05/README.md): live runs for all five projects 30 Sep 2026; at `38716a0` (after D46) 29/29 checks (236 backend tests, `verify-collection` 13/13 on 1,010 records) and 25/25 mutants; CI green |
-| 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | blocked (built and checked; live acquisition blocked by I17; Z1–Z3 awaiting approval) | `fb5ce62` and follow-ups: `backend/app/media/` (windows, language, fetch, pipeline, translate, evaluation), `backend/app/api/routes_media.py`, `backend/Dockerfile.media`, `docker-compose.yml` (media-worker; MongoDB protected), `prompts/a04_language_context.1.0.md`, `evals/media/v1/`, contracts (sources 1.3.0, operations 1.2.0), `seed/source_policies.json` (spoken_video_content v2, youtube v3), `scripts/run_step06_*.sh`, `DECISIONS.md` (D47–D49, I17) | [logs/step-06](logs/step-06/README.md): 23/23 checks at `982028c`; 16/16 mutants; 258 backend tests; speech set 20/22; A04 5/5; live attempts `network_refused` (I17) |
-| 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | not_started | — | — |
+| 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | blocked (built and checked; live video run deferred by the product owner, office firewall I17; Z2 accepted; Z3 frames implemented as D49; Z1 awaiting approval) | `fb5ce62` and follow-ups: `backend/app/media/` (windows, language, fetch, pipeline, translate, evaluation), `backend/app/api/routes_media.py`, `backend/Dockerfile.media`, `docker-compose.yml` (media-worker; MongoDB protected), `prompts/a04_language_context.1.0.md`, `prompts/a03_video_understanding.1.0.md`, `backend/app/media/frames.py`, `evals/media/v1/` (speech and frames), contracts (sources 1.4.0, common 1.1.0, agents 1.1.0, operations 1.2.0), `seed/source_policies.json` (spoken_video_content v3, youtube v3), `scripts/run_step06_*.sh`, `DECISIONS.md` (D47–D49, I17) | [logs/step-06](logs/step-06/README.md): 23/23 checks at `982028c` and by the product owner at `5028a5a`; 16/16 mutants; frames (Z3): 271 backend tests, A03 6/6 phrases and 3/3 renders; live attempts `network_refused` (I17) |
+| 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | in_progress | `606762d`: `backend/app/evidence/` (similarity, origin clusters), `backend/tests/test_evidence.py` | 5 tests (UC-47 so far) |
 | 08 | [Agent development and master workflow](steps/08-agents-and-master-workflow.md) | not_started | — | — |
 | 09 | [Moderator console](steps/09-cms-moderation.md) | not_started | — | — |
 | 10 | [SEO/AEO content and quality controls](steps/10-seo-aeo-and-editorial-qa.md) | not_started | — | — |
@@ -25,13 +25,14 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 
 ## Current handoff
 
-- Active step: 06 (videos, shorts and multilingual processing). Built and checked; awaiting the product owner's approval of Z1–Z3 (D47–D49) and an answer on I17. Step 05 is complete: U–X and Y points 2–4 approved on 1 Oct 2026, and D46 (robots.txt recorded, not enforced) decided.
-- **Blocked (I17):** live captions and audio. From this machine's network, youtube.com is unreachable: the TLS handshake is reset by name, while DNS, googleapis.com and google.com work. Videos tried end metadata-only with `network_refused`; nothing works around it. The YouTube Data API (discovery) still works.
+- Active step: 07 (evidence storage, deduplication and retrieval), in progress: origin clusters done (`606762d`); context anchors, eligibility, retrieval, lineage and the benchmark are next. Step 06 is built and checked: Z2 accepted (D48); Z3 declined as proposed, so frames and on-screen text are now implemented (D49); Z1 (D47) awaits approval after the transcript demonstration. Step 05 is complete.
+- **Blocked (I17):** live captions, audio and frames. The office firewall blocks youtube.com (the product owner confirmed this on 1 Oct 2026). The TLS handshake is reset by name, while DNS, googleapis.com and google.com work. Videos tried end metadata-only with `network_refused`; nothing works around it. The YouTube Data API (discovery) still works. The product owner will test the end-to-end flow later from another network.
 - Proven:
   - real Whisper `large-v3-turbo` in the media worker on the synthetic speech set: 20/22 key facts;
   - real A04 on its sentences: 5/5 kept, 12/12 facts;
+  - real A03 on three synthetic frames: 6/6 phrases read verbatim, 3/3 graphics recognised;
   - the whole pipeline with fakes.
-- Next action: the product owner answers I17 (can the media worker reach youtube.com?) and approves or amends Z1–Z3. After that, `make transcribe` processes the accepted project videos and the live gate can close; then Step 07 (evidence storage, deduplication and retrieval).
+- Next action: continue Step 07 (context anchors and their integrity checks, centralised eligibility, retrieval, lineage, the retrieval benchmark). The product owner approves Z1 and runs `make transcribe` from a network where YouTube is allowed, which closes the Step 06 live gate.
 - Step 06 input from the product owner's earlier project (youtube-learning-copilot, reviewed 30 Sep 2026):
   - adapt the fallback order, video-ID parsing, ffmpeg 16 kHz mono and loading Whisper once;
   - do not reuse its cookie and proxy workarounds (D33) or its OpenAI and Ollama calls;
@@ -341,6 +342,29 @@ Fixture-only behavior still awaiting live validation: caption and audio acquisit
 Known defects / missing inputs / owner: I17 (product owner); transcription in Docker runs at about 3–11x real time
 Remaining acceptance checks: live media analysis on a permitted real sample (I17); approval of Z1–Z3
 Next executable action: product owner answers I17 and decides Z1–Z3
+```
+
+```text
+Date / tool / branch / commit: 2026-10-01..02 / Claude Code (VS Code) / step-07 worktree, then main / 606762d → (this commit)
+Step and scope completed: Step 06 amendment Z3, frames and on-screen text (Step 06.5), as the product owner directed
+  ("Z3 - Not Ok, it needs to be implemented"); D48 accepted (Z2); I17 reclassified (office firewall; test later)
+Files changed: backend/app/media/ (frames.py new: A03 runner; fetch.py: one YtDlpMedia download, sample_frames,
+  transcriber converts its own audio; pipeline.py: speech plus frames, store_frame_segments, skip audit, fallbacks;
+  language.py: frame_flags; evaluation.py: evaluate_frames); agents/gateway.py (image content blocks); identity/
+  (evidence modality per segment; inherited frame links return to review); sources/verify.py (frame rule; all media
+  modalities); config.py (MEDIA_FRAMES_*); cli.py (eval-frames; frame counts); prompts/a03_video_understanding.1.0.md;
+  contracts (common 1.1.0, agents 1.1.0, sources 1.4.0) and fixtures; web types; seed (spoken_video_content v3);
+  evals/media/v1/frames; tests/test_media.py (UC-46b, 8 tests); scripts/run_step06_*.sh; Makefile; DECISIONS
+  (D48, D49, I17); docs/04, docs/06; CHANGELOG; logs/step-06 (the owner's 23/23 and 16/16 runs recorded)
+Decisions made, with DECISIONS.md IDs: D49 rewritten as implemented (Z3); D48 accepted; I17 updated
+Checks actually run and results: backend suite 271 passed; ruff and mypy clean; contracts 13/13; web gates OK;
+  live A03 on the synthetic frames 6/6 phrases, 3/3 graphics (claude-sonnet-5, 3,053/311 tokens);
+  run_step06_checks.sh and run_step06_mutations.sh after this commit: see logs/step-06/README.md
+Live integrations verified (credential present + real query result): A03 vision on Claude (synthetic frames only)
+Fixture-only behavior still awaiting live validation: captions, audio and frames of real project videos (I17)
+Known defects / missing inputs / owner: I17 (office firewall; product owner tests from another network)
+Remaining acceptance checks: Step 06 live gate; Z1 approval; Step 07 deliverables
+Next executable action: continue Step 07
 ```
 
 ## Session entry template
