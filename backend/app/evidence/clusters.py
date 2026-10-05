@@ -13,6 +13,7 @@ change is audited. Evidence carries its source's cluster and version, so a claim
 
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from datetime import UTC, datetime
 from typing import Any
@@ -33,7 +34,10 @@ from app.evidence.similarity import (
 )
 from app.identity.intake import source_text
 from app.ids import new_id
+from app.jobs import queue
+from app.observability import log_event
 
+logger = logging.getLogger(__name__)
 COLLECTION = "ai_origin_clusters"
 MIN_WORDS = 12
 NEAR_JACCARD = 0.8
@@ -230,3 +234,22 @@ def independent_origins(db: Database[dict[str, Any]], evidence_refs: list[dict[s
         cluster = evidence.get("origin_cluster")
         origins.add(cluster["id"] if cluster else f"source:{key_of(evidence['source'])}")
     return sorted(origins)
+
+
+KIND = "cluster_origins"
+
+
+def start_clustering(db: Database[dict[str, Any]]) -> bool:
+    """Scheduler: queue at most one clustering job per hour, and only when evidence is waiting for a cluster."""
+    if not db["ai_evidence"].count_documents({"origin_cluster": None, "excerpt_text": {"$type": "string"}}, limit=1):
+        return False
+    _, created = queue.enqueue(db, KIND, f"{KIND}:{utcnow():%Y%m%d%H}", max_attempts=3)
+    return created
+
+
+def handle_cluster_origins(db: Database[dict[str, Any]], job: dict[str, Any], check: Any) -> str | None:
+    """Worker handler: grouping is pure computation (about 15 s for 363 sources), so it runs as a job."""
+    check()
+    report = cluster_origins(db.client, db)
+    log_event(logger, "origin clusters updated", **report)
+    return None

@@ -109,6 +109,21 @@ recheck: ## Re-check stored sources for edits, deletions and stated dates (worke
 verify-collection: ## Read-only checks over what collection stored (policies, robots, metadata-only, threads, quotas)
 	$(COMPOSE) exec -T api python -m app.cli verify-collection
 
+verify-evidence: ## Read-only checks over evidence: anchors, links, erasure, search index, clusters, lineage
+	$(COMPOSE) exec -T api python -m app.cli verify-evidence
+
+cluster-origins: ## Group copies of one origin into origin clusters now (the scheduler also queues it hourly)
+	$(COMPOSE) exec -T api python -m app.cli cluster-origins
+
+evidence-context: ## Give evidence stored before Step 07 its context window, once (audited)
+	$(COMPOSE) exec -T api python -m app.cli add-evidence-context
+
+search: ## Keyword search over a project's eligible evidence: make search PROJECT=<slug> Q="<words>"
+	$(COMPOSE) exec -T api python -m app.cli search-evidence --project "$(PROJECT)" --query "$(Q)"
+
+eval-retrieval: ## Retrieval benchmark on the labelled synthetic set, saved (scratch database, dropped)
+	$(COMPOSE) exec -T api python -m app.cli eval-retrieval --save
+
 transcribe: ## Queue transcription of project-matched videos and wait (media worker; needs youtube.com reachable)
 	$(COMPOSE) exec -T api python -m app.cli transcribe-videos --wait 1800
 
@@ -132,3 +147,9 @@ check-step06: ## Step 06 checks with a saved log
 
 mutations-step06: ## Step 06 mutation check: each media rule disabled must be caught (stack up)
 	bash scripts/run_step06_mutations.sh
+
+check-step07: ## Step 07 checks with a saved log
+	bash scripts/run_step07_checks.sh
+
+mutations-step07: ## Step 07 mutation check: each evidence rule disabled must be caught (stack up)
+	bash scripts/run_step07_mutations.sh

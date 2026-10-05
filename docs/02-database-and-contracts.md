@@ -38,10 +38,11 @@ Version these changes as a new contract revision, update fixtures and adapters, 
 | `ai_payloads` | Erasable source text keyed by source revision (`payload_ref.key`); erasure deletes it and leaves the metadata (D38) | Ingestion service |
 | `ai_project_source_links` | Unique `(project_id, source_id, source_revision, segment_key)`; match status and rationale | Identity service / moderator |
 | `ai_media_segments` | Unique `(source.id, source.revision, segment_key, modality)`; a transcript window on the original timeline (D47): time anchor, language, modality, how it was transcribed (captions or faster-whisper), quality flags, and references to the original words and any translation in the erasable payload store. Erasing the video erases those payloads; timing stays | Media worker |
-| `ai_evidence` | Source revision and anchor; indexes for source/dependency invalidation | Evidence service |
-| `ai_claims` | Unique `(project_id, claim_id, revision)`; aspect, type, immutable evidence refs | Analysis service |
-| `ai_findings` | Unique `(project_id, finding_id, revision)`; exact claim refs and wording | Synthesis / revision service |
-| `ai_content_revisions` | Unique `(project_id, locale, revision)`; immutable payload/hash/dependency manifest | Editorial service |
+| `ai_evidence` | Unique `(id, revision)`; source revision, link, anchor and context anchor (D50), words (erasable), origin cluster; indexes by link and source | Identity and media services |
+| `ai_evidence_search` | Derived and rebuildable (D50): one entry per evidence span with its words and any kept English translation; MongoDB text index (no stemming, `language_override` moved aside); synced before each search, deleted on erasure | Retrieval service |
+| `ai_claims` | Unique `(id, revision)`; aspect, type, immutable evidence refs; indexed by supporting and contradicting evidence for lineage (D50) | Analysis service |
+| `ai_findings` | Unique `(id, revision)`; exact claim refs and wording; indexed by claim | Synthesis / revision service |
+| `ai_content_revisions` | Unique `(project_id, locale, revision)`; immutable payload/hash/dependency manifest; indexed by every manifest reference, so a correction finds every affected draft and active revision (D50) | Editorial service |
 | `ai_review_decisions` | Target type/ID/revision/hash and server-derived actor; append-only decisions | Review API |
 | `ai_publication_state` | Unique `(project_id, locale)`; approved target, active pointer, version, evidence epoch, serving gate | Publication/invalidation service |
 | `ai_publication_operations` | Unique operation ID and scoped idempotency key; receipts, delivery/retry states | Publisher |
@@ -54,7 +55,7 @@ Version these changes as a new contract revision, update fixtures and adapters, 
 | `ai_runs` | WorkflowRun: stage, window, per-connector coverage, budget, requester | Run API / collector |
 | `ai_run_events` | Run events (ULID keys) for the SSE stream and Last-Event-ID resume | Collector |
 | `ai_source_policies` | Immutable policy versions, scope and expiry; current eligibility pointer | Authorised administrator |
-| `ai_origin_clusters` | Cluster membership/version and provenance | Deduplication service |
+| `ai_origin_clusters` | Stable cluster ID, versioned membership of source revisions, method (exact hash or near-duplicate) and representative; every change audited (D50) | Clustering job |
 | `ai_audit_events` | Actor/action/target/time; no raw source payload | Backend services |
 | `ai_idempotency_keys` | Operation, user, key hash, request digest and stored response for seven days (docs/03 Idempotency-Key, D38) | API |
 | `ai_deletion_requests` | Source/policy scope, dependent IDs and erasure progress | Lifecycle service |

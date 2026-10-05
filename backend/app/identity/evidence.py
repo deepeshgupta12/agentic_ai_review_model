@@ -1,7 +1,6 @@
-"""Evidence spans for linked text segments (Evidence, D24) and their eligibility for identity work.
+"""Evidence spans for linked text and media segments (Evidence, D24) and their eligibility for identity work.
 
-Eligibility is computed when used, never stored: the evidence and its source must be active, the source
-policy must allow AI processing and the link must not be rejected or superseded.
+Eligibility is computed when used, never stored, by the shared rule in app.evidence.eligibility (D50).
 """
 
 from __future__ import annotations
@@ -12,12 +11,10 @@ from pymongo.client_session import ClientSession
 from pymongo.database import Database
 
 from app.db import utcnow
+from app.evidence.context import text_context
 from app.identity.rules import EVIDENCE_MAX_CHARS
 from app.identity.text import sha256_text, text_anchor
 from app.ids import new_id
-from app.sources.policies import ai_processing_allowed
-
-UNUSABLE_LINK_STATUSES = {"rejected", "superseded"}
 
 
 def segment_bounds(segment_key: str, text_length: int) -> tuple[int, int] | None:
@@ -58,7 +55,7 @@ def create_link_evidence(
         "source": {"id": source["id"], "revision": source["revision"]},
         "link_id": link["_id"],
         "anchor": anchor,
-        "context_anchor": None,
+        "context_anchor": text_context(text, start, end),
         "excerpt_text": text[start:end],
         "excerpt_sha256": anchor["excerpt_sha256"],
         "language": source.get("language") or "und",
@@ -80,6 +77,7 @@ def create_media_evidence(
     segment: dict[str, Any],
     policy_ref: dict[str, Any],
     session: ClientSession | None = None,
+    context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Media evidence for a linked segment (Step 06): a transcript window's words, or a frame's on-screen text or
     description (D49), on the original timeline, governed by the spoken-content policy rather than the video's
@@ -97,7 +95,7 @@ def create_media_evidence(
         "source": {"id": source["id"], "revision": source["revision"]},
         "link_id": link["_id"],
         "anchor": segment["time"],
-        "context_anchor": None,
+        "context_anchor": context,
         "excerpt_text": excerpt,
         "excerpt_sha256": sha256_text(excerpt),
         "language": segment["language"],
@@ -115,14 +113,7 @@ def create_media_evidence(
 def usable_for_identity(
     db: Database[dict[str, Any]], evidence: dict[str, Any], session: ClientSession | None = None
 ) -> bool:
-    if evidence.get("lifecycle") != "active" or not evidence.get("excerpt_text"):
-        return False
-    link = db["ai_project_source_links"].find_one({"_id": evidence["link_id"]}, session=session)
-    if link is None or link["status"] in UNUSABLE_LINK_STATUSES:
-        return False
-    source = db["ai_sources"].find_one(
-        {"id": evidence["source"]["id"], "revision": evidence["source"]["revision"]}, session=session
-    )
-    if source is None or source["lifecycle"] != "active":
-        return False
-    return ai_processing_allowed(db, evidence["policy"], session)
+    """The shared eligibility rule (app.evidence.eligibility), with links still in review allowed."""
+    from app.evidence.eligibility import eligibility  # imported here: that module imports identity.links
+
+    return eligibility(db, evidence, for_identity=True, session=session).eligible

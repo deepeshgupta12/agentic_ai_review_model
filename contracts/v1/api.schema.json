@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "API request and response shapes",
   "description": "Bodies and views used by contracts/v1/openapi.json (docs/03). Actor identity is never accepted from a request body; the backend derives it from the session.",
-  "x-contract-version": "1.1.0",
+  "x-contract-version": "1.2.0",
   "$defs": {
     "LoginRequest": {
       "type": "object",
@@ -237,7 +237,7 @@
         "eligible": { "type": "boolean" },
         "ineligibility_reasons": {
           "type": "array",
-          "items": { "enum": ["policy_disallows", "source_withdrawn", "source_deleted", "policy_expired", "link_not_accepted", "superseded"] }
+          "items": { "enum": ["policy_disallows", "source_withdrawn", "source_deleted", "policy_expired", "link_not_accepted", "superseded", "source_unavailable"] }
         }
       }
     },

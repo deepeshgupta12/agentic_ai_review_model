@@ -13,20 +13,14 @@ from app.api.idempotency import HEADER, run_idempotent
 from app.api.routes_ops import decode_cursor, encode_cursor
 from app.contracts import ContractStore, to_view
 from app.errors import ApiError
+from app.evidence.eligibility import eligibility
 from app.identity.intake import source_text
-from app.identity.links import ACTIVE_STATUSES, link_view
+from app.identity.links import link_view
 from app.identity.text import sha256_text
 from app.sources.lifecycle import withdraw
-from app.sources.policies import ai_processing_allowed
 
 router = APIRouter(prefix="/v1", tags=["sources"])
 LINK_RANK = {"accepted": 4, "auto_accepted": 3, "needs_review": 2, "rejected": 1}
-LIFECYCLE_REASON = {
-    "withdrawn": "source_withdrawn",
-    "deleted": "source_deleted",
-    "expired": "policy_expired",
-    "superseded": "superseded",
-}
 
 
 def source_view(doc: dict[str, Any]) -> dict[str, Any]:
@@ -42,15 +36,8 @@ def utf16(text: str, index: int) -> int:
 def evidence_view(
     db: Database[dict[str, Any]], evidence: dict[str, Any], source: dict[str, Any], text: str | None
 ) -> dict[str, Any]:
-    """Evidence with UTF-16 offsets for browsers and whether findings may use it now (D24)."""
-    reasons: list[str] = []
-    if source["lifecycle"] in LIFECYCLE_REASON:
-        reasons.append(LIFECYCLE_REASON[source["lifecycle"]])
-    if not ai_processing_allowed(db, evidence["policy"]):
-        reasons.append("policy_disallows")
-    link = db["ai_project_source_links"].find_one({"_id": evidence["link_id"]}, {"status": 1})
-    if link is None or link["status"] not in ACTIVE_STATUSES:
-        reasons.append("link_not_accepted")
+    """Evidence with UTF-16 offsets for browsers and whether findings may use it now (D24, D50)."""
+    reasons = eligibility(db, evidence).reasons
     anchor = dict(evidence["anchor"])
     if anchor.get("kind") == "text":
         basis = text if text is not None else (evidence.get("excerpt_text") or "")

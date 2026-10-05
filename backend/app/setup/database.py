@@ -22,7 +22,7 @@ SCHEMA_VERSION_ID = "contracts-v1"
 @dataclass
 class IndexSpec:
     name: str
-    keys: list[tuple[str, int]]
+    keys: list[tuple[str, int | str]]  # str for "text" indexes
     options: dict[str, Any] = field(default_factory=dict)
 
 
@@ -155,6 +155,36 @@ def _fetch_log_validator() -> dict[str, Any]:
                 "status_code": {"bsonType": ["int", "long", "null"]},
                 "run_id": {"bsonType": ["string", "null"]},
                 "at": {"bsonType": "date"},
+            },
+        }
+    }
+
+
+def _search_validator() -> dict[str, Any]:
+    """ai_evidence_search (Step 07.4): a derived, rebuildable keyword index over evidence words (D50)."""
+    ref = {
+        "bsonType": "object",
+        "required": ["id", "revision"],
+        "properties": {"id": {"bsonType": "string"}, "revision": {"bsonType": ["int", "long"]}},
+    }
+    return {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "additionalProperties": False,
+            "required": ["_id", "evidence", "project_id", "source", "link_id", "modality", "language", "text"],
+            "properties": {
+                "_id": {"bsonType": "string"},
+                "evidence": ref,
+                "project_id": {"bsonType": "string"},
+                "source": ref,
+                "link_id": {"bsonType": "string"},
+                "modality": {"bsonType": "string"},
+                "language": {"bsonType": "string"},
+                "text": {"bsonType": "string", "minLength": 1},
+                "translation": {"bsonType": ["string", "null"]},
+                "published_at": {"bsonType": ["date", "null"]},
+                "phase_rera_id": {"bsonType": ["string", "null"]},
+                "indexed_at": {"bsonType": "date"},
             },
         }
     }
@@ -364,6 +394,72 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
                     ],
                     {"unique": True},
                 ),
+            ],
+        ),
+        # Step 07: lineage. Claims, findings, source reviews and content revisions cite exact revisions; these
+        # indexes answer "what depends on this evidence, link or source?" (app.evidence.lineage).
+        CollectionSpec(
+            "ai_claims",
+            contracts.mongo_validator("evidence.schema.json#/$defs/Claim", id_field=None, extra={"_id": string}),
+            [
+                IndexSpec("uniq_id_revision", [("id", ASCENDING), ("revision", ASCENDING)], {"unique": True}),
+                IndexSpec("by_project_aspect", [("project_id", ASCENDING), ("aspect", ASCENDING)]),
+                IndexSpec("by_supporting_evidence", [("supporting_evidence.id", ASCENDING)]),
+                IndexSpec("by_contradicting_evidence", [("contradicting_evidence.id", ASCENDING)]),
+            ],
+        ),
+        CollectionSpec(
+            "ai_findings",
+            contracts.mongo_validator("evidence.schema.json#/$defs/Finding", id_field=None, extra={"_id": string}),
+            [
+                IndexSpec("uniq_id_revision", [("id", ASCENDING), ("revision", ASCENDING)], {"unique": True}),
+                IndexSpec("by_claim", [("claims.id", ASCENDING)]),
+                IndexSpec("by_project_status", [("project_id", ASCENDING), ("review_status", ASCENDING)]),
+            ],
+        ),
+        CollectionSpec(
+            "ai_review_excerpts",
+            contracts.mongo_validator(
+                "evidence.schema.json#/$defs/ReviewExcerpt", id_field=None, extra={"_id": string}
+            ),
+            [
+                IndexSpec("uniq_id_revision", [("id", ASCENDING), ("revision", ASCENDING)], {"unique": True}),
+                IndexSpec("by_evidence", [("evidence.id", ASCENDING)]),
+                IndexSpec("by_source", [("source.id", ASCENDING), ("source.revision", ASCENDING)]),
+                IndexSpec("by_project_status", [("project_id", ASCENDING), ("review_status", ASCENDING)]),
+            ],
+        ),
+        CollectionSpec(
+            "ai_content_revisions",
+            contracts.mongo_validator("content.schema.json#/$defs/ContentRevision"),
+            [
+                IndexSpec(
+                    "uniq_project_locale_revision",
+                    [("project_id", ASCENDING), ("locale", ASCENDING), ("revision", ASCENDING)],
+                    {"unique": True},
+                ),
+                IndexSpec("by_project_lifecycle", [("project_id", ASCENDING), ("lifecycle", ASCENDING)]),
+                IndexSpec("by_manifest_findings", [("manifest.findings.id", ASCENDING)]),
+                IndexSpec("by_manifest_claims", [("manifest.claims.id", ASCENDING)]),
+                IndexSpec("by_manifest_reviews", [("manifest.reviews.id", ASCENDING)]),
+                IndexSpec("by_manifest_evidence", [("manifest.evidence.id", ASCENDING)]),
+                IndexSpec("by_manifest_sources", [("manifest.sources.id", ASCENDING)]),
+                IndexSpec("by_manifest_links", [("manifest.links", ASCENDING)]),
+            ],
+        ),
+        CollectionSpec(
+            "ai_evidence_search",
+            _search_validator(),
+            [
+                IndexSpec(
+                    "text_words",
+                    [("text", "text"), ("translation", "text")],
+                    # no stemming or stop words (Hindi, Hinglish and English mixed); evidence carries its own
+                    # `language` field, which a text index would otherwise read as a stemming language
+                    {"default_language": "none", "language_override": "search_language_override"},
+                ),
+                IndexSpec("by_project", [("project_id", ASCENDING), ("published_at", DESCENDING)]),
+                IndexSpec("by_source", [("source.id", ASCENDING), ("source.revision", ASCENDING)]),
             ],
         ),
         CollectionSpec(

@@ -22,6 +22,7 @@ from app import audit
 from app.contracts import ContractStore
 from app.db import run_in_transaction, utcnow
 from app.errors import ApiError
+from app.evidence import retrieval
 from app.identity.links import ACTIVE_STATUSES, enqueue_invalidation
 from app.jobs import queue
 from app.sources import policies
@@ -261,6 +262,7 @@ def handle_erase(db: Database[dict[str, Any]], job: dict[str, Any], check: Any) 
             {"$set": {"excerpt_text": None, "lifecycle": source["lifecycle"]}},
             session=session,
         )
+        retrieval.remove_source(db, source["id"], source["revision"], session=session)  # the search copy too
         audit.record(
             db,
             "source.erased",

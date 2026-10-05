@@ -17,6 +17,7 @@ from app import audit
 from app.agents.gateway import ModelGateway
 from app.contracts import ContractStore
 from app.db import run_in_transaction
+from app.evidence.context import media_context
 from app.identity.agent import run_identity_agent
 from app.identity.catalogue import load_identities
 from app.identity.evidence import create_link_evidence, create_media_evidence
@@ -243,7 +244,10 @@ def identify_media(
                 rows.append((doc, True))
         for link, created in rows:
             if link["status"] not in ("rejected", "superseded") and link["segment_key"] in by_key:
-                create_media_evidence(db, link, source, by_key[link["segment_key"]], policy_ref, session)
+                segment = by_key[link["segment_key"]]
+                create_media_evidence(
+                    db, link, source, segment, policy_ref, session, context=media_context(segments, segment)
+                )
             if created:
                 audit.record(
                     db,

@@ -38,6 +38,7 @@ JOB_KINDS = {
     "evaluate",
     "check_availability",
     "process_media",
+    "cluster_origins",
 }
 
 

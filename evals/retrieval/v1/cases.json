@@ -1,0 +1,191 @@
+{
+  "dataset": {
+    "name": "retrieval",
+    "version": "1",
+    "synthetic": true
+  },
+  "cases": [
+    {
+      "id": "r01",
+      "project": "Quillon Residences",
+      "query": "approach road broken",
+      "relevant": [
+        "q01"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r02",
+      "project": "Quillon Residences",
+      "query": "flooding rains",
+      "relevant": [
+        "q01"
+      ],
+      "kind": "other_word_form"
+    },
+    {
+      "id": "r03",
+      "project": "Quillon Residences",
+      "query": "lifts installed",
+      "relevant": [
+        "q02"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r04",
+      "project": "Quillon Residences",
+      "query": "possession date",
+      "relevant": [
+        "q03",
+        "q10"
+      ],
+      "kind": "cross_language"
+    },
+    {
+      "id": "r05",
+      "project": "Quillon Residences",
+      "query": "सड़क टूटी",
+      "relevant": [
+        "q04"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r06",
+      "project": "Quillon Residences",
+      "query": "maintenance charges",
+      "relevant": [
+        "q05"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r07",
+      "project": "Quillon Residences",
+      "query": "water supply tanker",
+      "relevant": [
+        "q06"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r08",
+      "project": "Quillon Residences",
+      "query": "3 BHK price crore",
+      "relevant": [
+        "q07"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r09",
+      "project": "Quillon Residences",
+      "query": "covered parking",
+      "relevant": [
+        "q09"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r10",
+      "project": "Quillon Residences",
+      "query": "पज़ेशन",
+      "relevant": [
+        "q10"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r11",
+      "project": "Quillon Residences",
+      "query": "clubhouse",
+      "relevant": [
+        "q02"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r12",
+      "project": "Quillon Residences",
+      "query": "बारिश पानी",
+      "relevant": [
+        "q04"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r13",
+      "project": "Quillon Residences",
+      "query": "resale launch price",
+      "relevant": [
+        "q07"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r14",
+      "project": "Quillon Residences",
+      "query": "park jogging track",
+      "relevant": [
+        "q11"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r15",
+      "project": "Tavira Vista",
+      "query": "road broken",
+      "relevant": [
+        "t01",
+        "t03"
+      ],
+      "kind": "cross_language"
+    },
+    {
+      "id": "r16",
+      "project": "Tavira Vista",
+      "query": "lifts",
+      "relevant": [
+        "t02"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r17",
+      "project": "Tavira Vista",
+      "query": "possession delayed",
+      "relevant": [
+        "t04"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r18",
+      "project": "Zephyrine Crest",
+      "query": "clubhouse swimming pool",
+      "relevant": [
+        "z01"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r19",
+      "project": "Zephyrine Crest",
+      "query": "paani samasya",
+      "relevant": [
+        "z03"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r20",
+      "project": "Zephyrine Crest",
+      "query": "approach road",
+      "relevant": [
+        "z05"
+      ],
+      "kind": "same_language"
+    }
+  ]
+}

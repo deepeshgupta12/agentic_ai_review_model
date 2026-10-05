@@ -5,10 +5,10 @@
 services:
   mongodb:
     image: mongo:8.0
-    # The cache is capped at WiredTiger's minimum: by default it takes about half of the 4 GB Docker VM (2.1 GB seen
-    # during tests), and at 0.75 GB the VM still ran out of memory while Whisper was loaded (2 Oct 2026). The data
-    # is about 6 MB plus 3 MB of indexes (Step 06, D48).
-    command: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
+    # The cache is capped: by default it takes about half of the 4 GB Docker VM (2.1 GB seen during tests), leaving
+    # too little for the media worker; the data is about 6 MB plus 3 MB of indexes. 0.25 GB was tried on 5 Oct 2026:
+    # tests ran three times slower and MongoDB's memory did not fall, so 0.75 GB stays (Step 06, D48).
+    command: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.75"]
     oom_score_adj: -500  # under memory pressure the kernel kills other services before the database (Step 06)
     ports:
       - "127.0.0.1:27017:27017"

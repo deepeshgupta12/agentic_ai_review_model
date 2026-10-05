@@ -1,0 +1,137 @@
+{
+  "dataset": {
+    "name": "retrieval",
+    "version": "1",
+    "synthetic": true,
+    "note": "Synthetic, fictional posts written for this check about projects from the fictional identity catalogue (evals/identity/v1). It measures whether filtered keyword retrieval finds the labelled posts of the right project and never returns another project's or withdrawn evidence. It is small and was written alongside the retriever, so it shows the baseline behaves as designed; it is not a measure of retrieval quality on real chatter. Some queries are deliberately hard for keywords: other word forms (flooding/floods) and English queries for Hindi posts. Hindi posts write the locality in Latin letters (\"Sector 102\"), as many real posts do; with \"सेक्टर 102\" the Step 04 matcher sends the link to review (I19), which this retrieval check keeps separate."
+  },
+  "documents": [
+    {
+      "id": "q01",
+      "project": "Quillon Residences",
+      "language": "en",
+      "text": "Quillon Residences, Sector 102: the approach road is broken and floods after rain; buyers say the builder has not fixed it."
+    },
+    {
+      "id": "q02",
+      "project": "Quillon Residences",
+      "language": "en",
+      "text": "Quillon Residences Sector 102 site visit: lifts are installed in Tower B and the clubhouse frame is up."
+    },
+    {
+      "id": "q03",
+      "project": "Quillon Residences",
+      "language": "en",
+      "text": "At Quillon Residences in Sector 102 the sales team promised possession in March 2027, but the builder would not put the date in writing."
+    },
+    {
+      "id": "q04",
+      "project": "Quillon Residences",
+      "language": "hi",
+      "text": "Quillon Residences Sector 102 की सड़क टूटी हुई है और बारिश में पानी भर जाता है।"
+    },
+    {
+      "id": "q05",
+      "project": "Quillon Residences",
+      "language": "hi-Latn",
+      "text": "Quillon Residences Sector 102 mein maintenance charges bahut zyada hain, 4 rupaye per sq ft maang rahe hain."
+    },
+    {
+      "id": "q06",
+      "project": "Quillon Residences",
+      "language": "en",
+      "text": "Residents of Quillon Residences in Sector 102 report irregular water supply and say they depend on tanker water in summer."
+    },
+    {
+      "id": "q07",
+      "project": "Quillon Residences",
+      "language": "en",
+      "text": "Quillon Residences Sector 102: a 3 BHK was quoted at 1.75 crore, and resale listings now ask more than the launch price."
+    },
+    {
+      "id": "q08",
+      "project": "Quillon Residences",
+      "language": "en",
+      "withdrawn": true,
+      "text": "Quillon Residences Sector 102 approach road is broken, a complaint later withdrawn by its author."
+    },
+    {
+      "id": "q09",
+      "project": "Quillon Residences",
+      "language": "en",
+      "text": "Quillon Residences in Sector 102 gives two covered parking slots per flat in the basement."
+    },
+    {
+      "id": "q10",
+      "project": "Quillon Residences",
+      "language": "hi",
+      "text": "Quillon Residences Sector 102 में पज़ेशन मार्च 2027 में देने का वादा किया गया है।"
+    },
+    {
+      "id": "q11",
+      "project": "Quillon Residences",
+      "language": "en",
+      "text": "Quillon Residences Sector 102 has a large central park, a jogging track and a small temple near Tower A."
+    },
+    {
+      "id": "t01",
+      "project": "Tavira Vista",
+      "language": "en",
+      "text": "Tavira Vista, Sector 88: the approach road is broken and floods after rain; buyers say the builder has not fixed it."
+    },
+    {
+      "id": "t02",
+      "project": "Tavira Vista",
+      "language": "en",
+      "text": "Tavira Vista Sector 88: the lifts are not installed yet in any tower, and the clubhouse has not started."
+    },
+    {
+      "id": "t03",
+      "project": "Tavira Vista",
+      "language": "hi",
+      "text": "Tavira Vista Sector 88 की सड़क टूटी हुई है।"
+    },
+    {
+      "id": "t04",
+      "project": "Tavira Vista",
+      "language": "en",
+      "text": "Tavira Vista in Sector 88 has delayed possession to 2028, according to the latest builder letter."
+    },
+    {
+      "id": "t05",
+      "project": "Tavira Vista",
+      "language": "en",
+      "text": "Tavira Vista Sector 88 maintenance charges are reasonable at 2.5 rupees per sq ft."
+    },
+    {
+      "id": "z01",
+      "project": "Zephyrine Crest",
+      "language": "en",
+      "text": "Zephyrine Crest, Sector 65: the clubhouse is ready and the swimming pool opened last month."
+    },
+    {
+      "id": "z02",
+      "project": "Zephyrine Crest",
+      "language": "en",
+      "text": "Zephyrine Crest Sector 65 maintenance charges are high for what residents get."
+    },
+    {
+      "id": "z03",
+      "project": "Zephyrine Crest",
+      "language": "hi-Latn",
+      "text": "Zephyrine Crest Sector 65 mein paani ki samasya hai, tanker mangwana padta hai."
+    },
+    {
+      "id": "z04",
+      "project": "Zephyrine Crest",
+      "language": "en",
+      "text": "Zephyrine Crest in Sector 65: a 4 BHK costs about 2.4 crore on the Golf Course Extension."
+    },
+    {
+      "id": "z05",
+      "project": "Zephyrine Crest",
+      "language": "en",
+      "text": "Zephyrine Crest Sector 65 approach road is smooth and well lit, a short drive from Golf Course Extension Road."
+    }
+  ]
+}

@@ -488,6 +488,89 @@ def cmd_verify_collection(_: argparse.Namespace) -> int:
     return 0 if all(r["ok"] for r in rows) else 1
 
 
+def cmd_verify_evidence(_: argparse.Namespace) -> int:
+    """Read-only checks over the evidence layer: anchors, links, erasure, search index, clusters, lineage."""
+    from app.evidence.verify import verify_evidence
+
+    rows = verify_evidence(get_db())
+    _print(rows)
+    return 0 if all(r["ok"] for r in rows) else 1
+
+
+def cmd_cluster_origins(_: argparse.Namespace) -> int:
+    """Group copies of one origin (exact and near-duplicate texts, copied passages) into origin clusters (D50)."""
+    from app.evidence.clusters import cluster_origins
+
+    db = get_db()
+    _print(cluster_origins(db.client, db))
+    return 0
+
+
+def cmd_add_evidence_context(_: argparse.Namespace) -> int:
+    """Give evidence stored before Step 07 its context window, once (audited)."""
+    from app.evidence.anchors import backfill_context
+
+    db = get_db()
+    _print(backfill_context(db.client, db))
+    return 0
+
+
+def cmd_search_evidence(args: argparse.Namespace) -> int:
+    """Keyword search over one project's eligible evidence, with filters (D50)."""
+    from app.evidence.retrieval import search
+
+    db = get_db()
+    result = search(
+        db,
+        _slug_to_id(db, args.project),
+        args.query,
+        modalities=args.modality or None,
+        languages=args.language or None,
+        limit=args.limit,
+    )
+    _print(
+        {
+            **{k: v for k, v in result.items() if k != "items"},
+            "items": [
+                {
+                    "evidence": f"{i['evidence']['id']}@{i['evidence']['revision']}",
+                    "score": i["score"],
+                    "modality": i["evidence"]["modality"],
+                    "language": i["evidence"]["language"],
+                    "flags": i["flags"],
+                    "excerpt": (i["evidence"]["excerpt_text"] or "")[:160],
+                }
+                for i in result["items"]
+            ],
+        }
+    )
+    return 0
+
+
+def cmd_eval_retrieval(args: argparse.Namespace) -> int:
+    """Retrieval benchmark on the labelled synthetic set (evals/retrieval/v1) in a scratch database, dropped after."""
+    from app.db import utcnow
+    from app.evidence.benchmark import benchmark_record, run_benchmark
+    from app.ids import new_id
+
+    settings, contracts = get_settings(), get_contracts()
+    db = get_db()
+    result = run_benchmark(
+        db.client,
+        contracts,
+        settings,
+        REPO_ROOT / "evals" / "retrieval" / "v1",
+        REPO_ROOT / "evals" / "identity" / "v1" / "catalogue.json",
+    )
+    record = benchmark_record(result)
+    if args.save:
+        record = {"_id": new_id("evl"), **record, "created_at": utcnow()}
+        db["ai_evaluations"].insert_one(record)
+    _print({**result, "saved_as": record.get("_id")})
+    clean = result["wrong_project_results"] == result["withdrawn_results"] == result["anchor_errors"] == 0
+    return 0 if clean and not result["unlinked_documents"] else 1
+
+
 def cmd_eval_identity(args: argparse.Namespace) -> int:
     from app.db import utcnow
     from app.identity.evaluation import evaluate_dataset, load_dataset
@@ -709,6 +792,25 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("verify-collection", help="read-only checks over what collection stored").set_defaults(
         func=cmd_verify_collection
     )
+    sub.add_parser("verify-evidence", help="read-only checks over evidence, the search index and lineage").set_defaults(
+        func=cmd_verify_evidence
+    )
+    sub.add_parser("cluster-origins", help="group copies of one origin into origin clusters").set_defaults(
+        func=cmd_cluster_origins
+    )
+    sub.add_parser("add-evidence-context", help="give older evidence its context window, once").set_defaults(
+        func=cmd_add_evidence_context
+    )
+    p = sub.add_parser("eval-retrieval", help="retrieval benchmark on the labelled synthetic set (scratch database)")
+    p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
+    p.set_defaults(func=cmd_eval_retrieval)
+    p = sub.add_parser("search-evidence", help="keyword search over a project's eligible evidence")
+    p.add_argument("--project", required=True, help="project slug")
+    p.add_argument("--query", default="", help="words to look for; empty lists the newest evidence")
+    p.add_argument("--modality", action="append", help="text, speech, on_screen_text or frame (repeatable)")
+    p.add_argument("--language", action="append", help="language tag, e.g. hi or en (repeatable)")
+    p.add_argument("--limit", type=int, default=10)
+    p.set_defaults(func=cmd_search_evidence)
     p = sub.add_parser("eval-identity", help="identity evaluation on the labelled dataset")
     p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
     p.set_defaults(func=cmd_eval_identity)

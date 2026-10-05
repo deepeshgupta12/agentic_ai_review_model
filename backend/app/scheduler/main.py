@@ -21,7 +21,15 @@ def tick() -> int:
     recovered = queue.recover_expired(db)
     finish_runs(db)
     expire_sources(db)
+    start_clustering(db)
     return recovered
+
+
+def start_clustering(db: Any) -> bool:
+    """Step 07: new evidence gets its origin cluster within the hour (a worker job; D50)."""
+    from app.evidence.clusters import start_clustering as start
+
+    return start(db)
 
 
 def expire_sources(db: Any) -> int:

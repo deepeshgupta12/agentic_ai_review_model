@@ -5,6 +5,18 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Evidence storage, deduplication and retrieval — 5 October 2026 (Step 07)
+
+- **One eligibility rule** for support, identity work, the API and retrieval (D50). A temporarily unavailable source is not used; a stale one is used with a flag.
+- **Context windows.** New text evidence keeps up to 400 code points of context on each side, cut at a sentence end or a space; speech evidence keeps the neighbouring transcript windows. Older evidence gets its context once (`make evidence-context`).
+- **Anchor checks.** `make verify-evidence` re-derives every anchor and context from the stored source, and checks links, erasure, the search index, origin clusters and lineage references.
+- **Origin clusters.** Copies of one origin count once: identical texts, near-copies and copied passages are joined; short identical comments are not. A scheduled job keeps clusters current; cluster IDs are stable and changes are audited.
+- **Filtered retrieval** (keyword baseline). Eligibility and the caller's filters come first, then a MongoDB text index ranks the results. English queries reach Hindi speech through A04's kept translation. Erasure removes the search copy at once. Commands: `make search` and `make eval-retrieval`.
+- **Lineage.** Claims, findings, source reviews and content revisions are indexed by every exact reference. A correction or withdrawal finds every affected draft and active revision; the invalidation job withdraws approvals that rested on the evidence and reports the rest.
+- **Benchmark:** `evals/retrieval/v1`, 21 synthetic posts and 20 labelled queries. Results are in `logs/step-07`.
+- **Contracts:** api 1.2.0 (`source_unavailable`), operations 1.3.0 (job `cluster_origins`). New collections: `ai_claims`, `ai_findings`, `ai_review_excerpts`, `ai_content_revisions` and `ai_evidence_search`.
+- **Found:** Hindi posts that write the locality in Devanagari ("सेक्टर 102") go to review rather than being matched automatically (I19).
+
 ## Videos and languages — 1 October 2026 (Step 06)
 
 - **Transcripts** for project videos whose match is accepted (D47). The route order is:
@@ -35,7 +47,7 @@
   - A03's output cap is raised to 8,192 tokens;
   - phone numbers read off frames are replaced, because contact details are not evidence;
   - on-screen text is tagged by its own script;
-  - MongoDB's cache is lowered to 0.25 GB, and the media worker restarts after the kernel kills it (D48).
+  - the media worker restarts after the kernel kills it (D48). A 0.25 GB MongoDB cache was tried and reverted, because tests ran three times slower and memory did not fall.
 
   On 1 Oct an office firewall had blocked youtube.com (I17).
 

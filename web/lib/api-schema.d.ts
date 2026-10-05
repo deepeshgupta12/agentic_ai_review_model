@@ -1732,7 +1732,7 @@ export interface components {
             evidence: components["schemas"]["Evidence"];
             anchor_view: components["schemas"]["TextAnchorView"] | components["schemas"]["TimeAnchor"];
             eligible: boolean;
-            ineligibility_reasons: ("policy_disallows" | "source_withdrawn" | "source_deleted" | "policy_expired" | "link_not_accepted" | "superseded")[];
+            ineligibility_reasons: ("policy_disallows" | "source_withdrawn" | "source_deleted" | "policy_expired" | "link_not_accepted" | "superseded" | "source_unavailable")[];
         };
         MediaSegmentId: string;
         /** @description ai_media_segments record for authorised media only. Original speech and translation are stored separately. */
@@ -2122,10 +2122,10 @@ export interface components {
             id: components["schemas"]["JobId"];
             logical_key: string;
             /**
-             * @description check_availability re-checks stored sources for edits and deletions (Step 05.6, D44); process_media acquires and transcribes an authorised video (Step 06, D47)
+             * @description check_availability re-checks stored sources for edits and deletions (Step 05.6, D44); process_media acquires and transcribes an authorised video (Step 06, D47); cluster_origins groups copies of one origin (Step 07, D50)
              * @enum {unknown}
              */
-            kind: "collect" | "analyse" | "resume_after_review" | "generate_content" | "deliver_publication" | "invalidate_dependencies" | "erase_payloads" | "scheduled_refresh" | "evaluate" | "check_availability" | "process_media";
+            kind: "collect" | "analyse" | "resume_after_review" | "generate_content" | "deliver_publication" | "invalidate_dependencies" | "erase_payloads" | "scheduled_refresh" | "evaluate" | "check_availability" | "process_media" | "cluster_origins";
             run_id: components["schemas"]["RunId"] | null;
             project_id: components["schemas"]["ProjectId"] | null;
             status: components["schemas"]["JobStatus"];

@@ -20,6 +20,7 @@ from pymongo.database import Database
 
 from app.config import get_settings
 from app.db import get_db
+from app.evidence import clusters
 from app.identity import invalidation
 from app.jobs import queue
 from app.media import pipeline as media
@@ -48,6 +49,7 @@ register("collect")(collection.handle_collect)
 register("erase_payloads")(lifecycle.handle_erase)
 register("check_availability")(recheck.handle_recheck)
 register("process_media")(media.handle_process_media)
+register("cluster_origins")(clusters.handle_cluster_origins)
 MEDIA_KINDS = ("process_media",)
 
 
