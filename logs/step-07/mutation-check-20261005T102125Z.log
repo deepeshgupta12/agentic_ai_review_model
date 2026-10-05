@@ -1,0 +1,87 @@
+Step 07 mutation check: each evidence rule is disabled on a scratch copy; its own test must fail.
+date (UTC): 2026-10-05T10:21:25Z
+commit:     a894ffc
+
+== baseline: the unchanged copy imports its own code and the Step 07 test file passes
+imports the scratch copy
+test_evidence.py             20 passed in 24.98s
+
+== rule disabled: a temporarily unavailable source is not used
+   in backend/app/evidence/eligibility.py
+FAILED tests/test_evidence.py::test_one_eligibility_rule_serves_support_identity_and_the_api
+FAILED tests/test_evidence.py::test_the_retrieval_filter_admits_exactly_what_the_rule_admits
+2 failed, 18 passed in 22.69s
+--> OK (caught by test_one_eligibility_rule_serves_support_identity_and_the_api)
+
+== rule disabled: a link of another project never supports this one
+   in backend/app/evidence/eligibility.py
+FAILED tests/test_evidence.py::test_one_eligibility_rule_serves_support_identity_and_the_api
+1 failed, 19 passed in 33.83s
+--> OK (caught by test_one_eligibility_rule_serves_support_identity_and_the_api)
+
+== rule disabled: the retrieval filter admits only usable source revisions
+   in backend/app/evidence/eligibility.py
+FAILED tests/test_evidence.py::test_the_retrieval_filter_admits_exactly_what_the_rule_admits
+1 failed, 19 passed in 31.80s
+--> OK (caught by test_the_retrieval_filter_admits_exactly_what_the_rule_admits)
+
+== rule disabled: erasure removes the search copy of the words
+   in backend/app/sources/lifecycle.py
+FAILED tests/test_evidence.py::test_withdrawn_or_unaccepted_evidence_leaves_retrieval_at_once_and_its_words_leave_the_index
+1 failed, 19 passed in 38.69s
+--> OK (caught by test_withdrawn_or_unaccepted_evidence_leaves_retrieval_at_once_and_its_words_leave_the_index)
+
+== rule disabled: the text index does not read evidence language as a stemming language
+   in backend/app/setup/database.py
+FAILED tests/test_evidence.py::test_search_ranks_this_projects_words_and_never_another_projects
+FAILED tests/test_evidence.py::test_withdrawn_or_unaccepted_evidence_leaves_retrieval_at_once_and_its_words_leave_the_index
+FAILED tests/test_evidence.py::test_an_english_query_reaches_hindi_speech_through_its_kept_translation
+FAILED tests/test_evidence.py::test_the_evidence_checks_pass_on_good_data_and_catch_broken_lineage
+FAILED tests/test_evidence.py::test_the_retrieval_benchmark_is_clean_and_reports_honestly
+5 failed, 15 passed in 29.32s
+--> OK (caught by test_search_ranks_this_projects_words_and_never_another_projects)
+
+== rule disabled: lineage matches exact revisions
+   in backend/app/evidence/lineage.py
+FAILED tests/test_evidence.py::test_lineage_follows_exact_revisions_from_source_to_content
+1 failed, 19 passed in 48.51s
+--> OK (caught by test_lineage_follows_exact_revisions_from_source_to_content)
+
+== rule disabled: approvals resting on ineligible evidence are withdrawn
+   in backend/app/identity/invalidation.py
+FAILED tests/test_evidence.py::test_a_source_correction_reaches_every_draft_and_active_revision_and_withdraws_approvals
+1 failed, 19 passed in 46.47s
+--> OK (caught by test_a_source_correction_reaches_every_draft_and_active_revision_and_withdraws_approvals)
+
+== rule disabled: the invalidation follows evidence that became ineligible
+   in backend/app/identity/invalidation.py
+FAILED tests/test_evidence.py::test_a_source_correction_reaches_every_draft_and_active_revision_and_withdraws_approvals
+1 failed, 19 passed in 101.89s (0:01:41)
+--> OK (caught by test_a_source_correction_reaches_every_draft_and_active_revision_and_withdraws_approvals)
+
+== rule disabled: anchors are re-derived from the source text
+   in backend/app/evidence/anchors.py
+FAILED tests/test_evidence.py::test_anchor_checks_rederive_every_excerpt
+1 failed, 19 passed in 54.58s
+--> OK (caught by test_anchor_checks_rederive_every_excerpt)
+
+== rule disabled: text evidence is stored with its context
+   in backend/app/identity/evidence.py
+FAILED tests/test_evidence.py::test_evidence_is_stored_with_its_context
+1 failed, 19 passed in 40.13s
+--> OK (caught by test_evidence_is_stored_with_its_context)
+
+== rule disabled: clustering is queued only when evidence waits
+   in backend/app/evidence/clusters.py
+FAILED tests/test_evidence.py::test_new_evidence_is_clustered_by_a_scheduled_job_within_the_hour
+1 failed, 19 passed in 52.67s
+--> OK (caught by test_new_evidence_is_clustered_by_a_scheduled_job_within_the_hour)
+
+== rule disabled: short identical comments stay separate opinions
+   in backend/app/evidence/clusters.py
+FAILED tests/test_evidence.py::test_short_identical_comments_stay_separate_opinions
+1 failed, 19 passed in 42.04s
+--> OK (caught by test_short_identical_comments_stay_separate_opinions)
+
+ALL MUTANTS CAUGHT
+log: logs/step-07/mutation-check-20261005T102125Z.log

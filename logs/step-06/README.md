@@ -137,13 +137,13 @@ Hindi number words are where Whisper errs ("पच्छाहेतर" for प
 - [x] Relevant repository checks were actually run and their results recorded (above): 23/23 checks at `982028c`, 16/16 mutants, 258 backend tests.
 - [x] PROGRESS.md records changed paths, decisions, evidence, unresolved dependencies and the next action.
 - [x] Live media analysis on a permitted real sample. Five real project videos were processed on 2 Oct 2026: captions, audio and frames. The checks are clean at `5578a70` (24/24, 26/26). The 2 Oct fixes (the A03 output cap, phone numbers, the on-screen language tag) are tested with fakes. They have not yet met a real video, because YouTube was blocked again on 5 Oct (I17).
-- [ ] The product owner approves Z1. Z2 is accepted. Z3 was declined as proposed, and frames are now implemented as directed (D49).
+- [x] The product owner approved Z1 and Step 06 (5 Oct 2026). Z2 was accepted on 1 Oct. Z3 was declined as proposed, and frames are implemented as directed (D49).
 
 ## Approvals (Z1–Z3), for the product owner
 
 | Item | Decision | Where |
 |---|---|---|
-| Z1 | Transcripts: <ul><li>only videos with an accepted project match;</li><li>captions first, else local transcription for videos up to 10 minutes;</li><li>refusals recorded and never worked around;</li><li>audio deleted after each job;</li><li>windows of about 30 seconds as segments and evidence;</li><li>windows that name no project inherit the video's match;</li><li>machine-made numbers always flagged;</li><li>A04 translations kept only when numbers and negations survive;</li><li>spoken_video_content v2 and youtube v3 apply D33</li></ul> | D47 |
+| Z1 | **Approved 5 Oct 2026.** Transcripts: <ul><li>only videos with an accepted project match;</li><li>captions first, else local transcription for videos up to 10 minutes;</li><li>refusals recorded and never worked around;</li><li>audio deleted after each job;</li><li>windows of about 30 seconds as segments and evidence;</li><li>windows that name no project inherit the video's match;</li><li>machine-made numbers always flagged;</li><li>A04 translations kept only when numbers and negations survive;</li><li>spoken_video_content v2 and youtube v3 apply D33</li></ul> | D47 |
 | Z2 | Whisper `large-v3-turbo` by default, in a separate media worker capped at 2 GB. **Accepted** ("OK", 1 Oct 2026) | D48 |
 | Z3 | Frames and on-screen text. The proposal to leave them out was **declined** ("it needs to be implemented", 1 Oct 2026). They are now built as UC-46b, and the build is recorded in D49 | D49 |
 

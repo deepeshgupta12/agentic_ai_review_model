@@ -9,7 +9,7 @@ Step 07 builds the evidence layer: every finding can be traced to exact evidence
 - lineage collections and the "what depends on this?" lookup, wired into dependency invalidation;
 - a labelled synthetic retrieval benchmark.
 
-Embeddings are not part of the baseline (D50): they are a measured option. Their memory cost matters on the 4 GB Docker VM (I18).
+Embedding search (local `bge-m3`) was requested by the product owner on 5 Oct 2026 and is being added on top of the keyword baseline recorded here.
 
 Run the commands from the repository root with the stack up (`make up`). In zsh, run `setopt interactivecomments` once if you paste commands that contain `#` comments.
 
@@ -68,3 +68,14 @@ make eval-retrieval
 - **Search API.** Retrieval is a backend service and a command; a console route waits for Step 09.
 - **Claims, findings and content** do not exist yet (Steps 08–11). Lineage is tested with records built from the contract fixtures.
 - **Devanagari localities** ("सेक्टर 102") send a post's link to review (I19).
+
+## Recorded results
+
+| Date (UTC) | Commit | Run by | Command | Result | Log |
+|---|---|---|---|---|---|
+| 2026-10-05 | worktree | Implementer | backend suite, ruff, mypy, contracts, web gates | 287 tests passed (20 for Step 07); lint and types clean; contracts 13/13; web gates OK | (console) |
+| 2026-10-05 10:03 | `a894ffc` | Implementer | `bash scripts/run_step07_checks.sh` | **ALL CHECKS OK, 20/20.** 287 backend tests. The scheduler queued clustering and the worker clustered 437 waiting spans: 363 sources, 3 joined origins (two syndicated article pairs, one set of three identical comments); a repeat changed nothing. Context added to 110 older spans once. verify-evidence 8/8. Retrieval on the five projects' real evidence: 35 searches, p50 18 ms, p95 270 ms, none from another project or ineligible. Benchmark recall@10 0.9: same language 1.0 (17 queries), cross-language 0.5 (2), other word form 0.0 (1); no wrong-project, withdrawn or anchor errors; p50 9 ms | [log](checks-20261005T100321Z.log) |
+| 2026-10-05 10:20 | `a894ffc` | Implementer | `verify-evidence` again, after the searches filled the index | 8/8; the search-index rule looked at 437 entries, 0 broken (in the check run it ran before any search and saw 0) | (console) |
+| 2026-10-05 10:21 | `a894ffc` | Implementer | `bash scripts/run_step07_mutations.sh` | **ALL MUTANTS CAUGHT, 12/12** | [log](mutation-check-20261005T102125Z.log) |
+
+The keyword baseline missed exactly what keywords cannot match: "flooding rains" for "floods after rain", and English queries for two Hindi posts without a stored translation. These are the cases embedding search is meant to close.
