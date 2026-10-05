@@ -217,11 +217,43 @@ def evaluate_frames(directory: Path, gateway: Any) -> dict[str, Any]:
         )
     total = sum(len(c["must_read"]) for c in cases)
     return {
-        "dataset": dataset,
+        "dataset": {"name": "media-frames", "version": dataset["version"], "synthetic": True},
         "model": result.returned_model or result.requested_model,
         "outcome": result.outcome,
         "usage": result.usage,
         "phrases_read": f"{sum(int(r['read'].split('/')[0]) for r in rows)}/{total}",
         "renders_recognised": f"{sum(r['imagery_ok'] for r in rows)}/{len(rows)}",
         "rows": rows,
+    }
+
+
+def frames_record(result: dict[str, Any]) -> dict[str, Any]:
+    """EvaluationRun fields for the A03 frame check; the caller adds id and created_at."""
+    from app.media.frames import AGENT_ID, PROMPT_VERSION, SCHEMA_VERSION
+
+    rows = result["rows"]
+    read, total = (int(x) for x in result["phrases_read"].split("/"))
+    return {
+        "dataset": result["dataset"],
+        "config": {
+            "agent": AGENT_ID,
+            "model": result["model"],
+            "prompt_version": PROMPT_VERSION,
+            "schema_version": SCHEMA_VERSION,
+        },
+        "status": "completed" if result["outcome"] == "completed" else "failed",
+        "metrics": [
+            {
+                "name": "on_screen_phrases_read",
+                "value": round(read / total, 3) if total else None,
+                "sample_size": total,
+                "note": "synthetic text slides with a fictional code; real video frames are harder",
+            },
+            {
+                "name": "renders_not_called_real_footage",
+                "value": round(sum(r["imagery_ok"] for r in rows) / len(rows), 3) if rows else None,
+                "sample_size": len(rows),
+                "note": "every synthetic frame is a graphic",
+            },
+        ],
     }

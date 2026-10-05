@@ -2,7 +2,8 @@
 
 Frames go to Claude as images with their frame IDs and times. A03 copies on-screen text verbatim and describes visible
 facts, and says whether each frame is real footage or a render or graphic. The backend keeps only observations for
-frames it sent, uses its own frame times (not the model's), caps their length, and never stores the images. Every
+frames it sent, uses its own frame times (not the model's), caps their length, replaces phone numbers (contact
+details are not evidence) and never stores the images. Every
 call is recorded in ai_agent_runs. Renders and graphics are flagged `possible_render`: they never prove construction
 status.
 """
@@ -11,6 +12,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 import time
 from typing import Any
 
@@ -29,7 +31,10 @@ SCHEMA_REF = "agents.schema.json#/$defs/VideoObservations"
 SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"
 MAX_OBSERVATION_CHARS = 800
+MAX_OUTPUT_TOKENS = 8192  # 12 real frames needed more than 4,000 (live run, 2 Oct 2026)
 MODALITIES = ("on_screen_text", "frame")
+# Indian phone numbers (ten digits from 6-9, optional +91, spaces or dashes): contact details are not evidence
+PHONE = re.compile(r"(?<!\d)(?:\+?91[\s-]?)?[6-9](?:[\s-]?\d){9}(?!\d)")
 
 
 def _clock(ms: int) -> str:
@@ -80,7 +85,11 @@ def analyse_frames(
         return [], "failed"
     started = time.monotonic()
     result = gateway.run(
-        "routine", SCHEMA_REF, PROMPT_PATH.read_text(encoding="utf-8"), build_content(frames, video), max_tokens=4000
+        "routine",
+        SCHEMA_REF,
+        PROMPT_PATH.read_text(encoding="utf-8"),
+        build_content(frames, video),
+        max_tokens=MAX_OUTPUT_TOKENS,
     )
     elapsed_ms = int((time.monotonic() - started) * 1000)
     by_id = {f"fr{i}": frame for i, frame in enumerate(frames)}
@@ -88,7 +97,7 @@ def analyse_frames(
     if result.outcome == "completed" and result.data is not None:
         for item in result.data["observations"]:
             frame = by_id.get(item["segment_id"])
-            text = (item["observation"] or "").strip()[:MAX_OBSERVATION_CHARS]
+            text = PHONE.sub("[phone number]", (item["observation"] or "").strip())[:MAX_OBSERVATION_CHARS]
             if frame is None or item["modality"] not in MODALITIES or not text:
                 continue  # an unknown frame, a speech claim from a frame, or nothing said
             key = (frame.ms, item["modality"])

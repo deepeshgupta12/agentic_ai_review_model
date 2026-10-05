@@ -31,7 +31,13 @@
 
   Synthetic frame check: 6 of 6 phrases read, and 3 of 3 graphics recognised as graphics (`make eval-frames`).
 - **Contracts:** sources 1.4.0, common 1.1.0, agents 1.1.0 and operations 1.2.0. **Policies:** spoken_video_content v3 and youtube v3.
-- **Blocked:** live acquisition, because an office firewall blocks youtube.com (I17). The product owner will run the end-to-end video test later from another network.
+- **First real videos** (2 Oct 2026). Five project videos went through captions, audio and frames. The run led to these fixes:
+  - A03's output cap is raised to 8,192 tokens;
+  - phone numbers read off frames are replaced, because contact details are not evidence;
+  - on-screen text is tagged by its own script;
+  - MongoDB's cache is lowered to 0.25 GB, and the media worker restarts after the kernel kills it (D48).
+
+  On 1 Oct an office firewall had blocked youtube.com (I17).
 
 ## Text and social collection — 30 September 2026 (Step 05)
 

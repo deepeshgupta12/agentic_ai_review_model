@@ -444,8 +444,7 @@ def cmd_eval_frames(args: argparse.Namespace) -> int:
     from app.agents.gateway import ModelGateway
     from app.db import utcnow
     from app.ids import new_id
-    from app.media.evaluation import evaluate_frames
-    from app.media.frames import PROMPT_VERSION, SCHEMA_VERSION
+    from app.media.evaluation import evaluate_frames, frames_record
 
     settings, contracts = get_settings(), get_contracts()
     gateway = ModelGateway(settings, contracts)
@@ -453,32 +452,7 @@ def cmd_eval_frames(args: argparse.Namespace) -> int:
         print("skipped: no ANTHROPIC_API_KEY configured")
         return 0
     result = evaluate_frames(REPO_ROOT / "evals" / "media" / "v1", gateway)
-    rows = result["rows"]
-    read, total = (int(x) for x in result["phrases_read"].split("/"))
-    record: dict[str, Any] = {
-        "dataset": result["dataset"],
-        "config": {
-            "agent": "A03_video_understanding",
-            "model": result["model"],
-            "prompt_version": PROMPT_VERSION,
-            "schema_version": SCHEMA_VERSION,
-        },
-        "status": "completed" if result["outcome"] == "completed" else "failed",
-        "metrics": [
-            {
-                "name": "on_screen_phrases_read",
-                "value": round(read / total, 3) if total else None,
-                "sample_size": total,
-                "note": "synthetic text slides with a fictional code; real video frames are harder",
-            },
-            {
-                "name": "renders_not_called_real_footage",
-                "value": round(sum(r["imagery_ok"] for r in rows) / len(rows), 3) if rows else None,
-                "sample_size": len(rows),
-                "note": "every synthetic frame is a graphic",
-            },
-        ],
-    }
+    record = frames_record(result)
     if args.save:
         record = {"_id": new_id("evl"), **record, "created_at": utcnow()}
         get_db()["ai_evaluations"].insert_one(record)

@@ -5,9 +5,10 @@
 services:
   mongodb:
     image: mongo:8.0
-    # The cache is capped: by default it takes about half of the 4 GB Docker VM (2.1 GB seen during tests), leaving
-    # too little for the media worker; this data set is small (Step 06, D48).
-    command: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.75"]
+    # The cache is capped at WiredTiger's minimum: by default it takes about half of the 4 GB Docker VM (2.1 GB seen
+    # during tests), and at 0.75 GB the VM still ran out of memory while Whisper was loaded (2 Oct 2026). The data
+    # is about 6 MB plus 3 MB of indexes (Step 06, D48).
+    command: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
     oom_score_adj: -500  # under memory pressure the kernel kills other services before the database (Step 06)
     ports:
       - "127.0.0.1:27017:27017"
@@ -116,6 +117,7 @@ services:
     # database. Found on 1 Oct 2026, when a 3 GB model test got MongoDB killed for lack of memory.
     mem_limit: 2g
     oom_score_adj: 1000
+    restart: on-failure  # back after the kernel kills it; its leased job then expires and is retried
     cpus: ${MEDIA_WORKER_CPUS:-2}  # CI runners have 2 CPUs; raise it in .env on a machine with more cores
     stop_grace_period: 60s
 

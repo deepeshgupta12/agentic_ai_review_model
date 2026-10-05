@@ -15,14 +15,14 @@ Step 06 turns what is said in project videos into timed, project-linked evidence
 
 **Live status:**
 
-- **Blocked:** live acquisition of captions, audio and frames. The office firewall blocks youtube.com (I17, confirmed by the product owner on 1 Oct 2026); the YouTube Data API still works. Every attempt so far ended metadata-only with the reason `network_refused`, which is the designed outcome for a refusal. The product owner will run the end-to-end test later from another network.
+- **Live, 2 Oct 2026:** YouTube was reachable, so the check script's bounded attempt processed 5 real project videos: captions, audio and frames. That run is in the table below. On 1 Oct the office firewall blocked youtube.com (I17), and those attempts ended metadata-only with `network_refused`, the designed outcome for a refusal.
 - **Proven:**
   - the whole path with fakes;
   - the real Whisper model inside the media worker container, on the synthetic speech set;
   - the real A04 model on the same sentences;
   - the real A03 model on three synthetic frames.
 
-The spec says live media analysis is not complete until a permitted real sample has been processed. That gate stays open until the run from another network.
+The spec says live media analysis is not complete until a permitted real sample has been processed. The 2 Oct run processed one; the gate closes with a clean check run after the fixes it led to.
 
 Run the commands from the repository root with the stack up (`make up`). In zsh, run `setopt interactivecomments` once if you paste commands that contain `#` comments.
 
@@ -122,6 +122,8 @@ Hindi number words are where Whisper errs ("पच्छाहेतर" for प
 | 2026-10-01 10:58 | `5028a5a` | Product owner | `bash scripts/run_step06_mutations.sh` | **ALL MUTANTS CAUGHT, 16/16** | [log](mutation-check-20261001T105843Z.log) |
 | 2026-10-01 11:40 | worktree (Z3) | Implementer | live A03 on the synthetic frames | 6/6 phrases read; 3/3 graphics recognised; 3,053/311 tokens | (console; `make eval-frames` saves it) |
 | 2026-10-02 | worktree (Z3) | Implementer | backend suite, ruff, mypy, contracts, web gates | 271 tests passed; lint and types clean; contracts 13/13; web gates OK | (console) |
+| 2026-10-02 07:32 | `9a167f4` | Implementer | `bash scripts/run_step06_checks.sh` | 22/24. **Live: YouTube was reachable.** The bounded attempt processed 5 real Conscient Parq videos: 3 from public captions, 1 from its audio (music only; no speech found) and 2 with frames, giving 79 windows, 43 speech and 36 frame evidence; verify-collection passed on them. **Failed:** (1) the speech check was killed when the Docker VM ran out of memory (`global_oom`; the media worker died, never MongoDB); (2) the frame check's A03 call passed but saving its result failed the evaluation contract (an extra `note` field). Also found: 2 of 4 real A03 calls hit the 4,000-token cap; a broker's phone number was stored from a sign; an English overlay was tagged `hi-Latn`; the killed media worker stayed down (no restart policy) | [log](checks-20261002T073247Z.log) |
+| 2026-10-02 08:17 | `9a167f4` | Implementer | speech check alone on an idle media worker | 20/22 facts again; peak about 1.4 GB in the worker | (console) |
 
 ## Step 06 acceptance checks
 
@@ -132,7 +134,7 @@ Hindi number words are where Whisper errs ("पच्छाहेतर" for प
 - [x] Comments, descriptions, spoken content and frame observations remain distinguishable. Comments are separate sources (Step 05). Descriptions are metadata, never evidence. Speech evidence has modality `speech`. Frame evidence has modality `on_screen_text` or `frame`, a segment key `f:<ms>:text` or `f:<ms>:scene`, and a `frame_sample` time anchor (UC-46b).
 - [x] Relevant repository checks were actually run and their results recorded (above): 23/23 checks at `982028c`, 16/16 mutants, 258 backend tests.
 - [x] PROGRESS.md records changed paths, decisions, evidence, unresolved dependencies and the next action.
-- [ ] Live media analysis on a permitted real sample. **Blocked by I17** (office firewall); the product owner will test it from another network.
+- [ ] Live media analysis on a permitted real sample. Processed on 2 Oct 2026 (5 real videos; captions, audio and frames); waiting for a clean check run after the fixes.
 - [ ] The product owner approves Z1. Z2 is accepted. Z3 was declined as proposed, and frames are now implemented as directed (D49).
 
 ## Approvals (Z1–Z3), for the product owner

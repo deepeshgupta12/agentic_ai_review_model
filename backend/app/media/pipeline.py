@@ -205,11 +205,10 @@ def store_frame_segments(
     contracts: ContractStore,
     source: dict[str, Any],
     observations: list[dict[str, Any]],
-    *,
-    declared_language: str | None,
 ) -> list[dict[str, Any]]:
     """A03's frame observations become segments at their frame's time, and the video becomes `analysed`. On-screen
-    text keeps its language; a frame description is A03's English. Neither is a transcription."""
+        text is tagged by its own script (a sign in English on a Hindi video is English); a frame description is A03's
+    English. Neither is a transcription."""
     now = utcnow()
     segments: list[dict[str, Any]] = []
     for item in observations:
@@ -228,7 +227,7 @@ def store_frame_segments(
                     "precision": "exact",  # the sampled frame's own time on the original timeline
                     "method": "frame_sample",
                 },
-                "language": language_tag(text, declared_language) if on_screen else "en",
+                "language": language_tag(text, None) if on_screen else "en",  # its own script, not the video's
                 "modality": item["modality"],
                 "transcription": None,
                 "original_text_ref": f"{segment_id}:original",
@@ -414,8 +413,7 @@ def process_video(
                 settings=settings,
             )
         if frames_skipped is None:
-            declared = track.language if has_captions and track is not None else source.get("language")
-            segments += store_frame_segments(client, db, contracts, source, observations, declared_language=declared)
+            segments += store_frame_segments(client, db, contracts, source, observations)
     except (MediaRefused, MediaUnavailable) as exc:
         set_media_status(db, contracts, source, "metadata_only", f"{exc.code}: {exc.message}")
         return {"outcome": "metadata_only", "reason": exc.code}

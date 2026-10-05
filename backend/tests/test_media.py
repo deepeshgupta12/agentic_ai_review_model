@@ -490,6 +490,9 @@ A03_OUTPUT = {
         observation("fr0", "on_screen_text", "Possession December 2027", imagery="render_or_graphic"),
         observation("fr0", "frame", "A computer render of two towers beside a pool.", imagery="render_or_graphic"),
         observation("fr1", "frame", "Two towers with scaffolding and a tower crane; the top floors have no facade."),
+        observation(
+            "fr1", "on_screen_text", "Site visit: call +91 98111 22333 / 7982 646567. RERA GGM/650/382/2022/125"
+        ),
         observation("fr2", "on_screen_text", "TAVIRA VISTA Sector 88", imagery="unclear", uncertainty="small text"),
         observation("fr2", "speech", "The presenter says it is ready."),  # frames carry no speech
         observation("fr9", "frame", "A frame that was never sent."),
@@ -522,7 +525,12 @@ def test_one_download_serves_speech_and_frames_and_nothing_is_kept(db, settings,
     content = client.calls[0]["messages"][0]["content"]
     assert [b["type"] for b in content].count("image") == 3 and "untrusted" in content[0]["text"]
     segments = {s["segment_key"]: s for s in frame_segments(db, video)}
-    assert sorted(segments) == ["f:0:scene", "f:0:text", "f:10000:scene", "f:20000:text"], "unknown frames dropped"
+    assert sorted(segments) == ["f:0:scene", "f:0:text", "f:10000:scene", "f:10000:text", "f:20000:text"], (
+        "unknown frames dropped"
+    )
+    sign = db["ai_payloads"].find_one({"_id": segments["f:10000:text"]["original_text_ref"]})["text"]
+    assert sign == "Site visit: call [phone number] / [phone number]. RERA GGM/650/382/2022/125", "no contact details"
+    assert segments["f:10000:text"]["language"] == "en", "tagged by its own script"
     for seg in segments.values():
         assert contracts.errors(to_view(seg), "sources.schema.json#/$defs/MediaSegment") == []
         assert seg["transcription"] is None and seg["time"]["method"] == "frame_sample"
@@ -659,7 +667,7 @@ def test_the_collection_checks_cover_frames(db, settings, contracts, video):
     process(db, settings, contracts, video, gateway=gateway)
     rows = {r["check"]: r for r in verify_collection(db, settings)}
     assert all(r["ok"] for r in rows.values()), [r for r in rows.values() if not r["ok"]]
-    assert rows["frame observations are never speech and exist only for analysed videos"]["looked_at"] == 4
+    assert rows["frame observations are never speech and exist only for analysed videos"]["looked_at"] == 5
     frame = frame_segments(db, video)[0]
     whisper = {"engine": "faster-whisper", "model_size": "small", "language_hint": None, "caption_kind": None}
     db["ai_media_segments"].update_one({"_id": frame["_id"]}, {"$set": {"transcription": whisper}})
@@ -669,3 +677,22 @@ def test_the_collection_checks_cover_frames(db, settings, contracts, video):
     db["ai_sources"].update_one({"_id": video["_id"]}, {"$set": {"media.access_status": "transcribed"}})
     failed = {r["check"] for r in verify_collection(db, settings) if not r["ok"]}
     assert failed == {"frame observations are never speech and exist only for analysed videos"}
+
+
+def test_the_frame_check_scores_a03_and_saves_a_valid_record(settings, contracts):
+    from app.config import REPO_ROOT
+    from app.media.evaluation import evaluate_frames, frames_record
+
+    from .test_gateway import response
+
+    cases = [
+        observation("fr0", "on_screen_text", "QUILLON RESIDENCES\nSector 102 Gurugram", imagery="render_or_graphic"),
+        observation("fr1", "on_screen_text", "Tower C - 20th floor slab complete", imagery="real_footage"),
+        observation("fr2", "on_screen_text", "Possession December 2027", imagery="render_or_graphic"),
+    ]
+    _, gateway = a03(settings, contracts, response({"outcome": "completed", "observations": cases}))
+    result = evaluate_frames(REPO_ROOT / "evals" / "media" / "v1", gateway)
+    assert result["renders_recognised"] == "2/3", "f2 is a graphic called real footage"
+    assert result["phrases_read"].split("/")[1] == "6" and result["dataset"]["synthetic"] is True
+    record = frames_record(result) | {"id": "evl_01JB0000000000000000000001", "created_at": "2026-10-02T00:00:00Z"}
+    assert contracts.errors(record, "operations.schema.json#/$defs/EvaluationRun") == []

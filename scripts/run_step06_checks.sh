@@ -99,10 +99,11 @@ worker_roles() {
   media=$(docker compose logs media-worker 2>/dev/null | grep '"worker started"' | tail -1)
   echo "worker:       $(echo "$general" | grep -o '"role": "[a-z]*"')"
   echo "media-worker: $(echo "$media" | grep -o '"role": "[a-z]*"') $(echo "$media" | grep -o '"kinds": \[[^]]*\]')"
-  docker inspect agentic_ai_review_model-media-worker-1 --format 'media-worker memory limit {{.HostConfig.Memory}} bytes, oom_score_adj {{.HostConfig.OomScoreAdj}}'
-  docker inspect agentic_ai_review_model-mongodb-1 --format 'mongodb oom_score_adj {{.HostConfig.OomScoreAdj}}'
+  docker inspect agentic_ai_review_model-media-worker-1 --format 'media-worker memory limit {{.HostConfig.Memory}} bytes, oom_score_adj {{.HostConfig.OomScoreAdj}}, restart {{.HostConfig.RestartPolicy.Name}}'
+  docker inspect agentic_ai_review_model-mongodb-1 --format 'mongodb oom_score_adj {{.HostConfig.OomScoreAdj}}, args {{.Args}}'
   echo "$general" | grep -q '"role": "general"' && echo "$media" | grep -q '"kinds": \["process_media"\]' \
-    && [ "$(docker inspect agentic_ai_review_model-media-worker-1 --format '{{.HostConfig.Memory}}')" = 2147483648 ]
+    && [ "$(docker inspect agentic_ai_review_model-media-worker-1 --format '{{.HostConfig.Memory}}')" = 2147483648 ] \
+    && [ "$(docker inspect agentic_ai_review_model-media-worker-1 --format '{{.HostConfig.RestartPolicy.Name}}')" = on-failure ]
 }
 
 setup_db_is_a_no_op() {
@@ -192,7 +193,13 @@ EOF
 # ---------- Speech and language ----------
 
 speech_check() {
-  docker compose exec -T media-worker python -m app.cli eval-media --save > "$T/eval-media.json" 2> "$T/eval-media.err" || { tail -5 "$T/eval-media.err"; return 1; }
+  local code=0
+  docker compose exec -T media-worker python -m app.cli eval-media --save > "$T/eval-media.json" 2> "$T/eval-media.err" || code=$?
+  if [ "$code" != 0 ]; then
+    tail -5 "$T/eval-media.err"
+    echo "eval-media exited with $code$([ "$code" = 137 ] && echo ' (killed: out of memory)')"
+    return 1
+  fi
   "$PY" - "$T/eval-media.json" <<'EOF'
 import json, sys
 r = json.load(open(sys.argv[1]))
@@ -333,7 +340,7 @@ expect "Web: eslint, TypeScript, API types, unit tests" 0 bash -c "cd web && pnp
 
 expect "Stack builds (including the media worker image) and every service is healthy" 0 docker compose up -d --build --wait
 expect "Long-running services up, including media-worker" 0 services_running
-expect "D48: worker roles, the media worker's 2 GB cap and kill priority; MongoDB protected" 0 worker_roles
+expect "D48: worker roles, the media worker's 2 GB cap, kill priority and restart on failure; MongoDB protected" 0 worker_roles
 expect "Repeating database setup changes nothing (ai_media_segments present)" 0 setup_db_is_a_no_op
 expect "Seeding twice: the second pass changes nothing; spoken_video_content v3 and youtube v3" 0 seeding_is_repeatable
 
