@@ -124,6 +124,8 @@ Hindi number words are where Whisper errs ("पच्छाहेतर" for प
 | 2026-10-02 | worktree (Z3) | Implementer | backend suite, ruff, mypy, contracts, web gates | 271 tests passed; lint and types clean; contracts 13/13; web gates OK | (console) |
 | 2026-10-02 07:32 | `9a167f4` | Implementer | `bash scripts/run_step06_checks.sh` | 22/24. **Live: YouTube was reachable.** The bounded attempt processed 5 real Conscient Parq videos: 3 from public captions, 1 from its audio (music only; no speech found) and 2 with frames, giving 79 windows, 43 speech and 36 frame evidence; verify-collection passed on them. **Failed:** (1) the speech check was killed when the Docker VM ran out of memory (`global_oom`; the media worker died, never MongoDB); (2) the frame check's A03 call passed but saving its result failed the evaluation contract (an extra `note` field). Also found: 2 of 4 real A03 calls hit the 4,000-token cap; a broker's phone number was stored from a sign; an English overlay was tagged `hi-Latn`; the killed media worker stayed down (no restart policy) | [log](checks-20261002T073247Z.log) |
 | 2026-10-02 08:17 | `9a167f4` | Implementer | speech check alone on an idle media worker | 20/22 facts again; peak about 1.4 GB in the worker | (console) |
+| 2026-10-05 04:54 | `5578a70` | Implementer | `bash scripts/run_step06_checks.sh` | **ALL CHECKS OK, 24/24.** 272 backend tests; media worker restarts on failure; MongoDB cache 0.25 GB; speech set 20/22 (saved); A04 5/5 and 12/12 (saved); A03 frame check 6/6 phrases and 3/3 renders (saved); live: the day's 5 attempts were `network_refused`, so YouTube was blocked again from this network (I17); verify-collection passed on the 2 Oct real videos (79 media segments, 36 frame observations) | [log](checks-20261005T045454Z.log) |
+| 2026-10-05 05:12 | `5578a70` | Implementer | `bash scripts/run_step06_mutations.sh` | **ALL MUTANTS CAUGHT, 26/26** (16 speech, 10 frames) | [log](mutation-check-20261005T051209Z.log) |
 
 ## Step 06 acceptance checks
 
@@ -134,7 +136,7 @@ Hindi number words are where Whisper errs ("पच्छाहेतर" for प
 - [x] Comments, descriptions, spoken content and frame observations remain distinguishable. Comments are separate sources (Step 05). Descriptions are metadata, never evidence. Speech evidence has modality `speech`. Frame evidence has modality `on_screen_text` or `frame`, a segment key `f:<ms>:text` or `f:<ms>:scene`, and a `frame_sample` time anchor (UC-46b).
 - [x] Relevant repository checks were actually run and their results recorded (above): 23/23 checks at `982028c`, 16/16 mutants, 258 backend tests.
 - [x] PROGRESS.md records changed paths, decisions, evidence, unresolved dependencies and the next action.
-- [ ] Live media analysis on a permitted real sample. Processed on 2 Oct 2026 (5 real videos; captions, audio and frames); waiting for a clean check run after the fixes.
+- [x] Live media analysis on a permitted real sample. Five real project videos were processed on 2 Oct 2026: captions, audio and frames. The checks are clean at `5578a70` (24/24, 26/26). The 2 Oct fixes (the A03 output cap, phone numbers, the on-screen language tag) are tested with fakes. They have not yet met a real video, because YouTube was blocked again on 5 Oct (I17).
 - [ ] The product owner approves Z1. Z2 is accepted. Z3 was declined as proposed, and frames are now implemented as directed (D49).
 
 ## Approvals (Z1–Z3), for the product owner
