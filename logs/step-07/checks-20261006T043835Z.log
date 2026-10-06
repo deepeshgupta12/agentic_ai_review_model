@@ -1,0 +1,641 @@
+Step 07 checks
+date (UTC): 2026-10-06T04:38:44Z
+commit:     447deb0 (plus uncommitted changes)
+python:     Python 3.10.11 (.venv); backend Python 3.13.9
+node:       v25.9.0 | pnpm 11.20.0 | docker 29.4.2 | Docker VM memory 4108828672 bytes
+
+=== Regression: Step 01 validator ===
+$ python3 scripts/validate_inputs.py
+Step 01 input validation
+========================
+
+Projects (contracts/five-project-input-template.json)
+  1. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana | dlf privana south | dlf privana west | dlf privana north
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         GGM/772/504/2023/116, GGM/819/551/2024/46, GGM/954/686/2025/57
+     Client id:        1170
+     status:       ready_to_move
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+     status:       under_construction
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+     status:       new_launch
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+     status:       new_launch
+  5. M3M Antalya Hills
+     slug:         m3m-antalya-hills-sector-79-gurgaon
+     search names: m3m antalya hills | m3m antalya hills phase 1 | m3m antalya hills phase ii | m3m antalya hills 3 | commercial 01 in m3m antalya hills phase i
+     place:        sector 79, new gurgaon, gurgaon
+     developer:    m3m
+     RERA:         GGM/650/382/2022/125, GGM/833/565/2024/60, GGM/844/576/2024/71, GGM/867/599/2024/94
+     Client id:        201749
+     status:       partially_ready
+
+Connectors + model providers: 12 (8 access_pending, 4 live)
+Source policies: 11 (11 accepted)
+Operating defaults: 14 (12 accepted, 2 open)
+
+Warnings (1):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+
+Result: PASS (0 errors, 1 warnings)
+--> OK (exit 0, expected 0)
+
+=== Regression: Step 01-02 use-case suites ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python -m unittest discover -s scripts/tests -q
+----------------------------------------------------------------------
+Ran 129 tests in 2.879s
+
+OK
+--> OK (exit 0, expected 0)
+
+=== Regression: contract checker (api 1.2.0, operations 1.3.0, sources 1.4.0; D49, D50) ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/check_contracts.py
+Step 02 contract checks
+=======================
+9 schema files, 217 definitions, 50 operations, 14 state machines, 19 journeys, 115 fixture cases
+
+  PASS      Schema files are valid and every $ref resolves
+  PASS      Status vocabulary and state machines
+  PASS      Route table and generated OpenAPI
+  PASS      Journeys: actors, operations and state paths
+  PASS      Agent outputs fit Claude structured outputs
+  PASS      Fixtures: valid pass, invalid fail for the stated reason
+  PASS      Canonical hashing (D23)
+  PASS      Text anchors, code points and UTF-16 (D24)
+  PASS      Approval and public-read rules
+  PASS      Construction status and first-person source reviews (D27, D28)
+  PASS      Step 01 seed data uses the contract vocabulary
+  PASS      Docs: journeys doc current, screen references valid
+  PASS      JavaScript cross-check (Node)
+
+Result: PASS (13/13 sections passed)
+--> OK (exit 0, expected 0)
+
+=== Backend: ruff lint and format ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run ruff check . && env -u VIRTUAL_ENV uv run ruff format --check .
+All checks passed!
+119 files already formatted
+--> OK (exit 0, expected 0)
+
+=== Backend: mypy ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run mypy
+Success: no issues found in 93 source files
+--> OK (exit 0, expected 0)
+
+=== UC-17..UC-51: backend tests against the Compose replica set (no real credentials) ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run pytest -q -p no:cacheprovider
+........................................................................ [ 24%]
+........................................................................ [ 49%]
+........................................................................ [ 74%]
+........................................................................ [ 98%]
+...                                                                      [100%]
+291 passed in 403.63s (0:06:43)
+--> OK (exit 0, expected 0)
+
+=== Web: eslint, TypeScript, API types, unit tests ===
+$ bash -c cd web && pnpm -s lint && pnpm -s typecheck >/dev/null && pnpm -s check:api && pnpm -s test >/dev/null && echo 'web gates OK'
+$ eslint
+$ next typegen && tsc --noEmit
+$ openapi-typescript ../contracts/v1/openapi.json -o lib/api-schema.d.ts --check
+✨ openapi-typescript 7.13.0
+$ vitest run
+web gates OK
+--> OK (exit 0, expected 0)
+
+=== Stack builds (including the embedder image) and every service is healthy ===
+$ docker compose up -d --build --wait
+ Image agentic_ai_review_model-scheduler Building 
+ Image agentic_ai_review_model-db-setup Building 
+ Image agentic_ai_review_model-api Building 
+ Image agentic_ai_review_model-worker Building 
+ Image agentic_ai_review_model-web Building 
+ Image agentic_ai_review_model-embedder Building 
+ Image agentic_ai_review_model-media-worker Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 3.69kB done
+#1 DONE 0.0s
+
+#2 [embedder internal] load build definition from Dockerfile.embed
+#2 transferring dockerfile: 1.09kB 0.0s done
+#2 DONE 0.1s
+
+#3 [web internal] load build definition from Dockerfile
+#3 transferring dockerfile: 877B 0.0s done
+#3 DONE 0.1s
+
+#4 [media-worker internal] load build definition from Dockerfile.media
+#4 transferring dockerfile: 1.38kB 0.0s done
+#4 DONE 0.1s
+
+#5 [media-worker internal] load metadata for docker.io/library/python:3.13-slim
+#5 ...
+
+#6 [api internal] load build definition from Dockerfile
+#6 transferring dockerfile: 900B 0.0s done
+#6 DONE 0.2s
+
+#5 [api internal] load metadata for docker.io/library/python:3.13-slim
+#5 DONE 0.5s
+
+#7 [api internal] load metadata for ghcr.io/astral-sh/uv:0.10.2
+#7 DONE 2.2s
+
+#8 [web internal] load metadata for docker.io/library/node:24-alpine
+#8 DONE 2.2s
+
+#9 [api internal] load .dockerignore
+#9 transferring context: 195B 0.0s done
+#9 DONE 0.0s
+
+#10 [media-worker internal] load build context
+#10 DONE 0.0s
+
+#11 [media-worker stage-0  1/12] FROM docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b
+#11 resolve docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b
+#11 resolve docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b 0.1s done
+#11 DONE 0.1s
+
+#12 [api] FROM ghcr.io/astral-sh/uv:0.10.2@sha256:94a23af2d50e97b87b522d3cea24aaf8a1faedec1344c952767434f69585cbf9
+#12 resolve ghcr.io/astral-sh/uv:0.10.2@sha256:94a23af2d50e97b87b522d3cea24aaf8a1faedec1344c952767434f69585cbf9 0.1s done
+#12 DONE 0.1s
+
+#13 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+#13 resolve docker.io/library/node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 0.1s done
+#13 DONE 0.1s
+
+#10 [worker internal] load build context
+#10 transferring context: 1.78MB 0.2s done
+#10 DONE 0.3s
+
+#14 [embedder internal] load build context
+#14 transferring context: 1.59MB 0.3s done
+#14 DONE 0.3s
+
+#15 [web internal] load build context
+#15 transferring context: 546.92kB 0.3s done
+#15 DONE 0.3s
+
+#16 [api stage-0  3/12] WORKDIR /srv/backend
+#16 CACHED
+
+#17 [web deps 5/5] RUN pnpm install --frozen-lockfile
+#17 CACHED
+
+#18 [web deps 4/5] COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
+#18 CACHED
+
+#19 [web deps 3/5] RUN corepack enable
+#19 CACHED
+
+#20 [web deps 2/5] WORKDIR /srv/web
+#20 CACHED
+
+#21 [web build 4/6] COPY --from=deps /srv/web/node_modules ./node_modules
+#21 CACHED
+
+#22 [media-worker stage-0  3/13] RUN sed -i "s|http://deb.debian.org|https://deb.debian.org|g" /etc/apt/sources.list.d/debian.sources  && apt-get update  && apt-get install -y --no-install-recommends ffmpeg  && rm -rf /var/lib/apt/lists/*
+#22 CACHED
+
+#23 [media-worker stage-0  2/12] COPY --from=ghcr.io/astral-sh/uv:0.10.2 /uv /uvx /bin/
+#23 CACHED
+
+#24 [media-worker stage-0  4/13] WORKDIR /srv/backend
+#24 CACHED
+
+#25 [scheduler stage-0  4/10] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#25 DONE 0.1s
+
+#26 [worker stage-0  4/12] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#26 CACHED
+
+#27 [web build 5/6] COPY web/ ./
+#27 DONE 0.2s
+
+#28 [media-worker stage-0  5/13] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#28 DONE 0.2s
+
+#29 [worker stage-0  5/12] RUN uv sync --frozen --no-dev --no-install-project
+#29 1.263 Using CPython 3.13.15 interpreter at: /usr/local/bin/python3.13
+#29 1.264 Creating virtual environment at: /opt/venv
+#29 1.486 Downloading numpy (15.0MiB)
+#29 1.486 Downloading anthropic (1.3MiB)
+#29 1.505 Downloading babel (9.7MiB)
+#29 1.513 Downloading zstandard (4.8MiB)
+#29 1.518 Downloading sqlalchemy (4.4MiB)
+#29 1.521 Downloading pydantic-core (1.9MiB)
+#29 1.526 Downloading pymongo (2.0MiB)
+#29 1.530 Downloading uvloop (4.1MiB)
+#29 1.535 Downloading lxml (4.8MiB)
+#29 4.814  Downloaded pydantic-core
+#29 6.262  Downloaded pymongo
+#29 ...
+
+#30 [media-worker stage-0  6/13] RUN uv sync --frozen --no-dev --group media --no-install-project
+#30 1.240 Using CPython 3.13.15 interpreter at: /usr/local/bin/python3.13
+#30 1.243 Creating virtual environment at: /opt/venv
+#30 1.853 Downloading faster-whisper (1.1MiB)
+#30 1.972 Downloading yt-dlp (3.0MiB)
+#30 2.039 Downloading sqlalchemy (4.4MiB)
+#30 2.047 Downloading anthropic (1.3MiB)
+#30 2.082 Downloading babel (9.7MiB)
+#30 2.088 Downloading numpy (15.0MiB)
+#30 2.092 Downloading zstandard (4.8MiB)
+#30 2.092 Downloading lxml (4.8MiB)
+#30 2.097 Downloading tokenizers (3.4MiB)
+#30 2.104 Downloading hf-xet (4.1MiB)
+#30 2.105 Downloading pydantic-core (1.9MiB)
+#30 2.109 Downloading ctranslate2 (16.1MiB)
+#30 2.123 Downloading onnxruntime (20.4MiB)
+#30 2.125 Downloading uvloop (4.1MiB)
+#30 2.127 Downloading pymongo (2.0MiB)
+#30 2.349 Downloading av (31.2MiB)
+#30 ...
+
+#29 [worker stage-0  5/12] RUN uv sync --frozen --no-dev --no-install-project
+#29 8.324  Downloaded uvloop
+#29 8.324  Downloaded sqlalchemy
+#29 8.815  Downloaded zstandard
+#29 9.248  Downloaded lxml
+#29 ...
+
+#31 [embedder stage-0  5/10] RUN uv sync --frozen --no-dev --group embed --no-install-project
+#31 1.262 Using CPython 3.13.15 interpreter at: /usr/local/bin/python3.13
+#31 1.265 Creating virtual environment at: /opt/venv
+#31 2.028 Downloading uvloop (4.1MiB)
+#31 2.043 Downloading babel (9.7MiB)
+#31 2.059 Downloading tokenizers (3.4MiB)
+#31 2.069 Downloading hf-xet (4.1MiB)
+#31 2.080 Downloading onnxruntime (20.4MiB)
+#31 2.084 Downloading anthropic (1.3MiB)
+#31 2.084 Downloading sqlalchemy (4.4MiB)
+#31 2.088 Downloading pymongo (2.0MiB)
+#31 2.114 Downloading numpy (15.0MiB)
+#31 2.114 Downloading lxml (4.8MiB)
+#31 2.124 Downloading pydantic-core (1.9MiB)
+#31 2.142 Downloading zstandard (4.8MiB)
+#31 8.236  Downloaded pydantic-core
+#31 9.866  Downloaded pymongo
+#31 10.05  Downloaded tokenizers
+#31 ...
+
+#32 [web build 6/6] RUN pnpm build
+#32 1.246 ! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-11.20.0.tgz
+#32 ...
+
+#30 [media-worker stage-0  6/13] RUN uv sync --frozen --no-dev --group media --no-install-project
+#30 9.039  Downloaded faster-whisper
+#30 10.73  Downloaded pydantic-core
+#30 11.23  Downloaded pymongo
+#30 13.41  Downloaded yt-dlp
+#30 13.48  Downloaded tokenizers
+#30 14.63  Downloaded hf-xet
+#30 ...
+
+#31 [embedder stage-0  5/10] RUN uv sync --frozen --no-dev --group embed --no-install-project
+#31 10.82  Downloaded hf-xet
+#31 11.06  Downloaded uvloop
+#31 11.12  Downloaded sqlalchemy
+#31 11.73  Downloaded zstandard
+#31 12.05  Downloaded lxml
+#31 13.73  Downloaded babel
+#31 14.87  Downloaded anthropic
+#31 ...
+
+#30 [media-worker stage-0  6/13] RUN uv sync --frozen --no-dev --group media --no-install-project
+#30 18.74  Downloaded zstandard
+#30 18.74  Downloaded sqlalchemy
+#30 18.74  Downloaded uvloop
+#30 18.74  Downloaded lxml
+#30 18.74  Downloaded anthropic
+#30 18.75  Downloaded babel
+#30 19.87  Downloaded ctranslate2
+#30 ...
+
+#29 [worker stage-0  5/12] RUN uv sync --frozen --no-dev --no-install-project
+#29 12.24  Downloaded babel
+#29 12.82  Downloaded anthropic
+#29 13.04  Downloaded numpy
+#29 13.04 Prepared 88 packages in 11.73s
+#29 ...
+
+#30 [media-worker stage-0  6/13] RUN uv sync --frozen --no-dev --group media --no-install-project
+#30 22.82  Downloaded numpy
+#30 22.84  Downloaded onnxruntime
+#30 24.82  Downloaded av
+#30 24.84 Prepared 103 packages in 23.54s
+#30 ...
+
+#31 [embedder stage-0  5/10] RUN uv sync --frozen --no-dev --group embed --no-install-project
+#31 18.81  Downloaded numpy
+#31 18.81  Downloaded onnxruntime
+#31 18.81 Prepared 97 packages in 14.93s
+#31 ...
+
+#32 [web build 6/6] RUN pnpm build
+#32 32.51 $ next build
+#32 ...
+
+#31 [embedder stage-0  5/10] RUN uv sync --frozen --no-dev --group embed --no-install-project
+#31 39.78 Installed 97 packages in 23.50s
+#31 ...
+
+#32 [web build 6/6] RUN pnpm build
+#32 44.81 ▲ Next.js 16.3.6 (Turbopack)
+#32 ...
+
+#29 [worker stage-0  5/12] RUN uv sync --frozen --no-dev --no-install-project
+#29 35.26 Installed 88 packages in 22.20s
+#29 ...
+
+#30 [media-worker stage-0  6/13] RUN uv sync --frozen --no-dev --group media --no-install-project
+#30 48.14 Installed 103 packages in 23.28s
+#30 ...
+
+#32 [web build 6/6] RUN pnpm build
+#32 48.69 ✓ Running next.config.ts took 3.9s
+#32 48.99 
+#32 49.35   Creating an optimized production build ...
+#32 ...
+
+#29 [worker stage-0  5/12] RUN uv sync --frozen --no-dev --no-install-project
+#29 180.2 Bytecode compiled 5845 files in 2m 24s
+#29 180.3  + annotated-doc==0.0.5
+#29 180.3  + annotated-types==0.8.0
+#29 180.3  + anthropic==1.8.0
+#29 180.3  + anyio==4.15.1
+#29 180.3  + argon2-cffi==25.1.0
+#29 180.3  + argon2-cffi-bindings==26.1.0
+#29 180.3  + attrs==26.1.0
+#29 180.3  + babel==2.18.0
+#29 180.3  + certifi==2026.7.22
+#29 180.3  + cffi==2.1.1
+#29 180.3  + charset-normalizer==3.5.1
+#29 180.3  + click==8.5.0
+#29 180.3  + courlan==1.4.0
+#29 180.3  + dateparser==1.4.3
+#29 180.3  + distro==1.9.0
+#29 180.3  + dnspython==2.8.0
+#29 180.3  + docstring-parser==0.18.0
+#29 180.3  + fastapi==0.141.1
+#29 180.3  + h11==0.16.0
+#29 180.3  + htmldate==1.10.0
+#29 180.3  + httpcore==1.0.9
+#29 180.3  + httpcore2==2.13.1
+#29 180.3  + httptools==0.8.0
+#29 180.3  + httpx==0.28.1
+#29 180.3  + httpx2==2.13.1
+#29 180.3  + idna==3.20
+#29 180.3  + jiter==0.17.0
+#29 180.3  + jsonpatch==1.33
+#29 180.3  + jsonpointer==3.1.1
+#29 180.3  + jsonschema==4.26.0
+#29 180.3  + jsonschema-specifications==2025.9.1
+#29 180.3  + justext==3.0.2
+#29 180.3  + langchain==1.4.2
+#29 180.3  + langchain-classic==1.0.8
+#29 180.3  + langchain-core==1.6.5
+#29 180.3  + langchain-mongodb==0.12.1
+#29 180.3  + langchain-protocol==0.0.19
+#29 180.3  + langchain-text-splitters==1.1.2
+#29 180.3  + langgraph==1.2.12
+#29 180.3  + langgraph-checkpoint==4.2.0
+#29 180.3  + langgraph-checkpoint-mongodb==0.5.0
+#29 180.3  + langgraph-prebuilt==1.1.0
+#29 180.3  + langgraph-sdk==0.4.5
+#29 180.3  + langsmith==0.14.1
+#29 180.3  + lark==1.3.1
+#29 180.3  + lxml==6.1.3
+#29 180.3  + lxml-html-clean==0.4.5
+#29 180.3  + numpy==2.5.3
+#29 180.3  + orjson==3.12.0
+#29 180.3  + ormsgpack==1.12.2
+#29 180.3  + packaging==26.3
+#29 180.3  + pycparser==3.0
+#29 180.3  + pydantic==2.13.5
+#29 180.3  + pydantic-core==2.46.5
+#29 180.3  + pydantic-settings==2.15.0
+#29 180.3  + pymongo==4.17.0
+#29 180.3  + pymongo-search-utils==0.3.1
+#29 180.3  + python-dateutil==2.9.0.post0
+#29 180.3  + python-dotenv==1.2.3
+#29 180.3  + python-ulid==4.0.1
+#29 180.3  + pytz==2026.4
+#29 180.3  + pyyaml==6.0.3
+#29 180.3  + referencing==0.37.0
+#29 180.3  + regex==2026.9.29
+#29 180.3  + requests==2.34.2
+#29 180.3  + requests-toolbelt==1.0.0
+#29 180.3  + rfc8785==0.1.4
+#29 180.3  + rpds-py==2026.6.3
+#29 180.3  + six==1.17.0
+#29 180.3  + sniffio==1.3.1
+#29 180.3  + sqlalchemy==2.1.1
+#29 180.3  + starlette==1.7.0
+#29 180.3  + tenacity==9.1.4
+#29 180.3  + tld==0.13.2
+#29 180.3  + trafilatura==2.2.0
+#29 180.3  + truststore==0.10.4
+#29 180.3  + typing-extensions==4.16.0
+#29 180.3  + typing-inspection==0.4.4
+#29 180.3  + tzdata==2026.4
+#29 180.3  + tzlocal==5.4.4
+#29 180.3  + urllib3==2.8.0
+#29 180.3  + uuid-utils==0.17.1
+#29 180.3  + uvicorn==0.54.0
+#29 180.3  + uvloop==0.22.1
+#29 180.3  + watchfiles==1.3.0
+#29 180.3  + websockets==16.1.1
+#29 180.3  + xxhash==4.0.1
+#29 180.3  + zstandard==0.25.0
+#29 DONE 184.6s
+
+#30 [media-worker stage-0  6/13] RUN uv sync --frozen --no-dev --group media --no-install-project
+#30 ...
+
+#33 [db-setup stage-0  6/12] COPY backend/app ./app
+#33 DONE 36.4s
+
+#34 [api stage-0  7/12] RUN uv sync --frozen --no-dev
+#34 ...
+
+#31 [embedder stage-0  5/10] RUN uv sync --frozen --no-dev --group embed --no-install-project
+#31 224.6 error: Failed to bytecode-compile Python file in: /opt/venv/lib/python3.13/site-packages
+#31 224.6   Caused by: Bytecode timed out (60s) compiling file: `/opt/venv/lib/python3.13/site-packages/numpy/_core/tests/test_multiarray.py`
+#31 ERROR: process "/bin/sh -c uv sync --frozen --no-dev --group embed --no-install-project" did not complete successfully: exit code: 2
+
+#32 [web build 6/6] RUN pnpm build
+#32 ...
+
+#34 [db-setup stage-0  7/12] RUN uv sync --frozen --no-dev
+#34 ...
+
+#30 [media-worker stage-0  6/13] RUN uv sync --frozen --no-dev --group media --no-install-project
+#30 CANCELED
+
+#32 [web build 6/6] RUN pnpm build
+#32 CANCELED
+
+#34 [worker stage-0  7/12] RUN uv sync --frozen --no-dev
+#34 8.975 runc run failed: container process is already dead
+#34 CANCELED
+------
+ > [embedder stage-0  5/10] RUN uv sync --frozen --no-dev --group embed --no-install-project:
+11.73  Downloaded zstandard
+12.05  Downloaded lxml
+13.73  Downloaded babel
+14.87  Downloaded anthropic
+18.81  Downloaded numpy
+18.81  Downloaded onnxruntime
+18.81 Prepared 97 packages in 14.93s
+39.78 Installed 97 packages in 23.50s
+224.6 error: Failed to bytecode-compile Python file in: /opt/venv/lib/python3.13/site-packages
+224.6   Caused by: Bytecode timed out (60s) compiling file: `/opt/venv/lib/python3.13/site-packages/numpy/_core/tests/test_multiarray.py`
+------
+Dockerfile.embed:17
+
+--------------------
+
+  15 |     WORKDIR /srv/backend
+
+  16 |     COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+
+  17 | >>> RUN uv sync --frozen --no-dev --group embed --no-install-project
+
+  18 |     COPY backend/app ./app
+
+  19 |     RUN uv sync --frozen --no-dev --group embed
+
+--------------------
+
+target embedder: failed to solve: process "/bin/sh -c uv sync --frozen --no-dev --group embed --no-install-project" did not complete successfully: exit code: 2
+
+--> NOT OK (exit 1, expected 0)
+
+=== Long-running services up ===
+$ services_running
+mongodb running
+api running
+worker running
+media-worker running
+embedder NOT running
+scheduler running
+web running
+--> NOT OK (exit 1, expected 0)
+
+=== Database setup adds the Step 07 collections and indexes; a repeat changes nothing ===
+$ setup_creates_step07_collections
+first pass changed: nothing (already set up)
+Step 07 collections present: ['ai_claims', 'ai_findings', 'ai_review_excerpts', 'ai_content_revisions', 'ai_evidence_search']; changed on repeat: none
+--> OK (exit 0, expected 0)
+
+=== UC-47: the scheduler queues clustering for new evidence and the worker completes it ===
+$ scheduler_clusters_new_evidence
+  evidence waiting for a cluster: 0
+  latest clustering job: cluster_origins:2026100510 completed; still waiting: 0
+--> OK (exit 0, expected 0)
+
+=== UC-47: clustering again changes nothing (stable cluster IDs); joined copies listed ===
+$ clusters_are_stable
+  sources with evidence 363; clusters 359; joined (copies of one origin) 3; created 0, changed 0, retired 0 on this repeat
+  cls_01M45RY77GV8GF8ABC1YQTZV0R v1 near_duplicate: 2 copies (article, article)
+  cls_01M45RY77HJ9Z9FJJC6Q4YPQ2X v1 exact_hash: 3 copies (comment, comment, comment)
+  cls_01M45RY77J0R4R6GC5F1CYXDFF v1 near_duplicate: 2 copies (article, article)
+--> OK (exit 0, expected 0)
+
+=== UC-49: older evidence gets its context window once ===
+$ context_backfill_once
+  first pass: {'looked_at': 327, 'set': 0, 'none_needed': 327}
+  repeat:     {'looked_at': 327, 'set': 0, 'none_needed': 327}
+--> OK (exit 0, expected 0)
+
+=== D51: the embedder serves pinned bge-m3 int8 vectors (1.5 GB cap, kill priority, restart on failure) ===
+$ embedder_ready
+
+error: no such object: agentic_ai_review_model-embedder-1
+Error response from daemon: No such container: agentic_ai_review_model-embedder-1
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+ModuleNotFoundError: No module named 'app.embeddings'
+--> NOT OK (exit 1, expected 0)
+
+=== UC-52: the scheduler queues embedding and the worker gives every evidence span its vector ===
+$ scheduler_embeds_evidence
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+ModuleNotFoundError: No module named 'app.embeddings'
+--> NOT OK (exit 1, expected 0)
+
+=== UC-49/51: the evidence rules hold on the real stored data (verify-evidence) ===
+$ evidence_rules_hold
+  OK   every anchor and context re-derives its excerpt from the stored source   looked at 447   broken 0
+  OK   evidence agrees with its link on project and source revision             looked at 447   broken 0
+  OK   erased evidence keeps no words                                           looked at 10    broken 0
+  OK   the search index holds only words the evidence still has                 looked at 437   broken 0
+  OK   every origin-cluster reference contains the evidence's source            looked at 447   broken 0
+  OK   claims cite existing evidence revisions of their own project             looked at 0     broken 0
+  OK   findings cite existing claim revisions of their own project              looked at 0     broken 0
+  OK   every content manifest reference resolves                                looked at 0     broken 0
+--> OK (exit 0, expected 0)
+
+=== UC-50/52: hybrid retrieval on the real evidence of the five projects returns only that project's eligible evidence ===
+$ retrieval_on_real_evidence
+Traceback (most recent call last):
+  File "<stdin>", line 4, in <module>
+ModuleNotFoundError: No module named 'app.embeddings'
+--> NOT OK (exit 1, expected 0)
+
+=== UC-50/52: retrieval benchmark, keyword, vector and hybrid (saved): no wrong-project, withdrawn or anchor errors ===
+$ retrieval_benchmark
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+KeyError: 'embedded'
+--> OK (exit 0, expected 0)
+
+=== Regression: the collection rules still hold (verify-collection) ===
+$ collection_rules_hold
+  17/17 collection rules hold
+--> OK (exit 0, expected 0)
+
+=== Hygiene: nothing generated, secret or downloaded is tracked ===
+$ no_tracked_secrets_or_env
+no .env, .venv, node_modules, .next or downloaded media tracked (the synthetic .opus clips are the only audio)
+--> OK (exit 0, expected 0)
+
+=== Hygiene: secret values absent from commits, service logs and logs/ ===
+$ secrets_not_in_repo_or_logs
+SEED_USER_PASSWORD: not in committed files, service logs or logs/
+SESSION_SECRET: not in committed files, service logs or logs/
+REVALIDATION_SECRET: not in committed files, service logs or logs/
+ANTHROPIC_API_KEY: not in committed files, service logs or logs/
+BRAVE_SEARCH_API_KEY: not in committed files, service logs or logs/
+YOUTUBE_API_KEY: not in committed files, service logs or logs/
+--> OK (exit 0, expected 0)
+
+=== Hygiene: latest CI run on main is not failing ===
+$ ci_not_failing
+latest CI run on main: e638523 completed success Step 06 approved (Z1); Step 07 keyword layer runs recorded (20/20, 12…
+--> OK (exit 0, expected 0)
+
+SOME CHECKS NOT OK
+log: logs/step-07/checks-20261006T043835Z.log

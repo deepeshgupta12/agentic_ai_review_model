@@ -336,11 +336,11 @@ echo "node:       $(node --version 2>/dev/null) | pnpm $(pnpm --version 2>/dev/n
 
 expect "Regression: Step 01 validator" 0 python3 scripts/validate_inputs.py
 expect "Regression: Step 01-02 use-case suites" 0 "$PY" -m unittest discover -s scripts/tests -q
-expect "Regression: contract checker (api 1.2.0, operations 1.3.0, sources 1.4.0; D49, D50)" 0 "$PY" scripts/check_contracts.py
+expect "Regression: contract checker (api 1.2.0, operations 1.4.0, sources 1.4.0; D49, D50, D51)" 0 "$PY" scripts/check_contracts.py
 
 expect "Backend: ruff lint and format" 0 bash -c "cd backend && $UV run ruff check . && $UV run ruff format --check ."
 expect "Backend: mypy" 0 bash -c "cd backend && $UV run mypy"
-expect "UC-17..UC-51: backend tests against the Compose replica set (no real credentials)" 0 bash -c "cd backend && $UV run pytest -q -p no:cacheprovider"
+expect "UC-17..UC-52: backend tests against the Compose replica set (no real credentials)" 0 bash -c "cd backend && $UV run pytest -q -p no:cacheprovider"
 expect "Web: eslint, TypeScript, API types, unit tests" 0 bash -c "cd web && pnpm -s lint && pnpm -s typecheck >/dev/null && pnpm -s check:api && pnpm -s test >/dev/null && echo 'web gates OK'"
 
 expect "Stack builds (including the embedder image) and every service is healthy" 0 docker compose up -d --build --wait
