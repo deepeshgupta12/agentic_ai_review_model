@@ -126,6 +126,33 @@ mutant "short identical comments stay separate opinions" test_evidence.py test_s
   '    sets = {k: shingles(t) for k, t in texts.items() if t and len(words(t)) >= MIN_WORDS}' \
   '    sets = {k: shingles(t) for k, t in texts.items() if t}'
 
+printf '\n-- embedding search (D51)\n'
+
+mutant "hybrid ranking fuses vectors with keywords" test_evidence.py test_vectors_find_what_keywords_miss_and_hybrid_keeps_both \
+  app/evidence/retrieval.py \
+  '    if mode == "keyword" or not similar:' \
+  '    if True:'
+
+mutant "a down embedder falls back to keywords" test_evidence.py test_without_the_embedder_search_falls_back_to_keywords_and_says_so \
+  app/evidence/retrieval.py \
+  '                degraded = f"embedder unavailable ({exc}): keyword ranking only"' \
+  '                raise'
+
+mutant "a new model means new vectors" test_evidence.py test_vectors_are_made_by_a_scheduled_job_and_remade_for_a_new_model \
+  app/embeddings/jobs.py \
+  '    return {"$or": [{"embedding": None}, {"embedding_model": {"$ne": model_label(settings)}}]}' \
+  '    return {"embedding": None}'
+
+mutant "entries whose evidence lost its words leave the index" test_evidence.py test_vectors_are_made_by_a_scheduled_job_and_remade_for_a_new_model \
+  app/evidence/retrieval.py \
+  '    if stale:' \
+  '    if False:'
+
+mutant "a model file must match its pinned hash" test_evidence.py test_a_model_file_that_does_not_match_its_pinned_hash_is_refused \
+  app/embeddings/model.py \
+  '        if actual != expected:' \
+  '        if False:'
+
 echo
 if [ "$FAILED" -eq 0 ]; then echo "ALL MUTANTS CAUGHT"; else echo "SOME MUTANTS NOT CAUGHT"; fi
 echo "log: $LOG"

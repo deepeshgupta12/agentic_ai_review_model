@@ -184,6 +184,8 @@ def _search_validator() -> dict[str, Any]:
                 "translation": {"bsonType": ["string", "null"]},
                 "published_at": {"bsonType": ["date", "null"]},
                 "phase_rera_id": {"bsonType": ["string", "null"]},
+                "embedding": {"bsonType": ["array", "null"], "items": {"bsonType": "double"}},
+                "embedding_model": {"bsonType": ["string", "null"]},
                 "indexed_at": {"bsonType": "date"},
             },
         }

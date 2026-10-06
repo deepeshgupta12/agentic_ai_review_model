@@ -5,11 +5,11 @@ Step 07 builds the evidence layer: every finding can be traced to exact evidence
 - one eligibility rule used everywhere;
 - context windows and anchor checks;
 - origin clusters, kept current by a scheduled job;
-- filtered keyword retrieval with a derived search index;
+- filtered retrieval with a derived search index: keyword, vector (local bge-m3) and hybrid ranking;
 - lineage collections and the "what depends on this?" lookup, wired into dependency invalidation;
 - a labelled synthetic retrieval benchmark.
 
-Embedding search (local `bge-m3`) was requested by the product owner on 5 Oct 2026 and is being added on top of the keyword baseline recorded here.
+Embedding search was requested by the product owner on 5 Oct 2026 and is built on top of the keyword baseline (D51). The `embedder` service runs bge-m3 as int8 ONNX, pinned and hash-checked, capped at 1.5 GB.
 
 Run the commands from the repository root with the stack up (`make up`). In zsh, run `setopt interactivecomments` once if you paste commands that contain `#` comments.
 
@@ -29,28 +29,30 @@ The check script covers:
 - the new collections and indexes, and that repeating setup changes nothing;
 - the scheduled clustering job on the real evidence, then a stable repeat;
 - context windows for older evidence, added once;
+- the embedder: pinned model loaded, memory cap, kill priority and restart policy, and a Hindi–English similarity check;
+- the scheduled job that gives every real evidence span its vector;
 - the evidence rules on the real stored data (`verify-evidence`);
-- retrieval on the real evidence of the five projects: only that project's eligible evidence, with latency;
-- the retrieval benchmark (saved);
+- hybrid retrieval on the real evidence of the five projects: only that project's eligible evidence, with latency;
+- the retrieval benchmark for keyword, vector and hybrid ranking (saved);
 - the collection rules;
 - hygiene.
 
-It ends with `ALL CHECKS OK`. It makes no Claude call and runs no Whisper.
+It ends with `ALL CHECKS OK`. It makes no Claude call and runs no Whisper. The embedder's first start downloads the pinned model (568 MB) into a volume.
 
-The mutation script disables 12 evidence rules one at a time; each must be caught by its own test.
+The mutation script disables 17 evidence rules one at a time (12 for the evidence layer and 5 for embedding search); each must be caught by its own test.
 
 ## Try it yourself
 
 ```bash
-make search PROJECT=conscient-parq-sector-80-gurgaon Q="possession"
+make search PROJECT=conscient-parq-sector-80-gurgaon Q="when will I get possession"
 make search PROJECT=m3m-antalya-hills-sector-79-gurgaon Q="पज़ेशन"
 make verify-evidence
 make eval-retrieval
 ```
 
-- `search` lists that project's eligible evidence for the words, best first, with flags (for example `stale`). An empty query lists the newest evidence.
+- `search` lists that project's eligible evidence, best first, by hybrid ranking. Each result shows its keyword score, its cosine similarity and any flags (for example `stale`). `--mode keyword` or `--mode vector` (through `python -m app.cli search-evidence`) ranks one way only. An empty query lists the newest evidence.
 - `verify-evidence` re-derives every anchor from the stored source and checks the search index, clusters and lineage.
-- `eval-retrieval` runs the labelled synthetic set in a scratch database that is dropped afterwards.
+- `eval-retrieval` runs the labelled synthetic set in a scratch database that is dropped afterwards, scoring keyword, vector and hybrid ranking.
 
 ## Use cases
 
@@ -60,11 +62,13 @@ make eval-retrieval
 | UC-48 | One eligibility rule | Stale is flagged; unavailable, review, another project's link, withdrawal and superseded revisions are not eligible. Identity work may use links in review. The retrieval filter admits exactly what the rule admits | 2 |
 | UC-49 | Anchors and context | Context keeps whole sentences and words, in Hindi too. UTF-16 offsets for Hindi and emoji point at the same characters in a browser. Anchor checks catch an altered, moved or uncontained span. New evidence is stored with its context (text and speech). Older evidence gets its context once | 5 |
 | UC-50 | Filtered retrieval | Only this project's words come back, never another project's. Withdrawn evidence leaves at once, its search copy at erasure, and a link in review is no support. An English query reaches Hindi speech through its kept translation. The benchmark is clean and reports its misses honestly | 4 |
+| UC-52 | Embedding search (D51) | Vectors find what keywords miss (other word forms, English for Hindi), and hybrid keeps both. Vectors never cross projects. Without the embedder, search falls back to keywords and says so. A scheduled job makes the vectors, and remakes them for a new model. An entry whose evidence lost its words leaves the index. A model file that does not match its pinned hash is refused | 4 |
 | UC-51 | Lineage | Exact revisions are followed from source to content. A source correction reaches every draft and active revision, withdraws the approved one and reports the rest. The evidence checks pass on good data and catch broken lineage | 3 |
 
 ## Known limits
 
-- **Keyword ranking only.** No stemming ("floods" does not match "flooding") and no cross-language matching without a stored translation. The benchmark shows both.
+- **Keyword ranking alone** has no stemming and no cross-language matching without a stored translation; hybrid ranking with bge-m3 closes both on the benchmark. Vector similarity is computed over at most 2,000 entries per project, which is plenty for this POC.
+- **Memory.** The embedder uses about 0.75 GB. Docker's 4 GB VM is tight; the product owner chose 6 GB (I18). This Mac has 8.6 GB in total.
 - **Search API.** Retrieval is a backend service and a command; a console route waits for Step 09.
 - **Claims, findings and content** do not exist yet (Steps 08–11). Lineage is tested with records built from the contract fixtures.
 - **Devanagari localities** ("सेक्टर 102") send a post's link to review (I19).

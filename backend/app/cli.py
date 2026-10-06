@@ -517,6 +517,7 @@ def cmd_add_evidence_context(_: argparse.Namespace) -> int:
 
 def cmd_search_evidence(args: argparse.Namespace) -> int:
     """Keyword search over one project's eligible evidence, with filters (D50)."""
+    from app.embeddings.client import default_embedder
     from app.evidence.retrieval import search
 
     db = get_db()
@@ -527,6 +528,8 @@ def cmd_search_evidence(args: argparse.Namespace) -> int:
         modalities=args.modality or None,
         languages=args.language or None,
         limit=args.limit,
+        embedder=default_embedder(get_settings()),
+        mode=args.mode,
     )
     _print(
         {
@@ -535,6 +538,8 @@ def cmd_search_evidence(args: argparse.Namespace) -> int:
                 {
                     "evidence": f"{i['evidence']['id']}@{i['evidence']['revision']}",
                     "score": i["score"],
+                    "keyword_score": i["keyword_score"],
+                    "similarity": i["similarity"],
                     "modality": i["evidence"]["modality"],
                     "language": i["evidence"]["language"],
                     "flags": i["flags"],
@@ -550,6 +555,7 @@ def cmd_search_evidence(args: argparse.Namespace) -> int:
 def cmd_eval_retrieval(args: argparse.Namespace) -> int:
     """Retrieval benchmark on the labelled synthetic set (evals/retrieval/v1) in a scratch database, dropped after."""
     from app.db import utcnow
+    from app.embeddings.client import default_embedder
     from app.evidence.benchmark import benchmark_record, run_benchmark
     from app.ids import new_id
 
@@ -561,13 +567,17 @@ def cmd_eval_retrieval(args: argparse.Namespace) -> int:
         settings,
         REPO_ROOT / "evals" / "retrieval" / "v1",
         REPO_ROOT / "evals" / "identity" / "v1" / "catalogue.json",
+        embedder=None if args.keyword_only else default_embedder(settings),
     )
     record = benchmark_record(result)
     if args.save:
         record = {"_id": new_id("evl"), **record, "created_at": utcnow()}
         db["ai_evaluations"].insert_one(record)
     _print({**result, "saved_as": record.get("_id")})
-    clean = result["wrong_project_results"] == result["withdrawn_results"] == result["anchor_errors"] == 0
+    clean = all(
+        r["wrong_project_results"] == r["withdrawn_results"] == r["anchor_errors"] == 0
+        for r in result["by_retriever"].values()
+    )
     return 0 if clean and not result["unlinked_documents"] else 1
 
 
@@ -803,6 +813,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     p = sub.add_parser("eval-retrieval", help="retrieval benchmark on the labelled synthetic set (scratch database)")
     p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
+    p.add_argument("--keyword-only", action="store_true", help="skip the embedder (keyword ranking only)")
     p.set_defaults(func=cmd_eval_retrieval)
     p = sub.add_parser("search-evidence", help="keyword search over a project's eligible evidence")
     p.add_argument("--project", required=True, help="project slug")
@@ -810,6 +821,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--modality", action="append", help="text, speech, on_screen_text or frame (repeatable)")
     p.add_argument("--language", action="append", help="language tag, e.g. hi or en (repeatable)")
     p.add_argument("--limit", type=int, default=10)
+    p.add_argument("--mode", choices=["hybrid", "keyword", "vector"], default="hybrid")
     p.set_defaults(func=cmd_search_evidence)
     p = sub.add_parser("eval-identity", help="identity evaluation on the labelled dataset")
     p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")

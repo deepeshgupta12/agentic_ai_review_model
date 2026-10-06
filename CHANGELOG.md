@@ -11,10 +11,11 @@
 - **Context windows.** New text evidence keeps up to 400 code points of context on each side, cut at a sentence end or a space; speech evidence keeps the neighbouring transcript windows. Older evidence gets its context once (`make evidence-context`).
 - **Anchor checks.** `make verify-evidence` re-derives every anchor and context from the stored source, and checks links, erasure, the search index, origin clusters and lineage references.
 - **Origin clusters.** Copies of one origin count once: identical texts, near-copies and copied passages are joined; short identical comments are not. A scheduled job keeps clusters current; cluster IDs are stable and changes are audited.
-- **Filtered retrieval** (keyword baseline). Eligibility and the caller's filters come first, then a MongoDB text index ranks the results. English queries reach Hindi speech through A04's kept translation. Erasure removes the search copy at once. Commands: `make search` and `make eval-retrieval`.
+- **Filtered retrieval.** Eligibility and the caller's filters come first. A MongoDB text index ranks by keywords; English queries reach Hindi speech through A04's kept translation. Erasure removes the search copy at once. Commands: `make search` and `make eval-retrieval`.
+- **Embedding search** (D51, requested by the product owner). Local bge-m3 (int8 ONNX, pinned and hash-checked) runs in a new `embedder` service, capped at 1.5 GB. A scheduled job gives every evidence span its vector. Hybrid ranking fuses keywords and vectors by reciprocal rank and is the default; if the embedder is down, search falls back to keywords and says so. On the labelled set (45 posts, 28 queries), recall@10 went from 0.839 (keyword) to 1.0 (hybrid), closing the word-form, cross-language and paraphrase misses.
 - **Lineage.** Claims, findings, source reviews and content revisions are indexed by every exact reference. A correction or withdrawal finds every affected draft and active revision; the invalidation job withdraws approvals that rested on the evidence and reports the rest.
-- **Benchmark:** `evals/retrieval/v1`, 21 synthetic posts and 20 labelled queries. Results are in `logs/step-07`.
-- **Contracts:** api 1.2.0 (`source_unavailable`), operations 1.3.0 (job `cluster_origins`). New collections: `ai_claims`, `ai_findings`, `ai_review_excerpts`, `ai_content_revisions` and `ai_evidence_search`.
+- **Benchmark:** `evals/retrieval/v1`, 45 synthetic posts and 28 labelled queries, scoring keyword, vector and hybrid ranking. Results are in `logs/step-07`.
+- **Contracts:** api 1.2.0 (`source_unavailable`), operations 1.4.0 (jobs `cluster_origins` and `embed_evidence`). New collections: `ai_claims`, `ai_findings`, `ai_review_excerpts`, `ai_content_revisions` and `ai_evidence_search`.
 - **Found:** Hindi posts that write the locality in Devanagari ("सेक्टर 102") go to review rather than being matched automatically (I19).
 
 ## Videos and languages — 1 October 2026 (Step 06)

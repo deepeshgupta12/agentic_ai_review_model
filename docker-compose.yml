@@ -121,6 +121,29 @@ services:
     cpus: ${MEDIA_WORKER_CPUS:-2}  # CI runners have 2 CPUs; raise it in .env on a machine with more cores
     stop_grace_period: 60s
 
+  embedder:  # Step 07 (D51): bge-m3 int8 embeddings for evidence search; Compose network only, no published port
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.embed
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - embedding_models:/srv/embeddings
+    healthcheck:  # ready once the pinned model is downloaded (568 MB, first start only), checked and loaded
+      test: ["CMD", "python", "-c", "import json, sys, urllib.request; sys.exit(0 if json.load(urllib.request.urlopen('http://127.0.0.1:8100/health', timeout=3))['ready'] else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 120s
+    # About 0.75 GB in use with the model loaded (measured 5 Oct 2026). Under memory pressure the kernel kills the
+    # media worker first, then this service, never the database; it restarts and search meanwhile uses keywords.
+    mem_limit: 1536m
+    oom_score_adj: 900
+    restart: on-failure
+    cpus: ${EMBEDDER_CPUS:-2}
+    stop_grace_period: 20s
+
   scheduler:
     build:
       context: .
@@ -150,3 +173,4 @@ services:
 volumes:
   mongo_data:
   whisper_models:
+  embedding_models:

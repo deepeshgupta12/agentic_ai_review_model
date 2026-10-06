@@ -20,6 +20,7 @@ from pymongo.database import Database
 
 from app.config import get_settings
 from app.db import get_db
+from app.embeddings import jobs as embedding_jobs
 from app.evidence import clusters
 from app.identity import invalidation
 from app.jobs import queue
@@ -50,6 +51,7 @@ register("erase_payloads")(lifecycle.handle_erase)
 register("check_availability")(recheck.handle_recheck)
 register("process_media")(media.handle_process_media)
 register("cluster_origins")(clusters.handle_cluster_origins)
+register("embed_evidence")(embedding_jobs.handle_embed_evidence)
 MEDIA_KINDS = ("process_media",)
 
 

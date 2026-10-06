@@ -23,13 +23,18 @@ from typing import Any
 from pymongo.database import Database
 
 from app.db import utcnow
+from app.embeddings.client import Embedder, EmbeddingUnavailable
 from app.evidence.eligibility import eligibility, eligible_filter
 from app.evidence.similarity import words
 
 INDEX = "ai_evidence_search"
 RETRIEVER = "keyword-v1"
+RETRIEVERS = {"keyword": "keyword-v1", "vector": "vector-bge-m3-v1", "hybrid": "hybrid-rrf-v1"}
+MODES = tuple(RETRIEVERS)
 MAX_CANDIDATES = 200
 MAX_RESULTS = 50
+MAX_VECTOR_CANDIDATES = 2000  # newest first; similarity is computed in the API process, so it stays bounded
+RRF_K = 60  # reciprocal rank fusion constant (Cormack et al., 2009)
 
 
 def _translation_of(db: Database[dict[str, Any]], evidence: dict[str, Any]) -> str | None:
@@ -91,6 +96,8 @@ def sync_index(db: Database[dict[str, Any]], project_id: str | None = None) -> d
                 "translation": _translation_of(db, evidence),
                 "published_at": date.get("value") if date.get("status") not in (None, "unknown") else None,
                 "phase_rera_id": (links[evidence["link_id"]].get("phase") or {}).get("rera_id"),
+                "embedding": None,  # filled by the embed_evidence job (D51)
+                "embedding_model": None,
                 "indexed_at": utcnow(),
             },
             upsert=True,
@@ -115,7 +122,13 @@ def search(
     phase_rera_id: str | None = None,
     aspects: list[str] | None = None,
     limit: int = 10,
+    embedder: Embedder | None = None,
+    mode: str = "hybrid",
 ) -> dict[str, Any]:
+    """mode: keyword, vector or hybrid. Without an embedder (or when it is down) the ranking is keyword-only and
+    the result says why in `degraded`."""
+    if mode not in MODES:
+        raise ValueError(f"unknown retrieval mode {mode!r}")
     started = time.perf_counter()
     limit = max(1, min(limit, MAX_RESULTS))
     sync_index(db, project_id)
@@ -139,16 +152,38 @@ def search(
                 f"{r['id']}@{r['revision']}" for r in claim["supporting_evidence"] + claim["contradicting_evidence"]
             }
         narrow["_id"] = {"$in": sorted(cited)}
-    if terms:
+    keyword: list[tuple[str, float]] = []
+    similar: list[tuple[str, float]] = []
+    degraded = None
+    if terms and mode in ("keyword", "hybrid"):
         cursor = (
             db[INDEX]
             .find({**narrow, "$text": {"$search": terms}}, {"score": {"$meta": "textScore"}})
             .sort([("score", {"$meta": "textScore"}), ("_id", 1)])
             .limit(MAX_CANDIDATES)
         )
-    else:
+        keyword = [(c["_id"], round(c["score"], 4)) for c in cursor]
+    if terms and mode in ("vector", "hybrid"):
+        if embedder is None:
+            degraded = "no embedder configured: keyword ranking only"
+        else:
+            try:
+                similar = _nearest(db, narrow, embedder.embed([query.strip()])[0])
+            except EmbeddingUnavailable as exc:
+                degraded = f"embedder unavailable ({exc}): keyword ranking only"
+        if degraded and not keyword:  # vector-only was asked for; give the keyword ranking rather than nothing
+            cursor = (
+                db[INDEX]
+                .find({**narrow, "$text": {"$search": terms}}, {"score": {"$meta": "textScore"}})
+                .sort([("score", {"$meta": "textScore"}), ("_id", 1)])
+                .limit(MAX_CANDIDATES)
+            )
+            keyword = [(c["_id"], round(c["score"], 4)) for c in cursor]
+    if not terms:
         cursor = db[INDEX].find(narrow, {"_id": 1}).sort([("published_at", -1), ("_id", 1)]).limit(MAX_CANDIDATES)
-    ranked = [(c["_id"], round(c.get("score", 0.0), 4)) for c in cursor]
+        keyword = [(c["_id"], 0.0) for c in cursor]
+    ranked, used = _fuse(keyword, similar, mode if not degraded else "keyword")
+    keyword_score, similarity = dict(keyword), dict(similar)
     candidates = {
         e["_id"]: e
         for e in db["ai_evidence"].find({**eligible_filter(db, project_id), "_id": {"$in": [i for i, _ in ranked]}})
@@ -161,13 +196,58 @@ def search(
         check = eligibility(db, evidence)
         if not check.eligible:
             continue
-        items.append({"evidence": evidence, "score": score, "flags": check.flags})
+        items.append(
+            {
+                "evidence": evidence,
+                "score": score,
+                "keyword_score": keyword_score.get(evidence_id),
+                "similarity": similarity.get(evidence_id),
+                "flags": check.flags,
+            }
+        )
         if len(items) == limit:
             break
     return {
-        "retriever": RETRIEVER,
+        "retriever": used,
+        "degraded": degraded,
         "query_terms": terms,
         "candidates": len(ranked),
         "items": items,
         "elapsed_ms": round((time.perf_counter() - started) * 1000, 1),
     }
+
+
+def _nearest(
+    db: Database[dict[str, Any]], narrow: dict[str, Any], query_vector: list[float]
+) -> list[tuple[str, float]]:
+    """Cosine similarity (vectors are normalised) against at most MAX_VECTOR_CANDIDATES embedded entries."""
+    import numpy as np
+
+    rows = list(
+        db[INDEX]
+        .find({**narrow, "embedding": {"$type": "array"}}, {"embedding": 1})
+        .sort([("published_at", -1), ("_id", 1)])
+        .limit(MAX_VECTOR_CANDIDATES)
+    )
+    if not rows:
+        return []
+    matrix = np.asarray([r["embedding"] for r in rows], dtype=np.float32)
+    scores = matrix @ np.asarray(query_vector, dtype=np.float32)
+    order = np.argsort(-scores, kind="stable")[:MAX_CANDIDATES]
+    return [(rows[i]["_id"], round(float(scores[i]), 4)) for i in order]
+
+
+def _fuse(
+    keyword: list[tuple[str, float]], similar: list[tuple[str, float]], mode: str
+) -> tuple[list[tuple[str, float]], str]:
+    """keyword or vector: that list as it is; hybrid: reciprocal rank fusion of both."""
+    if mode == "keyword" or not similar:
+        return keyword, RETRIEVERS["keyword"]
+    if mode == "vector":
+        return similar, RETRIEVERS["vector"]
+    fused: dict[str, float] = {}
+    for ranking in (keyword, similar):
+        for rank, (evidence_id, _) in enumerate(ranking, 1):
+            fused[evidence_id] = fused.get(evidence_id, 0.0) + 1.0 / (RRF_K + rank)
+    ordered = sorted(fused.items(), key=lambda item: (-item[1], item[0]))
+    return [(i, round(score, 5)) for i, score in ordered], RETRIEVERS["hybrid"]

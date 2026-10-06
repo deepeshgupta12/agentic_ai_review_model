@@ -39,6 +39,7 @@ JOB_KINDS = {
     "check_availability",
     "process_media",
     "cluster_origins",
+    "embed_evidence",
 }
 
 

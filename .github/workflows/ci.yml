@@ -92,6 +92,8 @@ jobs:
         run: docker compose exec -T api python -m app.cli fixture-smoke-identity
       - name: Identity evaluation (synthetic labelled set)
         run: docker compose exec -T api python -m app.cli eval-identity
+      - name: Embedder serves pinned bge-m3 int8 vectors (D51)
+        run: docker compose exec -T api python -c "from app.config import get_settings; from app.embeddings.client import HttpEmbedder; v = HttpEmbedder(get_settings()).embed(['possession date']); assert len(v[0]) == 1024; print('embedder OK', len(v[0]))"
       - name: Media worker has ffmpeg and the media libraries (no model download)
         run: docker compose exec -T media-worker sh -c 'ffmpeg -version | head -1 && python -c "import faster_whisper, yt_dlp, youtube_transcript_api; print(\"media libraries import\")"'
       - name: Logs on failure

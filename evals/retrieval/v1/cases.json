@@ -186,6 +186,79 @@
         "z05"
       ],
       "kind": "same_language"
+    },
+    {
+      "id": "r21",
+      "project": "Quillon Residences",
+      "query": "how far is the metro",
+      "relevant": [
+        "q12"
+      ],
+      "kind": "paraphrase"
+    },
+    {
+      "id": "r22",
+      "project": "Quillon Residences",
+      "query": "power backup",
+      "relevant": [
+        "q17"
+      ],
+      "kind": "cross_language"
+    },
+    {
+      "id": "r23",
+      "project": "Quillon Residences",
+      "query": "is the builder reliable",
+      "relevant": [
+        "q14"
+      ],
+      "kind": "paraphrase"
+    },
+    {
+      "id": "r24",
+      "project": "Tavira Vista",
+      "query": "parking",
+      "relevant": [
+        "t07"
+      ],
+      "kind": "same_language"
+    },
+    {
+      "id": "r25",
+      "project": "Tavira Vista",
+      "query": "hospital nearby",
+      "relevant": [
+        "t10"
+      ],
+      "kind": "cross_language"
+    },
+    {
+      "id": "r26",
+      "project": "Zephyrine Crest",
+      "query": "maintenance",
+      "relevant": [
+        "z02",
+        "z10"
+      ],
+      "kind": "cross_language"
+    },
+    {
+      "id": "r27",
+      "project": "Zephyrine Crest",
+      "query": "electric car charging",
+      "relevant": [
+        "z09"
+      ],
+      "kind": "paraphrase"
+    },
+    {
+      "id": "r28",
+      "project": "Zephyrine Crest",
+      "query": "was possession on time",
+      "relevant": [
+        "z08"
+      ],
+      "kind": "paraphrase"
     }
   ]
 }

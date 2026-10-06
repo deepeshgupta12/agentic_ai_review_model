@@ -27,7 +27,7 @@ flowchart TD
 
 One repository, two applications and one database:
 
-- `backend/` — Python. Entry points: API (Uvicorn), workflow worker, scheduler. Agents are logical components inside the worker, not microservices. Separate worker pools for media only if throughput requires it.
+- `backend/` — Python. Entry points: API (Uvicorn), workflow worker, scheduler. Agents are logical components inside the worker, not microservices. Two isolated containers use the same code: the media worker (Whisper, ffmpeg; D48) and the embedder (bge-m3 int8 on onnxruntime, internal HTTP only; D51).
 - `web/` — Next.js (App Router, TypeScript). `/console/*` is the authenticated moderator console; `/projects/[slug]` is the public, server-rendered project page that reads the active eligible revision through a backend read endpoint at render time and is revalidated on demand by the publication worker.
 - `mongodb` — Docker Compose service running as a single-node replica set so multi-document transactions and change streams are available locally and in the demo environment.
 
@@ -41,7 +41,7 @@ One repository, two applications and one database:
 | Model gateway | Anthropic Python SDK behind an application interface (`backend/app/agents/gateway.py`) | Messages API only. Structured outputs through the JSON-schema output format (`client.messages.parse()` with Pydantic types) for extraction/synthesis agents; strict tool use for tool-calling agents. Prompt caching for repeated evidence context; Message Batches API for bulk offline classification. Reference: https://platform.claude.com/docs/en/build-with-claude/structured-outputs |
 | Model roles | `MODEL_ROUTINE`, `MODEL_REASONING`, `MODEL_DIFFICULT` in config | Initial values from DECISIONS.md D10; verify with the Models API at Step 03; change only through evaluation (Step 08). |
 | Speech-to-text | `faster-whisper` (local, CPU acceptable for POC volumes) on authorised files only | Record model size, language hint and quality flags per segment. Hosted STT is a recorded decision if needed. |
-| Embeddings | None in the first retrieval build (filters + MongoDB text index); then local `BAAI/bge-m3` via `sentence-transformers`, frozen model/dimension | Application-side cosine ranking over a capped candidate set. Voyage AI is the hosted alternative. Native MongoDB vector search only if the pinned server build supports it. |
+| Embeddings | Local `BAAI/bge-m3` (1,024 dimensions) as int8 ONNX on onnxruntime, pinned commit and file hashes, in the `embedder` service (D51); the keyword baseline (filters + MongoDB text index) stays, and hybrid ranking fuses both | Application-side cosine ranking over a capped candidate set (2,000). No torch. Native MongoDB vector search is not in the community 8.0 server. |
 | Discovery | Brave Search API, direct platform APIs, contracted listening provider | Each connector is `access_pending` until its credential is configured and a real query is demonstrated. |
 | Extraction | Firecrawl and/or Playwright adapters for permitted domains | Adapters follow the scraping policy in docs/06. A fetching tool does not confer data rights. |
 | Media | FFmpeg + faster-whisper; bounded frame extraction | Only process permitted files; cap duration, bytes, frames and concurrency. |

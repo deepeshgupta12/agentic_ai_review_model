@@ -2122,10 +2122,10 @@ export interface components {
             id: components["schemas"]["JobId"];
             logical_key: string;
             /**
-             * @description check_availability re-checks stored sources for edits and deletions (Step 05.6, D44); process_media acquires and transcribes an authorised video (Step 06, D47); cluster_origins groups copies of one origin (Step 07, D50)
+             * @description check_availability re-checks stored sources for edits and deletions (Step 05.6, D44); process_media acquires and transcribes an authorised video (Step 06, D47); cluster_origins groups copies of one origin (Step 07, D50); embed_evidence fills evidence vectors through the embedder (Step 07, D51)
              * @enum {unknown}
              */
-            kind: "collect" | "analyse" | "resume_after_review" | "generate_content" | "deliver_publication" | "invalidate_dependencies" | "erase_payloads" | "scheduled_refresh" | "evaluate" | "check_availability" | "process_media" | "cluster_origins";
+            kind: "collect" | "analyse" | "resume_after_review" | "generate_content" | "deliver_publication" | "invalidate_dependencies" | "erase_payloads" | "scheduled_refresh" | "evaluate" | "check_availability" | "process_media" | "cluster_origins" | "embed_evidence";
             run_id: components["schemas"]["RunId"] | null;
             project_id: components["schemas"]["ProjectId"] | null;
             status: components["schemas"]["JobStatus"];

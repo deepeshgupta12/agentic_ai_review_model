@@ -94,6 +94,20 @@ class Settings(BaseSettings):
     whisper_compute_type: str = "int8"
     whisper_models_dir: Path = Path("/srv/models")
 
+    # Embeddings (Step 07, D51): bge-m3 int8 ONNX in the embedder service; pinned commit and file hashes.
+    embedding_enabled: bool = True
+    embedding_url: str = "http://embedder:8100"
+    embedding_model: str = "Xenova/bge-m3"  # the ONNX export of BAAI/bge-m3 (MIT)
+    embedding_revision: str = "4de13258303883538bd53b696b452bf8099f0858"
+    embedding_file: str = "onnx/model_int8.onnx"
+    embedding_sha256: str = "a206e10e995aa2a833924bcd725ba5dd6c3425cd34bac3cf2b5677cd2a1c51d6"
+    embedding_tokenizer_sha256: str = "6710678b12670bc442b99edc952c4d996ae309a7020c1fa0096dd245c2faf790"
+    embedding_dim: int = 1024
+    embedding_max_tokens: int = Field(default=512, ge=16, le=8192)
+    embedding_threads: int = Field(default=2, ge=1, le=16)
+    embedding_batch: int = Field(default=8, ge=1, le=64)
+    embedding_models_dir: Path = Path("/srv/embeddings")
+
     public_base_url: str = "http://localhost:3000"
     revalidation_secret: SecretStr | None = None
 

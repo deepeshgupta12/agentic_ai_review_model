@@ -516,3 +516,123 @@ def test_evidence_is_stored_with_its_context(db, settings, contracts, fictional,
     middle = speech[1]
     assert middle["context_anchor"]["start_ms"] == speech[0]["anchor"]["start_ms"]
     assert middle["context_anchor"]["end_ms"] >= middle["anchor"]["end_ms"]
+
+
+# --- UC-52: embedding search (D51) ------------------------------------------------------------------------------------
+
+
+FOLD = {"flooding": "flood", "floods": "flood", "rains": "rain", "पज़ेशन": "possession", "पानी": "water"}
+
+
+class FakeEmbedder:
+    """Deterministic stand-in for bge-m3: hashed words, with a few word forms and translations folded together so
+    that, like the real model, "flooding" meets "floods" and "पज़ेशन" meets "possession"."""
+
+    def __init__(self, error=None):
+        self.error, self.calls, self.model = error, 0, "fake"
+
+    def embed(self, texts):
+        import hashlib
+        import math
+
+        self.calls += 1
+        if self.error:
+            raise self.error
+        out = []
+        for text in texts:
+            vector = [0.0] * 1024
+            for word in words(text):
+                word = FOLD.get(word, word)
+                vector[int(hashlib.sha256(word.encode()).hexdigest(), 16) % 1024] += 1.0
+            norm = math.sqrt(sum(x * x for x in vector)) or 1.0
+            out.append([x / norm for x in vector])
+        return out
+
+
+FLOODS = "Quillon Residences in Sector 102: the approach road floods after rain and stays under water."
+HINDI_POSSESSION = "Quillon Residences Sector 102 में पज़ेशन मार्च 2027 में देने का वादा किया गया है।"
+
+
+def test_vectors_find_what_keywords_miss_and_hybrid_keeps_both(db, contracts, settings, fictional):
+    from app.embeddings.jobs import embed_pending
+    from app.evidence.retrieval import search, sync_index
+
+    q = fictional["Quillon Residences"]
+    road = source_for(db, contracts, q, "road", FLOODS)
+    hindi = source_for(db, contracts, q, "hindi", HINDI_POSSESSION)
+    source_for(db, contracts, q, "lifts", LIFTS)
+    source_for(db, contracts, fictional["Tavira Vista"], "tavira", TAVIRA_ROAD)
+    embedder = FakeEmbedder()
+    sync_index(db)
+    assert embed_pending(db, embedder, settings) == {"embedded": 4, "waiting": 0}
+    assert search(db, q, "flooding", embedder=embedder, mode="keyword")["items"] == [], "no stemming in keywords"
+    vector = search(db, q, "flooding", embedder=embedder, mode="vector")
+    assert vector["retriever"] == "vector-bge-m3-v1" and vector["items"][0]["evidence"]["source"]["id"] == road["id"]
+    hybrid = search(db, q, "possession", embedder=embedder)
+    assert hybrid["retriever"] == "hybrid-rrf-v1" and hybrid["degraded"] is None
+    assert hybrid["items"][0]["evidence"]["source"]["id"] == hindi["id"], "an English word reaches Hindi text"
+    assert all(i["evidence"]["project_id"] == q for i in hybrid["items"]), "vectors never cross projects"
+    assert hybrid["items"][0]["similarity"] > 0 and "keyword_score" in hybrid["items"][0]
+
+
+def test_without_the_embedder_search_falls_back_to_keywords_and_says_so(db, contracts, settings, fictional):
+    from app.embeddings.client import EmbeddingUnavailable
+    from app.evidence.retrieval import search
+
+    q = fictional["Quillon Residences"]
+    source_for(db, contracts, q, "road", ROAD)
+    down = search(db, q, "approach road", embedder=FakeEmbedder(error=EmbeddingUnavailable("embedder: ConnectError")))
+    assert down["retriever"] == "keyword-v1" and "embedder unavailable" in down["degraded"] and len(down["items"]) == 1
+    none = search(db, q, "approach road", mode="vector")
+    assert none["retriever"] == "keyword-v1" and "no embedder" in none["degraded"] and len(none["items"]) == 1
+
+
+def test_vectors_are_made_by_a_scheduled_job_and_remade_for_a_new_model(
+    db, contracts, settings, fictional, monkeypatch
+):
+    from app.embeddings import jobs
+    from app.evidence.retrieval import INDEX
+
+    q = fictional["Quillon Residences"]
+    source_for(db, contracts, q, "road", ROAD)
+    assert jobs.start_embedding(db, settings) and not jobs.start_embedding(db, settings), "one job per ten minutes"
+    fake = FakeEmbedder()
+    monkeypatch.setattr(jobs, "default_embedder", lambda _s: fake)
+    monkeypatch.setattr(jobs, "get_settings", lambda: settings)
+    run_jobs(db)
+    entry = db[INDEX].find_one({"project_id": q})
+    assert len(entry["embedding"]) == 1024 and entry["embedding_model"] == jobs.model_label(settings)
+    settings.embedding_revision = "0" * 40  # a different pinned model: every vector is made again
+    assert jobs.embed_pending(db, fake, settings)["embedded"] == 1
+    erased = db["ai_evidence"].find_one({"project_id": q})
+    db["ai_evidence"].update_one({"_id": erased["_id"]}, {"$set": {"excerpt_text": None}})
+    from app.evidence.retrieval import sync_index
+
+    sync_index(db, q)
+    assert db[INDEX].count_documents({"project_id": q}) == 0, "no words, no vector"
+
+
+def test_a_model_file_that_does_not_match_its_pinned_hash_is_refused(settings, tmp_path, monkeypatch):
+    import hashlib
+    import sys
+    from types import SimpleNamespace
+
+    import pytest
+
+    from app.embeddings.model import fetch_model
+
+    files = {"onnx/model_int8.onnx": b"weights", "tokenizer.json": b"{}"}
+
+    def download(repo, name, revision, cache_dir):
+        assert repo == settings.embedding_model and revision == settings.embedding_revision, "only the pinned commit"
+        path = tmp_path / name.replace("/", "_")
+        path.write_bytes(files[name])
+        return str(path)
+
+    monkeypatch.setitem(sys.modules, "huggingface_hub", SimpleNamespace(hf_hub_download=download))
+    settings.embedding_sha256 = hashlib.sha256(b"weights").hexdigest()
+    settings.embedding_tokenizer_sha256 = hashlib.sha256(b"{}").hexdigest()
+    assert fetch_model(settings).onnx.read_bytes() == b"weights"
+    files["onnx/model_int8.onnx"] = b"tampered"
+    with pytest.raises(RuntimeError, match="does not match the pinned"):
+        fetch_model(settings)

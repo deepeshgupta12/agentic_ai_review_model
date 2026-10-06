@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Step 07 checks: Steps 01-06 regression, backend and web gates, and the evidence layer on the Compose stack: the
 # new collections, origin clusters (the scheduled job, then stable on a repeat), context windows for older evidence,
-# the evidence rules on the real stored data, filtered retrieval on the real project evidence (no other project's
-# and no ineligible results), the retrieval benchmark on the labelled synthetic set, and hygiene.
+# the embedder (bge-m3 int8, pinned and checked) and the scheduled embedding of every evidence span, the evidence rules
+# on the real stored data, hybrid retrieval on the real project evidence (no other project's and no ineligible
+# results), the retrieval benchmark for keyword, vector and hybrid ranking, and hygiene.
 # Output is printed and saved to logs/step-07/checks-<UTC time>.log. Secret values are read from .env but never
 # printed. Exit code 0 only if every check is OK.
 #
 #   bash scripts/run_step07_checks.sh
 #
-# Needs Docker, uv, pnpm, Node.js and Python 3.10+; `gh` signed in; SEED_USER_PASSWORD in .env. No Claude call and
-# no Whisper run are needed for Step 07.
+# Needs Docker, uv, pnpm, Node.js and Python 3.10+; `gh` signed in. No Claude call and no Whisper run are needed for
+# Step 07. The first start of the embedder downloads the pinned model (568 MB) into a volume.
 
 set -u
 cd "$(dirname "$0")/.."
@@ -86,7 +87,7 @@ latest_run() { # latest_run <project id>
 services_running() {
   local running missing=0 name
   running=$(docker compose ps --status running --services)
-  for name in mongodb api worker media-worker scheduler web; do
+  for name in mongodb api worker media-worker embedder scheduler web; do
     if echo "$running" | grep -qx "$name"; then echo "$name running"; else echo "$name NOT running"; missing=1; fi
   done
   return $missing
@@ -146,6 +147,50 @@ for c in db.ai_origin_clusters.find({"members.1": {"$exists": True}}).limit(5):
 EOF
 }
 
+embedder_ready() {
+  docker inspect agentic_ai_review_model-embedder-1 --format 'embedder memory limit {{.HostConfig.Memory}} bytes, oom_score_adj {{.HostConfig.OomScoreAdj}}, restart {{.HostConfig.RestartPolicy.Name}}'
+  docker stats --no-stream --format 'embedder memory in use: {{.MemUsage}}' agentic_ai_review_model-embedder-1
+  docker compose exec -T api python - <<'EOF' || return 1
+import httpx
+from app.config import get_settings
+from app.embeddings.client import HttpEmbedder, model_label
+settings = get_settings()
+health = httpx.get(settings.embedding_url + "/health", timeout=5).json()
+print(f"  health: {health}")
+embedder = HttpEmbedder(settings)
+vectors = embedder.embed(["possession date", "पज़ेशन मार्च 2027 में देने का वादा किया गया है।", "two covered parking slots"])
+same, other = sum(a * b for a, b in zip(vectors[0], vectors[1])), sum(a * b for a, b in zip(vectors[0], vectors[2]))
+print(f"  {len(vectors)} vectors of {len(vectors[0])}; possession (en) vs पज़ेशन (hi) {same:.2f}, vs parking {other:.2f}")
+raise SystemExit(0 if health["ready"] and health["model"] == model_label(settings) and len(vectors[0]) == settings.embedding_dim and same > other else 1)
+EOF
+  [ "$(docker inspect agentic_ai_review_model-embedder-1 --format '{{.HostConfig.Memory}}')" = 1610612736 ] \
+    && [ "$(docker inspect agentic_ai_review_model-embedder-1 --format '{{.HostConfig.RestartPolicy.Name}}')" = on-failure ]
+}
+
+scheduler_embeds_evidence() {
+  docker compose exec -T api python - <<'EOF'
+import time
+from app.config import get_settings
+from app.db import get_db
+from app.embeddings.jobs import pending_query
+from app.evidence.retrieval import INDEX, sync_index
+db, settings = get_db(), get_settings()
+sync_index(db)
+print(f"  search entries: {db[INDEX].count_documents({})}; waiting for a vector: {db[INDEX].count_documents(pending_query(settings))}")
+started = time.monotonic()
+deadline = started + 1500
+while time.monotonic() < deadline:
+    waiting = db[INDEX].count_documents(pending_query(settings))
+    if waiting == 0:
+        break
+    time.sleep(15)
+jobs = {j["status"] for j in db.ai_jobs.find({"kind": "embed_evidence"}, {"status": 1})}
+waiting = db[INDEX].count_documents(pending_query(settings))
+print(f"  embed_evidence jobs: {sorted(jobs)}; still waiting: {waiting}; waited {time.monotonic() - started:.0f} s")
+raise SystemExit(0 if waiting == 0 and "failed" not in jobs else 1)
+EOF
+}
+
 context_backfill_once() {
   docker compose exec -T api python -m app.cli add-evidence-context > "$T/ctx1.json" || return 1
   docker compose exec -T api python -m app.cli add-evidence-context > "$T/ctx2.json" || return 1
@@ -173,15 +218,21 @@ retrieval_on_real_evidence() {
   docker compose exec -T api python - <<'EOF'
 import statistics
 from app.db import get_db
+from app.config import get_settings
+from app.embeddings.client import default_embedder
 from app.evidence.eligibility import eligibility
 from app.evidence.retrieval import search
 db = get_db()
+embedder = default_embedder(get_settings())
+retrievers = set()
 queries = ["possession", "price per sq ft", "road", "clubhouse", "maintenance", "पज़ेशन", ""]
 bad, latencies = 0, []
 for p in db.projects.find({}, {"slug": 1}).sort("slug", 1):
     counts = []
     for q in queries:
-        r = search(db, p["_id"], q, limit=10)
+        r = search(db, p["_id"], q, limit=10, embedder=embedder)
+        if q:
+            retrievers.add((r["retriever"], r["degraded"]))
         latencies.append(r["elapsed_ms"])
         counts.append(len(r["items"]))
         for item in r["items"]:
@@ -190,11 +241,11 @@ for p in db.projects.find({}, {"slug": 1}).sort("slug", 1):
                 bad += 1
     print(f"  {p['slug'][:44]:44} results per query {dict(zip(queries, counts))}")
 ordered = sorted(latencies)
-print(f"  {len(latencies)} searches; latency p50 {ordered[len(ordered)//2]} ms, p95 {ordered[int(0.95*len(ordered))]} ms; results from another project or not eligible: {bad}")
-top = search(db, db.projects.find_one({"slug": "conscient-parq-sector-80-gurgaon"})["_id"], "possession", limit=3)
+print(f"  {len(latencies)} searches; retriever {sorted(retrievers)}; latency p50 {ordered[len(ordered)//2]} ms, p95 {ordered[int(0.95*len(ordered))]} ms; results from another project or not eligible: {bad}")
+top = search(db, db.projects.find_one({"slug": "conscient-parq-sector-80-gurgaon"})["_id"], "when will I get possession", limit=3, embedder=embedder)
 for item in top["items"]:
-    print(f"   {item['score']:6} {item['evidence']['modality']:7} {item['evidence']['language']:7} {item['evidence']['excerpt_text'][:90]!r}")
-raise SystemExit(1 if bad else 0)
+    print(f"   rrf {item['score']} keyword {item['keyword_score']} cosine {item['similarity']} {item['evidence']['modality']:7} {item['evidence']['language']:7} {item['evidence']['excerpt_text'][:80]!r}")
+raise SystemExit(1 if bad or retrievers != {("hybrid-rrf-v1", None)} else 0)
 EOF
 }
 
@@ -204,12 +255,15 @@ retrieval_benchmark() {
   "$PY" - "$T/retrieval.json" <<'EOF'
 import json, sys
 r = json.load(open(sys.argv[1]))
-print(f"  synthetic: {r['dataset']['synthetic']}; {r['documents']} posts, {r['queries']} queries; retriever {r['retriever']}; saved as {r['saved_as']}")
-print(f"  recall@10 {r['recall_at_10']}; by kind {r['recall_at_10_by_kind']} (queries {r['queries_by_kind']})")
-print(f"  wrong-project results {r['wrong_project_results']}; withdrawn results {r['withdrawn_results']}; anchor errors {r['anchor_errors']}; latency p50 {r['latency_ms_p50']} ms, p95 {r['latency_ms_p95']} ms")
+print(f"  synthetic: {r['dataset']['synthetic']}; {r['documents']} posts, {r['queries']} queries; embedded {r['embedded']}; saved as {r['saved_as']}")
+for mode, x in r["by_retriever"].items():
+    print(f"  {x['retriever']:16} recall@10 {x['recall_at_10']} MRR@10 {x['mrr_at_10']} by kind {x['recall_at_10_by_kind']}")
+    print(f"  {'':16} wrong-project {x['wrong_project_results']}, withdrawn {x['withdrawn_results']}, anchor errors {x['anchor_errors']}; latency p50 {x['latency_ms_p50']} ms, p95 {x['latency_ms_p95']} ms")
+print(f"  queries by kind {r['queries_by_kind']}")
 for row in r["rows"]:
-    if row["missed"]:
-        print(f"  missed: {row['id']} {row['kind']:16} {row['query']!r} -> {row['missed']}")
+    if row["missed"] or (row["rank_of_first_hit"] or 99) > 1:
+        print(f"  hybrid: {row['id']} {row['kind']:16} {row['query']!r} first hit at {row['rank_of_first_hit']}, missed {row['missed']}")
+sys.exit(0 if "hybrid" in r["by_retriever"] else 1)
 EOF
   return $code
 }
@@ -289,15 +343,17 @@ expect "Backend: mypy" 0 bash -c "cd backend && $UV run mypy"
 expect "UC-17..UC-51: backend tests against the Compose replica set (no real credentials)" 0 bash -c "cd backend && $UV run pytest -q -p no:cacheprovider"
 expect "Web: eslint, TypeScript, API types, unit tests" 0 bash -c "cd web && pnpm -s lint && pnpm -s typecheck >/dev/null && pnpm -s check:api && pnpm -s test >/dev/null && echo 'web gates OK'"
 
-expect "Stack builds and every service is healthy" 0 docker compose up -d --build --wait
+expect "Stack builds (including the embedder image) and every service is healthy" 0 docker compose up -d --build --wait
 expect "Long-running services up" 0 services_running
 expect "Database setup adds the Step 07 collections and indexes; a repeat changes nothing" 0 setup_creates_step07_collections
 expect "UC-47: the scheduler queues clustering for new evidence and the worker completes it" 0 scheduler_clusters_new_evidence
 expect "UC-47: clustering again changes nothing (stable cluster IDs); joined copies listed" 0 clusters_are_stable
 expect "UC-49: older evidence gets its context window once" 0 context_backfill_once
+expect "D51: the embedder serves pinned bge-m3 int8 vectors (1.5 GB cap, kill priority, restart on failure)" 0 embedder_ready
+expect "UC-52: the scheduler queues embedding and the worker gives every evidence span its vector" 0 scheduler_embeds_evidence
 expect "UC-49/51: the evidence rules hold on the real stored data (verify-evidence)" 0 evidence_rules_hold
-expect "UC-50: retrieval on the real evidence of the five projects returns only that project's eligible evidence" 0 retrieval_on_real_evidence
-expect "UC-50: retrieval benchmark on the labelled synthetic set (saved): no wrong-project, withdrawn or anchor errors" 0 retrieval_benchmark
+expect "UC-50/52: hybrid retrieval on the real evidence of the five projects returns only that project's eligible evidence" 0 retrieval_on_real_evidence
+expect "UC-50/52: retrieval benchmark, keyword, vector and hybrid (saved): no wrong-project, withdrawn or anchor errors" 0 retrieval_benchmark
 expect "Regression: the collection rules still hold (verify-collection)" 0 collection_rules_hold
 
 expect "Hygiene: nothing generated, secret or downloaded is tracked" 0 no_tracked_secrets_or_env

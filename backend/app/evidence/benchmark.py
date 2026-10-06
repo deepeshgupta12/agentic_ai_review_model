@@ -7,7 +7,8 @@ then runs through `retrieval.search` for its project. Reported:
 - wrong-project contamination: results from another project (must be 0);
 - ineligible leakage: withdrawn posts returned (must be 0);
 - anchors: every returned excerpt is re-derived from its stored source (app.evidence.anchors);
-- latency of each search call, p50 and p95, on this machine.
+- latency of each search call, p50 and p95, on this machine;
+- with an embedder, the same for vector-only and hybrid ranking, plus MRR@10.
 The scratch database is dropped afterwards. Small and synthetic: it shows the baseline behaves as designed, not
 how well it retrieves real chatter.
 """
@@ -24,8 +25,10 @@ from pymongo import MongoClient
 
 from app.config import Settings
 from app.contracts import ContractStore
+from app.embeddings.client import Embedder
+from app.embeddings.jobs import embed_pending
 from app.evidence.anchors import anchor_problems
-from app.evidence.retrieval import RETRIEVER, search
+from app.evidence.retrieval import search, sync_index
 from app.identity.intake import source_text, store_text_source
 from app.identity.service import identify_source
 from app.seed.projects import import_projects
@@ -46,8 +49,15 @@ def _percentile(values: list[float], share: float) -> float | None:
 
 
 def run_benchmark(
-    client: MongoClient[dict[str, Any]], contracts: ContractStore, settings: Settings, directory: Path, catalogue: Path
+    client: MongoClient[dict[str, Any]],
+    contracts: ContractStore,
+    settings: Settings,
+    directory: Path,
+    catalogue: Path,
+    embedder: Embedder | None = None,
 ) -> dict[str, Any]:
+    """Keyword ranking always; with an embedder, vector and hybrid ranking too, on the same scratch data. The top-level
+    figures are the hybrid ones when an embedder is given, else the keyword ones; `by_retriever` has all."""
     corpus = json.loads((directory / "corpus.json").read_text(encoding="utf-8"))
     cases = json.loads((directory / "cases.json").read_text(encoding="utf-8"))["cases"]
     scratch = client[f"sy_poc_retrieval_{secrets.token_hex(4)}"]
@@ -86,101 +96,145 @@ def run_benchmark(
             pass
         withdrawn = {d["id"] for d in corpus["documents"] if d.get("withdrawn")}
         project_of = {d["id"]: d["project"] for d in corpus["documents"]}
-        rows = []
-        latencies: list[float] = []
-        contamination = leakage = anchor_errors = 0
-        for case in cases:
-            result = search(scratch, projects[case["project"]], case["query"], limit=K)
-            latencies.append(result["elapsed_ms"])
-            found = []
-            for item in result["items"]:
-                evidence = item["evidence"]
-                doc_id = doc_of.get(evidence["source"]["id"], "?")
-                found.append(doc_id)
-                contamination += int(project_of.get(doc_id) != case["project"])
-                leakage += int(doc_id in withdrawn)
-                stored = scratch["ai_sources"].find_one(
-                    {"id": evidence["source"]["id"], "revision": evidence["source"]["revision"]}
-                )
-                anchor_errors += int(
-                    bool(stored is None or anchor_problems(scratch, evidence, source_text(scratch, stored), None))
-                )
-            hits = [d for d in case["relevant"] if d in found[:K]]
-            rows.append(
-                {
-                    "id": case["id"],
-                    "kind": case["kind"],
-                    "query": case["query"],
-                    "recall_at_10": round(len(hits) / len(case["relevant"]), 3),
-                    "found": found,
-                    "missed": [d for d in case["relevant"] if d not in hits],
-                    "elapsed_ms": result["elapsed_ms"],
-                }
+        embedded = None
+        if embedder is not None:
+            sync_index(scratch)
+            embedded = embed_pending(scratch, embedder, settings)
+        modes = ["keyword", "vector", "hybrid"] if embedder is not None else ["keyword"]
+        by_retriever = {}
+        for mode in modes:
+            by_retriever[mode] = _score(
+                scratch, cases, projects, doc_of, project_of, withdrawn, embedder=embedder, mode=mode
             )
     finally:
         client.drop_database(scratch.name)
 
-    def mean(values: list[float]) -> float | None:
-        return round(statistics.mean(values), 3) if values else None
-
-    kinds = sorted({r["kind"] for r in rows})
+    primary = by_retriever["hybrid" if "hybrid" in by_retriever else "keyword"]
     return {
         "dataset": {k: corpus["dataset"][k] for k in ("name", "version", "synthetic")},
-        "retriever": RETRIEVER,
         "documents": len(corpus["documents"]),
-        "queries": len(rows),
+        "queries": len(cases),
         "unlinked_documents": unlinked,
-        "recall_at_10": mean([r["recall_at_10"] for r in rows]),
-        "recall_at_10_by_kind": {k: mean([r["recall_at_10"] for r in rows if r["kind"] == k]) for k in kinds},
+        "embedded": embedded,
+        **primary,
+        "by_retriever": {mode: {k: v for k, v in r.items() if k != "rows"} for mode, r in by_retriever.items()},
+        "scratch_database_dropped": True,
+    }
+
+
+def _mean(values: list[float]) -> float | None:
+    return round(statistics.mean(values), 3) if values else None
+
+
+def _score(
+    scratch: Any,
+    cases: list[dict[str, Any]],
+    projects: dict[str, str],
+    doc_of: dict[str, str],
+    project_of: dict[str, str],
+    withdrawn: set[str],
+    *,
+    embedder: Embedder | None,
+    mode: str,
+) -> dict[str, Any]:
+    rows = []
+    latencies: list[float] = []
+    contamination = leakage = anchor_errors = 0
+    retriever = None
+    for case in cases:
+        result = search(scratch, projects[case["project"]], case["query"], limit=K, embedder=embedder, mode=mode)
+        retriever = result["retriever"]
+        latencies.append(result["elapsed_ms"])
+        found = []
+        for item in result["items"]:
+            evidence = item["evidence"]
+            doc_id = doc_of.get(evidence["source"]["id"], "?")
+            found.append(doc_id)
+            contamination += int(project_of.get(doc_id) != case["project"])
+            leakage += int(doc_id in withdrawn)
+            stored = scratch["ai_sources"].find_one(
+                {"id": evidence["source"]["id"], "revision": evidence["source"]["revision"]}
+            )
+            anchor_errors += int(
+                bool(stored is None or anchor_problems(scratch, evidence, source_text(scratch, stored), None))
+            )
+        hits = [d for d in case["relevant"] if d in found[:K]]
+        rows.append(
+            {
+                "id": case["id"],
+                "kind": case["kind"],
+                "query": case["query"],
+                "recall_at_10": round(len(hits) / len(case["relevant"]), 3),
+                "rank_of_first_hit": next((found.index(d) + 1 for d in found if d in case["relevant"]), None),
+                "found": found,
+                "missed": [d for d in case["relevant"] if d not in hits],
+                "elapsed_ms": result["elapsed_ms"],
+            }
+        )
+    kinds = sorted({r["kind"] for r in rows})
+    reciprocal = [1 / r["rank_of_first_hit"] if r["rank_of_first_hit"] else 0.0 for r in rows]
+    return {
+        "retriever": retriever,
+        "recall_at_10": _mean([r["recall_at_10"] for r in rows]),
+        "mrr_at_10": _mean(reciprocal),
+        "recall_at_10_by_kind": {k: _mean([r["recall_at_10"] for r in rows if r["kind"] == k]) for k in kinds},
         "queries_by_kind": {k: sum(1 for r in rows if r["kind"] == k) for k in kinds},
         "wrong_project_results": contamination,
         "withdrawn_results": leakage,
         "anchor_errors": anchor_errors,
         "latency_ms_p50": _percentile(latencies, 0.5),
         "latency_ms_p95": _percentile(latencies, 0.95),
-        "scratch_database_dropped": True,
         "rows": rows,
     }
 
 
 def benchmark_record(result: dict[str, Any]) -> dict[str, Any]:
-    """EvaluationRun fields for ai_evaluations; the caller adds id and created_at."""
+    """EvaluationRun fields for ai_evaluations; the caller adds id and created_at. One set of metrics per retriever."""
     note = "synthetic fictional posts written alongside the retriever; not real-world retrieval quality"
     n = result["queries"]
+    metrics: list[dict[str, Any]] = []
+    for mode, r in result["by_retriever"].items():
+        metrics += [
+            {"name": f"{mode}_recall_at_10", "value": r["recall_at_10"], "sample_size": n, "note": note},
+            {"name": f"{mode}_mrr_at_10", "value": r["mrr_at_10"], "sample_size": n, "note": note},
+            *(
+                {
+                    "name": f"{mode}_recall_at_10_{kind}",
+                    "value": value,
+                    "sample_size": r["queries_by_kind"][kind],
+                    "note": note,
+                }
+                for kind, value in r["recall_at_10_by_kind"].items()
+            ),
+            {
+                "name": f"{mode}_wrong_project_results",
+                "value": r["wrong_project_results"],
+                "sample_size": n,
+                "note": "must be 0",
+            },
+            {
+                "name": f"{mode}_withdrawn_results",
+                "value": r["withdrawn_results"],
+                "sample_size": n,
+                "note": "must be 0",
+            },
+            {"name": f"{mode}_anchor_errors", "value": r["anchor_errors"], "sample_size": n, "note": "must be 0"},
+            {
+                "name": f"{mode}_latency_ms_p50",
+                "value": r["latency_ms_p50"],
+                "sample_size": n,
+                "note": "search call, this machine",
+            },
+            {
+                "name": f"{mode}_latency_ms_p95",
+                "value": r["latency_ms_p95"],
+                "sample_size": n,
+                "note": "search call, this machine",
+            },
+        ]
     return {
         "dataset": result["dataset"],
         "config": {"agent": None, "model": result["retriever"], "prompt_version": None, "schema_version": None},
         "status": "completed",
-        "metrics": [
-            {"name": "recall_at_10", "value": result["recall_at_10"], "sample_size": n, "note": note},
-            *(
-                {
-                    "name": f"recall_at_10_{kind}",
-                    "value": value,
-                    "sample_size": result["queries_by_kind"][kind],
-                    "note": note,
-                }
-                for kind, value in result["recall_at_10_by_kind"].items()
-            ),
-            {
-                "name": "wrong_project_results",
-                "value": result["wrong_project_results"],
-                "sample_size": n,
-                "note": "must be 0",
-            },
-            {"name": "withdrawn_results", "value": result["withdrawn_results"], "sample_size": n, "note": "must be 0"},
-            {"name": "anchor_errors", "value": result["anchor_errors"], "sample_size": n, "note": "must be 0"},
-            {
-                "name": "latency_ms_p50",
-                "value": result["latency_ms_p50"],
-                "sample_size": n,
-                "note": "search call, this machine",
-            },
-            {
-                "name": "latency_ms_p95",
-                "value": result["latency_ms_p95"],
-                "sample_size": n,
-                "note": "search call, this machine",
-            },
-        ],
+        "metrics": metrics,
     }

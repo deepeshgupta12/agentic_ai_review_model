@@ -22,7 +22,15 @@ def tick() -> int:
     finish_runs(db)
     expire_sources(db)
     start_clustering(db)
+    start_embedding(db)
     return recovered
+
+
+def start_embedding(db: Any) -> bool:
+    """Step 07: new evidence gets its vector within about ten minutes (a worker job calling the embedder; D51)."""
+    from app.embeddings.jobs import start_embedding as start
+
+    return start(db)
 
 
 def start_clustering(db: Any) -> bool:
