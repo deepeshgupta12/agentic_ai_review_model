@@ -93,6 +93,17 @@ services_running() {
   return $missing
 }
 
+mongodb_healthy() { # builds load the VM; wait until MongoDB's own health probe passes again (at most 5 minutes)
+  local status i
+  for i in $(seq 1 60); do
+    status=$(docker inspect agentic_ai_review_model-mongodb-1 --format '{{.State.Health.Status}}' 2>/dev/null)
+    if [ "$status" = healthy ]; then echo "mongodb healthy after $((i * 5 - 5)) s"; return 0; fi
+    sleep 5
+  done
+  echo "mongodb still $status after 5 minutes"
+  return 1
+}
+
 setup_creates_step07_collections() {
   docker compose exec -T api python -m app.cli setup-db > "$T/setup1.json" || return 1
   docker compose exec -T api python -m app.cli setup-db > "$T/setup2.json" || return 1
@@ -343,7 +354,9 @@ expect "Backend: mypy" 0 bash -c "cd backend && $UV run mypy"
 expect "UC-17..UC-52: backend tests against the Compose replica set (no real credentials)" 0 bash -c "cd backend && $UV run pytest -q -p no:cacheprovider"
 expect "Web: eslint, TypeScript, API types, unit tests" 0 bash -c "cd web && pnpm -s lint && pnpm -s typecheck >/dev/null && pnpm -s check:api && pnpm -s test >/dev/null && echo 'web gates OK'"
 
-expect "Stack builds (including the embedder image) and every service is healthy" 0 docker compose up -d --build --wait
+expect "Images build (including the embedder)" 0 docker compose build
+expect "MongoDB is healthy again after the builds" 0 mongodb_healthy
+expect "Stack starts and every service is healthy" 0 docker compose up -d --wait
 expect "Long-running services up" 0 services_running
 expect "Database setup adds the Step 07 collections and indexes; a repeat changes nothing" 0 setup_creates_step07_collections
 expect "UC-47: the scheduler queues clustering for new evidence and the worker completes it" 0 scheduler_clusters_new_evidence

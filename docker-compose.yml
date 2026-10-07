@@ -17,7 +17,9 @@ services:
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "quit(db.hello().isWritablePrimary ? 0 : 1)"]
       interval: 5s
-      timeout: 5s
+      # mongosh starts a new process for every probe; on a busy 4 GB VM (image builds, tests) it took longer than 5 s
+      # for minutes and MongoDB was marked unhealthy while it was serving normally (6 Oct 2026)
+      timeout: 20s
       retries: 30
       start_period: 10s
 
