@@ -26,21 +26,30 @@ class Embedder(Protocol):
 
 
 class HttpEmbedder:
-    def __init__(self, settings: Settings, timeout: float = 120.0) -> None:
+    def __init__(self, settings: Settings, timeout: float | None = None) -> None:
         self.url = settings.embedding_url.rstrip("/")
-        self.timeout = timeout
+        self.timeout = timeout if timeout is not None else settings.embedding_query_timeout_seconds
         self.model = ""
+
+    def ready(self) -> bool:
+        try:
+            return bool(httpx.get(f"{self.url}/health", timeout=5).json().get("ready"))
+        except (httpx.HTTPError, ValueError):
+            return False
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         try:
             response = httpx.post(f"{self.url}/v1/embed", json={"texts": texts}, timeout=self.timeout)
             response.raise_for_status()
         except httpx.HTTPError as exc:
-            raise EmbeddingUnavailable(f"embedder: {type(exc).__name__}") from exc
+            raise EmbeddingUnavailable(f"embedder: {type(exc).__name__}: {str(exc)[:160]}") from exc
         body: dict[str, Any] = response.json()
         self.model = body["model"]
         return [list(v) for v in body["vectors"]]
 
 
-def default_embedder(settings: Settings) -> Embedder | None:
-    return HttpEmbedder(settings) if settings.embedding_enabled and settings.embedding_url else None
+def default_embedder(settings: Settings, *, for_job: bool = False) -> HttpEmbedder | None:
+    """Search waits at most EMBEDDING_QUERY_TIMEOUT_SECONDS, then uses keywords; the embedding job waits longer."""
+    if not (settings.embedding_enabled and settings.embedding_url):
+        return None
+    return HttpEmbedder(settings, settings.embedding_job_timeout_seconds if for_job else None)

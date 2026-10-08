@@ -138,9 +138,10 @@ services:
       timeout: 5s
       retries: 60
       start_period: 120s
-    # About 0.75 GB in use with the model loaded (measured 5 Oct 2026). Under memory pressure the kernel kills the
+    # About 0.8 GB in use with the model loaded and one text at a time (measured 7 Oct 2026). Under memory pressure the kernel kills the
     # media worker first, then this service, never the database; it restarts and search meanwhile uses keywords.
     mem_limit: 1536m
+    memswap_limit: 1536m  # no swap: batches of 8 long texts swapped and ran 13 times slower (7 Oct 2026)
     oom_score_adj: 900
     restart: on-failure
     cpus: ${EMBEDDER_CPUS:-2}

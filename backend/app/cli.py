@@ -567,7 +567,7 @@ def cmd_eval_retrieval(args: argparse.Namespace) -> int:
         settings,
         REPO_ROOT / "evals" / "retrieval" / "v1",
         REPO_ROOT / "evals" / "identity" / "v1" / "catalogue.json",
-        embedder=None if args.keyword_only else default_embedder(settings),
+        embedder=None if args.keyword_only else default_embedder(settings, for_job=True),
     )
     record = benchmark_record(result)
     if args.save:

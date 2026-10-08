@@ -1,6 +1,6 @@
 """Embedding evidence (Step 07, D51): the `embed_evidence` job fills the vector of every search-index entry that has
-none, or one made by another model, in small batches through the embedder service. The scheduler queues it at most
-every ten minutes, and only when entries are waiting."""
+none, or one made by another model, one text per request through the embedder service. The scheduler queues it at
+most every ten minutes, only when entries are waiting and the embedder says it is ready."""
 
 from __future__ import annotations
 
@@ -24,13 +24,16 @@ def pending_query(settings: Settings) -> dict[str, Any]:
     return {"$or": [{"embedding": None}, {"embedding_model": {"$ne": model_label(settings)}}]}
 
 
-def start_embedding(db: Database[dict[str, Any]], settings: Settings | None = None) -> bool:
+def start_embedding(db: Database[dict[str, Any]], settings: Settings | None = None, *, probe: bool = True) -> bool:
     settings = settings or get_settings()
+    embedder = default_embedder(settings, for_job=True) if probe else None
     if not settings.embedding_enabled:
         return False
     sync_index(db)
     if not db[INDEX].count_documents(pending_query(settings), limit=1):
         return False
+    if embedder is not None and not embedder.ready():
+        return False  # nothing is queued while the embedder is down or still loading; search uses keywords
     now = utcnow()
     _, created = queue.enqueue(db, KIND, f"{KIND}:{now:%Y%m%d%H}{now.minute // 10}", max_attempts=5)
     return created
@@ -63,7 +66,7 @@ def embed_pending(
 
 def handle_embed_evidence(db: Database[dict[str, Any]], job: dict[str, Any], check: Any) -> str | None:
     settings = get_settings()
-    embedder = default_embedder(settings)
+    embedder = default_embedder(settings, for_job=True)
     if embedder is None:
         return None
     sync_index(db)

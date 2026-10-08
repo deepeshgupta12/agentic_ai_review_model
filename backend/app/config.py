@@ -105,7 +105,10 @@ class Settings(BaseSettings):
     embedding_dim: int = 1024
     embedding_max_tokens: int = Field(default=512, ge=16, le=8192)
     embedding_threads: int = Field(default=2, ge=1, le=16)
-    embedding_batch: int = Field(default=8, ge=1, le=64)
+    # One text per request: batches of 8 long texts pushed the 1.5 GB embedder into swap and made it 13 times slower
+    embedding_batch: int = Field(default=1, ge=1, le=64)
+    embedding_query_timeout_seconds: float = Field(default=15.0, gt=0)  # then search falls back to keywords
+    embedding_job_timeout_seconds: float = Field(default=300.0, gt=0)
     embedding_models_dir: Path = Path("/srv/embeddings")
 
     public_base_url: str = "http://localhost:3000"

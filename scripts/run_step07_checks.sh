@@ -168,19 +168,28 @@ from app.embeddings.client import HttpEmbedder, model_label
 settings = get_settings()
 health = httpx.get(settings.embedding_url + "/health", timeout=5).json()
 print(f"  health: {health}")
-embedder = HttpEmbedder(settings)
+import time
+from app.db import get_db
+embedder = HttpEmbedder(settings, timeout=settings.embedding_job_timeout_seconds)
+long_text = max((d["text"] for d in get_db().ai_evidence_search.find({}, {"text": 1}).limit(200)), key=len, default="x " * 2000)
+t = time.perf_counter(); embedder.embed([long_text]); long_s = time.perf_counter() - t
+t = time.perf_counter(); embedder.embed(["when will I get possession"]); query_s = time.perf_counter() - t
+print(f"  one {len(long_text)}-character evidence text: {long_s:.1f} s; one short query: {query_s:.2f} s")
 vectors = embedder.embed(["possession date", "पज़ेशन मार्च 2027 में देने का वादा किया गया है।", "two covered parking slots"])
 same, other = sum(a * b for a, b in zip(vectors[0], vectors[1])), sum(a * b for a, b in zip(vectors[0], vectors[2]))
 print(f"  {len(vectors)} vectors of {len(vectors[0])}; possession (en) vs पज़ेशन (hi) {same:.2f}, vs parking {other:.2f}")
-raise SystemExit(0 if health["ready"] and health["model"] == model_label(settings) and len(vectors[0]) == settings.embedding_dim and same > other else 1)
+raise SystemExit(0 if health["ready"] and health["model"] == model_label(settings) and len(vectors[0]) == settings.embedding_dim and same > other and query_s < settings.embedding_query_timeout_seconds else 1)
 EOF
+  docker compose exec -T embedder sh -c 'echo "  swap allowed: $(cat /sys/fs/cgroup/memory.swap.max) bytes; swapped now: $(cat /sys/fs/cgroup/memory.swap.current) bytes"' 
   [ "$(docker inspect agentic_ai_review_model-embedder-1 --format '{{.HostConfig.Memory}}')" = 1610612736 ] \
     && [ "$(docker inspect agentic_ai_review_model-embedder-1 --format '{{.HostConfig.RestartPolicy.Name}}')" = on-failure ]
 }
 
 scheduler_embeds_evidence() {
-  docker compose exec -T api python - <<'EOF'
+  docker compose exec -T -e SINCE="$STAMP" api python - <<'EOF'
+import os
 import time
+from datetime import UTC, datetime
 from app.config import get_settings
 from app.db import get_db
 from app.embeddings.jobs import pending_query
@@ -195,9 +204,10 @@ while time.monotonic() < deadline:
     if waiting == 0:
         break
     time.sleep(15)
-jobs = {j["status"] for j in db.ai_jobs.find({"kind": "embed_evidence"}, {"status": 1})}
+since = datetime.fromtimestamp(int(os.environ["SINCE"]), UTC)
+jobs = {j["status"] for j in db.ai_jobs.find({"kind": "embed_evidence", "created_at": {"$gte": since}}, {"status": 1})}
 waiting = db[INDEX].count_documents(pending_query(settings))
-print(f"  embed_evidence jobs: {sorted(jobs)}; still waiting: {waiting}; waited {time.monotonic() - started:.0f} s")
+print(f"  embed_evidence jobs in this run: {sorted(jobs) or 'none needed'}; still waiting: {waiting}; waited {time.monotonic() - started:.0f} s")
 raise SystemExit(0 if waiting == 0 and "failed" not in jobs else 1)
 EOF
 }
@@ -362,7 +372,7 @@ expect "Database setup adds the Step 07 collections and indexes; a repeat change
 expect "UC-47: the scheduler queues clustering for new evidence and the worker completes it" 0 scheduler_clusters_new_evidence
 expect "UC-47: clustering again changes nothing (stable cluster IDs); joined copies listed" 0 clusters_are_stable
 expect "UC-49: older evidence gets its context window once" 0 context_backfill_once
-expect "D51: the embedder serves pinned bge-m3 int8 vectors (1.5 GB cap, kill priority, restart on failure)" 0 embedder_ready
+expect "D51: the embedder serves pinned bge-m3 int8 vectors (1.5 GB cap, no swap, kill priority, restart on failure; speed)" 0 embedder_ready
 expect "UC-52: the scheduler queues embedding and the worker gives every evidence span its vector" 0 scheduler_embeds_evidence
 expect "UC-49/51: the evidence rules hold on the real stored data (verify-evidence)" 0 evidence_rules_hold
 expect "UC-50/52: hybrid retrieval on the real evidence of the five projects returns only that project's eligible evidence" 0 retrieval_on_real_evidence

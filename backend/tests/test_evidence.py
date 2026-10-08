@@ -595,9 +595,12 @@ def test_vectors_are_made_by_a_scheduled_job_and_remade_for_a_new_model(
 
     q = fictional["Quillon Residences"]
     source_for(db, contracts, q, "road", ROAD)
-    assert jobs.start_embedding(db, settings) and not jobs.start_embedding(db, settings), "one job per ten minutes"
     fake = FakeEmbedder()
-    monkeypatch.setattr(jobs, "default_embedder", lambda _s: fake)
+    fake.ready = lambda: False
+    monkeypatch.setattr(jobs, "default_embedder", lambda _s, **_k: fake)
+    assert not jobs.start_embedding(db, settings), "nothing is queued while the embedder is down or loading"
+    fake.ready = lambda: True
+    assert jobs.start_embedding(db, settings) and not jobs.start_embedding(db, settings), "one job per ten minutes"
     monkeypatch.setattr(jobs, "get_settings", lambda: settings)
     run_jobs(db)
     entry = db[INDEX].find_one({"project_id": q})
