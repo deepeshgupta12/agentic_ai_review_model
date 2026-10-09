@@ -6,7 +6,7 @@ Change a weight or list here, bump RULES_VERSION and rerun the identity evaluati
 
 from __future__ import annotations
 
-RULES_VERSION = "identity-rules.1.0"
+RULES_VERSION = "identity-rules.1.1"  # 1.1: Devanagari locality, city and digit forms (I19)
 
 # Deterministic signal weights (0-1000 after capping).
 WEIGHTS = {
@@ -25,8 +25,8 @@ MAX_SCORE = 1000
 AUTO_ACCEPT_SCORE = 550
 
 CITY_SYNONYMS: dict[str, list[str]] = {
-    "gurgaon": ["gurugram"],
-    "gurugram": ["gurgaon"],
+    "gurgaon": ["gurugram", "गुड़गांव", "गुड़गाँव", "गुडगांव", "गुरुग्राम"],
+    "gurugram": ["gurgaon", "गुड़गांव", "गुड़गाँव", "गुडगांव", "गुरुग्राम"],
     "bangalore": ["bengaluru"],
     "bengaluru": ["bangalore"],
     "bombay": ["mumbai"],
@@ -35,9 +35,39 @@ CITY_SYNONYMS: dict[str, list[str]] = {
     "delhi": ["new delhi"],
 }
 
+# Hindi (Devanagari) spellings of locality words, so "सेक्टर 102" reads as "sector 102" (I19). Only words in the
+# catalogue's localities; extend with the catalogue.
+LOCALITY_SCRIPT_FORMS: dict[str, list[str]] = {
+    "sector": ["सेक्टर"],
+    "manesar": ["मानेसर"],
+}
+
 # Cities that reveal a same-name project elsewhere. A match naming one of these but not the project's own
 # city is rejected; naming both goes to review.
 KNOWN_CITIES = [
+    # Hindi (Devanagari) names first (I19); a city's own forms are excluded through CITY_SYNONYMS
+    "गुड़गांव",
+    "गुड़गाँव",
+    "गुडगांव",
+    "गुरुग्राम",
+    "दिल्ली",
+    "नई दिल्ली",
+    "नोएडा",
+    "ग्रेटर नोएडा",
+    "गाज़ियाबाद",
+    "गाजियाबाद",
+    "फरीदाबाद",
+    "सोनीपत",
+    "मुंबई",
+    "पुणे",
+    "बेंगलुरु",
+    "हैदराबाद",
+    "चेन्नई",
+    "कोलकाता",
+    "अहमदाबाद",
+    "चंडीगढ़",
+    "जयपुर",
+    "लखनऊ",
     "gurgaon",
     "gurugram",
     "delhi",

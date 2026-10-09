@@ -10,7 +10,7 @@ import pytest
 from app.identity.catalogue import identity_from_records
 from app.identity.evaluation import fictional_identities
 from app.identity.matching import match_text
-from app.identity.rules import AUTO_ACCEPT_SCORE
+from app.identity.rules import AUTO_ACCEPT_SCORE, RULES_VERSION
 from app.identity.text import contains_unit_guarded, paragraphs, rera_ids_in, sha256_text
 
 from .conftest import FICTIONAL_CATALOGUE
@@ -31,7 +31,7 @@ def test_name_with_locality_is_auto_accepted_and_explained(ids):
     [o] = match_text(ids, "Visited Quillon Residences in Sector 102 last weekend.", [Q])
     assert o.project_id == Q and o.status == "auto_accepted" and o.rule_score >= AUTO_ACCEPT_SCORE
     assert {"project_name", "locality"} <= set(o.signals)
-    assert o.matched_alias == "Quillon Residences" and "identity-rules.1.0" in o.rationale
+    assert o.matched_alias == "Quillon Residences" and RULES_VERSION in o.rationale
 
 
 def test_name_without_place_goes_to_review(ids):
@@ -181,3 +181,16 @@ def test_a_comparison_video_links_each_project_to_its_own_time_segments(ids):
     assert set(got) == {Q, T}
     assert got[Q].segment.key == "t:0-60000" and got[T].segment.key == "t:60000-125000"
     assert got[Q].status == got[T].status == "auto_accepted"
+
+
+def test_hindi_script_localities_cities_and_digits_count_like_english_ones(ids):
+    """I19 (identity-rules.1.1): "सेक्टर 102" is "Sector 102", "१०२" is "102", "गुरुग्राम" is Gurugram, and a Hindi
+    post naming the project in Noida is still another city."""
+    for text in (
+        "Quillon Residences सेक्टर 102 में सड़क टूटी हुई है।",
+        "Quillon Residences सेक्टर १०२ का पज़ेशन मार्च 2027 में है।",
+    ):
+        [o] = match_text(ids, text, [Q])
+        assert o.status == "auto_accepted" and "locality" in o.signals, text
+    [elsewhere] = match_text(ids, "Quillon Residences नोएडा वाला प्रोजेक्ट अलग है।", [Q])
+    assert elsewhere.status == "rejected"

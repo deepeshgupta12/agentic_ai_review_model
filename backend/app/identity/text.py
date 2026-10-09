@@ -19,6 +19,14 @@ RERA_PATTERN = re.compile(
 _PARAGRAPH_BREAK = re.compile(r"\n\s*\n")
 
 
+DEVANAGARI_DIGITS = str.maketrans("०१२३४५६७८९", "0123456789")
+
+
+def match_norm(text: str) -> str:
+    """Normalised text for matching: Devanagari digits read as ASCII digits, so "सेक्टर १०२" is "सेक्टर 102" (I19)."""
+    return normalise_text(text).translate(DEVANAGARI_DIGITS)
+
+
 def nfc(text: str) -> str:
     return unicodedata.normalize("NFC", text)
 

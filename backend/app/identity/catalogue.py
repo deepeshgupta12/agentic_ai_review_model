@@ -9,7 +9,7 @@ from typing import Any
 
 from pymongo.database import Database
 
-from app.identity.rules import CITY_SYNONYMS
+from app.identity.rules import CITY_SYNONYMS, LOCALITY_SCRIPT_FORMS
 from app.identity.text import normalise_text, numeral_variants
 
 
@@ -62,7 +62,8 @@ def city_variants(city: str) -> list[str]:
 
 
 def locality_variants(locality: str) -> list[str]:
-    """'Sector 76' also as 'sec 76' and 'sector76'; 'Manesar Sector 9' also as 'sector 9 manesar'."""
+    """'Sector 76' also as 'sec 76' and 'sector76'; 'Manesar Sector 9' also as 'sector 9 manesar'. Each form also in
+    Hindi script where its words have one ('सेक्टर 76', 'मानेसर सेक्टर 9'; I19)."""
     base = normalise_text(locality)
     variants = [base]
     m = re.fullmatch(r"(?:(\w+) )?sector (\w+)", base)
@@ -73,7 +74,20 @@ def locality_variants(locality: str) -> list[str]:
             variants += [f"{place} {f}" for f in forms[1:]] + [f"{f} {place}" for f in forms]
         else:
             variants += forms[1:]
+    variants += [hindi for variant in list(variants) for hindi in _in_hindi_script(variant)]
     return list(dict.fromkeys(variants))
+
+
+def _in_hindi_script(variant: str) -> list[str]:
+    """Every combination of the variant's words written in Hindi script, when all of its words have such a form."""
+    tokens = variant.split()
+    options = [[t] if t.isdigit() else [normalise_text(f) for f in LOCALITY_SCRIPT_FORMS.get(t, [])] for t in tokens]
+    if not tokens or any(not o for o in options) or all(t.isdigit() for t in tokens):
+        return []
+    out = [""]
+    for choice in options:
+        out = [f"{prefix} {c}".strip() for prefix in out for c in choice]
+    return out
 
 
 def identity_from_records(project: dict[str, Any], config: dict[str, Any] | None) -> ProjectIdentity:

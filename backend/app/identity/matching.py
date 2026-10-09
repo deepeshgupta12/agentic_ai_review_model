@@ -22,6 +22,7 @@ from app.identity.rules import AUTO_ACCEPT_SCORE, KNOWN_CITIES, MAX_SCORE, RULES
 from app.identity.text import (
     contains,
     contains_unit_guarded,
+    match_norm,
     nfc,
     normalise_text,
     numeral_variants,
@@ -67,7 +68,7 @@ class MatchOutcome:
 
 def evaluate(identity: ProjectIdentity, text: str) -> Candidate:
     """Signals, score and phase for one project in one piece of text."""
-    norm = normalise_text(text)
+    norm = match_norm(text)
     signals: list[str] = []
     notes: list[str] = []
     score = 0
