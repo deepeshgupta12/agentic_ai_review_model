@@ -99,6 +99,9 @@ def run_one(db: Database[dict[str, Any]], owner: str, lease_seconds: int, kinds:
     except JobCancelled:
         queue.acknowledge_cancel(db, claimed.id, claimed.token)
         return "cancelled"
+    except queue.Deferred as exc:
+        log_event(logger, "job deferred", job_id=claimed.id, kind=job["kind"], reason=exc.reason)
+        return queue.defer(db, claimed.id, claimed.token, exc.reason, exc.seconds)
     except Exception as exc:
         log_event(
             logger, "job failed", level=logging.ERROR, job_id=claimed.id, kind=job["kind"], error=type(exc).__name__

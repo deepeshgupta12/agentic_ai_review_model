@@ -13,7 +13,8 @@ from app.config import Settings, get_settings
 from app.db import utcnow
 from app.embeddings.client import Embedder, EmbeddingUnavailable, default_embedder, model_label
 from app.evidence.retrieval import INDEX, sync_index
-from app.jobs import queue
+from app.jobs import heavy, queue
+from app.jobs.queue import Deferred
 from app.observability import log_event
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,8 @@ def start_embedding(db: Database[dict[str, Any]], settings: Settings | None = No
     sync_index(db)
     if not db[INDEX].count_documents(pending_query(settings), limit=1):
         return False
+    if heavy.transcription_pending(db):
+        return False  # transcription first: both models do not fit in the 4 GB VM together (D52)
     if embedder is not None and not embedder.ready():
         return False  # nothing is queued while the embedder is down or still loading; search uses keywords
     now = utcnow()
@@ -46,11 +49,15 @@ def embed_pending(
     *,
     check: Any = lambda: None,
     limit: int | None = None,
+    should_yield: Any = lambda: False,
 ) -> dict[str, int]:
-    """Embed waiting entries in batches; returns counts. Raises EmbeddingUnavailable if the service is down."""
+    """Embed waiting entries in batches; returns counts. Raises EmbeddingUnavailable if the service is down. Stops
+    early, between batches, when `should_yield()` says another heavy job needs the memory."""
     done = 0
     label = model_label(settings)
     while limit is None or done < limit:
+        if should_yield():
+            break
         batch = list(db[INDEX].find(pending_query(settings), {"text": 1}).limit(settings.embedding_batch))
         if not batch:
             break
@@ -69,9 +76,13 @@ def handle_embed_evidence(db: Database[dict[str, Any]], job: dict[str, Any], che
     embedder = default_embedder(settings, for_job=True)
     if embedder is None:
         return None
+    if heavy.transcription_pending(db):
+        raise Deferred("transcription is running or waiting; it goes first in the 4 GB VM (D52)", 300)
     sync_index(db)
     try:
-        report = embed_pending(db, embedder, settings, check=check)
+        report = embed_pending(
+            db, embedder, settings, check=check, should_yield=lambda: heavy.transcription_pending(db)
+        )
     except EmbeddingUnavailable:
         raise  # retried with backoff; the embedder may still be loading its model
     log_event(logger, "evidence embedded", **report)

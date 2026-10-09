@@ -35,7 +35,8 @@ from app.identity.links import ACTIVE_STATUSES
 from app.identity.service import identify_media
 from app.identity.text import nfc, sha256_text
 from app.ids import new_id
-from app.jobs import queue
+from app.jobs import heavy, queue
+from app.jobs.queue import Deferred
 from app.media.fetch import (
     Captions,
     Download,
@@ -490,6 +491,8 @@ def _sample(sampler: FrameSampler, media: Path, workdir: Path, settings: Setting
 
 def handle_process_media(db: Database[dict[str, Any]], job: dict[str, Any], check: Any) -> str | None:
     """Worker handler for `process_media` jobs (the media worker only)."""
+    if heavy.running(db, heavy.EMBED):  # the embedding job stops after its current text when it sees this one waiting
+        raise Deferred("the embedder is working; Whisper waits for the memory (4 GB VM, D52)", 30)
     settings, contracts = get_settings(), get_contracts()
     ref = job["logical_key"].split(":")[1]  # process_media:<source id>@<revision>:<day>
     source = db["ai_sources"].find_one({"_id": ref})

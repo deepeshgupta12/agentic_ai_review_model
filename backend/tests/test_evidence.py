@@ -639,3 +639,42 @@ def test_a_model_file_that_does_not_match_its_pinned_hash_is_refused(settings, t
     files["onnx/model_int8.onnx"] = b"tampered"
     with pytest.raises(RuntimeError, match="does not match the pinned"):
         fetch_model(settings)
+
+
+def test_transcription_and_embedding_take_turns_in_the_4_gb_vm(db, contracts, settings, fictional, monkeypatch):
+    """D52: Whisper and bge-m3 never run together; transcription goes first and nobody loses an attempt."""
+    import pytest
+
+    from app.embeddings import jobs
+    from app.jobs import heavy, queue
+    from app.jobs.queue import Deferred
+    from app.media import pipeline
+    from app.workers.worker import run_one
+
+    q = fictional["Quillon Residences"]
+    source_for(db, contracts, q, "road", ROAD)
+    fake = FakeEmbedder()
+    fake.ready = lambda: True
+    monkeypatch.setattr(jobs, "default_embedder", lambda _s, **_k: fake)
+    monkeypatch.setattr(jobs, "get_settings", lambda: settings)
+
+    queue.enqueue(db, "process_media", "process_media:src_x@1:20261009", max_attempts=3)
+    assert not jobs.start_embedding(db, settings), "no embedding is queued while transcription waits"
+    from app.evidence.retrieval import sync_index
+
+    sync_index(db)
+    report = jobs.embed_pending(db, fake, settings, should_yield=lambda: heavy.transcription_pending(db))
+    assert report["embedded"] == 0 and report["waiting"] == 1, "embedding steps aside for transcription"
+
+    media = queue.claim(db, "media-worker", 60, ["process_media"])  # Whisper is now running
+    queue.enqueue(db, "embed_evidence", "embed_evidence:20261009000", max_attempts=5)
+    assert run_one(db, "general-worker", 60, ["embed_evidence"]) == "deferred"
+    job = db["ai_jobs"].find_one({"kind": "embed_evidence"})
+    assert job["status"] == "retry_wait" and job["attempts"] == 0 and job["error"]["code"] == "deferred"
+    queue.complete(db, media.id, media.token, None)
+
+    db["ai_jobs"].update_one({"_id": job["_id"]}, {"$set": {"next_attempt_at": None, "status": "queued"}})
+    embedding = queue.claim(db, "general-worker", 60, ["embed_evidence"])  # the embedder is now working
+    with pytest.raises(Deferred):
+        pipeline.handle_process_media(db, {"logical_key": "process_media:src_y@1:20261009"}, lambda: "ok")
+    queue.complete(db, embedding.id, embedding.token, None)

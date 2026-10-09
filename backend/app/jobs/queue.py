@@ -184,6 +184,36 @@ def backoff_seconds(attempt: int, base: float = 5.0, cap: float = 600.0) -> floa
     return random.uniform(0, min(cap, base * (2 ** max(attempt - 1, 0))))  # noqa: S311 - not security sensitive
 
 
+class Deferred(Exception):
+    """A handler cannot run yet (for example, another heavy job holds the memory it needs). The job waits about
+    `seconds` and runs again without using up an attempt."""
+
+    def __init__(self, reason: str, seconds: float = 60.0) -> None:
+        super().__init__(reason)
+        self.reason, self.seconds = reason, seconds
+
+
+def defer(db: Database[dict[str, Any]], job_id: str, token: int, reason: str, seconds: float) -> str | None:
+    """Back to retry_wait after about `seconds` (with jitter, so two waiting jobs do not keep meeting); the claim's
+    attempt is given back."""
+    now = utcnow()
+    wait = seconds * random.uniform(0.8, 1.2)  # noqa: S311 - not security sensitive
+    result = db[JOBS].update_one(
+        _owned(job_id, token),
+        {
+            "$set": {
+                "status": "retry_wait",
+                "next_attempt_at": now + timedelta(seconds=wait),
+                "lease": None,
+                "error": {"code": "deferred", "message": reason[:500], "retryable": True},
+                "updated_at": now,
+            },
+            "$inc": {"attempts": -1},
+        },
+    )
+    return "deferred" if result.modified_count == 1 else None
+
+
 def fail(
     db: Database[dict[str, Any]], job_id: str, token: int, code: str, message: str, *, retryable: bool
 ) -> str | None:

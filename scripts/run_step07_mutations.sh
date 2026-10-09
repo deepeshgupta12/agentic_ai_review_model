@@ -153,6 +153,28 @@ mutant "a model file must match its pinned hash" test_evidence.py test_a_model_f
   '        if actual != expected:' \
   '        if False:'
 
+printf '\n-- one heavy model at a time in the 4 GB VM (D52)\n'
+
+mutant "embedding waits while transcription is running or waiting" test_evidence.py test_transcription_and_embedding_take_turns_in_the_4_gb_vm \
+  app/embeddings/jobs.py \
+  '        raise Deferred("transcription is running or waiting; it goes first in the 4 GB VM (D52)", 300)' \
+  '        pass'
+
+mutant "transcription waits while the embedder is working" test_evidence.py test_transcription_and_embedding_take_turns_in_the_4_gb_vm \
+  app/media/pipeline.py \
+  '        raise Deferred("the embedder is working; Whisper waits for the memory (4 GB VM, D52)", 30)' \
+  '        pass'
+
+mutant "embedding steps aside between texts for transcription" test_evidence.py test_transcription_and_embedding_take_turns_in_the_4_gb_vm \
+  app/embeddings/jobs.py \
+  '        if should_yield():' \
+  '        if False:'
+
+mutant "a deferred job keeps its attempts" test_evidence.py test_transcription_and_embedding_take_turns_in_the_4_gb_vm \
+  app/workers/worker.py \
+  '        return queue.defer(db, claimed.id, claimed.token, exc.reason, exc.seconds)' \
+  '        return queue.fail(db, claimed.id, claimed.token, "deferred", exc.reason, retryable=True)'
+
 echo
 if [ "$FAILED" -eq 0 ]; then echo "ALL MUTANTS CAUGHT"; else echo "SOME MUTANTS NOT CAUGHT"; fi
 echo "log: $LOG"

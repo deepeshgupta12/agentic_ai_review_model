@@ -89,3 +89,11 @@ make eval-retrieval
 | 2026-10-09 04:58 | `60bf593` | GitHub Actions | CI, including the embedder (model downloaded at the pinned commit, a 1,024-dimension vector returned) | All four jobs passed | `gh run view 37886392860` |
 
 The keyword baseline missed exactly what keywords cannot match: "flooding rains" for "floods after rain", and English queries for two Hindi posts without a stored translation. These are the cases embedding search is meant to close.
+
+## Approvals
+
+| Item | Decision | Where |
+|---|---|---|
+| Step 07 | **Approved 9 Oct 2026**: the evidence layer (D50) and embedding search with hybrid ranking as the default (D51) | D50, D51 |
+| I19 | Devanagari localities: fixed at Step 08 with the identity evaluation re-run (agreed 9 Oct 2026) | I19 |
+| I18 | Docker stays at 4 GB, the product owner's limit (9 Oct 2026). Follow-up: Whisper and bge-m3 take turns (D52), tested and mutation-checked | I18, D52 |
