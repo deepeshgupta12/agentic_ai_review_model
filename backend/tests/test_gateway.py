@@ -156,13 +156,15 @@ def test_a_configured_key_makes_the_gateway_available(settings, contracts):
 def test_configured_model_ids_are_confirmed_once_each(settings, contracts):
     models = FakeModels()
     report = gateway(settings, contracts, FakeClient(models=models)).check_models()
-    assert {role: entry["model"] for role, entry in report.items()} == {
+    roles = {
+        "light": settings.model_light,
         "routine": settings.model_routine,
         "reasoning": settings.model_reasoning,
         "difficult": settings.model_difficult,
     }
+    assert {role: entry["model"] for role, entry in report.items()} == roles
     assert all(entry["status"] == "available" for entry in report.values())
-    assert sorted(models.calls) == sorted({settings.model_routine, settings.model_reasoning, settings.model_difficult})
+    assert sorted(models.calls) == sorted(set(roles.values())), "each model is confirmed once"
 
 
 def test_a_model_missing_for_the_account_is_reported(settings, contracts):
@@ -200,7 +202,7 @@ def test_smoke_command_reports_models_and_the_call(settings, contracts, monkeypa
     client = FakeClient(response(VALID), models=FakeModels())
     monkeypatch.setattr(cli, "get_settings", lambda: settings)
     monkeypatch.setattr(cli, "get_contracts", lambda: contracts)
-    monkeypatch.setattr(gateway_module, "ModelGateway", lambda s, c: ModelGateway(s, c, client=client))
+    monkeypatch.setattr(gateway_module, "gateway_for", lambda _db, s, c: ModelGateway(s, c, client=client))
     assert cli.main(["smoke-model"]) == 0
     printed = json.loads(capsys.readouterr().out)
     assert printed["outcome"] == "completed" and printed["model_outcome"] == "insufficient_evidence"
@@ -214,7 +216,7 @@ def test_smoke_command_fails_when_a_configured_model_is_missing(settings, contra
     client = FakeClient(response(VALID), models=FakeModels(missing={settings.model_difficult}))
     monkeypatch.setattr(cli, "get_settings", lambda: settings)
     monkeypatch.setattr(cli, "get_contracts", lambda: contracts)
-    monkeypatch.setattr(gateway_module, "ModelGateway", lambda s, c: ModelGateway(s, c, client=client))
+    monkeypatch.setattr(gateway_module, "gateway_for", lambda _db, s, c: ModelGateway(s, c, client=client))
     assert cli.main(["smoke-model"]) == 1
     assert json.loads(capsys.readouterr().out)["models"]["difficult"]["status"] == "model_not_found"
 
@@ -246,3 +248,146 @@ def test_a_malformed_workspace_id_is_refused():
 
     with pytest.raises(ValidationError):
         Settings(_env_file=None, anthropic_workspace_id="not-a-workspace")
+
+
+# --- D53: the spend cap ------------------------------------------------------------------------------------------
+
+
+def ledgered(db, settings, contracts, client):
+    from app.agents.spend import SpendLedger
+
+    return ModelGateway(settings, contracts, client=client, sleep=lambda _s: None, ledger=SpendLedger(db, settings))
+
+
+def test_each_call_is_priced_from_its_usage_and_recorded(db, settings, contracts):
+    from app.agents.spend import SpendLedger
+
+    client = FakeClient(response(VALID))
+    result = ledgered(db, settings, contracts, client).run("routine", SCHEMA, "system", "user", purpose="test")
+    expected = (120 * 2.0 + 30 * 10.0) / 1_000_000  # usage in response(): 120 in, 30 out at Sonnet 5 prices
+    assert result.outcome == "completed" and abs(result.cost_usd - expected) < 1e-9
+    state = SpendLedger(db, settings).state()
+    assert abs(state["spent_usd"] - expected) < 1e-9 and state["reserved_usd"] == 0 and state["calls"] == 1
+    entry = db["ai_model_calls"].find_one()
+    assert entry["purpose"] == "test" and entry["model"] == "claude-sonnet-5" and entry["estimate_usd"] >= expected
+    assert client.calls[0]["cache_control"] == {"type": "ephemeral"}, "repeated prefixes are cached"
+
+
+def test_a_call_that_could_exceed_the_budget_is_refused_before_it_is_made(db, settings, contracts):
+    settings.model_budget_usd = 0.001  # less than one worst-case call (16,000 output tokens at $10 per million)
+    client = FakeClient(response(VALID))
+    result = ledgered(db, settings, contracts, client).run("routine", SCHEMA, "system", "user")
+    assert result.outcome == "failed" and result.error["code"] == "budget_exhausted" and client.calls == []
+    small = ledgered(db, settings, contracts, FakeClient(response(VALID))).run(
+        "routine", SCHEMA, "system", "user", max_tokens=40
+    )
+    assert small.outcome == "completed", "a call bounded to fit is allowed"
+
+
+def test_a_failed_call_releases_its_reservation_and_costs_nothing(db, settings, contracts):
+    import anthropic
+
+    from app.agents.spend import SpendLedger
+
+    client = FakeClient(api_error(anthropic.BadRequestError, 400))
+    result = ledgered(db, settings, contracts, client).run("routine", SCHEMA, "system", "user")
+    assert result.error["code"] == "bad_request" and result.cost_usd == 0
+    state = SpendLedger(db, settings).state()
+    assert state["spent_usd"] == 0 and state["reserved_usd"] == 0 and state["calls"] == 1
+
+
+def test_live_calls_need_the_ledger_and_a_priced_model(db, settings, contracts):
+    from pydantic import SecretStr
+
+    settings.anthropic_api_key = SecretStr("sk-ant-test-not-a-real-key")
+    unmetered = ModelGateway(settings, contracts).run("routine", SCHEMA, "system", "user")
+    assert unmetered.error["code"] == "no_spend_ledger", "no live call escapes the budget"
+    settings.model_prices = {}
+    unpriced = ledgered(db, settings, contracts, FakeClient(response(VALID))).run("routine", SCHEMA, "system", "user")
+    assert unpriced.error["code"] == "price_unknown"
+
+
+def test_two_workers_cannot_overspend_together(db, settings):
+    from app.agents.spend import SpendLedger
+
+    settings.model_budget_usd = 1.0
+    first, second = SpendLedger(db, settings), SpendLedger(db, settings)
+    assert first.reserve("claude-sonnet-5", 0.6, batch=False) is not None
+    assert second.reserve("claude-sonnet-5", 0.6, batch=False) is None, "0.6 + 0.6 would pass the 1.0 limit"
+    assert second.reserve("claude-sonnet-5", 0.4, batch=False) is not None
+
+
+def test_batch_and_cache_prices(settings):
+    from app.agents.spend import actual_usd
+
+    usage = {"input_tokens": 1_000_000, "output_tokens": 1_000_000, "cache_read_input_tokens": 1_000_000}
+    assert actual_usd(settings, "claude-haiku-5-5", usage, batch=False) == round(0.10 + 0.50 + 0.01, 6)
+    assert actual_usd(settings, "claude-haiku-5-5", usage, batch=True) == round((0.10 + 0.50 + 0.01) / 2, 6)
+
+
+class FakeBatches:
+    """messages.batches stand-in: results are given per custom ID as response() messages or error types."""
+
+    def __init__(self, outcomes, status="ended"):
+        self.outcomes, self.status, self.created = outcomes, status, []
+
+    def create(self, requests):
+        self.created.append(requests)
+        return SimpleNamespace(id="msgbatch_test", processing_status="in_progress")
+
+    def retrieve(self, message_batch_id):
+        return SimpleNamespace(id=message_batch_id, processing_status=self.status)
+
+    def results(self, message_batch_id):
+        for custom_id, outcome in self.outcomes.items():
+            if isinstance(outcome, str):
+                yield SimpleNamespace(custom_id=custom_id, result=SimpleNamespace(type=outcome))
+            else:
+                yield SimpleNamespace(custom_id=custom_id, result=SimpleNamespace(type="succeeded", message=outcome))
+
+
+def batch_gateway(db, settings, contracts, batches):
+    from app.agents.gateway import BatchGateway
+
+    client = FakeClient()
+    client.batches = batches
+    return BatchGateway(ledgered(db, settings, contracts, client), db)
+
+
+def test_a_batch_reserves_its_worst_case_at_half_price_and_settles_once(db, settings, contracts):
+    from app.agents.spend import SpendLedger
+
+    batches = FakeBatches({"a": response(VALID), "b": response(text="not json"), "c": "errored"})
+    bg = batch_gateway(db, settings, contracts, batches)
+    items = [("a", "first"), ("b", "second"), ("c", "third")]
+    record = bg.submit("job:1", "light", SCHEMA, "system", items, max_tokens=200, purpose="test-batch")
+    assert (
+        record["status"] == "submitted"
+        and record["batch_id"] == "msgbatch_test"
+        and record["model"] == "claude-haiku-5-5"
+    )
+    assert bg.submit("job:1", "light", SCHEMA, "system", items, max_tokens=200, purpose="test-batch")["_id"] == "job:1"
+    assert len(batches.created) == 1, "the same key never submits twice"
+    params = batches.created[0][0]["params"]
+    assert params["output_config"]["format"]["type"] == "json_schema" and params["cache_control"] == {
+        "type": "ephemeral"
+    }
+    assert SpendLedger(db, settings).state()["reserved_usd"] == record["reserved_usd"] > 0
+    assert bg.status("job:1") == "ended"
+    results = bg.collect("job:1")
+    assert results["a"].outcome == "completed" and results["a"].data == VALID
+    assert results["b"].error["code"] == "invalid_output" and results["c"].error["code"] == "batch_errored"
+    state = SpendLedger(db, settings).state()
+    two_messages = 2 * (120 * 0.10 + 30 * 0.50) / 1_000_000 / 2  # two billed messages at Haiku 5.5 batch prices
+    assert state["reserved_usd"] == 0 and abs(state["spent_usd"] - two_messages) < 1e-9
+    bg.collect("job:1")
+    assert abs(SpendLedger(db, settings).state()["spent_usd"] - two_messages) < 1e-9, "collected twice, settled once"
+
+
+def test_a_batch_that_does_not_fit_the_budget_is_not_submitted(db, settings, contracts):
+    settings.model_budget_usd = 0.000001
+    batches = FakeBatches({})
+    record = batch_gateway(db, settings, contracts, batches).submit(
+        "job:2", "light", SCHEMA, "system", [("a", "x")], max_tokens=200, purpose="test"
+    )
+    assert record["error"]["code"] == "budget_exhausted" and batches.created == []

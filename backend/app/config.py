@@ -9,6 +9,7 @@ the connector stays `access_pending` (D06).
 from __future__ import annotations
 
 import secrets
+from datetime import UTC, datetime
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
@@ -49,11 +50,24 @@ class Settings(BaseSettings):
     anthropic_api_key: SecretStr | None = None
     # Only for an organisation-level key: the workspace its requests run in (sent as anthropic-workspace-id).
     anthropic_workspace_id: str | None = Field(default=None, pattern=r"^wrkspc_[A-Za-z0-9]+$")
+    model_light: str = "claude-haiku-5-5"  # Step 08 (D53): bulk extraction and curation, the cheapest current model
     model_routine: str = "claude-sonnet-5"
     model_reasoning: str = "claude-sonnet-5"
     model_difficult: str = "claude-opus-5-5"
     model_max_output_tokens: int = Field(default=16000, ge=256)
     model_max_attempts: int = Field(default=3, ge=1, le=6)
+    model_prompt_cache: bool = True  # automatic prompt caching of repeated prefixes (system prompt, shared context)
+
+    # Spend (Step 08, D53): a hard cap on live model calls, counted from MODEL_BUDGET_SINCE. Prices are USD per
+    # million tokens from Anthropic's published table (9 Oct 2026); the Batch API halves input and output.
+    model_budget_usd: float = Field(default=2.0, ge=0)
+    model_budget_since: datetime = datetime(2026, 10, 9, tzinfo=UTC)
+    model_prices: dict[str, dict[str, float]] = {
+        "claude-haiku-5-5": {"input": 0.10, "output": 0.50, "cache_write": 0.125, "cache_read": 0.01},
+        "claude-sonnet-5": {"input": 2.0, "output": 10.0, "cache_write": 2.50, "cache_read": 0.20},
+        "claude-sonnet-5-5": {"input": 2.0, "output": 10.0, "cache_write": 2.50, "cache_read": 0.10},
+        "claude-opus-5-5": {"input": 4.0, "output": 20.0, "cache_write": 5.0, "cache_read": 0.20},
+    }
 
     job_lease_seconds: int = Field(default=60, ge=5)
     job_max_attempts: int = Field(default=5, ge=1)
@@ -145,9 +159,12 @@ class Settings(BaseSettings):
         return self
 
     def model_for_role(self, role: str) -> str:
-        return {"routine": self.model_routine, "reasoning": self.model_reasoning, "difficult": self.model_difficult}[
-            role
-        ]
+        return {
+            "light": self.model_light,
+            "routine": self.model_routine,
+            "reasoning": self.model_reasoning,
+            "difficult": self.model_difficult,
+        }[role]
 
     def credential_present(self, env_name: str) -> bool:
         value = getattr(self, env_name.lower(), None)

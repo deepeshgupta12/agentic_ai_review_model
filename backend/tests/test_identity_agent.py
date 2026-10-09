@@ -172,7 +172,7 @@ def test_the_live_a01_smoke_option_checks_a_real_shaped_answer(db, settings, con
 
     real = gateway_module.ModelGateway
     fake = A01Fake(lambda segs: result([segment(s, None, decision="ambiguous") for s in segs]))
-    monkeypatch.setattr(gateway_module, "ModelGateway", lambda s, c: real(s, c, client=fake))
+    monkeypatch.setattr(gateway_module, "gateway_for", lambda _db, s, c: real(s, c, client=fake))
     monkeypatch.setattr(cli, "get_db", lambda: db)
     monkeypatch.setattr(cli, "get_settings", lambda: settings)
     monkeypatch.setattr(cli, "get_contracts", lambda: contracts)

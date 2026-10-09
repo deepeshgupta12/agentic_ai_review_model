@@ -142,7 +142,7 @@ def _record_run(
             "attempt": max(1, result.attempts),
             "repair_used": result.repair_used,
             "usage": result.usage,
-            "estimated_cost_usd": None,
+            "estimated_cost_usd": round(result.cost_usd, 6) if result.cost_usd else None,
             "provider_request_id": result.provider_request_id,
             "elapsed_ms": elapsed_ms,
             "error": {"code": result.error["code"], "message": result.error["message"]} if result.error else None,

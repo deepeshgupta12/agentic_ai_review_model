@@ -44,6 +44,12 @@ def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -
 
         key = settings.youtube_api_key
         return YouTubeDataApi(key.get_secret_value(), safe_client(settings), db, settings) if key else None
+    if connector_id == "harera_registry":
+        from app.connectors.harera import MAX_LISTING_BYTES, HareraRegistry
+
+        client = safe_client(settings)
+        client.max_bytes = max(client.max_bytes, MAX_LISTING_BYTES)  # a fresh client per build; the list is large
+        return HareraRegistry(client, RobotsCache(client, agent_token(settings)), db)
     if connector_id == "web_fetch":
         from app.connectors.web import WebFetch
 

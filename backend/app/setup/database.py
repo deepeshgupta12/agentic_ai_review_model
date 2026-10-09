@@ -160,6 +160,47 @@ def _fetch_log_validator() -> dict[str, Any]:
     }
 
 
+def _budget_validator() -> dict[str, Any]:
+    number = {"bsonType": ["double", "int", "long"]}
+    return {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["_id", "limit_usd", "spent_usd", "reserved_usd", "calls"],
+            "properties": {
+                "_id": {"bsonType": "string"},
+                "limit_usd": {**number, "minimum": 0},
+                "spent_usd": {**number, "minimum": 0},
+                "reserved_usd": number,
+                "calls": {"bsonType": ["int", "long"], "minimum": 0},
+            },
+        }
+    }
+
+
+def _model_call_validator() -> dict[str, Any]:
+    number = {"bsonType": ["double", "int", "long"], "minimum": 0}
+    return {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["_id", "budget", "at", "model", "purpose", "batch", "estimate_usd", "cost_usd", "outcome"],
+            "properties": {
+                "_id": {"bsonType": "string"},
+                "budget": {"bsonType": "string"},
+                "at": {"bsonType": "date"},
+                "model": {"bsonType": "string"},
+                "purpose": {"bsonType": "string"},
+                "batch": {"bsonType": "bool"},
+                "usage": {"bsonType": "object"},
+                "estimate_usd": number,
+                "cost_usd": number,
+                "outcome": {"bsonType": "string"},
+                "error_code": {"bsonType": ["string", "null"]},
+                "provider_request_id": {"bsonType": ["string", "null"]},
+            },
+        }
+    }
+
+
 def _search_validator() -> dict[str, Any]:
     """ai_evidence_search (Step 07.4): a derived, rebuildable keyword index over evidence words (D50)."""
     ref = {
@@ -463,6 +504,30 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
                 IndexSpec("by_project", [("project_id", ASCENDING), ("published_at", DESCENDING)]),
                 IndexSpec("by_source", [("source.id", ASCENDING), ("source.revision", ASCENDING)]),
             ],
+        ),
+        # Step 08 (D53): the model spend budget and one ledger entry per live model call.
+        CollectionSpec("ai_model_budget", _budget_validator(), []),
+        CollectionSpec(
+            "ai_model_batches",
+            {
+                "$jsonSchema": {
+                    "bsonType": "object",
+                    "required": ["_id", "status", "model", "schema_ref", "purpose", "custom_ids", "reserved_usd"],
+                    "properties": {
+                        "_id": {"bsonType": "string"},
+                        "status": {"enum": ["submitting", "submitted", "collected", "failed"]},
+                        "batch_id": {"bsonType": ["string", "null"]},
+                        "custom_ids": {"bsonType": "array", "items": {"bsonType": "string"}},
+                        "reserved_usd": {"bsonType": ["double", "int", "long"], "minimum": 0},
+                    },
+                }
+            },
+            [],
+        ),
+        CollectionSpec(
+            "ai_model_calls",
+            _model_call_validator(),
+            [IndexSpec("by_budget_time", [("budget", ASCENDING), ("at", DESCENDING)])],
         ),
         CollectionSpec(
             "ai_idempotency_keys",

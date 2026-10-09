@@ -23,7 +23,7 @@ from pymongo.database import Database
 from ulid import ULID
 
 from app import audit
-from app.agents.gateway import ModelGateway
+from app.agents.gateway import ModelGateway, gateway_for
 from app.config import Settings, get_settings
 from app.connectors.base import Page, ProviderError
 from app.connectors.registry import build
@@ -43,7 +43,11 @@ from app.sources.store import Item, Stored, store_item, withdrawn_on_request
 logger = logging.getLogger(__name__)
 RUNS = "ai_runs"
 EVENTS = "ai_run_events"
-GROUPS = {"web": ("brave_search", "web_fetch"), "youtube_data_api": ("youtube_data_api",)}
+GROUPS = {
+    "web": ("brave_search", "web_fetch"),
+    "youtube_data_api": ("youtube_data_api",),
+    "registry": ("harera_registry",),  # Step 08 (D53): dated primary records for verification
+}
 TERMINAL_JOB = {"completed", "failed", "cancelled"}
 
 
@@ -284,7 +288,7 @@ class Collector:
         run = db[RUNS].find_one({"_id": self.run_id}, {"coverage": 1}) or {"coverage": []}
         # Only the connectors the run planned (enabled for the project, chosen and runnable at the start).
         self.planned = {c["connector_id"] for c in run["coverage"] if c["status"] == "partial"}
-        gateway = ModelGateway(self.settings, self.contracts)
+        gateway = gateway_for(db, self.settings, self.contracts)
         self._gateway = gateway if gateway.available else None
         self.a01_left = self.settings.identity_agent_tasks_per_run
 
@@ -558,6 +562,55 @@ class Collector:
                 return
             cursor = page.next_cursor
 
+    # --- registry group: the HRERA record of each of the project's RERA registrations ---
+
+    def run_registry(self) -> None:
+        from app.connectors.harera import HareraRegistry
+        from app.sources.http import FetchError
+
+        registry = self._build("harera_registry")
+        if registry is None:
+            return
+        assert isinstance(registry, HareraRegistry)
+        cov = _coverage("harera_registry", "complete_for_query", None)
+        project = self.db["projects"].find_one({"_id": self.project_id}) or {}
+        rera_ids = [r["id_normalised"] for r in project.get("rera_registrations", [])]
+        policy = policies.current(self.db, "official_records")
+        if policy is None or not policy["collection_allowed"]:
+            cov.update(status="unavailable", note="the official_records policy does not allow collection")
+            update_coverage(self.db, self.run_id, cov)
+            return
+        try:
+            self.check()
+            listing = registry.listing(run_id=self.run_id)
+        except FetchError as exc:
+            cov.update(status="partial" if exc.retryable else "unavailable", note=f"{exc.code}: {exc.message}"[:500])
+            update_coverage(self.db, self.run_id, cov)
+            return
+        counts: dict[str, int] = {}
+        missing = [rid for rid in rera_ids if rid not in listing]
+        for rera_id in rera_ids:
+            if rera_id not in listing:
+                continue
+            self.check()
+            cov["attempted_queries"] += 1
+            stored = self._store_one(registry.item_for(listing[rera_id]), policy)
+            counts["changed" if stored.changed else ("new" if stored.created else "unchanged")] = (
+                counts.get("changed" if stored.changed else ("new" if stored.created else "unchanged"), 0) + 1
+            )
+            cov["fetched"] += 1
+            report = identify_source(
+                self.client, self.db, self.contracts, stored.source, focus_project_ids=[self.project_id]
+            )
+            if any(r["status"] != "rejected" and r["project_id"] == self.project_id for r in report["links"]):
+                cov["matched"] += 1
+        if missing:
+            counts["not_on_the_registry_list"] = len(missing)
+        cov["last_success_at"] = utcnow()
+        note = _note(counts, []) or ""
+        cov["note"] = (note + (f"; not listed: {', '.join(missing)}" if missing else ""))[:500] or None
+        update_coverage(self.db, self.run_id, cov)
+
 
 def _note(counts: dict[str, int], errors: list[str]) -> str | None:
     parts = [f"{k}: {v}" for k, v in sorted(counts.items())]
@@ -578,6 +631,8 @@ def handle_collect(db: Database[dict[str, Any]], job: dict[str, Any], check: Any
         collector.run_web()
     elif group == "youtube_data_api":
         collector.run_youtube()
+    elif group == "registry":
+        collector.run_registry()
     else:
         raise ValueError(f"unknown collect group {group}")
     finish_if_done(db.client, db, job["run_id"], exclude_job=job["_id"])

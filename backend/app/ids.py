@@ -29,6 +29,7 @@ PREFIXES = {
     "als",
     "cor",
     "rex",
+    "mcl",  # a model call ledger entry (D53); internal, not in the contracts
 }
 ID_PATTERN = re.compile(r"^([a-z]{3})_[0-9A-HJKMNP-TV-Z]{26}$")
 

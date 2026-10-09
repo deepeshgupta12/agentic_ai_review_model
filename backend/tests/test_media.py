@@ -147,7 +147,16 @@ def video(db, settings, world, tmp_path):  # noqa: F811
     source = db["ai_sources"].find_one({"source_kind": "video"})
     link = db["ai_project_source_links"].find_one({"source.id": source["id"], "segment_key": "whole"})
     assert link["status"] == "auto_accepted" and source["media"]["access_status"] == "metadata_only"
+    switch(db, world["q"], True)
     return source
+
+
+def switch(db, project_id, enabled):
+    """The project's spoken_video_transcripts switch, as a researcher sets it in the configuration."""
+    db["ai_project_configs"].update_one(
+        {"_id": project_id, "sources.connector_id": "spoken_video_transcripts"},
+        {"$set": {"sources.$.enabled": enabled}},
+    )
 
 
 def process(
@@ -314,6 +323,13 @@ def test_only_videos_with_an_accepted_match_are_queued_once(db, settings, video)
     assert job["logical_key"] == f"process_media:{video['_id']}:{job['created_at']:%Y%m%d}"
     db["ai_project_source_links"].update_many({"source.id": video["id"]}, {"$set": {"status": "needs_review"}})
     assert pipeline.eligible_videos(db) == []
+
+
+def test_a_project_with_transcripts_switched_off_gets_none(db, video, world):  # noqa: F811
+    switch(db, world["q"], False)
+    assert pipeline.eligible_videos(db) == [] and pipeline.start_media(db, None, 10)["queued"] == 0
+    switch(db, world["q"], True)
+    assert [v["_id"] for v in pipeline.eligible_videos(db, world["q"])] == [video["_id"]]
 
 
 def test_the_media_worker_takes_only_media_jobs(db, video):

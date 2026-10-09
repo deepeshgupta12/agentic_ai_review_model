@@ -92,10 +92,10 @@ def cmd_seed_users(args: argparse.Namespace) -> int:
 
 
 def cmd_smoke_model(_: argparse.Namespace) -> int:
-    from app.agents.gateway import ModelGateway
+    from app.agents.gateway import gateway_for
 
     settings = get_settings()
-    gateway = ModelGateway(settings, get_contracts())
+    gateway = gateway_for(get_db(), settings, get_contracts())
     if not gateway.available:
         print("skipped: no ANTHROPIC_API_KEY configured (connector anthropic stays access_pending)")
         return 0
@@ -394,13 +394,13 @@ def cmd_eval_media(args: argparse.Namespace) -> int:
 
 def cmd_eval_language(args: argparse.Namespace) -> int:
     """A04 on the known text of the non-English speech cases (one Claude call); numbers and negation must survive."""
-    from app.agents.gateway import ModelGateway
+    from app.agents.gateway import gateway_for
     from app.db import utcnow
     from app.ids import new_id
     from app.media.evaluation import evaluate_translation
 
     settings, contracts = get_settings(), get_contracts()
-    gateway = ModelGateway(settings, contracts)
+    gateway = gateway_for(get_db(), settings, contracts)
     if not gateway.available:
         print("skipped: no ANTHROPIC_API_KEY configured")
         return 0
@@ -441,13 +441,13 @@ def cmd_eval_language(args: argparse.Namespace) -> int:
 def cmd_eval_frames(args: argparse.Namespace) -> int:
     """A03 on the synthetic frames (one Claude vision call): each frame's text read verbatim, no render called real
     footage."""
-    from app.agents.gateway import ModelGateway
+    from app.agents.gateway import gateway_for
     from app.db import utcnow
     from app.ids import new_id
     from app.media.evaluation import evaluate_frames, frames_record
 
     settings, contracts = get_settings(), get_contracts()
-    gateway = ModelGateway(settings, contracts)
+    gateway = gateway_for(get_db(), settings, contracts)
     if not gateway.available:
         print("skipped: no ANTHROPIC_API_KEY configured")
         return 0
@@ -707,10 +707,10 @@ def _live_a01_check(
     checks: dict[str, bool],
 ) -> dict[str, Any] | str:
     """One real A01 call on a fictional review segment (a few cents). Skipped without an API key."""
-    from app.agents.gateway import ModelGateway
+    from app.agents.gateway import gateway_for
     from app.identity.service import identify_source
 
-    gateway = ModelGateway(settings, contracts)
+    gateway = gateway_for(get_db(), settings, contracts)
     if not gateway.available:
         return "skipped: no ANTHROPIC_API_KEY configured"
     review = source(

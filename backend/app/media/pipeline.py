@@ -27,7 +27,7 @@ from pymongo.client_session import ClientSession
 from pymongo.database import Database
 
 from app import audit
-from app.agents.gateway import ModelGateway
+from app.agents.gateway import ModelGateway, gateway_for
 from app.config import Settings, get_settings
 from app.contracts import ContractStore, get_contracts
 from app.db import run_in_transaction, utcnow
@@ -67,10 +67,16 @@ FRAMES_FROM_POLICY_VERSION = 3  # spoken_video_content v3 (product owner, 1 Oct 
 
 
 def eligible_videos(db: Database[dict[str, Any]], project_id: str | None = None) -> list[dict[str, Any]]:
-    """Active YouTube videos with an accepted project link that have no transcript yet."""
-    query: dict[str, Any] = {"status": {"$in": sorted(ACTIVE_STATUSES)}, "segment_key": "whole"}
-    if project_id:
-        query["project_id"] = project_id
+    """Active YouTube videos with an accepted project link that have no transcript yet, for projects whose
+    configuration enables `spoken_video_transcripts` (the project's switch for this route)."""
+    enabled = db["ai_project_configs"].distinct(
+        "_id", {"sources": {"$elemMatch": {"connector_id": "spoken_video_transcripts", "enabled": True}}}
+    )
+    query: dict[str, Any] = {
+        "status": {"$in": sorted(ACTIVE_STATUSES)},
+        "segment_key": "whole",
+        "project_id": {"$in": [project_id] if project_id in enabled else [] if project_id else enabled},
+    }
     linked = db["ai_project_source_links"].distinct("source.id", query)
     return list(
         db["ai_sources"].find(
@@ -514,7 +520,7 @@ def handle_process_media(db: Database[dict[str, Any]], job: dict[str, Any], chec
         contracts=contracts,
         final_attempt=job["attempts"] >= job["max_attempts"],
         check=check,
-        gateway=ModelGateway(settings, contracts),
+        gateway=gateway_for(db, settings, contracts),
     )
     log_event(logger, "video processed", source=ref, **{k: v for k, v in result.items() if k != "reason"})
     return None
