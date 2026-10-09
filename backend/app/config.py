@@ -115,6 +115,7 @@ class Settings(BaseSettings):
     revalidation_secret: SecretStr | None = None
 
     brave_search_api_key: SecretStr | None = None
+    scrapfly_api_key: SecretStr | None = None  # Instagram public posts (I20)
     firecrawl_api_key: SecretStr | None = None
     youtube_api_key: SecretStr | None = None
     reddit_client_id: SecretStr | None = None
