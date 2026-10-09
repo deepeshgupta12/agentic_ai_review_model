@@ -12,7 +12,7 @@
 | 04 | [Project catalogue and identity resolution](steps/04-project-identity.md) | complete (approved 29 Sep 2026) | `da76682`, `ed57fdf`, `5cc63a6`: `backend/app/identity/`, `backend/app/api/routes_projects.py`, `routes_identity.py`, `idempotency.py`, `backend/app/decisions.py`, `seed/construction_status.json`, `evals/identity/v1/`, `prompts/a01_project_identity.1.0.md`, `contracts/v1/state_machines.json` and `journeys.json` (1.1.0), `scripts/run_step04_*.sh`, `scripts/set_env_secret.py`, `DECISIONS.md` | [logs/step-04](logs/step-04/README.md): 32/32 at `5cc63a6` (143 backend tests); product owner's run 32/32 and 16/16 mutants at `4606c3a`; CI green. Live A01 verified 29 Sep 2026 ([log](logs/step-04/live-a01-check-20260929T060000Z.log)). Carried forward: invalidation of findings and approvals joins at Steps 07–11 |
 | 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | complete (approved 1 Oct 2026: U–X; Y points 2–4; Y point 1 replaced by D46) | `6881ccd`, `bebbd76`, `0fa6640`, `5e0cfd6`, `aca3128`, `38716a0`: `backend/app/sources/` (policies, http, robots, quota, state, store, collection, lifecycle, recheck, verify), `backend/app/connectors/` (brave, web, youtube, registry), `backend/app/api/routes_runs.py`, `routes_sources.py`, `routes_policies.py`, `contracts/v1/` (operations 1.1.0, state machines 1.2.0, sources 1.1.0), `seed/source_policies.json`, `seed/connectors.json`, `scripts/run_step05_*.sh`, `DECISIONS.md` (D40–D44), `docs/02`, `docs/06` | [logs/step-05](logs/step-05/README.md): live runs for all five projects 30 Sep 2026; at `38716a0` (after D46) 29/29 checks (236 backend tests, `verify-collection` 13/13 on 1,010 records) and 25/25 mutants; CI green |
 | 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | complete (approved 5 Oct 2026: Z1, Step 06; Z2 accepted 1 Oct; Z3 frames implemented as D49) | `fb5ce62` and follow-ups: `backend/app/media/` (windows, language, fetch, pipeline, translate, evaluation), `backend/app/api/routes_media.py`, `backend/Dockerfile.media`, `docker-compose.yml` (media-worker; MongoDB protected), `prompts/a04_language_context.1.0.md`, `prompts/a03_video_understanding.1.0.md`, `backend/app/media/frames.py`, `evals/media/v1/` (speech and frames), contracts (sources 1.4.0, common 1.1.0, agents 1.1.0, operations 1.2.0), `seed/source_policies.json` (spoken_video_content v3, youtube v3), `scripts/run_step06_*.sh`, `DECISIONS.md` (D47–D49, I17) | [logs/step-06](logs/step-06/README.md): 23/23 checks at `982028c` and by the product owner at `5028a5a`; 16/16 mutants; frames (Z3): 271 backend tests, A03 6/6 phrases and 3/3 renders; 1 Oct live attempts `network_refused` (I17); 2 Oct: 5 real videos (79 windows, 43 speech and 36 frame evidence); 5 Oct at `5578a70`: 24/24 checks, 26/26 mutants, 272 backend tests |
-| 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | in_progress (keyword layer checked at `a894ffc`: 20/20, 12/12; embedding search (D51) built, its check runs next) | `606762d`, `a894ffc`: `backend/app/embeddings/` (model, server, client, jobs), `backend/Dockerfile.embed`, `docker-compose.yml` (embedder), `backend/app/evidence/` (similarity, clusters, eligibility, context, anchors, retrieval, lineage, verify, benchmark), `backend/app/identity/invalidation.py`, `backend/app/setup/database.py` (5 collections), scheduler and worker (`cluster_origins`), contracts (api 1.2.0, operations 1.3.0), `evals/retrieval/v1/`, `backend/tests/test_evidence.py`, `scripts/run_step07_*.sh` | [logs/step-07](logs/step-07/README.md): 287 backend tests; 20/20 checks; 12/12 mutants; benchmark recall@10 0.9 (same language 1.0, cross-language 0.5, other word form 0.0), no wrong-project, withdrawn or anchor errors |
+| 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | built and checked; awaiting approval (24/24 checks and 17/17 mutants at `f04c4a1`, with embedding search, D51) | `606762d`, `a894ffc`: `backend/app/embeddings/` (model, server, client, jobs), `backend/Dockerfile.embed`, `docker-compose.yml` (embedder), `backend/app/evidence/` (similarity, clusters, eligibility, context, anchors, retrieval, lineage, verify, benchmark), `backend/app/identity/invalidation.py`, `backend/app/setup/database.py` (5 collections), scheduler and worker (`cluster_origins`), contracts (api 1.2.0, operations 1.3.0), `evals/retrieval/v1/`, `backend/tests/test_evidence.py`, `scripts/run_step07_*.sh` | [logs/step-07](logs/step-07/README.md): 291 backend tests; 24/24 checks; 17/17 mutants; benchmark recall@10 keyword 0.839, vector 1.0, hybrid 1.0 (MRR 0.861, 0.982, 0.954); no wrong-project, withdrawn or anchor errors |
 | 08 | [Agent development and master workflow](steps/08-agents-and-master-workflow.md) | not_started | — | — |
 | 09 | [Moderator console](steps/09-cms-moderation.md) | not_started | — | — |
 | 10 | [SEO/AEO content and quality controls](steps/10-seo-aeo-and-editorial-qa.md) | not_started | — | — |
@@ -25,14 +25,14 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 
 ## Current handoff
 
-- Active step: 07 (evidence storage, deduplication and retrieval). The keyword layer is built and checked (20/20, 12/12 at `a894ffc`). The product owner asked on 5 Oct 2026 for embedding search as well (local `bge-m3`), which is being added. Step 06 is complete (approved 5 Oct 2026).
+- Active step: 07 (evidence storage, deduplication and retrieval), built and checked (24/24, 17/17 at `f04c4a1`), awaiting the product owner's approval of D50 and D51. Step 06 is complete (approved 5 Oct 2026).
 - **I17:** on 1 Oct 2026 the office firewall blocked youtube.com (confirmed by the product owner). On 2 Oct YouTube was reachable, and 5 real project videos were processed (captions, audio, frames). The TLS handshake is reset by name, while DNS, googleapis.com and google.com work. Videos tried end metadata-only with `network_refused`; nothing works around it. The YouTube Data API (discovery) still works. The product owner will test the end-to-end flow later from another network.
 - Proven:
   - real Whisper `large-v3-turbo` in the media worker on the synthetic speech set: 20/22 key facts;
   - real A04 on its sentences: 5/5 kept, 12/12 facts;
   - real A03 on three synthetic frames: 6/6 phrases read verbatim, 3/3 graphics recognised;
   - the whole pipeline with fakes.
-- Next action: run the Step 07 check and mutation scripts with the embedder (first start downloads the pinned model, 568 MB), record and push. The product owner raises Docker Desktop to 6 GB (I18); this Mac has 8.6 GB in total, so 5 GB is the gentler choice.
+- Next action: the product owner reviews Step 07 (D50, D51) and I19 (Devanagari localities, a proposed identity fix). Docker Desktop memory (I18) is still 4 GB; raising it (5–6 GB) is advised before Whisper-heavy work. After approval, Step 08 (agents and master workflow).
 - Step 06 input from the product owner's earlier project (youtube-learning-copilot, reviewed 30 Sep 2026):
   - adapt the fallback order, video-ID parsing, ffmpeg 16 kHz mono and loading Whisper once;
   - do not reuse its cookie and proxy workarounds (D33) or its OpenAI and Ollama calls;
@@ -409,6 +409,26 @@ Checks actually run and results: run_step07_checks.sh ALL CHECKS OK 20/20 (287 b
 Decisions made, with DECISIONS.md IDs: D47 accepted (Z1); I18 decided (6 GB); embedding search requested (D50 to be
   amended when built)
 Next executable action: embedding search with bge-m3; product owner applies 6 GB in Docker Desktop
+```
+
+```text
+Date / tool / branch / commit: 2026-10-05..08 / Claude Code (VS Code) / step-07 worktree, then main / e638523 → (this commit)
+Step and scope completed: Step 07 embedding search (D51), at the product owner's request; check-run fixes
+Files changed: backend/app/embeddings/ (model, server, client, jobs), backend/Dockerfile.embed, docker-compose.yml
+  (embedder: 1.5 GB, no swap, kill priority 900, restart on failure; MongoDB probe timeout 20 s), retrieval (vector and
+  hybrid ranking, keyword fallback), benchmark (three retrievers, 45 posts, 28 queries), jobs/scheduler/worker
+  (embed_evidence), config, pyproject/uv.lock (numpy; embed group), contracts (operations 1.4.0), tests (UC-52),
+  scripts/run_step07_*.sh, CI (embedder step), all three Dockerfiles (uv bytecode timeout), DECISIONS (D51), docs/01,
+  docs/02, CHANGELOG, logs/step-07
+Decisions made, with DECISIONS.md IDs: D51 proposed (embedding search requested by the product owner)
+Checks actually run and results: run_step07_checks.sh: 6 Oct 17/22 (embedder build timed out), 6 Oct 7/22 (MongoDB
+  probe marked unhealthy under build load), 7 Oct 23/24 (stale failed jobs counted; embedder found swapping), 8 Oct
+  ALL CHECKS OK 24/24 at f04c4a1; run_step07_mutations.sh 17/17. Each failure, its cause and its fix are in
+  logs/step-07/README.md
+Live integrations verified (credential present + real query result): bge-m3 downloaded at the pinned commit and
+  hash-checked; vectors for all 437 real evidence spans; hybrid search on the five projects' real evidence
+Known defects / missing inputs / owner: I18 (Docker VM still 4 GB), I19 (Devanagari localities)
+Next executable action: product owner reviews Step 07
 ```
 
 ## Session entry template
