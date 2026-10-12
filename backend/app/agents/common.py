@@ -12,7 +12,9 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import time
+import unicodedata
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -24,6 +26,16 @@ from app.ids import new_id
 
 OUTPUTS = "ai_agent_outputs"
 CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
+
+
+def numbers_in(text: str | None) -> set[str]:
+    """The numbers a text states, without thousands separators and in ASCII digits (Devanagari digits fold), so a
+    model's wording may only repeat these."""
+    found = set()
+    for m in NUMBER.finditer(text or ""):
+        found.add("".join(str(unicodedata.decimal(ch)) if ch.isdigit() else ch for ch in m.group(0)))
+    return {n.replace(",", "").rstrip(".") for n in found}
 
 
 def stable_id(prefix: str, *parts: str) -> str:

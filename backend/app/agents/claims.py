@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 import time
 from collections import defaultdict
 from datetime import UTC, date, datetime
@@ -24,7 +23,7 @@ from typing import Any
 
 from pymongo.database import Database
 
-from app.agents.common import Handles, cached_output, keep_output, record_run, stable_id
+from app.agents.common import Handles, cached_output, keep_output, numbers_in, record_run, stable_id
 from app.agents.consistency import consistency_flags
 from app.agents.gateway import GatewayResult, ModelGateway
 from app.config import REPO_ROOT
@@ -40,11 +39,6 @@ ROLE = "light"  # D53: Claude Haiku 5.5 for bulk extraction; changed only on mea
 MAX_TASK_CHARS = 9000
 MAX_STATEMENT_CHARS = 400
 MAX_OUTPUT_TOKENS = 4000
-NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
-
-
-def _numbers(text: str) -> set[str]:
-    return {m.group(0).replace(",", "").rstrip(".") for m in NUMBER.finditer(text or "")}
 
 
 def _source_key(evidence: dict[str, Any]) -> str:
@@ -133,7 +127,7 @@ def check(
             drops["empty_statement"] += 1
             continue
         sources_text = " ".join((e["excerpt_text"] or "") + " " + (_translation_of(db, e) or "") for e in cited)
-        missing = _numbers(statement) - _numbers(sources_text)
+        missing = numbers_in(statement) - numbers_in(sources_text)
         if missing:
             drops["number_not_in_evidence"] += 1
             continue
