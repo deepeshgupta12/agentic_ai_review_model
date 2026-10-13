@@ -152,3 +152,7 @@ def test_without_a_scrapfly_key_refusals_stay_refused(db, settings, contracts):
     assert web.unblocker is None and calls == []
     settings.scrapfly_api_key = SecretStr("test-only-scrapfly-key-0000")
     assert registry.build("web_fetch", db, settings).unblock_left == settings.unblocked_pages_per_run
+    assert registry.build("web_fetch", db, settings).renderer is None, "no Firecrawl key, no rendering"
+    settings.firecrawl_api_key = SecretStr("fc-test-only-firecrawl-key-0000")
+    web = registry.build("web_fetch", db, settings)
+    assert web.renderer is not None and web.render_left == settings.rendered_pages_per_run, "D62 wired in the reader"

@@ -90,8 +90,15 @@ def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -
         from app.connectors.web import WebFetch
 
         client = safe_client(settings)
-        unblocker = scrapfly_for(db, settings)  # D60: refused competitor pages only, within the per-run cap
+        unblocker = scrapfly_for(db, settings)  # D60, D61: refused pages, within the per-run cap
+        renderer = firecrawl_for(db, settings)  # D62: pages built by JavaScript, within the per-run cap
         return WebFetch(
-            client, RobotsCache(client, agent_token(settings)), db, unblocker, settings.unblocked_pages_per_run
+            client,
+            RobotsCache(client, agent_token(settings)),
+            db,
+            unblocker,
+            settings.unblocked_pages_per_run,
+            renderer,
+            settings.rendered_pages_per_run,
         )
     return None
