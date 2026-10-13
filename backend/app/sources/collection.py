@@ -697,7 +697,17 @@ class Collector:
         counts: dict[str, int] = {}
         errors: list[str] = []
         posts: list[str] = []
-        for query in self._queries("instagram_public")[: self.settings.instagram_queries_per_project]:
+        # The project's name and approved standalone aliases, quoted: unquoted plan texts brought back unrelated
+        # profiles for every project in the 13 Oct 2026 run.
+        plan = self._queries("instagram_public")
+        base = plan[0] if plan else {"window_days": 90, "exclusions": [], "language": "en"}
+        project = self.db["projects"].find_one({"_id": self.project_id}, {"project_name": 1}) or {}
+        config = self.db["ai_project_configs"].find_one({"_id": self.project_id}, {"aliases": 1}) or {}
+        names = [project.get("project_name", "")] + [
+            a["text"] for a in config.get("aliases", []) if a.get("mode") == "standalone"
+        ]
+        queries = [{**base, "query_text": f'"{n}"'} for n in dict.fromkeys(n for n in names if n)]
+        for query in queries[: self.settings.instagram_queries_per_project]:
             self.check()
             try:
                 page = ig.discover(query, None)

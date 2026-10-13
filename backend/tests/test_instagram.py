@@ -180,6 +180,8 @@ def test_a_run_reads_the_projects_public_posts(db, settings, contracts, fictiona
     cov = {c["connector_id"]: c for c in run["coverage"]}
     assert cov["instagram_public"]["fetched"] == 2 and cov["instagram_public"]["matched"] == 2
     assert "not_a_post: 2" in cov["instagram_public"]["note"], "a profile page is not a post"
+    asked = [r.url.params["q"] for r in net.requests if r.url.host == "api.search.brave.com"]
+    assert 'site:instagram.com "Quillon Residences"' in [q.split(" -")[0] for q in asked], "the name is searched quoted"
     assert "instagram_left_to_instagram_connector" in cov["brave_search"]["note"]
     posts = list(db["ai_sources"].find({"connector_id": "instagram_public"}))
     assert {p["source_kind"] for p in posts} == {"forum_post"} and {p["policy"]["family"] for p in posts} == {

@@ -18,6 +18,6 @@ Rules:
 - A registration's "valid up to" date is the date the registration is valid until. It is not a possession or completion date; do not verify or contradict a possession date with it. Say so in the reason when a claim is about possession.
 - "No occupation or completion certificate listed" on the registry list supports only that statement; it does not prove that construction is unfinished.
 - Cite only handles that were given. Do not cite a claim's own evidence as contradicting it.
-- `reason`: one or two plain sentences naming what you compared, for a person to check.
+- `reason`: one plain sentence, at most 30 words, naming what you compared, for a person to check.
 
 Set `outcome` to `completed` when you gave a verdict for every claim, `needs_review` when a person must look (for example records that conflict with each other), and `insufficient_evidence` when there was nothing to compare.

@@ -39,12 +39,12 @@ from app.evidence.clusters import independent_origins
 from app.evidence.eligibility import eligibility, eligible_filter
 
 AGENT_ID = "A07_findings_synthesiser"
-PROMPT_VERSION = "a07_findings_synthesiser.1.1"
+PROMPT_VERSION = "a07_findings_synthesiser.1.2"  # 1.2: fewer, shorter findings (cost, 13 Oct 2026)
 SCHEMA_REF = "agents.schema.json#/$defs/SynthesisResult"
 SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"
 ROLE = "routine"  # D53: Sonnet 5 for synthesis
-CLAIMS_PER_TASK = 40
+CLAIMS_PER_TASK = 30
 MAX_OUTPUT_TOKENS = 12000  # packed aspects: 4,000 cut off a 22-claim project (evaluation, 13 Oct 2026)
 MAX_WORDING_CHARS = 600
 MAX_CAVEAT_CHARS = 200

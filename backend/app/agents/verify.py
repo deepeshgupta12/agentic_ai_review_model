@@ -36,7 +36,7 @@ from app.evidence.eligibility import eligible_filter
 from app.evidence.retrieval import search
 
 AGENT_ID = "A06_evidence_verifier"
-PROMPT_VERSION = "a06_evidence_verifier.1.0"
+PROMPT_VERSION = "a06_evidence_verifier.1.1"  # 1.1: brief reasons (cost, 13 Oct 2026)
 SCHEMA_REF = "agents.schema.json#/$defs/VerificationResult"
 SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"
