@@ -56,7 +56,9 @@ class Settings(BaseSettings):
     model_difficult: str = "claude-opus-5-5"
     model_max_output_tokens: int = Field(default=16000, ge=256)
     model_max_attempts: int = Field(default=3, ge=1, le=6)
-    model_prompt_cache: bool = True  # automatic prompt caching of repeated prefixes (system prompt, shared context)
+    # Automatic prompt caching. Off: each agent task sends its own evidence, so no prefix is shared between calls; in
+    # the 13 Oct 2026 evaluation all 25 calls wrote the cache and none read it, which only added the write premium.
+    model_prompt_cache: bool = False
 
     # Spend (Step 08, D53): a hard cap on live model calls, counted from MODEL_BUDGET_SINCE. Prices are USD per
     # million tokens from Anthropic's published table (9 Oct 2026); the Batch API halves input and output.

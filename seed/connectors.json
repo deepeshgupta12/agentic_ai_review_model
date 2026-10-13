@@ -310,9 +310,9 @@
    "cursor_method": "Brave query restricted to instagram.com per project; each post read once (shortcode)",
    "deletion_method": "Re-read on refresh: a removed post (HTTP 404/410) is marked gone and its caption erased",
    "demonstration": "A real public post of one supplied project read through Scrapfly with the robots.txt verdict and the credits used recorded",
-   "status": "access_pending",
-   "last_verified": null,
-   "verification_ref": null
+   "status": "live",
+   "last_verified": "2026-10-13",
+   "verification_ref": "logs/step-08/live-instagram-20261013T040454Z.log"
   },
   {
    "id": "meta_graph_api",

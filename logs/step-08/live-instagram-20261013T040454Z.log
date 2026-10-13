@@ -1,0 +1,10 @@
+Instagram public posts through Scrapfly: live demonstration (D54, D55), 13 Oct 2026
+commit: a9fc063 (main); key: SCRAPFLY_API_KEY in .env (value not shown); plan: Scrapfly free, 1,000 credits a month
+discovery: one Brave query 'site:instagram.com M3M Antalya Hills Gurgaon' -> 1 public post address, 16 other instagram.com pages skipped (not posts)
+read: the post page through api.scrapfly.io (unblocker=true, proxy_pool=public_residential_pool, country=in, render_js=false); not stored
+result: caption 445 characters, author username and post time (2026-07-08) present; post about M3M Antalya Hills, Sector 79
+the first attempt was refused (401): the services still held an earlier, mistyped key; after the corrected key was loaded the read succeeded
+
+fetch log (ai_fetch_log, no content):
+2026-10-13T04:01:14Z https://www.instagram.com/p/DahRjyIGaEI/ family=instagram_public v1 robots=disallowed (robots_unreachable) outcome=provider_refused status=401 credits=None
+2026-10-13T04:04:54Z https://www.instagram.com/p/DahRjyIGaEI/ family=instagram_public v1 robots=disallowed (robots_unreachable) outcome=fetched status=200 credits=25

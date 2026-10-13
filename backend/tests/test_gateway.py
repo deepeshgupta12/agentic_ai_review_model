@@ -270,7 +270,11 @@ def test_each_call_is_priced_from_its_usage_and_recorded(db, settings, contracts
     assert abs(state["spent_usd"] - expected) < 1e-9 and state["reserved_usd"] == 0 and state["calls"] == 1
     entry = db["ai_model_calls"].find_one()
     assert entry["purpose"] == "test" and entry["model"] == "claude-sonnet-5" and entry["estimate_usd"] >= expected
-    assert client.calls[0]["cache_control"] == {"type": "ephemeral"}, "repeated prefixes are cached"
+    assert "cache_control" not in client.calls[0], "no prefix is shared between agent tasks, so no cache is written"
+    settings.model_prompt_cache = True
+    client = FakeClient(response(VALID))
+    ledgered(db, settings, contracts, client).run("routine", SCHEMA, "system", "user", purpose="test")
+    assert client.calls[0]["cache_control"] == {"type": "ephemeral"}, "switched on, prefixes are cached"
 
 
 def test_a_call_that_could_exceed_the_budget_is_refused_before_it_is_made(db, settings, contracts):
@@ -369,9 +373,7 @@ def test_a_batch_reserves_its_worst_case_at_half_price_and_settles_once(db, sett
     assert bg.submit("job:1", "light", SCHEMA, "system", items, max_tokens=200, purpose="test-batch")["_id"] == "job:1"
     assert len(batches.created) == 1, "the same key never submits twice"
     params = batches.created[0][0]["params"]
-    assert params["output_config"]["format"]["type"] == "json_schema" and params["cache_control"] == {
-        "type": "ephemeral"
-    }
+    assert params["output_config"]["format"]["type"] == "json_schema" and "cache_control" not in params
     assert SpendLedger(db, settings).state()["reserved_usd"] == record["reserved_usd"] > 0
     assert bg.status("job:1") == "ended"
     results = bg.collect("job:1")
