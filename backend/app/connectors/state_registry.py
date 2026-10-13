@@ -81,6 +81,12 @@ FACT_LABEL = re.compile(
     r"total (?:area|units)|land area)\b",
     re.IGNORECASE,
 )
+CERTIFICATE = re.compile(
+    r"registration certificate|certificate of registration|form[\s-]*['\"]?c['\"]?\b|project registration number|"
+    r"registration (?:no|number)\s*[:.-]",
+    re.IGNORECASE,
+)
+PROCEEDINGS = re.compile(r"cause list|appeal no|complainant|respondent|appellant|advocate|hearing", re.IGNORECASE)
 CONDITIONS = re.compile(
     r"\n\s*(?:1\.\s*)?This registration is granted subject to|\n\s*Conditions? of registration", re.I
 )
@@ -192,6 +198,19 @@ class StateRegistry(Connector):
         is_pdf = content_type in PDF_TYPES or response.body[:5] == b"%PDF-"
         return (response.body if is_pdf else response.text()), is_pdf
 
+    @staticmethod
+    def not_a_record(text: str, number: str, is_pdf: bool) -> str | None:
+        """Why this page is not the number's registration record, or None."""
+        if squash(number) not in squash(text):
+            return "number_not_on_page"
+        if PROCEEDINGS.search(text[:4000]):
+            return "proceedings_not_a_record"
+        if is_pdf and not CERTIFICATE.search(text):
+            return "not_a_certificate"
+        if not is_pdf and len(registry_facts(text, is_pdf=False).splitlines()) < 2:
+            return "no_registry_facts"
+        return None
+
     def record(self, state: str, number: str, run_id: str | None = None) -> Item | None:
         """The registration record of `number` on `state`'s portal, or None when no page states it."""
         portal = PORTALS[state]
@@ -206,17 +225,10 @@ class StateRegistry(Connector):
             else:
                 assert isinstance(body, str)
                 text = (extract(body, url) or {}).get("text") or ""
-            if squash(number) not in squash(text):
-                log_fetch(
-                    self.db,
-                    {
-                        "connector_id": self.id,
-                        "url": url,
-                        "host": url.split("/")[2],
-                        "outcome": "number_not_on_page",
-                        "run_id": run_id,
-                    },
-                )
+            refusal = self.not_a_record(text, number, is_pdf)
+            if refusal:
+                entry = {"connector_id": self.id, "url": url, "host": url.split("/")[2], "run_id": run_id}
+                log_fetch(self.db, {**entry, "outcome": refusal})
                 continue
             facts = registry_facts(text, is_pdf)
             if squash(number) not in squash(facts):

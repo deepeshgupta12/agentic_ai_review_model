@@ -168,3 +168,13 @@ def test_a_run_for_a_project_in_another_state_stores_its_registry_record(
     assert cov["harera_registry"]["note"].startswith("UP RERA: 1 of 1 registration records found")
     record = db["ai_sources"].find_one({"connector_id": "state_registry"})
     assert record["source_kind"] == "registration_record" and record["policy"]["family"] == "official_records"
+
+
+def test_orders_and_cause_lists_that_mention_the_number_are_never_kept():
+    """Found live on 13 Oct 2026: a MahaRERA search for a project number returned a tribunal cause list naming
+    appellants and advocates. Only a registration record is kept."""
+    cause_list = f"Combined cause list\nAppeal No. 711/23\nMahaRERA Reg No. {NUMBER}\nAppellants Respondents Adv."
+    assert StateRegistry.not_a_record(cause_list, NUMBER, is_pdf=True) == "proceedings_not_a_record"
+    assert StateRegistry.not_a_record(f"Brochure for {NUMBER}", NUMBER, is_pdf=True) == "not_a_certificate"
+    assert StateRegistry.not_a_record(f"{NUMBER} news", NUMBER, is_pdf=False) == "no_registry_facts"
+    assert StateRegistry.not_a_record(pdf_text(CERTIFICATE), NUMBER, is_pdf=True) is None
