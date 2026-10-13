@@ -1,0 +1,26 @@
+Live connector checks, 13 Oct 2026 (D57, D60, D61, D62). Nothing was stored by these checks; no model call.
+commits: 5b1c894 (state registries), d080b16 (D63), and the Firecrawl wiring fix
+
+State registries (D57), read by registration number:
+  Uttar Pradesh UPRERAPRJ270079/12/2024: FOUND (registration certificate PDF, Form C, via Brave on up-rera.in)
+  Karnataka PRM/KA/RERA/1251/310/PR/170824/000032: FOUND (certificate PDF at the portal's own address)
+  Maharashtra P50500015376: not found (a tribunal cause list mentioning the number was refused as proceedings; the certificate server maharera.mahaonline.gov.in did not answer from this network)
+
+Competitor portal through Scrapfly (D60): a 99acres project page refused the reader (403) and was read through Scrapfly: 6,417 characters of text, 25 credits
+Firecrawl (D62): one NoBroker project page rendered directly: HTTP 200, 970,887 characters of HTML, 4,851 characters of extracted text, 1 credit (ledger 1 of 500 this month); no page was thin in the run, so the reader's automatic rendering was not triggered live
+
+Fetch log (ai_fetch_log, no content):
+2026-10-13T06:37:24Z state_registry fetched 200 credits=None official_records https://www.up-rera.in/ViewDocument?Param=376941231852.pdf
+2026-10-13T06:37:30Z state_registry fetched 200 credits=None official_records https://rera.karnataka.gov.in/certificate?CER_NO=PRM%2FKA%2FRERA%2F1251%2F310%2FPR%2F170824%2F000032
+2026-10-13T06:39:37Z state_registry error:timeout None credits=None official_records http://maharera.maharashtra.gov.in/sites/default/files/regulatory_document/FO_RC_253_P50500015376.pdf
+2026-10-13T06:39:41Z state_registry fetched 200 credits=None official_records https://maharera.maharashtra.gov.in/sites/default/files/cause-list/Combine_Cause_List_12_01_2024.pdf
+2026-10-13T06:41:44Z state_registry fetched 200 credits=None official_records https://www.up-rera.in/ViewDocument?Param=376941231852.pdf
+2026-10-13T06:41:49Z state_registry fetched 200 credits=None official_records https://rera.karnataka.gov.in/certificate?CER_NO=PRM%2FKA%2FRERA%2F1251%2F310%2FPR%2F170824%2F000032
+2026-10-13T06:41:49Z state_registry not_a_certificate None credits=None None https://rera.karnataka.gov.in/certificate?CER_NO=PRM%2FKA%2FRERA%2F1251%2F310%2FPR%2F170824%2F000032
+2026-10-13T06:43:58Z state_registry error:timeout None credits=None official_records http://maharera.maharashtra.gov.in/sites/default/files/regulatory_document/FO_RC_253_P50500015376.pdf
+2026-10-13T06:44:01Z state_registry fetched 200 credits=None official_records https://maharera.maharashtra.gov.in/sites/default/files/cause-list/Combine_Cause_List_12_01_2024.pdf
+2026-10-13T06:44:02Z state_registry proceedings_not_a_record None credits=None None https://maharera.maharashtra.gov.in/sites/default/files/cause-list/Combine_Cause_List_12_01_2024.pdf
+2026-10-13T06:44:43Z state_registry error:connection_failed None credits=None official_records https://maharera.mahaonline.gov.in/Upload/PDF/AT006-10480.pdf
+2026-10-13T06:51:08Z state_registry fetched 200 credits=None official_records https://rera.karnataka.gov.in/certificate?CER_NO=PRM%2FKA%2FRERA%2F1251%2F310%2FPR%2F170824%2F000032
+2026-10-13T06:51:11Z web_fetch refused 403 credits=None competitor_portals https://www.99acres.com/m3m-the-line-sector-72-noida-npxid-c419562
+2026-10-13T06:51:19Z web_fetch fetched_unblocked 200 credits=25 competitor_portals https://www.99acres.com/m3m-the-line-sector-72-noida-npxid-c419562

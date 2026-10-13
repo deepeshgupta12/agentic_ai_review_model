@@ -76,9 +76,9 @@
    "cursor_method": "URL queue from discovery; per-URL content hash",
    "deletion_method": "Re-fetch returns 404/410 or a removal notice on two checks: confirmed deletion, stored payload erased",
    "demonstration": "Fetch one allow-listed public page found by Brave for a supplied project; robots.txt decision, content hash and extracted publication date (or unknown) recorded",
-   "status": "access_pending",
-   "last_verified": null,
-   "verification_ref": null
+   "status": "live",
+   "last_verified": "2026-10-13",
+   "verification_ref": "logs/step-08/live-connectors-20261013T0700Z.log"
   },
   {
    "id": "web_fetch",

@@ -65,7 +65,7 @@ copy_repo
 printf '\n== baseline: the unchanged copy imports its own code and the Step 08 test files pass\n'
 (cd "$T/repo/backend" && PYTHONPATH="$T/repo/backend" "$PYTHON" -c 'import app, sys; sys.exit(0 if app.__file__.startswith(sys.argv[1]) else 1)' "$T/repo/backend") \
   && echo "imports the scratch copy" || { echo "--> NOT OK (tests would import the real files)"; FAILED=1; }
-for f in test_agents.py test_workflow.py test_instagram.py test_gateway.py; do
+for f in test_agents.py test_workflow.py test_instagram.py test_gateway.py test_state_registry.py test_policies.py; do
   printf '%-22s %s\n' "$f" "$(tests_in "$f" | tail -1)"
 done
 
@@ -171,6 +171,28 @@ mutant "Scrapfly credits are reserved before the request" test_instagram.py test
   app/connectors/scrapfly.py \
   '        if not quota.reserve(self.db, self.settings, LEDGER, "credits", cost, self.now()):' \
   '        if False:'
+
+printf '\n-- close-out rules: registries, status checks, review dashes, open web\n'
+
+mutant "a registry page that reads as proceedings is refused" test_state_registry.py test_orders_and_cause_lists_that_mention_the_number_are_never_kept \
+  app/connectors/state_registry.py \
+  '        if PROCEEDINGS.search(text[:4000]):' \
+  '        if False:'
+
+mutant "still awaiting possession after handover is flagged (D63)" test_agents.py test_more_status_checks_once_the_project_was_ready \
+  app/agents/consistency.py \
+  '        if perspective in checks["awaiting_after_handover"]["perspectives"]:' \
+  '        if False:'
+
+mutant "displayed reviews have no dashes" test_agents.py test_a11_reviews_come_from_one_source_in_the_authors_own_words \
+  app/agents/reviews.py \
+  '        if DASH.search(text):  # displayed reviews have no dashes or hyphens (product owner, 28 Sep 2026)' \
+  '        if False:'
+
+mutant "the generic web reads only its allow-list unless the policy opens it" test_policies.py test_the_generic_web_is_open_until_a_version_returns_to_the_allow_list \
+  app/sources/policies.py \
+  '    if web.get("host_scope", "allow_list") != "any_public_host" and not _matches(host, web["hosts"]):' \
+  '    if False:'
 
 echo
 if [ "$FAILED" -eq 0 ]; then echo "ALL MUTANTS CAUGHT"; else echo "SOME MUTANTS NOT CAUGHT"; fi
