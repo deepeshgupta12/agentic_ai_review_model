@@ -138,14 +138,19 @@ from app.db import get_db
 from app.sources import policies
 db = get_db()
 ig, meta = policies.current(db, "instagram_public"), policies.current(db, "meta")
+alerts, portals = policies.current(db, "google_alerts"), policies.current(db, "competitor_portals")
+print(f"  google_alerts v{alerts and alerts['policy_version']}: collect {alerts and alerts['collection_allowed']}; competitor_portals v{portals and portals['policy_version']}: {sum('Scrapfly' in c for c in (portals or {}).get('conditions', []))} Scrapfly condition")
 print(f"  instagram_public v{ig and ig['policy_version']}: collect {ig and ig['collection_allowed']}, quote {ig and ig['quotation_allowed']}, robots {ig and ig['robots_txt']}, retention {ig and ig['retention_days']} days, hosts {ig and ig['hosts']}")
 print(f"  meta v{meta and meta['policy_version']}: collect {meta and meta['collection_allowed']}, hosts {meta and meta['hosts']}")
 resolved = policies.resolve(db, "https://www.instagram.com/p/Cq1AbCdEfGh/")
 print(f"  instagram.com resolves to {resolved.family} ({resolved.reason})")
 configs = list(db.ai_project_configs.find({}, {"sources": 1}))
 with_ig = sum(any(s["connector_id"] == "instagram_public" for s in c["sources"]) for c in configs)
-print(f"  project configurations listing instagram_public: {with_ig}/{len(configs)}")
-ok = ig and ig["policy_version"] == 1 and meta and meta["hosts"] == ["facebook.com"] and resolved.family == "instagram_public" and with_ig == len(configs) == 5
+with_alerts = sum(any(s["connector_id"] == "google_alerts" for s in c["sources"]) for c in configs)
+print(f"  project configurations listing instagram_public: {with_ig}/{len(configs)}; still listing google_alerts: {with_alerts}")
+ok = (ig and ig["policy_version"] == 1 and meta and meta["hosts"] == ["facebook.com"] and resolved.family == "instagram_public"
+      and with_ig == len(configs) == 5 and with_alerts == 0 and alerts and not alerts["collection_allowed"]
+      and portals and portals["policy_version"] == 3)
 raise SystemExit(0 if ok else 1)
 EOF
 }
@@ -190,8 +195,12 @@ for p in db.projects.find({}, {"project_name": 1}).sort("slug", 1):
     run = db.ai_runs.find_one({"project_id": p["_id"], "stage": {"$in": ["findings_review", "insufficient_evidence", "formatting"]}}, sort=[("_id", -1)])
     if run is None:
         latest = db.ai_runs.find_one({"project_id": p["_id"]}, sort=[("_id", -1)])
-        print(f"  {p['project_name'][:24]:24} no analysed run (latest {latest and latest['_id']} {latest and latest['stage']}: {latest and latest['outcome_note']})")
-        ok = False
+        job = latest and db.ai_jobs.find_one({"run_id": latest["_id"], "kind": "analyse"}, sort=[("created_at", -1)])
+        stopped = bool(job and job["status"] == "failed" and (job.get("error") or {}).get("code") == "budget_exhausted")
+        print(f"  {p['project_name'][:24]:24} {latest and latest['_id']} {latest and latest['stage']}: {latest and latest['outcome_note']}")
+        if stopped:
+            print(f"  {'':24} an explicit stop at the model budget (D53): resumable with make analyse RUN={latest['_id']}")
+        ok = ok and stopped
         continue
     job = db.ai_jobs.find_one({"run_id": run["_id"], "kind": "analyse"}, sort=[("created_at", -1)])
     counts = {c: db[f"ai_{c}"].count_documents({"project_id": p["_id"]}) for c in ("claims", "findings", "review_excerpts")}
@@ -332,7 +341,7 @@ expect "Regression: contract checker" 0 "$PY" scripts/check_contracts.py
 
 expect "Backend: ruff lint and format" 0 bash -c "cd backend && $UV run ruff check . && $UV run ruff format --check ."
 expect "Backend: mypy" 0 bash -c "cd backend && $UV run mypy"
-expect "UC-17..UC-65: backend tests against the Compose replica set (no real credentials, no model call)" 0 bash -c "cd backend && $UV run pytest -q -p no:cacheprovider"
+expect "UC-17..UC-66: backend tests against the Compose replica set (no real credentials, no model call)" 0 bash -c "cd backend && $UV run pytest -q -p no:cacheprovider"
 expect "Web: eslint, TypeScript, API types, unit tests" 0 bash -c "cd web && pnpm -s lint && pnpm -s typecheck >/dev/null && pnpm -s check:api && pnpm -s test >/dev/null && echo 'web gates OK'"
 
 expect "Images build" 0 docker compose build
@@ -340,10 +349,10 @@ expect "MongoDB is healthy again after the builds" 0 mongodb_healthy
 expect "Stack starts and every service is healthy" 0 docker compose up -d --wait
 expect "Long-running services up" 0 services_running
 expect "Database setup has the Step 08 collections; a repeat changes nothing" 0 setup_has_step08_collections
-expect "D54: instagram_public v1 governs instagram.com, meta v2 is Facebook only; every project lists the connector" 0 policies_and_connector_seeded
+expect "D54/D59/D60: instagram_public v1 governs instagram.com, meta v2 Facebook only, google_alerts withdrawn, competitor_portals v3 unblocks" 0 policies_and_connector_seeded
 expect "D53: model roles priced, budget at most 2 USD and not overspent" 0 models_and_budget
 expect "D53: the dry-run plan of the next analysis fits the budget (no model call)" 0 plan_is_within_budget
-expect "UC-59: the real analysis of each project reached findings review (or an honest insufficient evidence)" 0 real_analysis_reached_review
+expect "UC-59/62: each project's real analysis reached findings review, or stopped explicitly at the budget" 0 real_analysis_reached_review
 expect "UC-55..58: the analysis rules hold on the real stored claims, findings, reviews, approvals and spend" 0 analysis_rules_hold
 expect "Sign in through the web app" 0 sign_in
 expect "UC-60: findings and reviews through the API match their contracts" 0 findings_through_the_api

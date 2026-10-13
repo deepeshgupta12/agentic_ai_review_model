@@ -4,7 +4,9 @@ Before a page is requested: its host's policy family must allow collection and b
 (generic web allow-list, competitor portals, official records). robots.txt is asked for every page and its verdict
 logged; it blocks the fetch only where the family's policy version says `obey` (D46: the product owner set the
 web families to `record_only` on 1 Oct 2026). Every redirect hop is checked the same way. A refused page
-(401/403/406/451) is recorded as refused and never worked around: no stealth, no disguised user agent (D33).
+(401/403/406/451) is recorded as refused and not worked around (D33), with one exception the product owner decided:
+a competitor-portal page that refuses the reader is asked for once more through Scrapfly's unblocker (D60), up to
+`UNBLOCKED_PAGES_PER_RUN` pages per collection job, still public pages only (no sign-in, accounts or cookies).
 The page's main text, title, author name and the date the markup states are kept; pages with too little text
 (often script-rendered) are counted as thin rather than stored. Every decision goes to the fetch log.
 """
@@ -18,7 +20,7 @@ from typing import Any
 import trafilatura
 from pymongo.database import Database
 
-from app.connectors.base import Availability, Connector
+from app.connectors.base import Availability, Connector, ProviderError, QuotaExhausted
 from app.sources import policies
 from app.sources.http import FetchError, SafeClient
 from app.sources.robots import RobotsCache
@@ -83,8 +85,16 @@ class WebFetch(Connector):
     id = "web_fetch"
     supports = frozenset({"fetch_item", "check_availability", "health"})
 
-    def __init__(self, client: SafeClient, robots: RobotsCache, db: Database[dict[str, Any]]) -> None:
+    def __init__(
+        self,
+        client: SafeClient,
+        robots: RobotsCache,
+        db: Database[dict[str, Any]],
+        unblocker: Any = None,
+        unblock_limit: int = 0,
+    ) -> None:
         self.client, self.robots, self.db = client, robots, db
+        self.unblocker, self.unblock_left = unblocker, unblock_limit  # D60: Scrapfly for refused competitor pages
 
     def _allowed(self, url: str) -> tuple[policies.Resolution, str | None]:
         resolution = policies.resolve(self.db, url)
@@ -134,6 +144,9 @@ class WebFetch(Connector):
         if response.status in GONE:
             log_fetch(self.db, {**entry, "outcome": "gone"})
             return FetchOutcome("gone", url, f"HTTP {response.status}")
+        if response.status in REFUSED and resolution.family in policies.UNBLOCK_FAMILIES and self.unblocker:
+            log_fetch(self.db, {**entry, "outcome": "refused"})
+            return self._unblocked(url, entry, resolution)
         if response.status in REFUSED or response.status >= 400:
             outcome = "refused" if response.status in REFUSED else "error"
             log_fetch(self.db, {**entry, "outcome": outcome})
@@ -142,7 +155,44 @@ class WebFetch(Connector):
         if final_url != url:  # every hop was checked; the page is governed by the policy where it landed
             entry["final_url"] = final_url
             resolution = self._allowed(final_url)[0]
-        data = extract(response.text(), final_url)
+        return self._page(response.text(), url, final_url, entry, resolution, "fetched")
+
+    def _unblocked(self, url: str, entry: dict[str, Any], resolution: policies.Resolution) -> FetchOutcome:
+        """The refused competitor page once more through Scrapfly (D60), while this job's allowance lasts."""
+        if self.unblock_left <= 0:
+            return FetchOutcome("refused", url, "refused; this run's allowance of pages read through Scrapfly is used")
+        self.unblock_left -= 1
+        attempt = {**entry, "status_code": None}
+        try:
+            page = self.unblocker.scrape(url)
+        except QuotaExhausted:
+            log_fetch(self.db, {**attempt, "outcome": "unblock_quota_exhausted"})
+            return FetchOutcome("refused", url, "refused; the month's Scrapfly credits are spent")
+        except ProviderError as exc:
+            log_fetch(self.db, {**attempt, "outcome": f"unblock_error:{exc.code}"})
+            return FetchOutcome("refused", url, f"refused; Scrapfly: {exc.code}")
+        except FetchError as exc:
+            log_fetch(self.db, {**attempt, "outcome": f"unblock_error:{exc.code}"[:100]})
+            return FetchOutcome("error", url, exc.message, retryable=exc.retryable)
+        attempt.update(status_code=page.upstream_status or None, provider_credits=page.credits)
+        if page.upstream_status in GONE:
+            log_fetch(self.db, {**attempt, "outcome": "gone"})
+            return FetchOutcome("gone", url, f"HTTP {page.upstream_status} through Scrapfly")
+        if page.upstream_status >= 400 or not page.html:
+            log_fetch(self.db, {**attempt, "outcome": "unblock_refused"})
+            return FetchOutcome("refused", url, f"refused even through Scrapfly (HTTP {page.upstream_status})")
+        return self._page(page.html, url, url, attempt, resolution, "fetched_unblocked")
+
+    def _page(
+        self,
+        html: str,
+        url: str,
+        final_url: str,
+        entry: dict[str, Any],
+        resolution: policies.Resolution,
+        outcome: str,
+    ) -> FetchOutcome:
+        data = extract(html, final_url)
         text = (data or {}).get("text") or ""
         if len(text) < MIN_TEXT_CHARS:
             log_fetch(self.db, {**entry, "outcome": "thin"})
@@ -163,8 +213,8 @@ class WebFetch(Connector):
             language=data.get("language"),
             author={"display_name": str(author)[:200], "role": "unknown", "role_basis": "none"} if author else None,
         )
-        log_fetch(self.db, {**entry, "outcome": "fetched"})
-        return FetchOutcome("fetched", final_url, "fetched", item=item, policy=resolution.policy)
+        log_fetch(self.db, {**entry, "outcome": outcome})
+        return FetchOutcome("fetched", final_url, outcome, item=item, policy=resolution.policy)
 
     def fetch_item(self, ref: str) -> Item:
         outcome = self.fetch(ref)

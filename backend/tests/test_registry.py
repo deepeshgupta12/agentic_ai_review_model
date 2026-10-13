@@ -156,3 +156,16 @@ def test_a_registration_missing_from_the_list_or_a_changed_layout_is_reported_no
     harera_page(world, "denied", status=403)
     cov = run_registry(db, settings, world["q"])
     assert cov["status"] == "unavailable" and "refused" in cov["note"]
+
+
+def test_each_project_is_looked_up_in_its_own_states_registry_or_reported_as_not_covered():
+    from app.connectors.registries import reader_for, state_of
+
+    assert state_of({"city": "Gurugram"}) == "haryana" and state_of({"city": "Gurgaon"}) == "haryana"
+    assert state_of({"city": "Pune"}) == "maharashtra" and state_of({"city": "Noida"}) == "uttar pradesh"
+    assert state_of({"city": "Somewhere", "state": "Kerala"}) == "kerala", "the input's state wins"
+    assert reader_for({"city": "Gurgaon"}) == ("harera_registry", None)
+    connector, reason = reader_for({"city": "Bengaluru"})
+    assert connector is None and "no registry reader for Karnataka yet" in reason
+    connector, reason = reader_for({"city": "Unknownpur"})
+    assert connector is None and "add the project's state" in reason

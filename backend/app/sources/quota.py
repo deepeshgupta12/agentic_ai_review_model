@@ -3,7 +3,8 @@ workers, so a quota is never overspent. Windows follow each provider's own reset
 - Brave Search: calendar month (UTC), `brave_monthly_queries` requests;
 - YouTube Data API: day in Pacific Time; `search` (100 calls/day by default) and `units` (10,000/day) are
   separate buckets, as Google counts them separately;
-- Scrapfly (Instagram public posts, D54): calendar month (UTC), `scrapfly_monthly_credits` credits.
+- Scrapfly (Instagram public posts, D54; refused competitor pages, D60): one calendar-month (UTC) ledger of
+  `scrapfly_monthly_credits` credits shared by both.
 """
 
 from __future__ import annotations
@@ -57,7 +58,7 @@ def bucket(settings: Settings, connector_id: str, name: str, now: datetime) -> B
         start, end = _pacific_day(now)
         limit = settings.youtube_daily_searches if name == "search" else settings.youtube_daily_units
         return Bucket(connector_id, name, limit, start, end)
-    if connector_id == "instagram_public":
+    if connector_id == "scrapfly":
         start, end = _month(now)
         return Bucket(connector_id, name, settings.scrapfly_monthly_credits, start, end)
     raise KeyError(f"no quota rules for {connector_id}")

@@ -13,7 +13,7 @@
 | 05 | [Text and social collection](steps/05-text-and-social-connectors.md) | complete (approved 1 Oct 2026: U–X; Y points 2–4; Y point 1 replaced by D46) | `6881ccd`, `bebbd76`, `0fa6640`, `5e0cfd6`, `aca3128`, `38716a0`: `backend/app/sources/` (policies, http, robots, quota, state, store, collection, lifecycle, recheck, verify), `backend/app/connectors/` (brave, web, youtube, registry), `backend/app/api/routes_runs.py`, `routes_sources.py`, `routes_policies.py`, `contracts/v1/` (operations 1.1.0, state machines 1.2.0, sources 1.1.0), `seed/source_policies.json`, `seed/connectors.json`, `scripts/run_step05_*.sh`, `DECISIONS.md` (D40–D44), `docs/02`, `docs/06` | [logs/step-05](logs/step-05/README.md): live runs for all five projects 30 Sep 2026; at `38716a0` (after D46) 29/29 checks (236 backend tests, `verify-collection` 13/13 on 1,010 records) and 25/25 mutants; CI green |
 | 06 | [Videos, shorts and multilingual processing](steps/06-video-and-language-processing.md) | complete (approved 5 Oct 2026: Z1, Step 06; Z2 accepted 1 Oct; Z3 frames implemented as D49) | `fb5ce62` and follow-ups: `backend/app/media/` (windows, language, fetch, pipeline, translate, evaluation), `backend/app/api/routes_media.py`, `backend/Dockerfile.media`, `docker-compose.yml` (media-worker; MongoDB protected), `prompts/a04_language_context.1.0.md`, `prompts/a03_video_understanding.1.0.md`, `backend/app/media/frames.py`, `evals/media/v1/` (speech and frames), contracts (sources 1.4.0, common 1.1.0, agents 1.1.0, operations 1.2.0), `seed/source_policies.json` (spoken_video_content v3, youtube v3), `scripts/run_step06_*.sh`, `DECISIONS.md` (D47–D49, I17) | [logs/step-06](logs/step-06/README.md): 23/23 checks at `982028c` and by the product owner at `5028a5a`; 16/16 mutants; frames (Z3): 271 backend tests, A03 6/6 phrases and 3/3 renders; 1 Oct live attempts `network_refused` (I17); 2 Oct: 5 real videos (79 windows, 43 speech and 36 frame evidence); 5 Oct at `5578a70`: 24/24 checks, 26/26 mutants, 272 backend tests |
 | 07 | [Evidence storage, deduplication and retrieval](steps/07-evidence-and-retrieval.md) | complete (approved 9 Oct 2026: D50, D51; 24/24 checks and 17/17 mutants at `f04c4a1`; D52 added after the 4 GB decision) | `606762d`, `a894ffc`: `backend/app/embeddings/` (model, server, client, jobs), `backend/Dockerfile.embed`, `docker-compose.yml` (embedder), `backend/app/evidence/` (similarity, clusters, eligibility, context, anchors, retrieval, lineage, verify, benchmark), `backend/app/identity/invalidation.py`, `backend/app/setup/database.py` (5 collections), scheduler and worker (`cluster_origins`), contracts (api 1.2.0, operations 1.3.0), `evals/retrieval/v1/`, `backend/tests/test_evidence.py`, `scripts/run_step07_*.sh` | [logs/step-07](logs/step-07/README.md): 291 backend tests; 24/24 checks; 17/17 mutants; benchmark recall@10 keyword 0.839, vector 1.0, hybrid 1.0 (MRR 0.861, 0.982, 0.954); no wrong-project, withdrawn or anchor errors |
-| 08 | [Agent development and master workflow](steps/08-agents-and-master-workflow.md) | in_progress (I19 fixed; D53: $2 model cap, HRERA reader, sample review) | identity rules 1.1 (I19) | [logs/step-08](logs/step-08/README.md) |
+| 08 | [Agent development and master workflow](steps/08-agents-and-master-workflow.md) | in_progress (built, real run done within the $2 cap; awaiting the product owner's sample review and approval) | `4d2676d` … `da3cae9` and the Step 08 close-out commit: `backend/app/agents/` (spend, gateway batches, common, consistency, claims, verify, findings, reviews, evaluation), `backend/app/workflows/` (analysis, decisions, verify, sample), `backend/app/api/routes_findings.py`, `backend/app/connectors/` (harera, instagram, scrapfly, registries, web fallback), prompts (A05 1.0, A06 1.2, A07 1.2, A11 1.0), `evals/agents/v1/`, seed (policies `instagram_public` v1, `meta` v2, `google_alerts` v2 withdrawn, `competitor_portals` v3; connectors), `scripts/run_step08_*.sh`, `DECISIONS.md` (D53–D60, I19, I20) | [logs/step-08](logs/step-08/README.md): evaluation (2nd run) recall 1.0, 0 forbidden, reviews 12/12, findings 4/4 ($0.151); real run: 4 projects at findings review (278 claims, 84 findings, 10 reviews), M3M Antalya Hills stopped at the $2 cap (`budget_exhausted`); verify-analysis 10/10 on the real data |
 | 09 | [Moderator console](steps/09-cms-moderation.md) | not_started | — | — |
 | 10 | [SEO/AEO content and quality controls](steps/10-seo-aeo-and-editorial-qa.md) | not_started | — | — |
 | 11 | [Publication and public page](steps/11-publishing-and-recovery.md) | not_started | — | — |
@@ -25,14 +25,13 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 
 ## Current handoff
 
-- Active step: 08 (agents and master workflow), in progress. Decisions D53 (9 Oct 2026): $2 cap on live model calls, HRERA registry reader in this step, the product owner checks a sample of real outputs, no viewer before Step 09. I19 fixed (identity-rules.1.1). Instagram (I20) waits for a network that allows it.
-- **I17:** on 1 Oct 2026 the office firewall blocked youtube.com (confirmed by the product owner). On 2 Oct YouTube was reachable, and 5 real project videos were processed (captions, audio, frames). The TLS handshake is reset by name, while DNS, googleapis.com and google.com work. Videos tried end metadata-only with `network_refused`; nothing works around it. The YouTube Data API (discovery) still works. The product owner will test the end-to-end flow later from another network.
-- Proven:
-  - real Whisper `large-v3-turbo` in the media worker on the synthetic speech set: 20/22 key facts;
-  - real A04 on its sentences: 5/5 kept, 12/12 facts;
-  - real A03 on three synthetic frames: 6/6 phrases read verbatim, 3/3 graphics recognised;
-  - the whole pipeline with fakes.
-- Next action: Step 08: the gateway's spend cap and cost records (D53), then the HRERA registry reader, then the agents A05, A06, A07 and A11 with their backend checks, then the LangGraph workflow.
+- Active step: 08 (agents and master workflow), built and run on real data; waiting for the product owner's sample review and approval. Decisions D53 (spend cap, HRERA reader, sample review), D54 (Instagram through Scrapfly), D55 (workflow and agent design), D56/D59 (Google Alerts built, then removed as overlapping Brave), D57 (registries across India), D58 (projects entered on the dashboard, Step 09), D60 (refused competitor-portal pages read through Scrapfly).
+- Real run, 13 Oct 2026 (runs `run_01M4SR5X…`): collection for all five projects (10 HRERA records, 341 YouTube items, 34 new web pages; Instagram found no posts with unquoted queries, now quoted), then the analysis graph: DLF Privana, Conscient Parq, Sobha Crescent and M3M Forestia West wait at findings review (278 claims, 84 findings, 10 reviews; 58 claims verified against HRERA records, 12 disputed, 1 contradicted). M3M Antalya Hills stopped with `budget_exhausted` at $1.9858 of $2: its finished tasks are cached, and `make analyse RUN=run_01M4SR5X8M167CWXEMDJD22TVN` continues it if the budget is raised. The stack was restarted twice mid-run; the running analysis recovered from its checkpoint each time.
+- Spend: $1.9858 of the $2 budget (two evaluations $0.31, identity checks $0.14, analysis about $1.53). Cost fixes from the run are committed (A07 1.2 and A06 1.1/1.2 prompts, output limits, smaller A05 tasks).
+- Sample sheet for the product owner (D53): `exports/step-08-sample-review-20261013.csv` (133 rows, git-ignored, quotes third-party posts; columns to fill: correct?, what is wrong, comment).
+- Live connectors added in Step 08: `harera_registry` (10 records stored), `instagram_public` (one real post read, 25 Scrapfly credits; free plan 1,000 a month). Google Alerts was built and removed (D59). Firecrawl key present, no adapter (proposed only for script-rendered pages).
+- To confirm: robots.txt recorded but not enforced for Instagram (D55). State RERA readers beyond Haryana (D57) are built state by state alongside Steps 09-10. Not done, by recommendation: Haiku-versus-Sonnet routing comparison (Haiku already scored recall 1.0 with no forbidden claims).
+- Next action: the product owner reviews the sample sheet and approves Step 08; then Step 09 (console end to end: findings and review decisions on the four analysed projects), then Step 10 (A08/A09; its generate route calls `request_resume`).
 - Step 06 input from the product owner's earlier project (youtube-learning-copilot, reviewed 30 Sep 2026):
   - adapt the fallback order, video-ID parsing, ffmpeg 16 kHz mono and loading Whisper once;
   - do not reuse its cookie and proxy workarounds (D33) or its OpenAI and Ollama calls;
@@ -44,13 +43,14 @@ Allowed status values: not_started, in_progress, blocked, complete. Completion r
 - Refresh scheduling of collection and re-checks arrives at Step 13. Until then use `make collect` and `make recheck` by hand.
 - Collection tools and competitor portals: D33 and D34, with D40 replacing Crawl4AI and D46 for robots.txt (recorded, not enforced). 99acres and Housing.com refuse the pages themselves (403, 406), which is not worked around, so they stay unread. MagicBricks, NoBroker, Houseiy and HomznSpace pages are read.
 - Local stack: `make up`, then `make seed`; sign in as `deepesh.gupta@client-site.example`. The password is only in the local `.env` (`SEED_USER_PASSWORD`, git-ignored). `APP_MODE` is `fixture`: it controls only the session secret and the API docs page. Fixture data never enters `sy_poc`; tests and smoke checks use their own databases.
-- Running services: MongoDB 8.0 replica set `rs0` (protected from the kernel's out-of-memory killer), API :8000, worker (`WORKER_ROLE=general`: `collect`, `check_availability`, `erase_payloads`, `invalidate_dependencies`), media-worker (`WORKER_ROLE=media`: `process_media`; 2 GB, killed first under memory pressure), scheduler and web :3000, all on 127.0.0.1. The Docker VM has 4 GB, shared with the product owner's other stacks.
+- Running services: MongoDB 8.0 replica set `rs0` (protected from the kernel's out-of-memory killer), API :8000, worker (`WORKER_ROLE=general`: `collect`, `analyse`, `resume_after_review`, `check_availability`, `erase_payloads`, `invalidate_dependencies`, `cluster_origins`, `embed_evidence`), media-worker (`WORKER_ROLE=media`: `process_media`; 2 GB, killed first under memory pressure), scheduler and web :3000, all on 127.0.0.1. The Docker VM has 4 GB, shared with the product owner's other stacks.
 - D21: the product owner will build the review-posting agent outside this repository; nothing here supports it. The agreed review form is D28.
 - Deferred inputs, asked at the step that needs them: moderator capacity I11 (Step 09), correction owner I10 (before Step 11), demo machine I12 (Step 13).
 - Repository: https://github.com/deepeshgupta12/agentic_ai_review_model (private), all work on `main` (D18). CI runs contracts, backend, web and Compose jobs on every push.
 - Credentials (names only), all in `.env`, never `.env.example`; the pre-commit hook guards this:
-  - live: ANTHROPIC_API_KEY (workspace-scoped), BRAVE_SEARCH_API_KEY, YOUTUBE_API_KEY;
-  - not configured: Firecrawl, Reddit, X, Meta, listening provider.
+  - live: ANTHROPIC_API_KEY (workspace-scoped), BRAVE_SEARCH_API_KEY, YOUTUBE_API_KEY, SCRAPFLY_API_KEY;
+  - present, not used yet: FIRECRAWL_API_KEY;
+  - not configured: Reddit, X, Meta, paid listening provider.
 - Not in this repository's commits: `AGENTS.md` has an uncommitted local vexp section, and `.codex/` and `.github/copilot-instructions.md` are untracked. They were added by another tool, so they are left out of the Step 05 commits for the product owner to keep or discard.
 - Tooling: backend `cd backend && uv run …` (unset any `VIRTUAL_ENV`); web `cd web && pnpm …`; contract checks in `.venv`. `make help` lists everything.
 
@@ -429,6 +429,30 @@ Live integrations verified (credential present + real query result): bge-m3 down
   hash-checked; vectors for all 437 real evidence spans; hybrid search on the five projects' real evidence
 Known defects / missing inputs / owner: I18 (Docker VM still 4 GB), I19 (Devanagari localities)
 Next executable action: product owner reviews Step 07
+```
+
+```text
+Date / tool / branch / commit: 2026-10-09 to 2026-10-13 / Claude Code (VS Code) / step-07 worktree, fast-forwarded to main /
+  787625d → da3cae9 and the close-out commit
+Step and scope completed: Step 08 built and run on real data: spend cap and Message Batches (D53), HRERA registry reader,
+  A05/A06/A07/A11 with backend checks, LangGraph analysis workflow with pause, checked resume, stops and recovery (D55),
+  findings and review decision API, Instagram through Scrapfly (D54) connector; Google Alerts built and removed (D56, D59); state registry routing (D57), agent
+  evaluation, sample sheet
+Files changed: see the ledger row for Step 08
+Decisions made, with DECISIONS.md IDs: D53, D54, D55, D56; I19 resolved; I20 built
+Checks actually run and results: backend suite (see logs/step-08 for the final count); mutation check 19/20 on the first
+  run (the gap is now tested); live evaluation twice (second: recall 1.0, 0 forbidden, reviews 12/12, findings 4/4,
+  $0.151); verify-analysis 10/10 on the real data; Step 08 check script (see logs/step-08)
+Live integrations verified (credential present + real query result): Claude Haiku 5.5 and Sonnet 5 through the spend ledger
+  (181 calls, $1.9858); HRERA registry (10 records); Instagram through Scrapfly (one real post, 25 credits)
+Fixture-only behavior still awaiting live validation: the resume path
+  through an API route (Step 10's createContentRevision calls request_resume)
+Known defects / missing inputs / owner: M3M Antalya Hills analysis stopped at the $2 cap (product owner: budget);
+  7 A05 and 3 A06 tasks cut off by output limits in the real run (limits raised); A06 called a brand vs registered
+  promoter difference a contradiction (prompt 1.2); YouTube transcription blocked on this network (I17); state RERA
+  readers beyond Haryana (D57)
+Remaining acceptance checks: product owner's sample review; Step 08 approval
+Next executable action: product owner reviews exports/step-08-sample-review-20261013.csv and approves Step 08
 ```
 
 ## Session entry template

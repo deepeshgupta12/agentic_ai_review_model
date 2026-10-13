@@ -31,6 +31,8 @@ COLLECTION = "ai_source_policies"
 GENERIC_WEB = "web_public_pages"
 # Families whose pages the web fetcher may read (by host). Others are reached only through their own API.
 WEB_FETCH_FAMILIES = {GENERIC_WEB, "competitor_portals", "official_records"}
+# Families whose refused pages may be read through Scrapfly's unblocker: a product owner's decision per family (D60).
+UNBLOCK_FAMILIES = {"competitor_portals"}
 IMMUTABLE_FIELDS = (
     "collection_allowed",
     "ai_processing_allowed",

@@ -168,9 +168,9 @@ mutant "a call that could exceed the budget is refused before it is made" test_g
   ''
 
 mutant "Scrapfly credits are reserved before the request" test_instagram.py test_a_refused_key_and_spent_credits_stop_the_connector \
-  app/connectors/instagram.py \
-  '        if not quota.reserve(' \
-  '        if False and not quota.reserve('
+  app/connectors/scrapfly.py \
+  '        if not quota.reserve(self.db, self.settings, LEDGER, "credits", cost, self.now()):' \
+  '        if False:'
 
 echo
 if [ "$FAILED" -eq 0 ]; then echo "ALL MUTANTS CAUGHT"; else echo "SOME MUTANTS NOT CAUGHT"; fi

@@ -195,9 +195,9 @@
    "cursor_method": "per RERA ID",
    "deletion_method": "Re-fetch on refresh; keep the dated record reference and flag changes for review",
    "demonstration": "Fetch the public record for one supplied RERA ID with the robots/terms decision recorded",
-   "status": "access_pending",
-   "last_verified": null,
-   "verification_ref": null
+   "status": "live",
+   "last_verified": "2026-10-13",
+   "verification_ref": "logs/step-08/README.md"
   },
   {
    "id": "spoken_video_transcripts",
@@ -340,34 +340,6 @@
    "cursor_method": "Per endpoint paging cursor",
    "deletion_method": "Per platform terms; erase on deletion events",
    "demonstration": "Each promised public/comment/Reels capability demonstrated with an approved app",
-   "status": "access_pending",
-   "last_verified": null,
-   "verification_ref": null
-  },
-  {
-   "id": "google_alerts",
-   "provider": "Google Alerts by RSS (the product owner's own alerts; free listening source)",
-   "policy_family": "google_alerts",
-   "acquisition_order": 8,
-   "demo_requirement": "optional",
-   "content_kinds": [
-    "search_result"
-   ],
-   "yields": "New mentions Google finds for each project's alert: page address, title and when Google found it. Discovery metadata only; allow-listed pages are then read by the web reader.",
-   "expected_capabilities": {
-    "search": false,
-    "archive": false,
-    "comments": false,
-    "transcripts": false,
-    "deletion_check": false
-   },
-   "credential_env": [
-    "GOOGLE_ALERTS_FEEDS"
-   ],
-   "quota": null,
-   "cursor_method": "Each feed read per run; a page already stored is not read again",
-   "deletion_method": "Not applicable to the metadata; pages read follow the web reader's re-checks",
-   "demonstration": "A real alert feed for a supplied project read, with its robots.txt verdict and the mentions it named recorded",
    "status": "access_pending",
    "last_verified": null,
    "verification_ref": null

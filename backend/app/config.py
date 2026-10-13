@@ -95,8 +95,8 @@ class Settings(BaseSettings):
     scrapfly_credits_per_post: int = Field(default=30, ge=1)
     instagram_posts_per_project: int = Field(default=5, ge=0)
     instagram_queries_per_project: int = Field(default=2, ge=0)
-    # Step 08 (D56): pages named by Google Alerts read per project per run (the same web reader rules apply).
-    alert_pages_per_run: int = Field(default=20, ge=0)
+    # Step 08 (D60): competitor-portal pages that refuse the web reader, read through Scrapfly, per collection job.
+    unblocked_pages_per_run: int = Field(default=5, ge=0)
     web_pages_per_run: int = Field(default=40, ge=0)
     identity_agent_tasks_per_run: int = Field(default=10, ge=0)
     recheck_per_job: int = Field(default=200, ge=0)
@@ -141,7 +141,6 @@ class Settings(BaseSettings):
 
     brave_search_api_key: SecretStr | None = None
     scrapfly_api_key: SecretStr | None = None  # Instagram public posts (I20)
-    google_alerts_feeds: SecretStr | None = None  # Google Alerts RSS feed addresses, space-separated (D56)
     firecrawl_api_key: SecretStr | None = None
     youtube_api_key: SecretStr | None = None
     reddit_client_id: SecretStr | None = None

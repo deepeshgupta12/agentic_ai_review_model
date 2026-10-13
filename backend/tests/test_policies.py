@@ -47,7 +47,9 @@ def test_seeded_policies_are_current_and_match_the_contract(db, contracts):
     assert web["policy_version"] == 5 and {"dlf.in", "republicworld.com"} <= set(web["hosts"])
     assert web["robots_txt"] == "record_only", "D46"
     assert "client-site.example" not in web["hosts"], "own content is not independent evidence"
-    assert current(db, "competitor_portals")["policy_version"] == 2
+    portals = current(db, "competitor_portals")
+    assert portals["policy_version"] == 3 and any("Scrapfly" in c for c in portals["conditions"]), "D60"
+    assert not current(db, "google_alerts")["collection_allowed"], "D59: withdrawn"
     for doc in db["ai_source_policies"].find():
         assert contracts.errors(policy_view(doc), "sources.schema.json#/$defs/SourcePolicy") == [], doc["family"]
 
@@ -128,9 +130,9 @@ def test_narrowing_a_policy_applies_at_once_and_is_rechecked(api, db, contracts,
     assert api.post("/v1/admin/source-policies", json=body, headers=headers).status_code == 201
     assert not usable_for_identity(db, evidence), "the current version governs stored evidence"
     job = db["ai_jobs"].find_one({"kind": "invalidate_dependencies"})
-    assert job is not None and job["logical_key"] == "invalidate_dependencies:policy:competitor_portals:v3"
+    assert job is not None and job["logical_key"] == "invalidate_dependencies:policy:competitor_portals:v4"
     audit = db["ai_audit_events"].find_one(
-        {"action": "source_policy.created", "details.family": "competitor_portals", "details.policy_version": 3}
+        {"action": "source_policy.created", "details.family": "competitor_portals", "details.policy_version": 4}
     )
     assert "ai_processing_allowed" in audit["details"]["narrowed"]
 
@@ -139,9 +141,7 @@ def test_policy_api_roles_and_the_rights_chain(api, db, make_user, contracts):
     researcher = sign_in(api, make_user, ["researcher"])
     page = api.get("/v1/admin/source-policies?limit=50", headers=researcher)
     assert page.status_code == 200 and contracts.errors(page.json(), "api.schema.json#/$defs/PolicyPage") == []
-    assert len(page.json()["items"]) == 14, (
-        "every stored version: 11, instagram_public v1 and meta v2 (D54), google_alerts v1"
-    )
+    assert len(page.json()["items"]) == 13, "one seeded version per family: 11, then instagram_public and google_alerts"
     assert api.post("/v1/admin/source-policies", json=version_request("youtube"), headers=researcher).status_code == 403
     analyst = sign_in(api, make_user, ["analyst"])
     assert api.get("/v1/admin/source-policies", headers=analyst).status_code == 403

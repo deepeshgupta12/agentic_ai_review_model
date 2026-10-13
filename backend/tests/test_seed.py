@@ -150,3 +150,18 @@ def test_password_changes_only_on_explicit_reset(db, api):
         api.post("/v1/auth/login", json={"email": "reset@example.test", "password": "second-password-456"}).status_code
         == 200
     )
+
+
+def test_a_connector_removed_from_the_registry_leaves_existing_configs(db, contracts):
+    """D59: Google Alerts left the registry; configurations that listed it drop it, so the configuration API (which
+    refuses unknown connectors) keeps working, and the other choices are kept."""
+    seed_projects(db.client, db, contracts, INPUT, SEED)
+    project_id = db["projects"].find_one({"slug": EXPECTED_SLUGS[0]})["_id"]
+    config = db["ai_project_configs"].find_one({"_id": project_id})
+    retired = {"connector_id": "google_alerts", "enabled": True}
+    chosen = [{**s, "enabled": False} if s["connector_id"] == "firecrawl" else s for s in config["sources"]]
+    db["ai_project_configs"].update_one({"_id": project_id}, {"$set": {"sources": [*chosen, retired]}})
+    seed_projects(db.client, db, contracts, INPUT, SEED)
+    after = db["ai_project_configs"].find_one({"_id": project_id})
+    sources = {s["connector_id"]: s["enabled"] for s in after["sources"]}
+    assert "google_alerts" not in sources and sources["firecrawl"] is False

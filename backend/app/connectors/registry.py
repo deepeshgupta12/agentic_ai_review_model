@@ -32,6 +32,14 @@ def agent_token(settings: Settings) -> str:
     return settings.crawler_user_agent.split("/", 1)[0].strip()
 
 
+def scrapfly_for(db: Database[dict[str, Any]], settings: Settings) -> Any:
+    """The shared Scrapfly client (Instagram, D54; refused competitor pages, D60), or None without a key."""
+    from app.connectors.scrapfly import Scrapfly
+
+    key = settings.scrapfly_api_key
+    return Scrapfly(key.get_secret_value(), safe_client(settings), db, settings) if key else None
+
+
 def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -> Connector | None:
     """The live adapter, or None when its credential is missing (access_pending)."""
     if connector_id == "brave_search":
@@ -53,25 +61,17 @@ def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -
     if connector_id == "instagram_public":  # D54: discovery needs Brave, reading needs Scrapfly
         from app.connectors.instagram import InstagramPublic
 
-        key = settings.scrapfly_api_key
+        scrapfly = scrapfly_for(db, settings)
         brave = build("brave_search", db, settings)
-        if key is None or brave is None:
+        if scrapfly is None or brave is None:
             return None
-        client = safe_client(settings)
-        return InstagramPublic(
-            key.get_secret_value(), client, RobotsCache(client, agent_token(settings)), db, settings, brave
-        )
-    if connector_id == "google_alerts":  # D56: feed addresses from the product owner's own alerts
-        from app.connectors.alerts import GoogleAlerts, feed_list
-
-        feeds = feed_list(settings.google_alerts_feeds.get_secret_value() if settings.google_alerts_feeds else None)
-        if not feeds:
-            return None
-        client = safe_client(settings)
-        return GoogleAlerts(feeds, client, RobotsCache(client, agent_token(settings)), db)
+        return InstagramPublic(scrapfly, RobotsCache(safe_client(settings), agent_token(settings)), db, settings, brave)
     if connector_id == "web_fetch":
         from app.connectors.web import WebFetch
 
         client = safe_client(settings)
-        return WebFetch(client, RobotsCache(client, agent_token(settings)), db)
+        unblocker = scrapfly_for(db, settings)  # D60: refused competitor pages only, within the per-run cap
+        return WebFetch(
+            client, RobotsCache(client, agent_token(settings)), db, unblocker, settings.unblocked_pages_per_run
+        )
     return None

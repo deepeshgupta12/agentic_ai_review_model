@@ -12,7 +12,8 @@ from pydantic import SecretStr
 from app.connectors import registry
 from app.connectors.base import ProviderError, QuotaExhausted
 from app.connectors.instagram import InstagramPublic, parse_post, post_url
-from app.sources import collection, quota
+from app.connectors.scrapfly import Scrapfly
+from app.sources import collection
 from app.sources.http import FetchError
 from app.sources.robots import RobotsCache
 
@@ -85,9 +86,8 @@ def connector(db, settings, net):
     client = net.client()
     brave = registry.build("brave_search", db, settings)
     brave.client = client
-    return InstagramPublic(
-        "test-only-scrapfly-key-0000", client, RobotsCache(client, "ProjectIntelligenceBot"), db, settings, brave
-    )
+    scrapfly = Scrapfly("test-only-scrapfly-key-0000", client, db, settings)
+    return InstagramPublic(scrapfly, RobotsCache(client, "ProjectIntelligenceBot"), db, settings, brave)
 
 
 def test_only_post_and_reel_addresses_are_read():
@@ -124,9 +124,7 @@ def test_a_post_is_read_through_scrapfly_with_policy_robots_and_credits_recorded
     assert log["outcome"] == "fetched" and log["family"] == "instagram_public" and log["provider_credits"] == 30
     assert log["robots"].startswith("disallowed"), "robots.txt is asked and recorded; the policy does not enforce it"
     assert "test-only-scrapfly-key" not in json.dumps(log, default=str), "the key is never logged"
-    assert (
-        quota.usage(db, settings, "instagram_public", "credits", ig.now())["used"] == settings.scrapfly_credits_per_post
-    )
+    assert ig.scrapfly.credits()["used"] == settings.scrapfly_credits_per_post, "one ledger, shared with D60"
 
 
 @pytest.mark.parametrize(

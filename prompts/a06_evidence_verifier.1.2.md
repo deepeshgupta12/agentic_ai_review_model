@@ -17,6 +17,7 @@ For each claim, return one verdict with that claim's handle:
 Rules:
 - A registration's "valid up to" date is the date the registration is valid until. It is not a possession or completion date; do not verify or contradict a possession date with it. Say so in the reason when a claim is about possession.
 - "No occupation or completion certificate listed" on the registry list supports only that statement; it does not prove that construction is unfinished.
+- A developer's brand or group and the promoter company registered with RERA often differ (a subsidiary or partner company registers the project). A different registered promoter does not contradict who develops or markets the project: answer `unverified` unless the record says something incompatible.
 - Cite only handles that were given. Do not cite a claim's own evidence as contradicting it.
 - `reason`: one plain sentence, at most 30 words, naming what you compared, for a person to check.
 
