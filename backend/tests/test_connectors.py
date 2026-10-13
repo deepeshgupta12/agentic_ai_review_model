@@ -141,7 +141,7 @@ def test_the_web_reader_never_requests_a_page_the_policy_does_not_allow(db):
     net = FakeNet()
     net.html("forum.example.test", {"/t/1": (200, article("x", "y"))})
     web = reader(net, db)
-    assert web.fetch("https://forum.example.test/t/1").status == "not_allowed", "not on the allow-list"
+    assert web.fetch("https://client-site.example/t/1").status == "not_allowed", "an excluded host (own content)"
     assert web.fetch("https://www.reddit.com/r/x/1").status == "not_allowed"
     assert web.fetch("https://www.youtube.com/watch?v=abc").status == "not_allowed", "YouTube has its own connector"
     assert net.requests == [], "nothing was requested"

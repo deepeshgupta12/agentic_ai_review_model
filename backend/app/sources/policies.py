@@ -31,8 +31,9 @@ COLLECTION = "ai_source_policies"
 GENERIC_WEB = "web_public_pages"
 # Families whose pages the web fetcher may read (by host). Others are reached only through their own API.
 WEB_FETCH_FAMILIES = {GENERIC_WEB, "competitor_portals", "official_records"}
-# Families whose refused pages may be read through Scrapfly's unblocker: a product owner's decision per family (D60).
-UNBLOCK_FAMILIES = {"competitor_portals"}
+# Families whose refused pages may be read through Scrapfly's unblocker: a product owner's decision per family
+# (competitor portals D60, the generic web D61).
+UNBLOCK_FAMILIES = {"competitor_portals", GENERIC_WEB}
 IMMUTABLE_FIELDS = (
     "collection_allowed",
     "ai_processing_allowed",
@@ -44,11 +45,13 @@ IMMUTABLE_FIELDS = (
     "excluded_hosts",
     "conditions",
     "robots_txt",
+    "host_scope",
     "basis",
     "status",
 )
-# Versions stored before a field existed read as its default: robots.txt was obeyed until D46.
-DEFAULTS = {"robots_txt": "obey"}
+# Versions stored before a field existed read as its default: robots.txt was obeyed until D46, and the generic web
+# route read only its allow-list until D61.
+DEFAULTS = {"robots_txt": "obey", "host_scope": "allow_list"}
 RIGHTS = ("collection_allowed", "ai_processing_allowed", "quotation_allowed", "derived_publication_allowed")
 
 
@@ -190,7 +193,7 @@ def resolve(db: Database[dict[str, Any]], url: str, session: ClientSession | Non
         return Resolution(host, None, None, False, "no generic web policy")
     if _matches(host, web["excluded_hosts"]):
         return Resolution(host, GENERIC_WEB, web, False, f"{host} is excluded from {GENERIC_WEB}")
-    if not _matches(host, web["hosts"]):
+    if web.get("host_scope", "allow_list") != "any_public_host" and not _matches(host, web["hosts"]):
         return Resolution(host, GENERIC_WEB, web, False, f"{host} is not on the {GENERIC_WEB} allow-list")
     return Resolution(host, GENERIC_WEB, web, web["collection_allowed"], f"{GENERIC_WEB} v{web['policy_version']}")
 
@@ -201,6 +204,8 @@ def narrowed(old: dict[str, Any], new: dict[str, Any]) -> list[str]:
     removed = [h for h in old["hosts"] if h not in new["hosts"]]
     if removed:
         lost.append(f"{len(removed)} host(s) removed")
+    if old.get("host_scope") == "any_public_host" and new.get("host_scope", "allow_list") != "any_public_host":
+        lost.append("host_scope narrowed to the allow-list")
     if old["retention_days"] and (new["retention_days"] or 0) < old["retention_days"]:
         lost.append("retention_days")
     return lost
@@ -238,6 +243,7 @@ def create_version(
                 )
             },
             "robots_txt": body.get("robots_txt", "obey"),
+            "host_scope": body.get("host_scope", "allow_list"),
             "status": "accepted",
             "effective_from": datetime.fromisoformat(body["effective_from"].replace("Z", "+00:00")),
             "accepted_on": utcnow().date().isoformat(),

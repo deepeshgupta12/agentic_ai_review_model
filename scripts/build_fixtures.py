@@ -173,6 +173,7 @@ POLICY_WEB = {
     "excluded_hosts": ["youtube.com", "reddit.com"],
     "conditions": ["Public pages only"],
     "robots_txt": "obey",
+    "host_scope": "allow_list",
     "basis": "docs/06 scraping policy; verbatim review quotes with a credit line (D28)",
     "status": "accepted",
     "effective_from": ts(25),

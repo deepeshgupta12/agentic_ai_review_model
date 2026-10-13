@@ -6,7 +6,9 @@ logged; it blocks the fetch only where the family's policy version says `obey` (
 web families to `record_only` on 1 Oct 2026). Every redirect hop is checked the same way. A refused page
 (401/403/406/451) is recorded as refused and not worked around (D33), with one exception the product owner decided:
 a competitor-portal page that refuses the reader is asked for once more through Scrapfly's unblocker (D60), up to
-`UNBLOCKED_PAGES_PER_RUN` pages per collection job, still public pages only (no sign-in, accounts or cookies).
+`UNBLOCKED_PAGES_PER_RUN` pages per collection job, still public pages only (no sign-in, accounts or cookies); D61
+extends this to the generic web. A page that comes back nearly empty because the browser builds its text is rendered
+once through Firecrawl (D62), up to `RENDERED_PAGES_PER_RUN` pages per job.
 The page's main text, title, author name and the date the markup states are kept; pages with too little text
 (often script-rendered) are counted as thin rather than stored. Every decision goes to the fetch log.
 """
@@ -92,9 +94,12 @@ class WebFetch(Connector):
         db: Database[dict[str, Any]],
         unblocker: Any = None,
         unblock_limit: int = 0,
+        renderer: Any = None,
+        render_limit: int = 0,
     ) -> None:
         self.client, self.robots, self.db = client, robots, db
-        self.unblocker, self.unblock_left = unblocker, unblock_limit  # D60: Scrapfly for refused competitor pages
+        self.unblocker, self.unblock_left = unblocker, unblock_limit  # D60, D61: Scrapfly for refused pages
+        self.renderer, self.render_left = renderer, render_limit  # D62: Firecrawl for pages built by JavaScript
 
     def _allowed(self, url: str) -> tuple[policies.Resolution, str | None]:
         resolution = policies.resolve(self.db, url)
@@ -183,6 +188,36 @@ class WebFetch(Connector):
             return FetchOutcome("refused", url, f"refused even through Scrapfly (HTTP {page.upstream_status})")
         return self._page(page.html, url, url, attempt, resolution, "fetched_unblocked")
 
+    def _rendered(
+        self, url: str, final_url: str, entry: dict[str, Any], resolution: policies.Resolution
+    ) -> FetchOutcome:
+        """The nearly empty page once more, rendered by Firecrawl (D62), while this job's allowance lasts."""
+        if self.render_left <= 0:
+            return FetchOutcome(
+                "thin", url, "script-rendered; this run's allowance of pages rendered by Firecrawl is used"
+            )
+        self.render_left -= 1
+        attempt = {**entry, "status_code": None}
+        try:
+            page = self.renderer.render(final_url)
+        except QuotaExhausted:
+            log_fetch(self.db, {**attempt, "outcome": "render_quota_exhausted"})
+            return FetchOutcome("thin", url, "script-rendered; the month's Firecrawl credits are spent")
+        except ProviderError as exc:
+            log_fetch(self.db, {**attempt, "outcome": f"render_error:{exc.code}"})
+            return FetchOutcome("thin", url, f"script-rendered; Firecrawl: {exc.code}")
+        except FetchError as exc:
+            log_fetch(self.db, {**attempt, "outcome": f"render_error:{exc.code}"[:100]})
+            return FetchOutcome("error", url, exc.message, retryable=exc.retryable)
+        attempt.update(status_code=page.upstream_status or None, provider_credits=page.credits)
+        if page.upstream_status in GONE:
+            log_fetch(self.db, {**attempt, "outcome": "gone"})
+            return FetchOutcome("gone", url, f"HTTP {page.upstream_status} through Firecrawl")
+        if page.upstream_status >= 400 or not page.html:
+            log_fetch(self.db, {**attempt, "outcome": "render_refused"})
+            return FetchOutcome("refused", url, f"refused even through Firecrawl (HTTP {page.upstream_status})")
+        return self._page(page.html, url, final_url, attempt, resolution, "fetched_rendered")
+
     def _page(
         self,
         html: str,
@@ -196,6 +231,8 @@ class WebFetch(Connector):
         text = (data or {}).get("text") or ""
         if len(text) < MIN_TEXT_CHARS:
             log_fetch(self.db, {**entry, "outcome": "thin"})
+            if outcome != "fetched_rendered" and resolution.family in policies.UNBLOCK_FAMILIES and self.renderer:
+                return self._rendered(url, final_url, entry, resolution)
             return FetchOutcome("thin", url, f"only {len(text)} characters of main text (possibly script-rendered)")
         assert data is not None
         comments = data.get("comments") or ""

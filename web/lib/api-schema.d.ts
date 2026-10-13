@@ -1036,6 +1036,11 @@ export interface components {
              * @enum {unknown}
              */
             robots_txt?: "obey" | "record_only";
+            /**
+             * @description Optional; allow_list when omitted (D61)
+             * @enum {unknown}
+             */
+            host_scope?: "allow_list" | "any_public_host";
             basis: string;
             effective_from: components["schemas"]["Timestamp"];
             expires_at: components["schemas"]["Timestamp"] | null;
@@ -1296,6 +1301,11 @@ export interface components {
              * @enum {unknown}
              */
             robots_txt: "obey" | "record_only";
+            /**
+             * @description allow_list: only `hosts` (generic web) or the family's own hosts. any_public_host (generic web only): any public host that no other family owns and that `excluded_hosts` does not list (D61). Versions stored before this field existed used allow_list.
+             * @enum {unknown}
+             */
+            host_scope: "allow_list" | "any_public_host";
             basis: string;
             /** @enum {unknown} */
             status: "proposed" | "accepted";

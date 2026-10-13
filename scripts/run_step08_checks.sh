@@ -169,7 +169,7 @@ budget = db.ai_model_budget.find_one({"_id": SpendLedger(db, s).budget_id})
 spent = budget["spent_usd"] if budget else 0.0
 print(f"  budget {s.model_budget_usd:.2f} USD since {s.model_budget_since.date()}; spent {spent:.4f}; calls {budget['calls'] if budget else 0}")
 missing = [m for m in set(roles.values()) if m not in s.model_prices]
-raise SystemExit(0 if not missing and spent <= s.model_budget_usd and s.model_budget_usd <= 2.0 else 1)
+raise SystemExit(0 if not missing and spent <= s.model_budget_usd and s.model_budget_usd <= 3.0 else 1)
 EOF
 }
 
@@ -350,7 +350,7 @@ expect "Stack starts and every service is healthy" 0 docker compose up -d --wait
 expect "Long-running services up" 0 services_running
 expect "Database setup has the Step 08 collections; a repeat changes nothing" 0 setup_has_step08_collections
 expect "D54/D59/D60: instagram_public v1 governs instagram.com, meta v2 Facebook only, google_alerts withdrawn, competitor_portals v3 unblocks" 0 policies_and_connector_seeded
-expect "D53: model roles priced, budget at most 2 USD and not overspent" 0 models_and_budget
+expect "D53/D61: model roles priced, budget at most 3 USD and not overspent" 0 models_and_budget
 expect "D53: the dry-run plan of the next analysis fits the budget (no model call)" 0 plan_is_within_budget
 expect "UC-59/62: each project's real analysis reached findings review, or stopped explicitly at the budget" 0 real_analysis_reached_review
 expect "UC-55..58: the analysis rules hold on the real stored claims, findings, reviews, approvals and spend" 0 analysis_rules_hold

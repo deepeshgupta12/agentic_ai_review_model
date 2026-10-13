@@ -17,6 +17,7 @@
 - **Identity:** Devanagari locality words, digits and city names now match (I19, identity-rules 1.1).
 - **Registries across India** (D57): each project is looked up only in its own state's RERA registry; a state without a reader yet is reported, not skipped. Haryana is the first reader.
 - **Google Alerts** was built as a free listening source (D56) and then removed (D59): it overlaps Brave Search.
+- **Every data** (D61): budget $3; robots.txt recorded, never enforced; the web reader reads any public host Brave finds (not only the allow-list), and refused pages go to Scrapfly. **Firecrawl** (D62) renders pages built by JavaScript. Contracts: sources 1.5.0, api 1.3.0 (`host_scope`).
 - **Competitor portals** (D60): a portal page that refuses the web reader (99acres, Housing.com) is read through Scrapfly, a few pages per run, within one credit ledger shared with Instagram.
 - **Real run** (13 Oct 2026, within the $2 cap): four projects reached findings review (278 claims, 84 findings, 10 reviews); the fifth stopped explicitly when the budget ran out and can continue from its cache. Prompts were tightened during the run to cut cost (A07 1.2, A06 1.2).
 

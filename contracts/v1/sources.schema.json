@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Source contracts",
   "description": "Source policies, global source revisions, project-source links, media segments, connector state and origin clusters (docs/02 items 1, 4, 5, 9; docs/06).",
-  "x-contract-version": "1.4.0",
+  "x-contract-version": "1.5.0",
   "$defs": {
     "SourcePolicy": {
       "description": "ai_source_policies record. Immutable per policy_version; a change is a new version. Rights form a chain: each needs the one before it.",
@@ -22,6 +22,7 @@
         "excluded_hosts",
         "conditions",
         "robots_txt",
+        "host_scope",
         "basis",
         "status",
         "effective_from",
@@ -45,6 +46,10 @@
         "robots_txt": {
           "description": "obey: a page robots.txt disallows (or a refused robots.txt) is not fetched. record_only: robots.txt is fetched and its verdict logged for every page, but does not block the fetch (D46). Versions stored before this field existed were obeyed.",
           "enum": ["obey", "record_only"]
+        },
+        "host_scope": {
+          "description": "allow_list: only `hosts` (generic web) or the family's own hosts. any_public_host (generic web only): any public host that no other family owns and that `excluded_hosts` does not list (D61). Versions stored before this field existed used allow_list.",
+          "enum": ["allow_list", "any_public_host"]
         },
         "basis": { "type": "string", "minLength": 1 },
         "status": { "enum": ["proposed", "accepted"] },

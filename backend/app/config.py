@@ -62,7 +62,7 @@ class Settings(BaseSettings):
 
     # Spend (Step 08, D53): a hard cap on live model calls, counted from MODEL_BUDGET_SINCE. Prices are USD per
     # million tokens from Anthropic's published table (9 Oct 2026); the Batch API halves input and output.
-    model_budget_usd: float = Field(default=2.0, ge=0)
+    model_budget_usd: float = Field(default=3.0, ge=0)  # D53 $2, raised to $3 by the product owner (D61)
     model_budget_since: datetime = datetime(2026, 10, 9, tzinfo=UTC)
     model_prices: dict[str, dict[str, float]] = {
         "claude-haiku-5-5": {"input": 0.10, "output": 0.50, "cache_write": 0.125, "cache_read": 0.01},
@@ -97,7 +97,11 @@ class Settings(BaseSettings):
     instagram_queries_per_project: int = Field(default=2, ge=0)
     # Step 08 (D60): competitor-portal pages that refuse the web reader, read through Scrapfly, per collection job.
     unblocked_pages_per_run: int = Field(default=5, ge=0)
-    web_pages_per_run: int = Field(default=40, ge=0)
+    # Step 08 (D62): pages built by JavaScript rendered through Firecrawl, per collection job, from a monthly ledger.
+    rendered_pages_per_run: int = Field(default=10, ge=0)
+    firecrawl_monthly_credits: int = Field(default=500, ge=0)
+    firecrawl_credits_per_page: int = Field(default=1, ge=1)
+    web_pages_per_run: int = Field(default=80, ge=0)  # 40 until D61 opened the generic web route
     identity_agent_tasks_per_run: int = Field(default=10, ge=0)
     recheck_per_job: int = Field(default=200, ge=0)
 

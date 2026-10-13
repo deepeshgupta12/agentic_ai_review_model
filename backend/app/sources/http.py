@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import ipaddress
+import json
 import random
 import socket
 import threading
@@ -174,6 +175,20 @@ class SafeClient:
             return response
         raise FetchError("too_many_redirects", f"more than {self.max_redirects} redirects")
 
+    def post_json(
+        self,
+        url: str,
+        body: dict[str, Any],
+        *,
+        headers: dict[str, str] | None = None,
+        accept: tuple[str, ...] = TEXT_TYPES,
+    ) -> Response:
+        """POST a JSON body to a provider's API (Firecrawl, D62): the same address checks, size cap and bounded retries;
+        redirects are not followed."""
+        host = self._check_target(url)
+        sent = {"Content-Type": "application/json", **(headers or {})}
+        return self._request(host, url, sent, None, accept, method="POST", content=json.dumps(body).encode())
+
     def _request(
         self,
         host: str,
@@ -181,13 +196,19 @@ class SafeClient:
         headers: dict[str, str] | None,
         params: dict[str, Any] | None,
         accept: tuple[str, ...],
+        method: str = "GET",
+        content: bytes | None = None,
     ) -> Response:
         last: FetchError | None = None
         for attempt in range(1, self.max_attempts + 1):
             self.pacer.wait(host)
             try:
                 with self._client.stream(
-                    "GET", url, params=params, headers={"User-Agent": self.user_agent, **(headers or {})}
+                    method,
+                    url,
+                    params=params,
+                    headers={"User-Agent": self.user_agent, **(headers or {})},
+                    content=content,
                 ) as raw:
                     status = raw.status_code
                     response_headers = {k.lower(): v for k, v in raw.headers.items()}

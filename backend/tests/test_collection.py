@@ -41,6 +41,7 @@ def allow_forum(db, contracts):
             "hosts": [*web["hosts"], "forum.example.test"],
             "excluded_hosts": web["excluded_hosts"],
             "conditions": web["conditions"],
+            "host_scope": web.get("host_scope", "allow_list"),
             "basis": "test allow-list",
             "effective_from": "2026-01-01T00:00:00Z",
             "expires_at": None,

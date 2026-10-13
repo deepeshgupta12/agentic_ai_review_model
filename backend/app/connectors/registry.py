@@ -40,6 +40,14 @@ def scrapfly_for(db: Database[dict[str, Any]], settings: Settings) -> Any:
     return Scrapfly(key.get_secret_value(), safe_client(settings), db, settings) if key else None
 
 
+def firecrawl_for(db: Database[dict[str, Any]], settings: Settings) -> Any:
+    """Firecrawl for pages built by JavaScript (D62), or None without a key."""
+    from app.connectors.firecrawl import Firecrawl
+
+    key = settings.firecrawl_api_key
+    return Firecrawl(key.get_secret_value(), safe_client(settings), db, settings) if key else None
+
+
 def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -> Connector | None:
     """The live adapter, or None when its credential is missing (access_pending)."""
     if connector_id == "brave_search":
