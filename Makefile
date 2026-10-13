@@ -165,3 +165,18 @@ check-step07: ## Step 07 checks with a saved log
 
 mutations-step07: ## Step 07 mutation check: each evidence rule disabled must be caught (stack up)
 	bash scripts/run_step07_mutations.sh
+
+check-step08: ## Step 08 checks with a saved log
+	bash scripts/run_step08_checks.sh
+
+mutations-step08: ## Step 08 mutation check: each agent and workflow rule disabled must be caught (stack up)
+	bash scripts/run_step08_mutations.sh
+
+check-step09-10: ## Steps 09-10 checks with a saved log (console, content, publication, journeys; spends nothing)
+	bash scripts/run_step09_10_checks.sh
+
+mutations-step09-10: ## Steps 09-10 mutation check: each console, content and publication rule disabled must be caught
+	bash scripts/run_step09_10_mutations.sh
+
+journeys: ## Browser journeys on the journey database with the real environment (no run started)
+	bash scripts/run_step09_e2e.sh

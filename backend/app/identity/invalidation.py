@@ -80,6 +80,8 @@ def _act(
     }
 
     def write(session: ClientSession) -> None:
+        from app.publication.service import invalidate_serving  # publication imports the content service
+
         withdrawn = []
         for content in lineage["content_revisions"]:
             current = content["lifecycle"]
@@ -102,6 +104,11 @@ def _act(
                     details={"from": current, "reason": reason},
                     session=session,
                 )
+        if withdrawn:  # the epoch moves, so old approvals cannot publish; withdrawn active content stops serving
+            docs = list(
+                db["ai_content_revisions"].find({"_id": {"$in": withdrawn}}, {"project_id": 1}, session=session)
+            )
+            invalidate_serving(db, docs, session)
         audit.record(
             db,
             "dependencies.invalidated",

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Content contracts",
   "description": "Frozen page payload, dependency manifest, content revisions and review decisions (docs/05 'Immutable content and hashing', D23).",
-  "x-contract-version": "1.0.0",
+  "x-contract-version": "1.1.0",
   "$defs": {
     "SafeJson": {
       "description": "JSON with integers only (safe range) so canonical hashing is identical across languages (D23).",
@@ -157,7 +157,10 @@
           }
         },
         "heading": { "type": "string", "minLength": 1 },
-        "overview": { "$ref": "#/$defs/SupportedText" },
+        "overview": {
+          "description": "Null on a page built from reviews alone (D64): no model-written summary without approved findings.",
+          "anyOf": [{ "$ref": "#/$defs/SupportedText" }, { "type": "null" }]
+        },
         "advantages": { "type": "array", "items": { "$ref": "#/$defs/SupportedItem" } },
         "considerations": { "type": "array", "items": { "$ref": "#/$defs/SupportedItem" } },
         "reviews": {
@@ -166,7 +169,11 @@
           "items": { "$ref": "#/$defs/PublicReview" }
         },
         "questions": { "type": "array", "items": { "$ref": "#/$defs/QuestionItem" } },
-        "sources": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/PublicSourceLink" } },
+        "sources": {
+          "description": "Sources behind the findings. Empty on a reviews-only page: reviews carry their own credit line (D28, D64).",
+          "type": "array",
+          "items": { "$ref": "#/$defs/PublicSourceLink" }
+        },
         "coverage_note": { "type": "string", "minLength": 1 },
         "reviewed_on": { "$ref": "common.schema.json#/$defs/Date" },
         "attribution": {
@@ -199,7 +206,7 @@
       "additionalProperties": false,
       "required": ["findings", "claims", "reviews", "evidence", "sources", "links", "policies", "eligibility_epoch"],
       "properties": {
-        "findings": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/FindingRef" } },
+        "findings": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/FindingRef" } },
         "reviews": {
           "type": "array",
           "items": {
@@ -212,7 +219,7 @@
             }
           }
         },
-        "claims": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/ClaimRef" } },
+        "claims": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/ClaimRef" } },
         "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" } },
         "sources": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/SourceRevisionRef" } },
         "links": { "type": "array", "minItems": 1, "items": { "$ref": "common.schema.json#/$defs/SourceLinkId" } },

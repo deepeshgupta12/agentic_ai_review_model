@@ -1,0 +1,78 @@
+Steps 09-10 mutation check: each rule is disabled on a scratch copy; its own test must fail.
+date (UTC): 2026-10-13T10:06:45Z
+
+== rule disabled: final approval binds the exact payload and manifest hashes
+   in backend/app/content/service.py
+FAILED tests/test_content.py::test_final_approval_binds_hash_epoch_and_state_version
+1 failed, 10 passed in 28.29s
+--> OK (caught by test_final_approval_binds_hash_epoch_and_state_version)
+
+== rule disabled: final approval binds the evidence epoch
+   in backend/app/content/service.py
+FAILED tests/test_content.py::test_final_approval_binds_hash_epoch_and_state_version
+1 failed, 10 passed in 25.35s
+--> OK (caught by test_final_approval_binds_hash_epoch_and_state_version)
+
+== rule disabled: a page from reviews alone calls no model (D64)
+   in backend/app/content/service.py
+FAILED tests/test_content.py::test_a_page_from_reviews_alone_needs_no_model
+1 failed, 10 passed in 24.04s
+--> OK (caught by test_a_page_from_reviews_alone_needs_no_model)
+
+== rule disabled: an opinion written as a universal fact blocks approval
+   in backend/app/content/qa.py
+FAILED tests/test_content.py::test_qa_blocks_opinion_as_fact_new_numbers_lost_caveats_occupancy_and_changed_reviews
+1 failed, 10 passed in 29.44s
+--> OK (caught by test_qa_blocks_opinion_as_fact_new_numbers_lost_caveats_occupancy_and_changed_reviews)
+
+== rule disabled: a shown review must equal its approved record (D28)
+   in backend/app/content/qa.py
+FAILED tests/test_content.py::test_qa_blocks_opinion_as_fact_new_numbers_lost_caveats_occupancy_and_changed_reviews
+1 failed, 10 passed in 25.29s
+--> OK (caught by test_qa_blocks_opinion_as_fact_new_numbers_lost_caveats_occupancy_and_changed_reviews)
+
+== rule disabled: delivery is verified from the rendered page's markers
+   in backend/app/publication/service.py
+FAILED tests/test_content.py::test_a_page_showing_the_wrong_revision_is_never_reported_as_delivered
+1 failed, 10 passed in 38.42s
+--> OK (caught by test_a_page_showing_the_wrong_revision_is_never_reported_as_delivered)
+
+== rule disabled: withdrawn evidence disables serving at once
+   in backend/app/publication/service.py
+FAILED tests/test_content.py::test_withdrawn_evidence_stops_serving_and_cannot_be_rolled_back_to
+1 failed, 10 passed in 26.89s
+--> OK (caught by test_withdrawn_evidence_stops_serving_and_cannot_be_rolled_back_to)
+
+== rule disabled: a finding edit cannot relabel an opinion as a verified fact
+   in backend/app/workflows/revisions.py
+FAILED tests/test_console_api.py::test_a_finding_edit_is_a_new_revision_that_keeps_the_evidence_rules
+1 failed, 5 passed in 12.70s
+--> OK (caught by test_a_finding_edit_is_a_new_revision_that_keeps_the_evidence_rules)
+
+== rule disabled: public corrections are rate-limited per address
+   in backend/app/api/routes_corrections.py
+FAILED tests/test_console_api.py::test_public_corrections_are_rate_limited_and_moderated
+1 failed, 5 passed in 22.75s
+--> OK (caught by test_public_corrections_are_rate_limited_and_moderated)
+
+== rule disabled: an admin cannot lock themselves out
+   in backend/app/api/routes_admin.py
+FAILED tests/test_console_api.py::test_users_and_roles_are_admin_only_and_an_admin_cannot_lock_themselves_out
+1 failed, 5 passed in 14.65s
+--> OK (caught by test_users_and_roles_are_admin_only_and_an_admin_cannot_lock_themselves_out)
+
+== rule disabled: adding a project from the console never updates an existing one (D58)
+   in backend/app/api/routes_projects.py
+FAILED tests/test_console_api.py::test_a_researcher_adds_one_project_from_the_console
+1 failed, 5 passed in 15.50s
+--> OK (caught by test_a_researcher_adds_one_project_from_the_console)
+
+== rule disabled: prompt caching marks the shared instructions (D65)
+   in backend/app/agents/gateway.py
+FAILED tests/test_gateway.py::test_the_shared_instructions_carry_the_only_cache_breakpoint
+FAILED tests/test_gateway.py::test_every_request_in_a_batch_carries_the_same_one_hour_breakpoint
+2 failed, 32 passed in 17.96s
+--> OK (caught by test_the_shared_instructions_carry_the_only_cache_breakpoint)
+
+ALL MUTANTS CAUGHT
+log: logs/step-09/mutation-check-20261013T100645Z.log

@@ -10,7 +10,10 @@
 - Every call returns what an AgentRun record needs: models, stop reason, usage, request ID.
 - `check_models` confirms through the Models API that each configured ID exists for the account.
 - Spend (D53): a live call needs the spend ledger; it reserves its worst-case cost first and is refused with
-  `budget_exhausted` when that does not fit, then records its actual cost. Repeated prefixes use prompt caching.
+  `budget_exhausted` when that does not fit, then records its actual cost.
+- Prompt caching (D65): one explicit breakpoint on the agent's instructions, the prefix all its tasks share, when it
+  reaches the model's minimum cacheable length (`cached_system`). The task's own evidence is never marked: no other
+  call repeats it. Cache writes and reads are priced and recorded like any other tokens.
 A missing API key is `access_pending`, not a crash (D06).
 """
 
@@ -25,7 +28,14 @@ from typing import Any, Protocol
 
 import anthropic
 
-from app.agents.spend import PriceUnknown, Reservation, SpendLedger, estimate_input_tokens, worst_case_usd
+from app.agents.spend import (
+    CHARS_PER_TOKEN,
+    PriceUnknown,
+    Reservation,
+    SpendLedger,
+    estimate_input_tokens,
+    worst_case_usd,
+)
 from app.config import Settings
 from app.contracts import ContractStore
 from app.db import utcnow
@@ -84,6 +94,19 @@ class GatewayResult:
     error: dict[str, str] | None = None
     cost_usd: float = 0.0  # summed over every billed round (D53)
     cache_write_tokens: int = 0
+
+
+def cached_system(settings: Settings, model: str, system: str, ttl: str) -> tuple[str | list[dict[str, Any]], int]:
+    """The system prompt as sent, and how many of its tokens may be written to the cache (D65).
+
+    With caching on and the instructions at or above the model's minimum cacheable length, the prompt becomes one text
+    block carrying the cache breakpoint; otherwise it is sent as plain text (the API would not cache it anyway)."""
+    tokens = int(len(system) / CHARS_PER_TOKEN)
+    minimum = settings.model_cache_min_tokens.get(model)
+    if not settings.model_prompt_cache or minimum is None or tokens < minimum:
+        return system, 0
+    control: dict[str, str] = {"type": "ephemeral"} if ttl == "5m" else {"type": "ephemeral", "ttl": ttl}
+    return [{"type": "text", "text": system, "cache_control": control}], tokens
 
 
 class ModelGateway:
@@ -169,14 +192,17 @@ class ModelGateway:
         schema = self.contracts.bundle(schema_ref)
         messages: list[dict[str, Any]] = [{"role": "user", "content": user_content}]
         limit = max_tokens or self.settings.model_max_output_tokens
+        ttl = self.settings.model_cache_ttl
+        system_param, cached_tokens = cached_system(self.settings, model, system, ttl)
         for repair_round in range(2):
             reservation = None
             if self.ledger is not None:
                 try:
                     input_tokens = estimate_input_tokens(system, _flatten(messages))
-                    reservation = self.ledger.reserve(
-                        model, worst_case_usd(self.settings, model, input_tokens, limit, batch=False), batch=False
+                    worst = worst_case_usd(
+                        self.settings, model, input_tokens, limit, batch=False, cached_tokens=cached_tokens, ttl=ttl
                     )
+                    reservation = self.ledger.reserve(model, worst, batch=False)
                 except PriceUnknown as exc:
                     result.error = {"code": "price_unknown", "message": str(exc)}
                     return result
@@ -188,7 +214,7 @@ class ModelGateway:
                         f"of {state['limit_usd']:.2f} USD spent",
                     }
                     return result
-            response = self._call(model, system, messages, schema, limit, result)
+            response = self._call(model, system_param, messages, schema, limit, result)
             if reservation is not None and self.ledger is not None:
                 billed = self._billed_usage(response)
                 result.cost_usd += self.ledger.settle(
@@ -230,7 +256,7 @@ class ModelGateway:
     def _call(
         self,
         model: str,
-        system: str,
+        system: str | list[dict[str, Any]],
         messages: list[dict[str, Any]],
         schema: dict[str, Any],
         max_tokens: int,
@@ -239,16 +265,12 @@ class ModelGateway:
         for attempt in range(1, self.settings.model_max_attempts + 1):
             result.attempts += 1
             try:
-                extra: dict[str, Any] = (
-                    {"cache_control": {"type": "ephemeral"}} if self.settings.model_prompt_cache else {}
-                )
                 return self._get_client().messages.create(
                     model=model,
                     max_tokens=max_tokens,
                     system=system,
                     messages=messages,
                     output_config={"format": {"type": "json_schema", "schema": schema}},
-                    **extra,
                 )
             except anthropic.NotFoundError:
                 result.error = {"code": "model_not_found", "message": f"Model {model} is not available to this account"}
@@ -279,11 +301,14 @@ class ModelGateway:
         usage = getattr(response, "usage", None) if response is not None else None
         if usage is None:
             return None
+        creation = getattr(usage, "cache_creation", None)
         return {
             "input_tokens": getattr(usage, "input_tokens", None) or 0,
             "output_tokens": getattr(usage, "output_tokens", None) or 0,
             "cache_read_input_tokens": getattr(usage, "cache_read_input_tokens", None) or 0,
             "cache_creation_input_tokens": getattr(usage, "cache_creation_input_tokens", None) or 0,
+            # 1-hour writes cost more than 5-minute ones (D65); the breakdown is reported when the cache was written
+            "cache_creation_1h_input_tokens": getattr(creation, "ephemeral_1h_input_tokens", None) or 0,
         }
 
     @staticmethod
@@ -366,6 +391,8 @@ class BatchGateway:
         if not g.available:
             return {"_id": key, "error": {"code": "access_pending", "message": "No Anthropic API key configured"}}
         reservation = None
+        ttl = g.settings.model_batch_cache_ttl
+        system_param, cached_tokens = cached_system(g.settings, model, system, ttl)
         if g.ledger is not None:
             try:
                 worst = sum(
@@ -375,6 +402,8 @@ class BatchGateway:
                         estimate_input_tokens(system, _flatten([{"content": content}])),
                         max_tokens,
                         batch=True,
+                        cached_tokens=cached_tokens,
+                        ttl=ttl,
                     )
                     for _, content in items
                 )
@@ -384,7 +413,6 @@ class BatchGateway:
             if reservation is None:
                 return {"_id": key, "error": {"code": "budget_exhausted", "message": "Model budget reached"}}
         schema = g.contracts.bundle(schema_ref)
-        extra: dict[str, Any] = {"cache_control": {"type": "ephemeral"}} if g.settings.model_prompt_cache else {}
         record = {
             "_id": key,
             "status": "submitting",
@@ -405,10 +433,9 @@ class BatchGateway:
                 "params": {
                     "model": model,
                     "max_tokens": max_tokens,
-                    "system": system,
+                    "system": system_param,  # the same breakpoint in every request, as Anthropic advises (D65)
                     "messages": [{"role": "user", "content": content}],
                     "output_config": {"format": {"type": "json_schema", "schema": schema}},
-                    **extra,
                 },
             }
             for custom_id, content in items
@@ -442,7 +469,13 @@ class BatchGateway:
             raise ValueError(f"no submitted batch for {key}")
         g = self.gateway
         results: dict[str, GatewayResult] = {}
-        total = {"input_tokens": 0, "output_tokens": 0, "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
+        total = {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 0,
+            "cache_creation_1h_input_tokens": 0,
+        }
         for row in g._get_client().messages.batches.results(record["batch_id"]):
             result = GatewayResult(outcome="failed", data=None, requested_model=record["model"])
             outcome = getattr(row.result, "type", None)

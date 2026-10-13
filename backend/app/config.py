@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     web_origin: str = "http://localhost:3000"
     login_attempts_per_window: int = Field(default=10, ge=1)
+    corrections_per_hour: int = Field(default=5, ge=1)  # public correction reports per client address
     login_window_minutes: int = Field(default=15, ge=1)
 
     anthropic_api_key: SecretStr | None = None
@@ -56,9 +57,23 @@ class Settings(BaseSettings):
     model_difficult: str = "claude-opus-5-5"
     model_max_output_tokens: int = Field(default=16000, ge=256)
     model_max_attempts: int = Field(default=3, ge=1, le=6)
-    # Automatic prompt caching. Off: each agent task sends its own evidence, so no prefix is shared between calls; in
-    # the 13 Oct 2026 evaluation all 25 calls wrote the cache and none read it, which only added the write premium.
-    model_prompt_cache: bool = False
+    # Prompt caching (D65, product owner 13 Oct 2026: "Use Claude's Prompt caching as well"). One explicit cache
+    # breakpoint on the agent's instructions (the system prompt), the prefix every task of that agent shares; never on
+    # the task's own evidence, which no other call repeats (automatic top-level caching cached that too: on 13 Oct all
+    # 25 evaluation calls wrote the cache and none read it). The breakpoint is set only when the instructions reach the
+    # model's minimum cacheable length; shorter prefixes are not cached by the API and are sent plain. Realtime calls
+    # use the 5-minute cache (an agent's tasks run back to back); batches use the 1-hour cache, as Anthropic advises
+    # for batches, whose requests run concurrently and later.
+    model_prompt_cache: bool = True
+    model_cache_ttl: str = Field(default="5m", pattern=r"^(5m|1h)$")
+    model_batch_cache_ttl: str = Field(default="1h", pattern=r"^(5m|1h)$")
+    # Minimum cacheable prefix per model, from Anthropic's prompt-caching documentation (checked 13 Oct 2026).
+    model_cache_min_tokens: dict[str, int] = {
+        "claude-haiku-5-5": 512,
+        "claude-sonnet-5": 1024,
+        "claude-sonnet-5-5": 512,
+        "claude-opus-5-5": 512,
+    }
 
     # Spend (Step 08, D53): a hard cap on live model calls, counted from MODEL_BUDGET_SINCE. Prices are USD per
     # million tokens from Anthropic's published table (9 Oct 2026); the Batch API halves input and output.
@@ -106,7 +121,8 @@ class Settings(BaseSettings):
     recheck_per_job: int = Field(default=200, ge=0)
 
     # Media (Step 06, D47). Only project-linked public videos; audio is deleted after transcription.
-    worker_role: str = Field(default="all", pattern="^(all|general|media)$")  # media: only process_media jobs
+    # media: only process_media jobs; journeys: the browser journeys' worker (no collection, analysis or media)
+    worker_role: str = Field(default="all", pattern="^(all|general|media|journeys)$")
     media_caption_languages: str = "hi,en,en-IN"
     media_max_duration_seconds: int = Field(default=600, ge=10)
     media_max_audio_bytes: int = Field(default=60_000_000, ge=100_000)
@@ -141,6 +157,9 @@ class Settings(BaseSettings):
     embedding_models_dir: Path = Path("/srv/embeddings")
 
     public_base_url: str = "http://localhost:3000"
+    # Where the worker reaches the web app to refresh and read the public page (delivery verification, docs/05);
+    # inside Compose the web service, not the browser's address.
+    web_internal_url: str = "http://localhost:3000"
     revalidation_secret: SecretStr | None = None
 
     brave_search_api_key: SecretStr | None = None

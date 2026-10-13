@@ -1,7 +1,9 @@
-"""Project catalogue and configuration (Step 04.1; journeys J01, J18).
+"""Project catalogue and configuration (Steps 04.1 and 09.2; journeys J01, J18; D58).
 
-Import creates or updates catalogue records from the five-project input file; configuration changes need
-the expected version. Aliases approved through proposals change only through alias decisions.
+Import creates or updates catalogue records from the five-project input file; a researcher can also add one project
+from the console (same fields, state optional), which never updates an existing project. Configuration changes need
+the expected version. Aliases approved through proposals change only through alias decisions. The portfolio row
+reads the latest run, its coverage, the open review work and the publication state.
 """
 
 from __future__ import annotations
@@ -19,8 +21,9 @@ from app.api.idempotency import HEADER, run_idempotent
 from app.api.routes_ops import decode_cursor, encode_cursor
 from app.config import Settings
 from app.contracts import ContractStore, to_view
-from app.db import utcnow
+from app.db import iso, utcnow
 from app.errors import ApiError
+from app.seed.normalise import match_key
 from app.seed.projects import SeedError, import_projects
 
 router = APIRouter(prefix="/v1", tags=["projects"])
@@ -46,22 +49,28 @@ def project_summary(db: Database[dict[str, Any]], project: dict[str, Any]) -> di
         r.get("estimated_cost_usd") or 0
         for r in db["ai_agent_runs"].find({"project_id": pid, "created_at": {"$gte": since}}, {"estimated_cost_usd": 1})
     )
+    run = db["ai_runs"].find_one({"project_id": pid}, sort=[("created_at", -1)])
+    state = db["ai_publication_state"].find_one({"project_id": pid, "locale": "en-IN"}) or {}
+    operation = db["ai_publication_operations"].find_one({"project_id": pid}, sort=[("created_at", -1)])
+    pending = {"review_status": "pending", "project_id": pid}
     return {
         "project": {k: project[k] for k in ("slug", "project_name", "locality", "city")} | {"id": pid},
-        "latest_run": None,
-        "coverage": [],
+        "latest_run": {"id": run["_id"], "stage": run["stage"], "updated_at": iso(run["updated_at"])} if run else None,
+        "coverage": [to_view(c, id_field=None) for c in (run or {}).get("coverage", [])],
         "pending_review": {
-            "findings": 0,
-            "review_excerpts": 0,
+            "findings": db["ai_findings"].count_documents(pending),
+            "review_excerpts": db["ai_review_excerpts"].count_documents(pending),
             "links": db["ai_project_source_links"].count_documents({"project_id": pid, "status": "needs_review"}),
             "alias_proposals": db["ai_alias_proposals"].count_documents({"project_id": pid, "status": "proposed"}),
-            "corrections": 0,
+            "corrections": db["ai_corrections"].count_documents(
+                {"project_id": pid, "status": {"$in": ["received", "in_review"]}}
+            ),
         },
         "publication": {
-            "serving_state": "unpublished",
-            "approved_revision": None,
-            "active_revision": None,
-            "delivery_status": None,
+            "serving_state": state.get("serving_state", "unpublished"),
+            "approved_revision": (state.get("approved") or {}).get("revision"),
+            "active_revision": (state.get("active") or {}).get("revision"),
+            "delivery_status": operation["status"] if operation else None,
         },
         "stale": False,
         "spend_usd_30d": float(spend),
@@ -99,6 +108,51 @@ def import_projects_route(
 
     return run_idempotent(
         db, operation_id="importProjects", user_id=principal.user_id, key=idempotency_key, body=data, compute=compute
+    )
+
+
+@router.post(
+    "/projects",
+    operation_id="createProject",
+    summary="Add one project from the console (D58); never updates an existing project",
+    status_code=201,
+)
+def create_project(
+    body: Any = Body(...),
+    idempotency_key: str | None = Header(default=None, alias=HEADER),
+    principal: Principal = Depends(require("createProject")),
+    db: Database[dict[str, Any]] = Depends(db_dep),
+    contracts: ContractStore = Depends(contracts_dep),
+    settings: Settings = Depends(settings_dep),
+) -> dict[str, Any]:
+    item = contract_body(contracts, body, "catalogue.schema.json#/$defs/ProjectInput")
+
+    def compute() -> dict[str, Any]:
+        if db["projects"].find_one({"match_key": match_key(item["project_name"], item["city"])}, {"_id": 1}):
+            raise ApiError(
+                409, "version_conflict", f"{item['project_name']} in {item['city']} is already in the catalogue"
+            )
+        try:
+            rows = import_projects(
+                db.client,
+                db,
+                contracts,
+                {"projects": [item]},
+                settings.seed_dir,
+                actor=principal.actor,
+                origin="console",
+            )
+        except SeedError as exc:
+            raise ApiError(409, "version_conflict", str(exc)) from exc
+        return {
+            "projects": [
+                {k: r[k] for k in ("project_id", "slug", "project_name")} | {"created": r["outcome"] == "created"}
+                for r in rows
+            ]
+        }
+
+    return run_idempotent(
+        db, operation_id="createProject", user_id=principal.user_id, key=idempotency_key, body=item, compute=compute
     )
 
 

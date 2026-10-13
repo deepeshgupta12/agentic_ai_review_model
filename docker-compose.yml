@@ -90,6 +90,8 @@ services:
     environment:
       MONGODB_URI: mongodb://mongodb:27017/?replicaSet=rs0
       WORKER_ROLE: general  # every job except process_media (Step 06)
+      # Delivery verification (docs/05): the worker refreshes and reads the public page on the web service.
+      WEB_INTERNAL_URL: http://web:3000
     depends_on:
       db-setup:
         condition: service_completed_successfully
@@ -167,6 +169,9 @@ services:
       dockerfile: web/Dockerfile
     environment:
       API_INTERNAL_URL: http://api:8000
+      # Only the shared secret of the signed revalidation route; provider keys stay with the API and the workers,
+      # which run every console action with the real .env (D64: the console drives the real system).
+      REVALIDATION_SECRET: ${REVALIDATION_SECRET:-}
     depends_on:
       api:
         condition: service_healthy

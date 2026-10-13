@@ -351,7 +351,8 @@ def manifest_problems(revision: dict[str, Any]) -> list[str]:
         problems.append("manifest.policies must be sorted by (family, policy_version) and unique")
     listed_findings = {(f["id"], f["revision"]) for f in manifest["findings"]}
     listed_claims = {(c["id"], c["revision"]) for c in manifest["claims"]}
-    blocks = [payload["overview"], *payload["advantages"], *payload["considerations"], *payload["questions"]]
+    overview = [payload["overview"]] if payload["overview"] is not None else []  # null on a reviews-only page (D64)
+    blocks = [*overview, *payload["advantages"], *payload["considerations"], *payload["questions"]]
     for block in blocks:
         for ref in block["support"]["findings"]:
             if (ref["id"], ref["revision"]) not in listed_findings:

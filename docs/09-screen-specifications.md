@@ -41,7 +41,7 @@ Any user. `op:login` starts the session; `op:getMe` loads roles; `op:logout` end
 
 ### Portfolio — `/console`
 
-All roles. Data: `op:listProjects`, `op:getOpsSummary`. One row per project: name, locality, latest run stage, coverage by connector, pending review counts (findings, links, alias proposals, corrections), approved vs active revision, delivery status, stale flag, 30-day spend. Researchers and admins see an import action (`op:importProjects`) that shows created vs updated projects.
+All roles. Data: `op:listProjects`, `op:getOpsSummary`. One row per project: name, locality, latest run stage, coverage by connector, pending review counts (findings, links, alias proposals, corrections), approved vs active revision, delivery status, stale flag, 30-day spend. Researchers and admins see an import action (`op:importProjects`) that shows created vs updated projects, and an **Add project** form (`op:createProject`, D58): name, alternate names, locality, city and state, with micromarket, developer and RERA numbers optional. After it is added, the project's Runs page starts its full run.
 
 ### Project setup — `/console/projects/[projectId]/setup`
 

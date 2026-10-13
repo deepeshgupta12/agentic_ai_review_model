@@ -1,7 +1,8 @@
 """Worker process: recovers expired leases, claims jobs, heartbeats and runs handlers.
 
 Registered: invalidate_dependencies (Step 04); collect, erase_payloads, check_availability (Step 05); process_media
-(Step 06); cluster_origins, embed_evidence (Step 07); analyse, resume_after_review (Step 08). WORKER_ROLE splits
+(Step 06); cluster_origins, embed_evidence (Step 07); analyse, resume_after_review (Step 08); deliver_publication
+(Step 10). WORKER_ROLE splits
 them: "media" takes only process_media (the media worker image), "general" takes everything else, "all" (the
 default, and tests) takes every kind.
 A job without a handler fails visibly instead of silently disappearing.
@@ -27,6 +28,7 @@ from app.identity import invalidation
 from app.jobs import queue
 from app.media import pipeline as media
 from app.observability import configure_logging, log_event, register_secrets
+from app.publication import service as publication
 from app.sources import collection, lifecycle, recheck
 from app.workflows import analysis
 
@@ -56,12 +58,19 @@ register("cluster_origins")(clusters.handle_cluster_origins)
 register("embed_evidence")(embedding_jobs.handle_embed_evidence)
 register("analyse")(analysis.handle_analyse)
 register("resume_after_review")(analysis.handle_resume)
+register("deliver_publication")(publication.handle_deliver)
 MEDIA_KINDS = ("process_media",)
+# The browser journeys' worker (Step 09.7): review continuation, publication delivery and invalidation only. It runs
+# with the real environment, so it never takes collection, analysis or media work; continuation calls a model only
+# when findings are selected, and the journeys select approved reviews only.
+JOURNEY_KINDS = ("resume_after_review", "deliver_publication", "invalidate_dependencies", "erase_payloads")
 
 
 def kinds_for(role: str) -> list[str] | None:
     if role == "media":
         return list(MEDIA_KINDS)
+    if role == "journeys":
+        return list(JOURNEY_KINDS)
     if role == "general":
         return [kind for kind in queue.JOB_KINDS if kind not in MEDIA_KINDS]
     return None

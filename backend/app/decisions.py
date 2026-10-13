@@ -22,6 +22,8 @@ def record_decision(
     reason: str | None,
     actor: dict[str, Any],
     session: ClientSession | None = None,
+    binding: dict[str, Any] | None = None,
+    idempotency_key: str | None = None,
 ) -> str:
     if actor.get("kind") != "user":
         raise ValueError("decisions are made by people only")
@@ -33,8 +35,8 @@ def record_decision(
             "action": action,
             "reason": reason,
             "actor": actor,
-            "binding": None,
-            "idempotency_key": None,
+            "binding": binding,  # a final approval's ContentBinding (docs/05 step 4); null otherwise
+            "idempotency_key": idempotency_key,
             "request_id": request_id_var.get() or "unknown",
             "created_at": utcnow(),
         },

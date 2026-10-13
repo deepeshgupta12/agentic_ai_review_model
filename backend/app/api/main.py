@@ -12,13 +12,17 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.responses import Response
 
 from app.api import (
+    routes_admin,
     routes_auth,
+    routes_content,
+    routes_corrections,
     routes_findings,
     routes_identity,
     routes_media,
     routes_ops,
     routes_policies,
     routes_projects,
+    routes_publication,
     routes_runs,
     routes_sources,
 )
@@ -73,6 +77,10 @@ def create_app() -> FastAPI:
     app.include_router(routes_sources.router)
     app.include_router(routes_media.router)
     app.include_router(routes_findings.router)
+    app.include_router(routes_admin.router)
+    app.include_router(routes_corrections.router)
+    app.include_router(routes_content.router)
+    app.include_router(routes_publication.router)
 
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> dict[str, Any]:

@@ -2,7 +2,8 @@
 
 Every live call is priced from its reported usage with the price table in configuration (USD per million tokens,
 from Anthropic's published prices; the Batch API halves input and output). Before a call, the gateway reserves its
-worst case (all input uncached, every allowed output token) against one budget record; the reservation is a single
+worst case (all input uncached, the cached prefix at the cache-write price, every allowed output token) against one
+budget record; the reservation is a single
 conditional update, so concurrent workers cannot overspend together. After the call the reservation is released and
 the actual cost added. A call that would not fit is refused with `budget_exhausted`. Each call leaves a ledger entry.
 A model without a price cannot be called: its cost could not be bounded.
@@ -57,17 +58,39 @@ def estimate_input_tokens(system: str, content: str | list[dict[str, Any]]) -> i
     return int(chars / CHARS_PER_TOKEN) + images * IMAGE_TOKENS + 50
 
 
-def worst_case_usd(settings: Settings, model: str, input_tokens: int, max_tokens: int, *, batch: bool) -> float:
+def cache_write_price(p: dict[str, float], ttl: str) -> float:
+    """USD per million tokens written to the cache: 1.25 times input for 5 minutes, twice input for 1 hour (D65)."""
+    return p["cache_write"] if ttl == "5m" else 2 * p["input"]
+
+
+def worst_case_usd(
+    settings: Settings,
+    model: str,
+    input_tokens: int,
+    max_tokens: int,
+    *,
+    batch: bool,
+    cached_tokens: int = 0,
+    ttl: str = "5m",
+) -> float:
+    """`cached_tokens` of the input sit before a cache breakpoint and may be written to the cache (D65)."""
     p = price_of(settings, model)
-    cost = (input_tokens * p["input"] + max_tokens * p["output"]) / 1_000_000
+    cached = min(cached_tokens, input_tokens)
+    cost = (
+        (input_tokens - cached) * p["input"] + cached * cache_write_price(p, ttl) + max_tokens * p["output"]
+    ) / 1_000_000
     return round(cost * (0.5 if batch else 1.0), 6)
 
 
 def actual_usd(settings: Settings, model: str, usage: dict[str, Any], *, batch: bool) -> float:
+    """Usage as reported: tokens after the last breakpoint, cache writes (5-minute and 1-hour), cache reads, output."""
     p = price_of(settings, model)
+    written = usage.get("cache_creation_input_tokens") or 0
+    written_1h = min(written, usage.get("cache_creation_1h_input_tokens") or 0)
     cost = (
         (usage.get("input_tokens") or 0) * p["input"]
-        + (usage.get("cache_creation_input_tokens") or 0) * p["cache_write"]
+        + (written - written_1h) * cache_write_price(p, "5m")
+        + written_1h * cache_write_price(p, "1h")
         + (usage.get("cache_read_input_tokens") or 0) * p["cache_read"]
         + (usage.get("output_tokens") or 0) * p["output"]
     ) / 1_000_000

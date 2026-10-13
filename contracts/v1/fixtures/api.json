@@ -413,17 +413,23 @@
       }
     },
     {
-      "name": "generate_without_findings",
+      "name": "generate_from_reviews_only",
       "schema": "api.schema.json#/$defs/ContentRevisionRequest",
-      "expect": "invalid",
-      "tags": [],
-      "why": "Generation needs selected approved findings",
-      "error_contains": "should be non-empty",
+      "expect": "valid",
+      "tags": [
+        "source_reviews"
+      ],
+      "why": "D64: a page from approved reviews alone; the backend refuses a selection with neither findings nor reviews",
       "instance": {
         "mode": "generate",
         "locale": "en-IN",
         "findings": [],
-        "reviews": []
+        "reviews": [
+          {
+            "id": "rex_01JB0000000000000000000001",
+            "revision": 1
+          }
+        ]
       }
     },
     {

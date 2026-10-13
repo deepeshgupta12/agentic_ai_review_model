@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Playwright (Step 09 browser journeys)
+/test-results/
+/playwright-report/
+/blob-report/

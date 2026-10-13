@@ -1599,12 +1599,11 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
                 ["public_read"],
             ),
             case(
-                "generate_without_findings",
+                "generate_from_reviews_only",
                 api + "ContentRevisionRequest",
-                {"mode": "generate", "locale": "en-IN", "findings": [], "reviews": []},
-                "Generation needs selected approved findings",
-                [],
-                "should be non-empty",
+                {"mode": "generate", "locale": "en-IN", "findings": [], "reviews": [ref(REX_POST_ID)]},
+                "D64: a page from approved reviews alone; the backend refuses a selection with neither findings nor reviews",
+                ["source_reviews"],
             ),
             case(
                 "generate_with_reviews",

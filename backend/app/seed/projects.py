@@ -100,6 +100,8 @@ def project_fields(item: dict[str, Any]) -> dict[str, Any]:
         "alternate_names": item.get("alternate_names", []),
         "locality": item["locality"],
         "city": item["city"],
+        # the state only when given (catalogue 1.1.0, D57, D58), so re-importing the five projects changes nothing
+        **({"state": item["state"]} if item.get("state") else {}),
         "micromarket": item.get("micromarket"),
         "developer": item.get("developer"),
         "phase": item.get("phase"),

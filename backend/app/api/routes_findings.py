@@ -1,7 +1,8 @@
-"""Findings and first-person reviews for moderation (Step 08.6; journeys J06, J07; D28).
+"""Findings and first-person reviews for moderation (Steps 08.6 and 09.4; journeys J06, J07; D28).
 
 Lists show each revision with its exact claims or spans, the evidence behind them and whether it may be approved
-now. Decisions name the exact revision; the actor comes from the session (app.workflows.decisions).
+now. Decisions name the exact revision; the actor comes from the session (app.workflows.decisions). Edits create new
+revisions under the same evidence rules (app.workflows.revisions).
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from app.contracts import ContractStore, to_view
 from app.errors import ApiError
 from app.identity.intake import source_text
 from app.workflows.decisions import decide_finding, decide_review, evidence_for, finding_problems
+from app.workflows.revisions import revise_finding, revise_review
 
 router = APIRouter(prefix="/v1", tags=["findings"])
 REVIEW_STATUSES = {"pending", "approved", "rejected", "changes_requested", "superseded"}
@@ -160,6 +162,24 @@ def decide_finding_route(
     return decide_finding(db.client, db, contracts, finding_id, request, principal.actor)
 
 
+@router.post(
+    "/findings/{finding_id}/revisions",
+    operation_id="reviseFinding",
+    summary="Edit a finding as a new revision from the exact base revision",
+    status_code=201,
+)
+def revise_finding_route(
+    finding_id: str,
+    body: Any = Body(...),
+    principal: Principal = Depends(require("reviseFinding")),
+    db: Database[dict[str, Any]] = Depends(db_dep),
+    contracts: ContractStore = Depends(contracts_dep),
+) -> dict[str, Any]:
+    known_id(finding_id, "fnd")
+    request = contract_body(contracts, body, "api.schema.json#/$defs/FindingRevisionRequest")
+    return revise_finding(db.client, db, contracts, finding_id, request, principal.actor)
+
+
 @router.get(
     "/projects/{project_id}/review-excerpts",
     operation_id="listReviewExcerpts",
@@ -196,3 +216,22 @@ def decide_review_route(
     known_id(excerpt_id, "rex")
     request = contract_body(contracts, body, "api.schema.json#/$defs/ReviewExcerptDecisionRequest")
     return decide_review(db.client, db, contracts, excerpt_id, request, principal.actor)
+
+
+@router.post(
+    "/review-excerpts/{excerpt_id}/revisions",
+    operation_id="reviseReviewExcerpt",
+    summary="Choose other spans of the same source or fix a translation, as a new revision",
+    status_code=201,
+    tags=["reviews"],
+)
+def revise_review_route(
+    excerpt_id: str,
+    body: Any = Body(...),
+    principal: Principal = Depends(require("reviseReviewExcerpt")),
+    db: Database[dict[str, Any]] = Depends(db_dep),
+    contracts: ContractStore = Depends(contracts_dep),
+) -> dict[str, Any]:
+    known_id(excerpt_id, "rex")
+    request = contract_body(contracts, body, "api.schema.json#/$defs/ReviewExcerptRevisionRequest")
+    return revise_review(db.client, db, contracts, excerpt_id, request, principal.actor)

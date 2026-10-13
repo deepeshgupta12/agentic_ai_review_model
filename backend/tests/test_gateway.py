@@ -270,11 +270,48 @@ def test_each_call_is_priced_from_its_usage_and_recorded(db, settings, contracts
     assert abs(state["spent_usd"] - expected) < 1e-9 and state["reserved_usd"] == 0 and state["calls"] == 1
     entry = db["ai_model_calls"].find_one()
     assert entry["purpose"] == "test" and entry["model"] == "claude-sonnet-5" and entry["estimate_usd"] >= expected
-    assert "cache_control" not in client.calls[0], "no prefix is shared between agent tasks, so no cache is written"
-    settings.model_prompt_cache = True
+
+
+INSTRUCTIONS = "Follow these rules exactly. " * 60  # about 1,680 characters: above Haiku 5.5's 512-token minimum
+
+
+def test_the_shared_instructions_carry_the_only_cache_breakpoint(db, settings, contracts):
+    """D65: the agent's instructions are the prefix every task repeats, so they are cached; the task's evidence is
+    not (no other call repeats it), and there is no top-level automatic breakpoint that would cache it."""
+    client = FakeClient(response(VALID), response(VALID), response(VALID))
+    g = ledgered(db, settings, contracts, client)
+    g.run("light", SCHEMA, INSTRUCTIONS, "evidence of task one", purpose="test")
+    params = client.calls[0]
+    assert params["system"] == [{"type": "text", "text": INSTRUCTIONS, "cache_control": {"type": "ephemeral"}}]
+    assert "cache_control" not in params and params["messages"] == [{"role": "user", "content": "evidence of task one"}]
+    g.run("light", SCHEMA, "Short rules.", "evidence", purpose="test")
+    assert client.calls[1]["system"] == "Short rules.", "below the model's minimum the API would not cache it"
+    g.run("routine", SCHEMA, INSTRUCTIONS[:1500], "evidence", purpose="test")
+    assert isinstance(client.calls[2]["system"], str), "Sonnet 5 needs 1,024 tokens before it caches"
+    settings.model_prompt_cache = False
     client = FakeClient(response(VALID))
-    ledgered(db, settings, contracts, client).run("routine", SCHEMA, "system", "user", purpose="test")
-    assert client.calls[0]["cache_control"] == {"type": "ephemeral"}, "switched on, prefixes are cached"
+    ledgered(db, settings, contracts, client).run("light", SCHEMA, INSTRUCTIONS, "evidence", purpose="test")
+    assert client.calls[0]["system"] == INSTRUCTIONS, "switched off, nothing is marked"
+
+
+def test_cache_reads_and_writes_are_priced_and_the_write_is_reserved_first(db, settings, contracts):
+    from app.agents.spend import SpendLedger, actual_usd, worst_case_usd
+
+    cached = response(VALID, model="claude-haiku-5-5")
+    cached.usage = SimpleNamespace(
+        input_tokens=40, output_tokens=30, cache_read_input_tokens=800, cache_creation_input_tokens=0
+    )
+    result = ledgered(db, settings, contracts, FakeClient(cached)).run("light", SCHEMA, INSTRUCTIONS, "x")
+    assert abs(result.cost_usd - (40 * 0.10 + 800 * 0.01 + 30 * 0.50) / 1_000_000) < 1e-12, "reads at 0.1x input"
+    assert SpendLedger(db, settings).state()["reserved_usd"] == 0
+    plain = worst_case_usd(settings, "claude-haiku-5-5", 1000, 100, batch=False)
+    marked = worst_case_usd(settings, "claude-haiku-5-5", 1000, 100, batch=False, cached_tokens=800)
+    hour = worst_case_usd(settings, "claude-haiku-5-5", 1000, 100, batch=False, cached_tokens=800, ttl="1h")
+    assert plain < marked < hour, "the reservation covers writing the prefix at 1.25x (5 minutes) or 2x (1 hour)"
+    usage = {"input_tokens": 0, "output_tokens": 0, "cache_creation_input_tokens": 1_000_000}
+    assert actual_usd(settings, "claude-haiku-5-5", usage, batch=False) == 0.125
+    usage["cache_creation_1h_input_tokens"] = 1_000_000
+    assert actual_usd(settings, "claude-haiku-5-5", usage, batch=False) == 0.2
 
 
 def test_a_call_that_could_exceed_the_budget_is_refused_before_it_is_made(db, settings, contracts):
@@ -374,6 +411,7 @@ def test_a_batch_reserves_its_worst_case_at_half_price_and_settles_once(db, sett
     assert len(batches.created) == 1, "the same key never submits twice"
     params = batches.created[0][0]["params"]
     assert params["output_config"]["format"]["type"] == "json_schema" and "cache_control" not in params
+    assert params["system"] == "system", "a prefix below the minimum is sent plain"
     assert SpendLedger(db, settings).state()["reserved_usd"] == record["reserved_usd"] > 0
     assert bg.status("job:1") == "ended"
     results = bg.collect("job:1")
@@ -393,3 +431,14 @@ def test_a_batch_that_does_not_fit_the_budget_is_not_submitted(db, settings, con
         "job:2", "light", SCHEMA, "system", [("a", "x")], max_tokens=200, purpose="test"
     )
     assert record["error"]["code"] == "budget_exhausted" and batches.created == []
+
+
+def test_every_request_in_a_batch_carries_the_same_one_hour_breakpoint(db, settings, contracts):
+    """D65: Anthropic advises identical cache_control blocks and the 1-hour cache for batches, whose requests run
+    concurrently and may start more than five minutes apart."""
+    batches = FakeBatches({"a": response(VALID), "b": response(VALID)})
+    bg = batch_gateway(db, settings, contracts, batches)
+    bg.submit("job:cache", "light", SCHEMA, INSTRUCTIONS, [("a", "one"), ("b", "two")], max_tokens=200, purpose="t")
+    systems = [r["params"]["system"] for r in batches.created[0]]
+    expected = [{"type": "text", "text": INSTRUCTIONS, "cache_control": {"type": "ephemeral", "ttl": "1h"}}]
+    assert systems == [expected, expected]

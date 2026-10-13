@@ -38,7 +38,8 @@ class ScriptedModel:
         self.fail_after: int | None = None  # the worker dies during the call after this many answers
 
     def create(self, **kwargs):
-        agent = re.match(r"You are (A\d\d)", kwargs["system"]).group(1)
+        system = kwargs["system"]  # text, or one cached text block when prompt caching applies (D65)
+        agent = re.match(r"You are (A\d\d)", system if isinstance(system, str) else system[0]["text"]).group(1)
         self.calls.append(agent)
         if agent in self.fail:
             raise self.fail.pop(agent)
@@ -108,6 +109,37 @@ class ScriptedModel:
                 }
             )
         return {"outcome": "completed", "reviews": reviews}
+
+    @staticmethod
+    def a08(items):
+        """Page blocks: one attributed item per approved finding, citing it and its claims (Step 10)."""
+        findings = [i for i in items if i["id"].startswith("f")]
+        blocks = {"pro": [], "con": []}
+        for finding in findings:
+            if finding["kind"] in blocks:
+                text = "Some buyers say: " + finding["wording"]
+                blocks[finding["kind"]].append(
+                    {"text": text, "caveat": None, "finding_ids": [finding["id"]], "claim_ids": finding["claims"]}
+                )
+        return {
+            "outcome": "completed",
+            "heading": "",  # the backend replaces a heading that does not name the project
+            "overview": {
+                "text": "Some buyers discuss " + ", ".join(sorted({f["aspect"] for f in findings})) + ".",
+                "caveat": None,
+                "finding_ids": [f["id"] for f in findings],
+                "claim_ids": [c for f in findings for c in f["claims"]],
+            },
+            "advantages": blocks["pro"],
+            "considerations": blocks["con"],
+            "questions": [],
+            "coverage_note": "",
+            "metadata": {"title": "What buyers say", "description": "Reviewed points from public discussion."},
+        }
+
+    @staticmethod
+    def a09(items):
+        return {"outcome": "completed", "issues": []}
 
 
 @pytest.fixture
@@ -245,8 +277,10 @@ def test_only_a_checked_moderator_selection_resumes_the_graph(db, settings, cont
     assert resume["kind"] == "resume_after_review" and resume["resume_event"]["actor"] == MODERATOR
     assert work(db) == ["completed"]
     run = db["ai_runs"].find_one({"_id": run["_id"]})
-    assert run["stage"] == "formatting" and "Step 10" in run["outcome_note"]
-    assert model.calls == ["A05", "A05", "A07", "A11"], "resuming calls no model"
+    assert run["stage"] == "final_review" and "ready for final review" in run["outcome_note"]
+    assert model.calls == ["A05", "A05", "A07", "A11", "A08", "A09"], "resuming writes and checks the page only"
+    revision = db["ai_content_revisions"].find_one({"_id": run["content_revision_id"]})
+    assert revision["lifecycle"] == "final_review" and revision["qa"]["blocking_issues"] == 0
 
 
 def test_a_selection_that_changed_after_the_request_is_refused_and_the_graph_stays_paused(
@@ -368,8 +402,9 @@ def test_a_crash_while_resuming_moves_the_run_once(db, settings, contracts, fict
     assert work(db) == ["retry_wait"]
     db["ai_jobs"].update_many({"status": "retry_wait"}, {"$currentDate": {"next_attempt_at": True}})
     assert work(db) == ["completed"]
-    assert db["ai_runs"].find_one({"_id": run["_id"]})["stage"] == "formatting"
+    assert db["ai_runs"].find_one({"_id": run["_id"]})["stage"] == "final_review"
     assert db["ai_run_events"].count_documents({"run_id": run["_id"], "stage": "formatting"}) == 1
+    assert db["ai_content_revisions"].count_documents({"project_id": q}) == 1, "one revision however often it resumes"
 
 
 # --- UC-62: explicit stops -----------------------------------------------------------------------------------------

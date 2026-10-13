@@ -3,7 +3,7 @@
 One LangGraph thread per run (thread ID `analysis:<run ID>`), checkpointed in MongoDB
 (`lg_checkpoints`, `lg_writes`) after every node. The state holds references and counts only, never source words.
 
-    claims -> findings -> reviews -> conclude -> review (interrupt) -> selected -> end
+    claims -> findings -> reviews -> conclude -> review (interrupt) -> selected -> format -> end
                                          `-> end (insufficient_evidence)
 
 - claims: A05 over every source task of the project's eligible evidence, A06 over the facts and allegations, then
@@ -16,8 +16,11 @@ One LangGraph thread per run (thread ID `analysis:<run ID>`), checkpointed in Mo
 - review: an interrupt. The `analyse` job ends `waiting_review` and its lease is released: nothing holds a worker
   while people review.
 - selected: runs only when a `resume_after_review` job continues the thread with an event the backend accepted
-  (request_resume): a moderator's selection of exact, approved finding and review revisions. The backend checks the
-  selection again, then moves the run to `formatting`. Content generation (A08/A09) is Step 10.
+  (request_resume): a moderator's selection of exact, approved finding and review revisions (findings may be empty
+  when reviews are selected, D64). The backend checks the selection again, then moves the run to `formatting`.
+- format (Step 10): the content revision is built, checked (deterministic QA, then A09 on model-written text) and
+  stored (app.content.service.generate); without a blocking issue the run moves to `final_review`. A model that is
+  unavailable or out of budget stops the job like any analysis node; nothing is stored until the draft is complete.
 
 Every node can run again after a crash: model outputs are cached per task, so a finished task is never paid for
 twice; records have stable IDs and are written once; stage changes are conditional on the expected stage.
@@ -77,6 +80,7 @@ class AnalysisState(TypedDict, total=False):
     outcome: str
     selection: dict[str, Any] | None
     selection_problems: list[str]
+    content: dict[str, Any] | None
 
 
 class AnalysisStopped(Exception):
@@ -251,10 +255,40 @@ def selected_node(ctx: Context, state: AnalysisState) -> dict[str, Any]:
         return {"selection": None, "selection_problems": problems}
     note = (
         f"Formatting from {len(selection['findings'])} approved finding(s) and {len(selection['reviews'])} approved "
-        "review(s); content generation (A08, A09) arrives in Step 10"
+        "review(s)"
     )
     move_stage(ctx.contracts, db, run_id, "findings_review", "formatting", "moderator", note, None)
     return {"selection_problems": []}
+
+
+def format_node(ctx: Context, state: AnalysisState) -> dict[str, Any]:
+    from app.content import service as content  # the content service imports this module (move_stage)
+
+    db, run_id = ctx.db, state["run_id"]
+    ctx.guard(run_id)
+    run = db[RUNS].find_one({"_id": run_id})
+    if run is None or run["stage"] not in ("formatting", "final_review"):
+        raise AnalysisStopped("run_moved_on", f"the run is {(run or {}).get('stage')}", retryable=False)
+    try:
+        out = content.generate(
+            db, ctx.contracts, ctx.settings, ctx.gateway, run=run, selection=state["selection"] or {}
+        )
+    except content.ModelUnavailable as stopped:
+        code = stopped.error["code"]
+        raise AnalysisStopped(code, stopped.error["message"], retryable=code in RETRY_CODES) from stopped
+    qa = out["qa"] or {}
+    if out["lifecycle"] == "final_review":
+        note = f"Content revision ready for final review ({qa.get('nonblocking_issues', 0)} nonblocking QA note(s))"
+        move_stage(ctx.contracts, db, run_id, "formatting", "final_review", "system", note, None)
+    else:
+        emit(
+            db,
+            run_id,
+            "error",
+            "formatting",
+            message=f"Draft stored with {qa.get('blocking_issues', 0)} blocking QA issue(s); a moderator edits it",
+        )
+    return {"content": {"revision_id": out["revision_id"], "lifecycle": out["lifecycle"]}}
 
 
 ALL_ASPECTS = (
@@ -284,6 +318,7 @@ def build_graph(ctx: Context, saver: MongoDBSaver) -> Any:
     graph.add_node("conclude", lambda s: conclude_node(ctx, s))
     graph.add_node("review", lambda s: review_node(ctx, s))
     graph.add_node("selected", lambda s: selected_node(ctx, s))
+    graph.add_node("format", lambda s: format_node(ctx, s))
     graph.add_edge(START, "claims")
     graph.add_edge("claims", "findings")
     graph.add_edge("findings", "reviews")
@@ -292,7 +327,10 @@ def build_graph(ctx: Context, saver: MongoDBSaver) -> Any:
         "conclude", lambda s: "review" if s.get("outcome") == "findings_review" else END, ["review", END]
     )
     graph.add_edge("review", "selected")
-    graph.add_conditional_edges("selected", lambda s: "review" if s.get("selection_problems") else END, ["review", END])
+    graph.add_conditional_edges(
+        "selected", lambda s: "review" if s.get("selection_problems") else "format", ["review", "format"]
+    )
+    graph.add_edge("format", END)
     return graph.compile(checkpointer=saver)
 
 
@@ -354,8 +392,8 @@ def selection_problems(db: Database[dict[str, Any]], project_id: str, selection:
     """Why this selection may not start content generation now: every finding and review must be the latest
     revision of this project, approved, and still approvable (decisions.finding_problems/review_problems)."""
     problems: list[str] = []
-    if not selection.get("findings"):
-        return ["no finding selected"]
+    if not selection.get("findings") and not selection.get("reviews"):
+        return ["nothing selected"]
     for kind, collection, refs, check in (
         ("finding", "ai_findings", selection.get("findings", []), finding_problems),
         ("review", "ai_review_excerpts", selection.get("reviews", []), review_problems),
@@ -471,6 +509,10 @@ def handle_resume(db: Database[dict[str, Any]], job: dict[str, Any], check: Call
     """Worker handler for `resume_after_review` jobs: check the event again, then continue the paused thread (or, after
     a crash part-way, continue from the last checkpoint without delivering the event twice)."""
     run = db[RUNS].find_one({"_id": job["run_id"]})
+    if run is not None and run["stage"] == "formatting":  # a crash after the selection was accepted: finish it
+        graph = build_graph(_context(db, check), saver_for(db))
+        snapshot = graph.get_state(thread_of(run["_id"]))
+        return _drive(db, job, graph, None) if snapshot.next else None
     if run is None or run["stage"] != "findings_review":
         return None  # cancelled, or moved on by another decision
     event = job.get("resume_event") or {}

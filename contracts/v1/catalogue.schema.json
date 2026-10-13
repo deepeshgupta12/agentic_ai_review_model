@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Catalogue contracts",
   "description": "Project input file, catalogue records, project configuration and alias proposals (docs/02, D15-D17, D19).",
-  "x-contract-version": "1.0.0",
+  "x-contract-version": "1.1.0",
   "$defs": {
     "ProjectInputFile": {
       "description": "contracts/five-project-input-template.json, input schema 1.1 (D15, D16).",
@@ -24,6 +24,10 @@
         "alternate_names": { "type": "array", "items": { "$ref": "#/$defs/InputText" } },
         "locality": { "$ref": "#/$defs/InputText" },
         "city": { "$ref": "#/$defs/InputText" },
+        "state": {
+          "description": "Indian state or union territory (D57, D58). Optional; when absent the backend derives it from the city where it can.",
+          "anyOf": [{ "$ref": "#/$defs/InputText" }, { "type": "null" }]
+        },
         "micromarket": { "anyOf": [{ "$ref": "#/$defs/InputText" }, { "type": "null" }] },
         "developer": { "anyOf": [{ "$ref": "#/$defs/InputText" }, { "type": "null" }] },
         "phase": { "anyOf": [{ "$ref": "#/$defs/InputText" }, { "type": "null" }] },
@@ -100,6 +104,10 @@
         "alternate_names": { "type": "array", "items": { "type": "string", "minLength": 1 } },
         "locality": { "type": "string", "minLength": 1 },
         "city": { "type": "string", "minLength": 1 },
+        "state": {
+          "description": "Optional (D57, D58): absent on records imported before catalogue 1.1.0.",
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        },
         "micromarket": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
         "developer": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
         "phase": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },

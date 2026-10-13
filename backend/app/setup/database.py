@@ -492,6 +492,48 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
                 IndexSpec("by_manifest_links", [("manifest.links", ASCENDING)]),
             ],
         ),
+        # Step 09: corrections reported from the public page; Steps 10-11: the publication control document and its
+        # operations (docs/05 atomicity strategy).
+        CollectionSpec(
+            "ai_corrections",
+            contracts.mongo_validator("operations.schema.json#/$defs/PublicCorrection"),
+            [IndexSpec("by_status_project", [("status", ASCENDING), ("project_id", ASCENDING), ("_id", DESCENDING)])],
+        ),
+        CollectionSpec(
+            "ai_content_qa",
+            {
+                "$jsonSchema": {
+                    "bsonType": "object",
+                    "required": ["_id", "issues", "created_at"],
+                    "properties": {
+                        "_id": {"bsonType": "string"},  # the content revision it reports on
+                        "issues": {"bsonType": "array", "items": {"bsonType": "object"}},
+                        "created_at": {"bsonType": "date"},
+                    },
+                }
+            },
+            [],
+        ),
+        CollectionSpec(
+            "ai_publication_state",
+            contracts.mongo_validator(
+                "publication.schema.json#/$defs/PublicationState", id_field=None, extra={"_id": string}
+            ),
+            [IndexSpec("uniq_project_locale", [("project_id", ASCENDING), ("locale", ASCENDING)], {"unique": True})],
+        ),
+        CollectionSpec(
+            "ai_publication_operations",
+            contracts.mongo_validator("publication.schema.json#/$defs/PublicationOperation"),
+            [
+                IndexSpec("by_project_created", [("project_id", ASCENDING), ("created_at", DESCENDING)]),
+                IndexSpec("by_status", [("status", ASCENDING), ("next_attempt_at", ASCENDING)]),
+                IndexSpec(
+                    "uniq_idempotency",
+                    [("idempotency_key", ASCENDING)],
+                    {"unique": True, "partialFilterExpression": {"idempotency_key": {"$type": "string"}}},
+                ),
+            ],
+        ),
         CollectionSpec(
             "ai_evidence_search",
             _search_validator(),

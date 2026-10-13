@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Agentic Project Intelligence API",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Generated from contracts/v1/routes.json by scripts/build_openapi.py. Do not edit by hand."
   },
   "servers": [
@@ -188,6 +188,63 @@
       }
     },
     "/v1/projects": {
+      "post": {
+        "operationId": "createProject",
+        "summary": "Add one project from the console (D58); same fields as the input file, state optional",
+        "tags": [
+          "projects"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "researcher",
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "ImportResult",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
+          }
+        }
+      },
       "get": {
         "operationId": "listProjects",
         "summary": "Portfolio with run, review, coverage and publication summary",
@@ -3393,6 +3450,9 @@
       },
       "ProjectDetail": {
         "$ref": "api.schema.json#/$defs/ProjectDetail"
+      },
+      "ProjectInput": {
+        "$ref": "catalogue.schema.json#/$defs/ProjectInput"
       },
       "ProjectInputFile": {
         "$ref": "catalogue.schema.json#/$defs/ProjectInputFile"

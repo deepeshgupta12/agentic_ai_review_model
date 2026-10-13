@@ -82,7 +82,8 @@ export interface paths {
         /** Portfolio with run, review, coverage and publication summary */
         get: operations["listProjects"];
         put?: never;
-        post?: never;
+        /** Add one project from the console (D58); same fields as the input file, state optional */
+        post: operations["createProject"];
         delete?: never;
         options?: never;
         head?: never;
@@ -860,8 +861,9 @@ export interface components {
             /** @constant */
             mode: "generate";
             locale: components["schemas"]["Locale"];
+            /** @description Approved finding revisions; may be empty when reviews are selected (D64). The backend refuses a selection with neither. */
             findings: components["schemas"]["FindingRef"][];
-            /** @description Approved review excerpts to show, positive and negative; may be empty. */
+            /** @description Approved review excerpts to show, positive and negative; may be empty when findings are selected. */
             reviews: components["schemas"]["ReviewExcerptRef"][];
         } | {
             /** @constant */
@@ -879,6 +881,8 @@ export interface components {
             preview_path: string;
             is_approved: boolean;
             is_active: boolean;
+            /** @description QA issues pinned to their blocks, blocking first in the console (Step 10.4): from the backend's deterministic checks and from A09. */
+            qa_issues: components["schemas"]["QaIssue"][];
         };
         CorrectionAck: {
             correction_id: components["schemas"]["CorrectionId"];
@@ -1079,6 +1083,20 @@ export interface components {
         ProjectDetail: {
             project: components["schemas"]["Project"];
             config: components["schemas"]["ProjectConfig"];
+        };
+        ProjectInput: {
+            project_name: components["schemas"]["InputText"];
+            alternate_names?: components["schemas"]["InputText"][];
+            locality: components["schemas"]["InputText"];
+            city: components["schemas"]["InputText"];
+            /** @description Indian state or union territory (D57, D58). Optional; when absent the backend derives it from the city where it can. */
+            state?: components["schemas"]["InputText"] | null;
+            micromarket?: components["schemas"]["InputText"] | null;
+            developer?: components["schemas"]["InputText"] | null;
+            phase?: components["schemas"]["InputText"] | null;
+            rera_ids?: components["schemas"]["ReraRegistrationInput"][];
+            reference_url?: components["schemas"]["HttpUrl"] | null;
+            client_ref?: components["schemas"]["ClientRef"] | null;
         };
         /** @description contracts/five-project-input-template.json, input schema 1.1 (D15, D16). */
         ProjectInputFile: {
@@ -1412,18 +1430,6 @@ export interface components {
             status: string;
             supplied_on: components["schemas"]["Date"];
         };
-        ProjectInput: {
-            project_name: components["schemas"]["InputText"];
-            alternate_names?: components["schemas"]["InputText"][];
-            locality: components["schemas"]["InputText"];
-            city: components["schemas"]["InputText"];
-            micromarket?: components["schemas"]["InputText"] | null;
-            developer?: components["schemas"]["InputText"] | null;
-            phase?: components["schemas"]["InputText"] | null;
-            rera_ids?: components["schemas"]["ReraRegistrationInput"][];
-            reference_url?: components["schemas"]["HttpUrl"] | null;
-            client_ref?: components["schemas"]["ClientRef"] | null;
-        };
         ProjectId: string;
         Slug: string;
         RunId: string;
@@ -1492,6 +1498,8 @@ export interface components {
             alternate_names: string[];
             locality: string;
             city: string;
+            /** @description Optional (D57, D58): absent on records imported before catalogue 1.1.0. */
+            state?: string | null;
             micromarket: string | null;
             developer: string | null;
             phase: string | null;
@@ -1974,12 +1982,14 @@ export interface components {
                 to: components["schemas"]["Date"];
             };
             heading: string;
-            overview: components["schemas"]["SupportedText"];
+            /** @description Null on a page built from reviews alone (D64): no model-written summary without approved findings. */
+            overview: components["schemas"]["SupportedText"] | null;
             advantages: components["schemas"]["SupportedItem"][];
             considerations: components["schemas"]["SupportedItem"][];
             /** @description Approved first-person reviews from real sources, positive and negative (D28). May be empty. */
             reviews: components["schemas"]["PublicReview"][];
             questions: components["schemas"]["QuestionItem"][];
+            /** @description Sources behind the findings. Empty on a reviews-only page: reviews carry their own credit line (D28, D64). */
             sources: components["schemas"]["PublicSourceLink"][];
             coverage_note: string;
             reviewed_on: components["schemas"]["Date"];
@@ -2041,6 +2051,18 @@ export interface components {
             };
             created_at: components["schemas"]["Timestamp"];
         } & (unknown & unknown);
+        QaIssue: {
+            /** @enum {unknown} */
+            block: "heading" | "overview" | "advantages" | "considerations" | "reviews" | "questions" | "coverage_note" | "metadata";
+            item_index: number | null;
+            /** @enum {unknown} */
+            severity: "blocking" | "nonblocking";
+            /** @enum {unknown} */
+            category: "unsupported_claim" | "number_mismatch" | "date_mismatch" | "unit_mismatch" | "name_mismatch" | "negation_lost" | "attribution_lost" | "caveat_lost" | "overgeneralisation" | "source_imbalance" | "status_inconsistent" | "review_meaning_changed" | "other";
+            explanation: string;
+            /** @enum {unknown} */
+            source: "backend" | "a09";
+        };
         /** @description The revision whose exact hash currently holds final approval. */
         ApprovedPointer: {
             revision_id: components["schemas"]["ContentRevisionId"];
@@ -2396,6 +2418,37 @@ export interface operations {
             };
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+        };
+    };
+    createProject: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Same key and body returns the original result; same key with a different body returns 409 */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProjectInput"];
+            };
+        };
+        responses: {
+            /** @description ImportResult */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            409: components["responses"]["Error409"];
+            422: components["responses"]["Error422"];
         };
     };
     getProject: {
