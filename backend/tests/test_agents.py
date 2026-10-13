@@ -222,14 +222,14 @@ def test_a06_accepts_verified_only_with_a_supplied_primary_record_and_posts_neve
     q, project, drafts, _ = verified_setup(db, settings, contracts, fictional)
     tasks = a06.build_tasks(db, q, drafts, None)
     assert {d["aspect"] for t in tasks for d in t["claims"]} == {"possession", "connectivity"}
-    possession = next(t for t in tasks if t["claims"][0]["aspect"] == "possession")
+    [possession] = tasks  # facts of every aspect in one task, ordered by aspect: c1 connectivity, c2 possession
     content, _ = a06.render(db, project, possession)
     assert '"id": "r1"' in content and "valid up to" in content.lower() and "evd_" not in content
     answer = {
         "outcome": "completed",
         "verdicts": [
             {
-                "claim_id": "c1",
+                "claim_id": "c2",
                 "status": "verified",
                 "primary_record_ids": [],
                 "contradicting_evidence_ids": [],
@@ -253,7 +253,7 @@ def test_a06_accepts_verified_only_with_a_supplied_primary_record_and_posts_neve
         "outcome": "completed",
         "verdicts": [
             {
-                "claim_id": "c1",
+                "claim_id": "c2",
                 "status": "contradicted",
                 "primary_record_ids": [],
                 "contradicting_evidence_ids": ["e1"],
@@ -271,12 +271,12 @@ def test_a06_accepts_verified_only_with_a_supplied_primary_record_and_posts_neve
 def test_a_verified_fact_cites_its_dated_record_and_claims_are_stored_once(db, settings, contracts, fictional):
     q, project, drafts, _ = verified_setup(db, settings, contracts, fictional)
     tasks = a06.build_tasks(db, q, drafts, None)
-    possession = next(t for t in tasks if t["claims"][0]["aspect"] == "possession")
+    [possession] = tasks  # facts of every aspect in one task, ordered by aspect: c1 connectivity, c2 possession
     answer = {
         "outcome": "completed",
         "verdicts": [
             {
-                "claim_id": "c1",
+                "claim_id": "c2",
                 "status": "verified",
                 "primary_record_ids": ["r1"],
                 "contradicting_evidence_ids": [],
@@ -380,14 +380,24 @@ def finding(kind, wording, handles, attribution="reported_opinion", aspect="layo
     }
 
 
-def test_a07_gets_only_usable_claims_one_task_per_aspect(db, settings, contracts, fictional):
+def handle_of(project, task, words):
+    """The handle A07 gives the claim whose statement holds these words."""
+    _, handles = a07.render(project, task)
+    return next(h for h, c in handles.items.items() if words in c["statement"])
+
+
+def test_a07_gets_only_usable_claims_with_whole_aspects_packed(db, settings, contracts, fictional, monkeypatch):
     q, project, refs = stored_claims(db, settings, contracts, fictional)
     claims, left_out = a07.usable_claims(db, q, refs)
     assert len(claims) == 3 and left_out == {"consistency_flagged": 1}, "a flagged claim never reaches a finding (D27)"
-    tasks = a07.build_tasks(db, q, claims)
-    assert [t["aspect"] for t in tasks] == ["connectivity", "layout", "possession"]
-    content, _ = a07.render(project, tasks[1])
+    [task] = a07.build_tasks(db, q, claims)
+    assert task["aspects"] == ["connectivity", "layout", "possession"], "a few calls per project, not one per aspect"
+    content, _ = a07.render(project, task)
     assert "clm_" not in content and '"id": "k1"' in content and "untrusted" in content
+    monkeypatch.setattr(a07, "CLAIMS_PER_TASK", 2)
+    assert [t["aspects"] for t in a07.build_tasks(db, q, claims)] == [["connectivity", "layout"], ["possession"]], (
+        "aspects are packed whole"
+    )
     db["ai_sources"].update_many({"source_kind": "forum_post"}, {"$set": {"lifecycle": "withdrawn"}})
     claims, left_out = a07.usable_claims(db, q, refs)
     assert claims == [] and left_out == {"consistency_flagged": 1, "evidence_not_eligible": 3}, (
@@ -397,40 +407,47 @@ def test_a07_gets_only_usable_claims_one_task_per_aspect(db, settings, contracts
 
 def test_a07_backend_rules_hold_whatever_the_model_writes(db, settings, contracts, fictional):
     q, project, refs = stored_claims(db, settings, contracts, fictional)
-    tasks = {t["aspect"]: t for t in a07.build_tasks(db, q, a07.usable_claims(db, q, refs)[0])}
+    [task] = a07.build_tasks(db, q, a07.usable_claims(db, q, refs)[0])
+    flat, road, possession = (handle_of(project, task, w) for w in ("sample flat", "approach road", "Possession"))
     answer = {
         "outcome": "completed",
         "findings": [
             finding(
-                "pro", "A site visitor found the sample flat bright and airy.", ["k1"], attribution="verified_fact"
+                "pro", "A site visitor found the sample flat bright and airy.", [flat], attribution="verified_fact"
             ),
-            finding("con", "A site visitor found the sample flat bright and airy.", ["k1"]),  # kind against the claim
-            finding("pro", "Visitors found 3 bright flats.", ["k1"]),  # a number no claim states
-            finding("pro", "The clubhouse is ready.", ["k4"]),  # an invented handle
+            finding("con", "A site visitor found the sample flat bright and airy.", [flat]),  # kind against the claim
+            finding("pro", "Visitors found 3 bright flats.", [flat]),  # a number no claim states
+            finding("pro", "The clubhouse is ready.", ["k9"]),  # an invented handle
+            finding(
+                "pro", "Possession is promised for March 2027.", [possession], aspect="possession"
+            ),  # neutral claim
+            finding("con", "The road is broken and the flat is bright.", [road, flat], aspect="connectivity"),  # mixed
         ],
         "insufficiency_note": None,
     }
     _, gateway = scripted(settings, contracts, answer)
-    out = a07.synthesise(db, gateway, project, tasks["layout"], run_id=None)
+    out = a07.synthesise(db, gateway, project, task, run_id=None)
     [draft] = out["drafts"]
     assert out["fixes"] == {
         "attribution_corrected": 1,
-        "kind_mismatch": 1,
+        "kind_mismatch": 2,
         "number_not_in_claims": 1,
         "invented_reference": 1,
         "no_valid_claims": 1,
-    }
+        "mixed_aspects": 1,
+    }, "a pro needs a positive claim; a finding never mixes aspects"
+    assert draft["aspect"] == "layout", "the aspect comes from the claims"
     assert draft["attribution"] == "reported_opinion", "an opinion is never presented as a verified fact"
     assert a07.SINGLE_SOURCE in draft["caveats"], "a single source is always said"
     verified = {
         "outcome": "completed",
         "findings": [
-            finding("neutral", "The registry record backs possession in March 2027.", ["k1"], aspect="possession")
+            finding("neutral", "The registry record backs possession in March 2027.", [possession], aspect="possession")
         ],
         "insufficiency_note": None,
     }
     _, gateway = scripted(settings, contracts, verified)
-    [fact] = a07.synthesise(db, gateway, project, tasks["possession"], run_id=None)["drafts"]
+    [fact] = a07.synthesise(db, gateway, project, {**task, "key": task["key"] + ":2"}, run_id=None)["drafts"]
     assert fact["attribution"] == "verified_fact" and a07.SINGLE_SOURCE not in fact["caveats"], (
         "a fact a primary record verifies may stand on one origin (contract fixture finding_revision_two)"
     )
@@ -473,11 +490,12 @@ def test_conflicting_claims_stay_visible_and_no_balance_is_forced(db, settings, 
 
 def test_findings_are_stored_once_revised_on_change_and_superseded_when_dropped(db, settings, contracts, fictional):
     q, project, refs = stored_claims(db, settings, contracts, fictional)
-    tasks = {t["aspect"]: t for t in a07.build_tasks(db, q, a07.usable_claims(db, q, refs)[0])}
+    [packed] = a07.build_tasks(db, q, a07.usable_claims(db, q, refs)[0])
+    flat = handle_of(project, packed, "sample flat")
 
     def run(wording, run_id):
-        answer = {"outcome": "completed", "findings": [finding("pro", wording, ["k1"])], "insufficiency_note": None}
-        task = {**tasks["layout"], "key": tasks["layout"]["key"] + wording}
+        answer = {"outcome": "completed", "findings": [finding("pro", wording, [flat])], "insufficiency_note": None}
+        task = {**packed, "key": packed["key"] + wording}
         _, gateway = scripted(settings, contracts, answer)
         drafts = a07.synthesise(db, gateway, project, task, run_id=run_id)["drafts"]
         return a07.store_findings(db, contracts, drafts, run_id=run_id)
@@ -718,3 +736,23 @@ def test_spoken_reviews_point_to_the_moment_in_the_video(db, settings, contracts
     [ref] = a11.store_reviews(db, contracts, [draft], run_id=None)
     doc = db["ai_review_excerpts"].find_one({"id": ref["id"]})
     assert contracts.errors(to_view(doc, id_field=None), "evidence.schema.json#/$defs/ReviewExcerpt") == []
+
+
+def test_a05_sends_a_post_with_its_comments_as_one_task(db, settings, contracts, fictional):
+    q, _, _ = setup_project(db, contracts, fictional)
+    post = text_source(db, contracts, q, "post", POST)
+    for n, text in enumerate(("Quillon Residences Sector 102: agreed, the road floods.", COMMENT)):
+        doc = store_text_source(
+            db,
+            connector_id="web_fetch",
+            native_id=f"https://nobroker.in/post#c{n}",
+            canonical_url=f"https://nobroker.in/post#c{n}",
+            source_kind="comment",
+            text=text,
+            policy_family="competitor_portals",
+            parent={"id": post["id"], "revision": post["revision"]},
+        )
+        identify_source(db.client, db, contracts, doc, focus_project_ids=[q])
+    text_source(db, contracts, q, "other", "Quillon Residences in Sector 102 has a large clubhouse.")
+    tasks = a05.build_tasks(db, q)
+    assert sorted(len(t["evidence"]) for t in tasks) == [1, 3], "one call per thread, not one per comment"

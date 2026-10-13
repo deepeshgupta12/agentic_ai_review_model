@@ -13,6 +13,7 @@ from starlette.responses import Response
 
 from app.api import (
     routes_auth,
+    routes_findings,
     routes_identity,
     routes_media,
     routes_ops,
@@ -71,6 +72,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_runs.router)
     app.include_router(routes_sources.router)
     app.include_router(routes_media.router)
+    app.include_router(routes_findings.router)
 
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> dict[str, Any]:

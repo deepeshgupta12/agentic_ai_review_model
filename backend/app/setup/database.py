@@ -154,6 +154,7 @@ def _fetch_log_validator() -> dict[str, Any]:
                 "outcome": {"bsonType": "string"},
                 "status_code": {"bsonType": ["int", "long", "null"]},
                 "run_id": {"bsonType": ["string", "null"]},
+                "provider_credits": {"bsonType": ["int", "long", "null"]},  # Scrapfly's reported cost (D54)
                 "at": {"bsonType": "date"},
             },
         }
@@ -284,6 +285,7 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
                 extra={
                     "fencing": {"bsonType": ["int", "long"], "minimum": 0},
                     "cancel_requested": {"bsonType": "bool"},
+                    "resume_event": {"bsonType": "object"},  # Step 08: the review event a resume job continues with
                 },
             ),
             [
@@ -528,6 +530,24 @@ def collection_specs(contracts: ContractStore) -> list[CollectionSpec]:
             "ai_model_calls",
             _model_call_validator(),
             [IndexSpec("by_budget_time", [("budget", ASCENDING), ("at", DESCENDING)])],
+        ),
+        # Step 08: each agent task's validated output, keyed by prompt and schema versions and exact input revisions,
+        # so a restarted node never pays for a finished task again. Derived; holds model output, not source words.
+        CollectionSpec(
+            "ai_agent_outputs",
+            {
+                "$jsonSchema": {
+                    "bsonType": "object",
+                    "required": ["_id", "agent", "data", "created_at"],
+                    "properties": {
+                        "_id": {"bsonType": "string"},
+                        "agent": {"bsonType": "string"},
+                        "data": {"bsonType": "object"},
+                        "created_at": {"bsonType": "date"},
+                    },
+                }
+            },
+            [],
         ),
         CollectionSpec(
             "ai_idempotency_keys",

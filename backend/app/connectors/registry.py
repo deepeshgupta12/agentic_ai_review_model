@@ -50,6 +50,17 @@ def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -
         client = safe_client(settings)
         client.max_bytes = max(client.max_bytes, MAX_LISTING_BYTES)  # a fresh client per build; the list is large
         return HareraRegistry(client, RobotsCache(client, agent_token(settings)), db)
+    if connector_id == "instagram_public":  # D54: discovery needs Brave, reading needs Scrapfly
+        from app.connectors.instagram import InstagramPublic
+
+        key = settings.scrapfly_api_key
+        brave = build("brave_search", db, settings)
+        if key is None or brave is None:
+            return None
+        client = safe_client(settings)
+        return InstagramPublic(
+            key.get_secret_value(), client, RobotsCache(client, agent_token(settings)), db, settings, brave
+        )
     if connector_id == "web_fetch":
         from app.connectors.web import WebFetch
 

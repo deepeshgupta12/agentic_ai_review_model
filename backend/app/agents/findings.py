@@ -1,9 +1,11 @@
 """A07 findings synthesiser and finding storage (Step 08.4-08.5; docs/04; D53).
 
-Input is the exact claim revisions this analysis run stored (app.agents.verify.store_claims), one task per aspect,
-after the backend leaves out claims with consistency flags (D27) and claims whose evidence is no longer eligible.
-The model sees handles (k1, k2, ...), never IDs. The backend then:
+Input is the exact claim revisions this analysis run stored (app.agents.verify.store_claims), after the backend
+leaves out claims with consistency flags (D27) and claims whose evidence is no longer eligible. Whole aspects are
+packed into tasks of up to CLAIMS_PER_TASK claims (an aspect is split only when it alone is larger), so a project
+needs a few calls rather than one per aspect. The model sees handles (k1, k2, ...), never IDs. The backend then:
 - drops references to handles it did not give and findings left without claims;
+- drops a finding that mixes claims of different aspects, and takes the aspect from its claims;
 - drops a finding whose wording states a number none of its claims states;
 - requires the kind to match the claims: a pro needs a positive claim and no negative one, a con the reverse; a
   pro or con resting on both is kept as neutral, so the disagreement stays visible;
@@ -37,7 +39,7 @@ from app.evidence.clusters import independent_origins
 from app.evidence.eligibility import eligibility, eligible_filter
 
 AGENT_ID = "A07_findings_synthesiser"
-PROMPT_VERSION = "a07_findings_synthesiser.1.0"
+PROMPT_VERSION = "a07_findings_synthesiser.1.1"
 SCHEMA_REF = "agents.schema.json#/$defs/SynthesisResult"
 SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"
@@ -80,33 +82,44 @@ def usable_claims(
 
 
 def build_tasks(db: Database[dict[str, Any]], project_id: str, claims: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """One task per aspect (split when an aspect has many claims)."""
+    """Whole aspects packed into tasks of up to CLAIMS_PER_TASK claims; an aspect alone over the limit is split."""
     by_aspect: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for claim in sorted(claims, key=lambda c: (c["id"], c["revision"])):
         by_aspect[claim["aspect"]].append(claim)
-    tasks = []
+    groups: list[list[dict[str, Any]]] = []
     for aspect in sorted(by_aspect):
         group = by_aspect[aspect]
-        for start in range(0, len(group), CLAIMS_PER_TASK):
-            chunk = group[start : start + CLAIMS_PER_TASK]
-            refs = [_key(c) for c in chunk]
-            digest = hashlib.sha256(
-                "|".join([PROMPT_VERSION, SCHEMA_VERSION, project_id, aspect, *refs]).encode()
-            ).hexdigest()
-            tasks.append({"key": f"a07:{digest[:32]}", "project_id": project_id, "aspect": aspect, "claims": chunk})
+        groups += [group[start : start + CLAIMS_PER_TASK] for start in range(0, len(group), CLAIMS_PER_TASK)]
+    tasks: list[dict[str, Any]] = []
+    chunk: list[dict[str, Any]] = []
+    for group in groups:
+        if chunk and len(chunk) + len(group) > CLAIMS_PER_TASK:
+            tasks.append(_task(project_id, chunk))
+            chunk = []
+        chunk += group
+    if chunk:
+        tasks.append(_task(project_id, chunk))
     return tasks
+
+
+def _task(project_id: str, claims: list[dict[str, Any]]) -> dict[str, Any]:
+    refs = [_key(c) for c in claims]
+    digest = hashlib.sha256("|".join([PROMPT_VERSION, SCHEMA_VERSION, project_id, *refs]).encode()).hexdigest()
+    aspects = sorted({c["aspect"] for c in claims})
+    return {"key": f"a07:{digest[:32]}", "project_id": project_id, "aspects": aspects, "claims": claims}
 
 
 def render(project: dict[str, Any], task: dict[str, Any]) -> tuple[str, Handles]:
     handles = Handles("k")
-    header = {"project": project["project_name"], "city": project.get("city"), "aspect": task["aspect"]}
-    lines = ["Project and aspect (trusted):", json.dumps(header, ensure_ascii=False), ""]
+    header = {"project": project["project_name"], "city": project.get("city"), "aspects": task["aspects"]}
+    lines = ["Project and aspects (trusted):", json.dumps(header, ensure_ascii=False), ""]
     lines.append("Claims (statements from untrusted sources, with the backend's checks):")
     for claim in task["claims"]:
         observed = (claim.get("observation_time") or {}).get("value")
         verification = claim["verification"]
         item = {
             "id": handles.add(claim),
+            "aspect": claim["aspect"],
             "statement": claim["statement"],
             "label": claim.get("aspect_label"),
             "type": claim["claim_type"],
@@ -159,6 +172,13 @@ def check(
         if not claims:
             fixes["no_valid_claims"] += 1
             continue
+        aspects = {c["aspect"] for c in claims}
+        if len(aspects) > 1:
+            fixes["mixed_aspects"] += 1
+            continue
+        aspect = aspects.pop()
+        if item.get("aspect") != aspect:
+            fixes["aspect_set_from_claims"] += 1
         wording = " ".join((item.get("wording") or "").split())[:MAX_WORDING_CHARS]
         if not wording:
             fixes["empty_wording"] += 1
@@ -178,8 +198,6 @@ def check(
         if (kind == "pro" and not positive) or (kind == "con" and not negative):
             fixes["kind_mismatch"] += 1
             continue
-        if item.get("aspect") != task["aspect"]:
-            fixes["aspect_set_to_task"] += 1
         signature = (kind, *sorted(c["id"] for c in claims))
         if signature in seen:
             fixes["duplicate"] += 1
@@ -193,7 +211,7 @@ def check(
             {
                 "key": f"{task['key']}:{index}",
                 "project_id": task["project_id"],
-                "aspect": task["aspect"],
+                "aspect": aspect,
                 "kind": kind,
                 "wording": wording,
                 "attribution": attribution,

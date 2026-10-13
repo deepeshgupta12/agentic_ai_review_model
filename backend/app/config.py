@@ -73,6 +73,8 @@ class Settings(BaseSettings):
     job_max_attempts: int = Field(default=5, ge=1)
     job_poll_seconds: float = Field(default=2.0, gt=0)
     run_budget_usd: float = Field(default=5.0, ge=0)
+    # Step 08: how long an analysis waits for transcripts and origin grouping before going ahead with what is there.
+    analysis_input_wait_minutes: int = Field(default=240, ge=0)
 
     # Collection (Step 05, docs/06). The crawler identifies itself honestly; limits are per host and per provider.
     crawler_user_agent: str = "ProjectIntelligenceBot/0.1 (project research POC)"  # no claim it cannot keep (D46)
@@ -86,6 +88,11 @@ class Settings(BaseSettings):
     youtube_daily_units: int = Field(default=10_000, ge=0)
     youtube_searches_per_project: int = Field(default=4, ge=0)
     youtube_comment_pages_per_video: int = Field(default=3, ge=0)
+    # Step 08 (D54): Instagram public posts through Scrapfly. Credits are reserved before each request.
+    scrapfly_monthly_credits: int = Field(default=1000, ge=0)
+    scrapfly_credits_per_post: int = Field(default=30, ge=1)
+    instagram_posts_per_project: int = Field(default=5, ge=0)
+    instagram_queries_per_project: int = Field(default=2, ge=0)
     web_pages_per_run: int = Field(default=40, ge=0)
     identity_agent_tasks_per_run: int = Field(default=10, ge=0)
     recheck_per_job: int = Field(default=200, ge=0)

@@ -1,6 +1,6 @@
 {
  "version": 1,
- "updated": "2026-10-01",
+ "updated": "2026-10-12",
  "note": "Initial source-policy set (Step 01.4, I06), accepted by the product owner on 2026-09-25; web_public_pages and youtube moved to version 2 on 2026-09-28 (D28). Conservative defaults: a family that needs an agreement we do not have is blocked. These are engineering defaults, not legal advice; each new host or platform is still checked against its current terms. A change is a new policy_version. Loaded into ai_source_policies by a seed script at Step 03; code never hard-codes them. 29 Sep 2026: competitor_portals added and web_public_pages moved to version 3 (D34). From Step 05 these are loaded into ai_source_policies by `make seed`. 1 Oct 2026: web_public_pages v5, competitor_portals v2 and official_records v2 record robots.txt without enforcing it (D46). Step 06: spoken_video_content v2 and youtube v3 (D47). spoken_video_content v3 adds frames (D49).",
  "policies": [
   {
@@ -332,6 +332,53 @@
    "review_owner": "Product owner",
    "accepted_on": "2026-09-25",
    "accepted_by": "Product owner (GitHub: deepeshgupta12)"
+  },
+  {
+   "family": "meta",
+   "policy_version": 2,
+   "collection_allowed": false,
+   "ai_processing_allowed": false,
+   "quotation_allowed": false,
+   "derived_publication_allowed": false,
+   "attribution_required": true,
+   "retention_days": null,
+   "hosts": [
+    "facebook.com"
+   ],
+   "conditions": [],
+   "basis": "Needs an approved Meta app or listening contract. Blocked until obtained. Version 2 (Step 08, D54): instagram.com public posts are governed by instagram_public; Facebook stays blocked.",
+   "status": "accepted",
+   "review_owner": "Product owner",
+   "accepted_on": "2026-10-09",
+   "accepted_by": "Product owner (D54, 9 Oct 2026)"
+  },
+  {
+   "family": "instagram_public",
+   "policy_version": 1,
+   "collection_allowed": true,
+   "ai_processing_allowed": true,
+   "quotation_allowed": true,
+   "derived_publication_allowed": true,
+   "attribution_required": true,
+   "retention_days": 30,
+   "hosts": [
+    "instagram.com"
+   ],
+   "excluded_hosts": [],
+   "conditions": [
+    "Public posts and reels only, found by Brave Search and linked to a catalogue project",
+    "Read through Scrapfly with its unblocker and residential proxy pool (D54); no sign-in, accounts, cookies or private content",
+    "Caption, the author's username and the post time only; no profile data; comments are not read in this version",
+    "A page gated for logged-out visitors is recorded and skipped",
+    "robots.txt is asked for every page and its verdict recorded; it does not block the fetch",
+    "Quoted captions are re-checked on refresh and withdrawn if the post is removed"
+   ],
+   "robots_txt": "record_only",
+   "basis": "D54 (product owner, 9 Oct 2026: 'we should do this'): the product owner accepts Instagram's terms-of-service risk and Scrapfly's anti-bot handling and residential proxies for public posts. Retention as for YouTube (30 days). Quotation follows D28: a caption is a first-person post shown with a credit line. robots.txt is recorded, not enforced, as for official_records (D46); instagram.com's robots.txt disallows unlisted crawlers, so enforcing it would read nothing.",
+   "status": "accepted",
+   "review_owner": "Product owner",
+   "accepted_on": "2026-10-09",
+   "accepted_by": "Product owner (D54, 9 Oct 2026)"
   }
  ]
 }

@@ -124,6 +124,18 @@ search: ## Keyword search over a project's eligible evidence: make search PROJEC
 eval-retrieval: ## Retrieval benchmark on the labelled synthetic set, saved (scratch database, dropped)
 	$(COMPOSE) exec -T api python -m app.cli eval-retrieval --save
 
+plan-analysis: ## Dry run: the agent tasks an analysis would send and their worst-case cost (no model call)
+	$(COMPOSE) exec -T api python -m app.cli plan-analysis
+
+analyse: ## Queue a run's analysis again after a stop, from its checkpoint: make analyse RUN=run_...
+	$(COMPOSE) exec -T api python -m app.cli analyse --run "$(RUN)"
+
+analysis-report: ## A run's stage, spend and analysis report: make analysis-report RUN=run_...
+	$(COMPOSE) exec -T api python -m app.cli analysis-report --run "$(RUN)"
+
+eval-agents: ## Agents on the labelled synthetic set, saved (live calls within the $$2 budget; scratch database)
+	$(COMPOSE) exec -T api python -m app.cli eval-agents --save
+
 transcribe: ## Queue transcription of project-matched videos and wait (media worker; needs youtube.com reachable)
 	$(COMPOSE) exec -T api python -m app.cli transcribe-videos --wait 1800
 

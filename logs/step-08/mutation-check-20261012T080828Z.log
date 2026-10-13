@@ -1,0 +1,143 @@
+Step 08 mutation check: each rule is disabled on a scratch copy; its own test must fail.
+date (UTC): 2026-10-12T08:08:28Z
+commit:     fa06db6 (plus uncommitted backend changes)
+
+== baseline: the unchanged copy imports its own code and the Step 08 test files pass
+imports the scratch copy
+test_agents.py         16 passed in 55.40s
+test_workflow.py       22 passed in 212.89s (0:03:32)
+test_instagram.py      10 passed in 66.91s (0:01:06)
+test_gateway.py        31 passed in 72.71s (0:01:12)
+
+-- agents: what the backend checks whatever the model writes
+
+== rule disabled: a handle the task did not give is an invented reference
+   in backend/app/agents/common.py
+FAILED tests/test_agents.py::test_a05_sees_handles_not_ids_and_the_backend_drops_invented_or_unsupported_claims
+FAILED tests/test_agents.py::test_a06_accepts_verified_only_with_a_supplied_primary_record_and_posts_never_contradict
+FAILED tests/test_agents.py::test_a07_backend_rules_hold_whatever_the_model_writes
+FAILED tests/test_agents.py::test_a11_reviews_come_from_one_source_in_the_authors_own_words
+4 failed, 12 passed in 43.50s
+--> OK (caught by test_a05_sees_handles_not_ids_and_the_backend_drops_invented_or_unsupported_claims)
+
+== rule disabled: a claim may not state a number its evidence does not
+   in backend/app/agents/claims.py
+FAILED tests/test_agents.py::test_a05_sees_handles_not_ids_and_the_backend_drops_invented_or_unsupported_claims
+FAILED tests/test_agents.py::test_untrusted_text_cannot_change_the_task
+2 failed, 14 passed in 59.33s
+--> OK (caught by test_untrusted_text_cannot_change_the_task)
+
+== rule disabled: only a cited primary record verifies or contradicts a fact
+   in backend/app/agents/verify.py
+FAILED tests/test_agents.py::test_a06_accepts_verified_only_with_a_supplied_primary_record_and_posts_never_contradict
+1 failed, 15 passed in 114.77s (0:01:54)
+--> OK (caught by test_a06_accepts_verified_only_with_a_supplied_primary_record_and_posts_never_contradict)
+
+== rule disabled: a flagged claim never reaches a finding (D27)
+   in backend/app/agents/findings.py
+FAILED tests/test_agents.py::test_a07_gets_only_usable_claims_one_task_per_aspect
+1 failed, 15 passed in 55.63s
+--> OK (caught by test_a07_gets_only_usable_claims_one_task_per_aspect)
+
+== rule disabled: the backend sets a finding's attribution
+   in backend/app/agents/findings.py
+FAILED tests/test_agents.py::test_a07_backend_rules_hold_whatever_the_model_writes
+1 failed, 15 passed in 63.21s (0:01:03)
+--> OK (caught by test_a07_backend_rules_hold_whatever_the_model_writes)
+
+== rule disabled: a pro or con must match its claims' polarity
+   in backend/app/agents/findings.py
+16 passed in 60.83s (0:01:00)
+--> NOT OK (expected test_a07_backend_rules_hold_whatever_the_model_writes to fail)
+
+== rule disabled: a pro resting on a negative claim becomes neutral (conflict stays visible)
+   in backend/app/agents/findings.py
+FAILED tests/test_agents.py::test_conflicting_claims_stay_visible_and_no_balance_is_forced
+1 failed, 15 passed in 62.64s (0:01:02)
+--> OK (caught by test_conflicting_claims_stay_visible_and_no_balance_is_forced)
+
+== rule disabled: a verbatim review equals the original words
+   in backend/app/agents/reviews.py
+FAILED tests/test_agents.py::test_rendering_checks_compare_every_word_with_the_original
+FAILED tests/test_agents.py::test_a11_reviews_come_from_one_source_in_the_authors_own_words
+2 failed, 14 passed in 35.46s
+--> OK (caught by test_rendering_checks_compare_every_word_with_the_original)
+
+== rule disabled: a review never mixes two people's sources
+   in backend/app/agents/reviews.py
+FAILED tests/test_agents.py::test_a11_reviews_come_from_one_source_in_the_authors_own_words
+1 failed, 15 passed in 52.54s
+--> OK (caught by test_a11_reviews_come_from_one_source_in_the_authors_own_words)
+
+== rule disabled: a review with a phone number or e-mail address is dropped
+   in backend/app/agents/reviews.py
+FAILED tests/test_agents.py::test_a_resident_review_before_possession_is_flagged_and_personal_data_is_never_shown
+1 failed, 15 passed in 34.61s
+--> OK (caught by test_a_resident_review_before_possession_is_flagged_and_personal_data_is_never_shown)
+
+-- decisions and the workflow
+
+== rule disabled: a decision names the latest revision
+   in backend/app/workflows/decisions.py
+FAILED tests/test_workflow.py::test_decisions_name_the_exact_revision_and_come_from_a_moderator_session
+1 failed, 22 passed in 95.31s (0:01:35)
+--> OK (caught by test_decisions_name_the_exact_revision_and_come_from_a_moderator_session)
+
+== rule disabled: an approval re-checks flags and eligibility
+   in backend/app/workflows/decisions.py
+FAILED tests/test_workflow.py::test_decisions_name_the_exact_revision_and_come_from_a_moderator_session
+1 failed, 22 passed in 54.07s
+--> OK (caught by test_decisions_name_the_exact_revision_and_come_from_a_moderator_session)
+
+== rule disabled: only a moderator continues an analysis after review
+   in backend/app/workflows/analysis.py
+FAILED tests/test_workflow.py::test_only_a_checked_moderator_selection_resumes_the_graph
+1 failed, 22 passed in 50.57s
+--> OK (caught by test_only_a_checked_moderator_selection_resumes_the_graph)
+
+== rule disabled: the resume job checks the selection again
+   in backend/app/workflows/analysis.py
+FAILED tests/test_workflow.py::test_a_selection_that_changed_after_the_request_is_refused_and_the_graph_stays_paused
+1 failed, 22 passed in 106.31s (0:01:46)
+--> OK (caught by test_a_selection_that_changed_after_the_request_is_refused_and_the_graph_stays_paused)
+
+== rule disabled: a pause the worker did not record is recovered
+   in backend/app/workflows/analysis.py
+FAILED tests/test_workflow.py::test_a_crash_at_any_node_recovers_without_duplicates_or_paying_twice[after_stage_moved]
+FAILED tests/test_workflow.py::test_a_crash_at_any_node_recovers_without_duplicates_or_paying_twice[after_pause]
+2 failed, 21 passed in 65.27s (0:01:05)
+--> OK (caught by test_a_crash_at_any_node_recovers_without_duplicates_or_paying_twice)
+
+== rule disabled: a finished task's output is reused, never paid for twice
+   in backend/app/agents/common.py
+FAILED tests/test_workflow.py::test_a_crash_at_any_node_recovers_without_duplicates_or_paying_twice[mid_claims]
+FAILED tests/test_workflow.py::test_a_crash_at_any_node_recovers_without_duplicates_or_paying_twice[after_findings_written]
+FAILED tests/test_workflow.py::test_a_crash_at_any_node_recovers_without_duplicates_or_paying_twice[after_reviews_written]
+3 failed, 20 passed in 46.57s
+--> OK (caught by test_a_crash_at_any_node_recovers_without_duplicates_or_paying_twice)
+
+== rule disabled: an exhausted budget stops the analysis visibly
+   in backend/app/workflows/analysis.py
+FAILED tests/test_workflow.py::test_budget_exhaustion_stops_the_analysis_visibly_and_a_new_budget_continues_it
+1 failed, 22 passed in 57.51s
+--> OK (caught by test_budget_exhaustion_stops_the_analysis_visibly_and_a_new_budget_continues_it)
+
+-- spend and Instagram
+
+== rule disabled: a call that could exceed the budget is refused before it is made
+   in backend/app/agents/spend.py
+FAILED tests/test_gateway.py::test_a_call_that_could_exceed_the_budget_is_refused_before_it_is_made
+FAILED tests/test_gateway.py::test_two_workers_cannot_overspend_together
+FAILED tests/test_gateway.py::test_a_batch_that_does_not_fit_the_budget_is_not_submitted
+3 failed, 28 passed in 33.00s
+--> OK (caught by test_a_call_that_could_exceed_the_budget_is_refused_before_it_is_made)
+
+== rule disabled: Scrapfly credits are reserved before the request
+   in backend/app/connectors/instagram.py
+FAILED tests/test_instagram.py::test_a_post_is_read_through_scrapfly_with_policy_robots_and_credits_recorded
+FAILED tests/test_instagram.py::test_a_refused_key_and_spent_credits_stop_the_connector
+2 failed, 8 passed in 21.93s
+--> OK (caught by test_a_refused_key_and_spent_credits_stop_the_connector)
+
+SOME MUTANTS NOT CAUGHT
+log: logs/step-08/mutation-check-20261012T080828Z.log

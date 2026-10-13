@@ -41,8 +41,9 @@ SCHEMA_REF = "agents.schema.json#/$defs/VerificationResult"
 SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"
 ROLE = "routine"  # D53: Sonnet 5 for verification
-CLAIMS_PER_TASK = 8
-CANDIDATES_PER_CLAIM = 4
+CLAIMS_PER_TASK = 10
+CANDIDATES_PER_CLAIM = 3
+CANDIDATE_CHARS = 500
 MAX_OUTPUT_TOKENS = 3000
 MAX_REASON_CHARS = 400
 
@@ -64,39 +65,34 @@ def primary_records(db: Database[dict[str, Any]], project_id: str) -> list[dict[
 def build_tasks(
     db: Database[dict[str, Any]], project_id: str, drafts: list[dict[str, Any]], embedder: Embedder | None
 ) -> list[dict[str, Any]]:
-    to_check = [d for d in drafts if d["claim_type"] in ("fact", "allegation") and not d["consistency_flags"]]
+    """Facts and allegations in tasks of CLAIMS_PER_TASK, ordered by aspect so related claims share a task."""
+    to_check = sorted(
+        (d for d in drafts if d["claim_type"] in ("fact", "allegation") and not d["consistency_flags"]),
+        key=lambda d: (d["aspect"], d["key"]),
+    )
     records = primary_records(db, project_id)
-    by_aspect: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for draft in sorted(to_check, key=lambda d: d["key"]):
-        by_aspect[draft["aspect"]].append(draft)
     tasks = []
-    for aspect in sorted(by_aspect):
-        group = by_aspect[aspect]
-        for start in range(0, len(group), CLAIMS_PER_TASK):
-            chunk = group[start : start + CLAIMS_PER_TASK]
-            candidates: dict[str, dict[str, Any]] = {}
-            for draft in chunk:
-                own = {_key(r) for r in draft["supporting_evidence"]}
-                found = search(
-                    db, project_id, draft["statement"], limit=CANDIDATES_PER_CLAIM + len(own), embedder=embedder
-                )
-                for item in found["items"]:
-                    evidence = item["evidence"]
-                    if _key(evidence) not in own and evidence["policy"]["family"] != "official_records":
-                        candidates.setdefault(_key(evidence), evidence)
-            refs = sorted(
-                [d["key"] for d in chunk] + [f"e:{k}" for k in candidates] + [f"r:{_key(r)}" for r in records]
-            )
-            digest = hashlib.sha256("|".join([PROMPT_VERSION, SCHEMA_VERSION, project_id, *refs]).encode()).hexdigest()
-            tasks.append(
-                {
-                    "key": f"a06:{digest[:32]}",
-                    "project_id": project_id,
-                    "claims": chunk,
-                    "records": records,
-                    "candidates": [candidates[k] for k in sorted(candidates)],
-                }
-            )
+    for start in range(0, len(to_check), CLAIMS_PER_TASK):
+        chunk = to_check[start : start + CLAIMS_PER_TASK]
+        candidates: dict[str, dict[str, Any]] = {}
+        for draft in chunk:
+            own = {_key(r) for r in draft["supporting_evidence"]}
+            found = search(db, project_id, draft["statement"], limit=CANDIDATES_PER_CLAIM + len(own), embedder=embedder)
+            for item in found["items"]:
+                evidence = item["evidence"]
+                if _key(evidence) not in own and evidence["policy"]["family"] != "official_records":
+                    candidates.setdefault(_key(evidence), evidence)
+        refs = sorted([d["key"] for d in chunk] + [f"e:{k}" for k in candidates] + [f"r:{_key(r)}" for r in records])
+        digest = hashlib.sha256("|".join([PROMPT_VERSION, SCHEMA_VERSION, project_id, *refs]).encode()).hexdigest()
+        tasks.append(
+            {
+                "key": f"a06:{digest[:32]}",
+                "project_id": project_id,
+                "claims": chunk,
+                "records": records,
+                "candidates": [candidates[k] for k in sorted(candidates)],
+            }
+        )
     return tasks
 
 
@@ -132,7 +128,10 @@ def render(
     lines += ["", "Other evidence (untrusted quoted data):"]
     for evidence in task["candidates"]:
         lines.append(
-            json.dumps({"id": others.add(evidence), "text": (evidence["excerpt_text"] or "")[:800]}, ensure_ascii=False)
+            json.dumps(
+                {"id": others.add(evidence), "text": (evidence["excerpt_text"] or "")[:CANDIDATE_CHARS]},
+                ensure_ascii=False,
+            )
         )
     return "\n".join(lines), {"c": claims, "r": records, "e": others}
 

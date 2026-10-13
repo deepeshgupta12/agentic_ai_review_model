@@ -7,7 +7,8 @@ connector group, so one provider's outage never stops the others:
 Connectors without a credential (or an adapter) never run and are reported `access_pending`. Each page's
 records are stored before its cursor moves, in one transaction, so a crash replays the page harmlessly.
 Coverage per connector is written to the run as each group finishes; when every group is done the run moves
-to `analysing` (Steps 07-08 do the analysis). Cancelling stops the jobs cooperatively and keeps what was found.
+to `analysing` and its `analyse` job is queued (app.workflows.analysis, Step 08). Cancelling stops the jobs
+cooperatively and keeps what was found.
 """
 
 from __future__ import annotations
@@ -47,6 +48,7 @@ GROUPS = {
     "web": ("brave_search", "web_fetch"),
     "youtube_data_api": ("youtube_data_api",),
     "registry": ("harera_registry",),  # Step 08 (D53): dated primary records for verification
+    "instagram": ("instagram_public",),  # Step 08 (D54): public posts through Scrapfly
 }
 TERMINAL_JOB = {"completed", "failed", "cancelled"}
 
@@ -233,13 +235,18 @@ def finish_if_done(
             "$set": {
                 "stage": "analysing",
                 "updated_at": now,
-                "outcome_note": "Collection finished; analysis arrives in Steps 07-08",
+                "outcome_note": "Collection finished; analysis queued",
             }
         },
     )
     if result.modified_count:
+        from app.workflows.analysis import start_analysis  # the workflow imports this module
+
         emit(db, run_id, "stage_changed", "analysing", message="collection finished")
         emit(db, run_id, "completed", "analysing", message="collection stage complete")
+        run = db[RUNS].find_one({"_id": run_id})
+        assert run is not None
+        start_analysis(db, run)
     return bool(result.modified_count)
 
 
@@ -376,10 +383,10 @@ class Collector:
                     keep: list[tuple[Item, dict[str, Any]]] = []
                     for item in page.items:
                         resolution = policies.resolve(self.db, item.canonical_url)
-                        if resolution.family == "youtube":
-                            skipped["youtube_left_to_youtube_connector"] = (
-                                skipped.get("youtube_left_to_youtube_connector", 0) + 1
-                            )
+                        if resolution.family in ("youtube", "instagram_public"):
+                            name = resolution.family.split("_")[0]
+                            key = f"{name}_left_to_{name}_connector"
+                            skipped[key] = skipped.get(key, 0) + 1
                             continue
                         if not resolution.may_collect or resolution.policy is None:
                             key = f"not_collected:{resolution.family or 'unknown'}"
@@ -611,6 +618,85 @@ class Collector:
         cov["note"] = (note + (f"; not listed: {', '.join(missing)}" if missing else ""))[:500] or None
         update_coverage(self.db, self.run_id, cov)
 
+    # --- Instagram group: Brave finds public posts, Scrapfly reads them (D54) ---
+
+    def run_instagram(self) -> None:
+        from app.connectors.base import QuotaExhausted
+        from app.connectors.instagram import InstagramPublic
+        from app.sources.http import FetchError
+
+        ig = self._build("instagram_public")
+        if ig is None:
+            return
+        assert isinstance(ig, InstagramPublic)
+        cov = _coverage("instagram_public", "complete_for_query", None)
+        policy = policies.current(self.db, "instagram_public")
+        if policy is None or not policy["collection_allowed"]:
+            cov.update(status="unavailable", note="the instagram_public policy does not allow collection")
+            update_coverage(self.db, self.run_id, cov)
+            return
+        counts: dict[str, int] = {}
+        errors: list[str] = []
+        posts: list[str] = []
+        for query in self._queries("instagram_public")[: self.settings.instagram_queries_per_project]:
+            self.check()
+            try:
+                page = ig.discover(query, None)
+            except ProviderError as exc:
+                errors.append(exc.code)
+                cov["status"] = "partial"
+                break
+            cov["attempted_queries"] += 1
+            for key, count in page.skipped.items():
+                counts[key] = counts.get(key, 0) + count
+            posts += [item.canonical_url for item in page.items if item.canonical_url not in posts]
+        read = 0
+        for url in posts:
+            if read >= self.settings.instagram_posts_per_project:
+                counts["over_the_per_run_cap"] = counts.get("over_the_per_run_cap", 0) + 1
+                continue
+            self.check()
+            shortcode = url.rstrip("/").rsplit("/", 1)[-1]
+            known = self.db["ai_sources"].find_one(
+                {"connector_id": "instagram_public", "native_id": shortcode},
+                {"lifecycle": 1, "id": 1},
+                sort=[("revision", -1)],
+            )
+            if known is not None:
+                outcome = "withdrawn_on_request" if withdrawn_on_request(self.db, known["id"]) else "already_read"
+                counts[outcome] = counts.get(outcome, 0) + 1
+                continue
+            read += 1
+            try:
+                item = ig.fetch_item(url, run_id=self.run_id)
+            except QuotaExhausted:
+                errors.append("credits_exhausted")
+                cov["status"] = "partial"
+                break
+            except ProviderError as exc:
+                errors.append(exc.code)
+                cov["status"] = "unavailable" if exc.code == "access_refused" else "partial"
+                break
+            except FetchError as exc:
+                counts[exc.code] = counts.get(exc.code, 0) + 1
+                continue
+            stored = self._store_one(item, policy)
+            cov["fetched"] += 1
+            report = identify_source(
+                self.client,
+                self.db,
+                self.contracts,
+                stored.source,
+                focus_project_ids=[self.project_id],
+                gateway=self.gateway,
+            )
+            self.spent(report)
+            if any(r["status"] != "rejected" and r["project_id"] == self.project_id for r in report["links"]):
+                cov["matched"] += 1
+        cov["last_success_at"] = utcnow() if cov["fetched"] else None
+        cov["note"] = _note(counts, errors)
+        update_coverage(self.db, self.run_id, cov)
+
 
 def _note(counts: dict[str, int], errors: list[str]) -> str | None:
     parts = [f"{k}: {v}" for k, v in sorted(counts.items())]
@@ -633,6 +719,8 @@ def handle_collect(db: Database[dict[str, Any]], job: dict[str, Any], check: Any
         collector.run_youtube()
     elif group == "registry":
         collector.run_registry()
+    elif group == "instagram":
+        collector.run_instagram()
     else:
         raise ValueError(f"unknown collect group {group}")
     finish_if_done(db.client, db, job["run_id"], exclude_job=job["_id"])

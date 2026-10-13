@@ -39,7 +39,7 @@ def version_request(family, **changes):
 
 def test_seeded_policies_are_current_and_match_the_contract(db, contracts):
     families = {p["family"] for p in db["ai_source_policies"].find()}
-    assert len(families) == 11 and {"competitor_portals", "web_public_pages"} <= families
+    assert len(families) == 12 and {"competitor_portals", "web_public_pages", "instagram_public"} <= families
     web = current(db, "web_public_pages")
     assert web["policy_version"] == 5 and {"dlf.in", "republicworld.com"} <= set(web["hosts"])
     assert web["robots_txt"] == "record_only", "D46"
@@ -136,7 +136,7 @@ def test_policy_api_roles_and_the_rights_chain(api, db, make_user, contracts):
     researcher = sign_in(api, make_user, ["researcher"])
     page = api.get("/v1/admin/source-policies?limit=50", headers=researcher)
     assert page.status_code == 200 and contracts.errors(page.json(), "api.schema.json#/$defs/PolicyPage") == []
-    assert len(page.json()["items"]) == 11
+    assert len(page.json()["items"]) == 13, "every stored version: 11, then instagram_public v1 and meta v2 (D54)"
     assert api.post("/v1/admin/source-policies", json=version_request("youtube"), headers=researcher).status_code == 403
     analyst = sign_in(api, make_user, ["analyst"])
     assert api.get("/v1/admin/source-policies", headers=analyst).status_code == 403

@@ -1,7 +1,7 @@
 """A05 claim extractor (Step 08.3; docs/04; D53): atomic aspect claims from a project's eligible evidence.
 
-Tasks are per source: all of one source revision's eligible spans for the project (split when long), so a later
-run with new evidence reuses the cached output of unchanged sources and pays only for new ones. The model sees
+Tasks are per source thread: a post or video with its comments and replies (split when long), so a later run with
+new evidence reuses the cached output of unchanged threads and pays only for changed ones. The model sees
 handles (e1, e2, ...), never IDs. The backend then:
 - drops references to handles it did not give (invented references) and claims left without evidence;
 - drops a claim whose numbers do not all appear in its cited evidence or that evidence's kept English translation
@@ -45,17 +45,35 @@ def _source_key(evidence: dict[str, Any]) -> str:
     return f"{evidence['source']['id']}@{evidence['source']['revision']}"
 
 
+def _thread_of(db: Database[dict[str, Any]], source_id: str, roots: dict[str, str]) -> str:
+    """The source a comment or reply belongs under (its video or post), or the source itself."""
+    if source_id not in roots:
+        current, seen = source_id, {source_id}
+        for _ in range(3):  # a reply's parent is a top comment, whose parent is the video
+            doc = db["ai_sources"].find_one({"id": current}, {"parent": 1}, sort=[("revision", -1)]) or {}
+            parent = (doc.get("parent") or {}).get("id")
+            if not parent or parent in seen:
+                break
+            current = parent
+            seen.add(parent)
+        roots[source_id] = current
+    return roots[source_id]
+
+
 def build_tasks(db: Database[dict[str, Any]], project_id: str) -> list[dict[str, Any]]:
-    """One task per source revision (split when its spans are long), over the project's eligible evidence."""
-    by_source: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    """One task per source thread (a post or video with its comments and replies; split when long), over the
+    project's eligible evidence. Grouping comments under their video avoids one call per short comment, and a new
+    comment only changes its own thread's task."""
+    by_thread: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    roots: dict[str, str] = {}
     for evidence in db["ai_evidence"].find(eligible_filter(db, project_id)).sort([("source.id", 1), ("_id", 1)]):
         if eligibility(db, evidence).eligible:
-            by_source[_source_key(evidence)].append(evidence)
+            by_thread[_thread_of(db, evidence["source"]["id"], roots)].append(evidence)
     tasks = []
-    for key in sorted(by_source):
+    for key in sorted(by_thread):
         chunk: list[dict[str, Any]] = []
         size = 0
-        for evidence in by_source[key]:
+        for evidence in by_thread[key]:
             length = len(evidence["excerpt_text"] or "")
             if chunk and size + length > MAX_TASK_CHARS:
                 tasks.append(_task(project_id, chunk))

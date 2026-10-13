@@ -5,6 +5,17 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Agents and the analysis workflow — 12 October 2026 (Step 08)
+
+- **Spend cap** (D53). Every live Claude call reserves its worst case against a $2 budget before it is made and settles the actual cost; a call that does not fit returns `budget_exhausted`. Roles: Claude Haiku 5.5 for claim extraction and review curation, Sonnet 5 for verification and synthesis. Message Batches are available for bulk work.
+- **Primary records.** The HRERA registry reader stores one dated record per supplied RERA ID with registry facts only, so facts can be verified (D53).
+- **Agents** with backend checks that hold whatever the model writes: A05 claims (per post or video thread), A06 verification against registry records, A07 findings (attribution, kind and caveats set by the backend; conflicts stay visible), A11 first-person reviews (the author's words checked word by word, one source each, no personal data). Models see short handles, never IDs; invented references are dropped.
+- **Workflow** (D55). A LangGraph analysis per run, checkpointed in MongoDB: claims → findings → reviews → findings review (pause) or insufficient evidence. The analysis starts when collection finishes; at the pause the worker is released. A moderator's selection of approved revisions, checked twice, continues it to formatting (content generation is Step 10). Budget and model-access stops are explicit; a crash at any node recovers without duplicates or paying twice; cancellation stops at the next task.
+- **Decisions and API.** `listFindings`, `decideFinding`, `listReviewExcerpts` and `decideReviewExcerpt`: decisions name the exact revision, come from a moderator's session, and an approval re-checks flags, attribution, eligibility, rendering and quotation policy. The source list now shows each source's aspects.
+- **Instagram public posts** (D54, D55): Brave discovery and Scrapfly reading, caption, author and time only, credits reserved before each request; `access_pending` until a Scrapfly key is set and a real post is read.
+- **Evaluation and checks:** `evals/agents/v1` (15 labelled fictional posts, adversarial cases from docs/04) with `make eval-agents`; `make plan-analysis` (dry-run cost), `make analysis-report`, `make verify-analysis`, and a sample sheet of real outputs for the product owner (`exports/`, never committed).
+- **Identity:** Devanagari locality words, digits and city names now match (I19, identity-rules 1.1).
+
 ## Evidence storage, deduplication and retrieval — 5 October 2026 (Step 07)
 
 - **One eligibility rule** for support, identity work, the API and retrieval (D50). A temporarily unavailable source is not used; a stale one is used with a flag.

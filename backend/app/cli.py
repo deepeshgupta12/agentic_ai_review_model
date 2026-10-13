@@ -497,6 +497,24 @@ def cmd_verify_evidence(_: argparse.Namespace) -> int:
     return 0 if all(r["ok"] for r in rows) else 1
 
 
+def cmd_verify_analysis(_: argparse.Namespace) -> int:
+    """Read-only checks over claims, findings, reviews, approvals and model spend (Step 08)."""
+    from app.workflows.verify import verify_analysis
+
+    rows = verify_analysis(get_db(), get_contracts(), get_settings())
+    _print(rows)
+    return 0 if all(r["ok"] for r in rows) else 1
+
+
+def cmd_sample_sheet(args: argparse.Namespace) -> int:
+    """The sample sheet of real claims, findings and reviews for the product owner's review (D53), as CSV on standard
+    output. It quotes third-party posts: save it under exports/ (git-ignored), never in the repository."""
+    from app.workflows.sample import sample_csv
+
+    sys.stdout.write(sample_csv(get_db(), args.claims, args.reviews))
+    return 0
+
+
 def cmd_cluster_origins(_: argparse.Namespace) -> int:
     """Group copies of one origin (exact and near-duplicate texts, copied passages) into origin clusters (D50)."""
     from app.evidence.clusters import cluster_origins
@@ -697,6 +715,123 @@ def cmd_fixture_smoke_identity(args: argparse.Namespace) -> int:
     return 0 if checks and all(checks.values()) else 1
 
 
+def cmd_plan_analysis(args: argparse.Namespace) -> int:
+    """Dry run before any spend (D53): per project, the A05 and A11 tasks the analysis would send and their worst-case
+    cost from the price table. A06 and A07 depend on the claims A05 finds; the run budget bounds them. Stores
+    nothing and calls no model; tasks whose output is already cached cost nothing and are counted apart."""
+    from app.agents import claims as a05
+    from app.agents import reviews as a11
+    from app.agents.common import cached_output
+    from app.agents.spend import estimate_input_tokens, worst_case_usd
+
+    db, settings = get_db(), get_settings()
+    ids = [_slug_to_id(db, args.project)] if args.project else [p["_id"] for p in db["projects"].find({}, {"_id": 1})]
+    rows, total = [], 0.0
+    for project_id in ids:
+        project = db["projects"].find_one({"_id": project_id})
+        assert project is not None
+        row: dict[str, Any] = {"project": project["project_name"]}
+        for name, module, tasks in (
+            ("a05", a05, a05.build_tasks(db, project_id)),
+            ("a11", a11, a11.build_tasks(db, project_id)),
+        ):
+            model = settings.model_for_role(module.ROLE)
+            system = module.PROMPT_PATH.read_text("utf-8")
+            fresh = [t for t in tasks if cached_output(db, t["key"]) is None]
+            worst = sum(
+                worst_case_usd(
+                    settings,
+                    model,
+                    estimate_input_tokens(system, module.render(db, project, t)[0]),
+                    module.MAX_OUTPUT_TOKENS,
+                    batch=False,
+                )
+                for t in fresh
+            )
+            row[name] = {
+                "model": model,
+                "tasks": len(tasks),
+                "cached": len(tasks) - len(fresh),
+                "worst_usd": round(worst, 4),
+            }
+            total += worst
+        rows.append(row)
+    _print({"projects": rows, "worst_case_usd_a05_a11": round(total, 4), "budget_usd": settings.model_budget_usd})
+    return 0
+
+
+def cmd_analyse(args: argparse.Namespace) -> int:
+    """Queue the analysis of a run again after a stop (budget, model access). The worker continues the run's graph
+    from its last checkpoint and reuses cached outputs."""
+    from app.workflows.analysis import analyse_again
+
+    try:
+        _print(analyse_again(get_db(), args.run))
+    except ValueError as exc:
+        print(f"analyse: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def cmd_analysis_report(args: argparse.Namespace) -> int:
+    """A run's stage, spend and the analysis report kept in its graph state (counts only, no source words)."""
+    from app.workflows.analysis import saver_for, spent_usd, thread_of
+
+    db = get_db()
+    run = db["ai_runs"].find_one({"_id": args.run})
+    if run is None:
+        print(f"analysis-report: no run {args.run}", file=sys.stderr)
+        return 1
+    saved = saver_for(db).get_tuple(thread_of(args.run))  # type: ignore[arg-type]
+    values = saved.checkpoint["channel_values"] if saved else {}
+    jobs = [
+        {"kind": j["kind"], "status": j["status"], "error": j["error"]}
+        for j in db["ai_jobs"].find({"run_id": args.run, "kind": {"$in": ["analyse", "resume_after_review"]}})
+    ]
+    _print(
+        {
+            "run_id": args.run,
+            "stage": run["stage"],
+            "outcome_note": run["outcome_note"],
+            "spent_usd": round(spent_usd(db, args.run), 6),
+            "claims": len(values.get("claims") or []),
+            "findings": len(values.get("findings") or []),
+            "reviews": len(values.get("reviews") or []),
+            "report": values.get("report"),
+            "jobs": jobs,
+        }
+    )
+    return 0
+
+
+def cmd_eval_agents(args: argparse.Namespace) -> int:
+    """The agents on the labelled synthetic set (evals/agents/v1) in a scratch database, dropped after. Live calls
+    count against the model budget (D53); `--light-model` compares routing for A05 and A11."""
+    from app.agents.evaluation import evaluation_record, run_agent_eval
+    from app.db import utcnow
+    from app.ids import new_id
+
+    settings, contracts, db = get_settings(), get_contracts(), get_db()
+    if not settings.credential_present("ANTHROPIC_API_KEY"):
+        print("eval-agents: skipped, no ANTHROPIC_API_KEY (access_pending)", file=sys.stderr)
+        return 0
+    result = run_agent_eval(
+        db.client,
+        contracts,
+        settings,
+        db,
+        REPO_ROOT / "evals" / "agents" / "v1",
+        REPO_ROOT / "evals" / "identity" / "v1" / "catalogue.json",
+        light_model=args.light_model,
+    )
+    record = evaluation_record(result)
+    if args.save:
+        record = {"_id": new_id("evl"), **record, "created_at": utcnow()}
+        db["ai_evaluations"].insert_one(record)
+    _print({**result, "saved_as": record.get("_id")})
+    return 0 if result["summary"]["forbidden_claims"] == 0 and not result["unlinked_documents"] else 1
+
+
 def _live_a01_check(
     client: Any,
     scratch: Any,
@@ -829,6 +964,26 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("fixture-smoke-identity", help="identity path on the fictional catalogue in a scratch database")
     p.add_argument("--live-a01", action="store_true", help="also make one real A01 call (needs ANTHROPIC_API_KEY)")
     p.set_defaults(func=cmd_fixture_smoke_identity)
+    p = sub.add_parser("eval-agents", help="agents on the labelled synthetic set (live calls, within the budget)")
+    p.add_argument("--light-model", help="model for the light role (A05, A11) instead of the configured one")
+    p.add_argument("--save", action="store_true", help="store the result in ai_evaluations")
+    p.set_defaults(func=cmd_eval_agents)
+    sub.add_parser("verify-analysis", help="read-only checks over claims, findings, reviews and spend").set_defaults(
+        func=cmd_verify_analysis
+    )
+    p = sub.add_parser("sample-sheet", help="CSV sample of real claims, findings and reviews for review (D53)")
+    p.add_argument("--claims", type=int, default=10, help="claims per project")
+    p.add_argument("--reviews", type=int, default=4, help="reviews per project")
+    p.set_defaults(func=cmd_sample_sheet)
+    p = sub.add_parser("plan-analysis", help="dry run: the agent tasks an analysis would send and their worst case")
+    p.add_argument("--project", help="project slug (default: all five)")
+    p.set_defaults(func=cmd_plan_analysis)
+    p = sub.add_parser("analyse", help="queue a run's analysis again after a stop (continues from its checkpoint)")
+    p.add_argument("--run", required=True)
+    p.set_defaults(func=cmd_analyse)
+    p = sub.add_parser("analysis-report", help="a run's stage, spend and analysis report")
+    p.add_argument("--run", required=True)
+    p.set_defaults(func=cmd_analysis_report)
     args = parser.parse_args(argv)
     return int(args.func(args))
 

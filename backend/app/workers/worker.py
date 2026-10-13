@@ -1,8 +1,9 @@
 """Worker process: recovers expired leases, claims jobs, heartbeats and runs handlers.
 
 Registered: invalidate_dependencies (Step 04); collect, erase_payloads, check_availability (Step 05); process_media
-(Step 06). WORKER_ROLE splits them: "media" takes only process_media (the media worker image), "general" takes
-everything else, "all" (the default, and tests) takes every kind.
+(Step 06); cluster_origins, embed_evidence (Step 07); analyse, resume_after_review (Step 08). WORKER_ROLE splits
+them: "media" takes only process_media (the media worker image), "general" takes everything else, "all" (the
+default, and tests) takes every kind.
 A job without a handler fails visibly instead of silently disappearing.
 """
 
@@ -27,6 +28,7 @@ from app.jobs import queue
 from app.media import pipeline as media
 from app.observability import configure_logging, log_event, register_secrets
 from app.sources import collection, lifecycle, recheck
+from app.workflows import analysis
 
 logger = logging.getLogger("worker")
 Handler = Callable[[Database[dict[str, Any]], dict[str, Any], Callable[[], str]], str | None]
@@ -52,6 +54,8 @@ register("check_availability")(recheck.handle_recheck)
 register("process_media")(media.handle_process_media)
 register("cluster_origins")(clusters.handle_cluster_origins)
 register("embed_evidence")(embedding_jobs.handle_embed_evidence)
+register("analyse")(analysis.handle_analyse)
+register("resume_after_review")(analysis.handle_resume)
 MEDIA_KINDS = ("process_media",)
 
 
@@ -102,6 +106,13 @@ def run_one(db: Database[dict[str, Any]], owner: str, lease_seconds: int, kinds:
     except queue.Deferred as exc:
         log_event(logger, "job deferred", job_id=claimed.id, kind=job["kind"], reason=exc.reason)
         return queue.defer(db, claimed.id, claimed.token, exc.reason, exc.seconds)
+    except queue.PausedForReview as exc:
+        log_event(logger, "job waiting for review", job_id=claimed.id, kind=job["kind"])
+        paused = queue.pause_for_review(db, claimed.id, claimed.token, exc.checkpoint_id)
+        return "waiting_review" if paused else "lost"
+    except queue.JobFailure as exc:
+        log_event(logger, "job stopped", level=logging.WARNING, job_id=claimed.id, kind=job["kind"], error=exc.code)
+        return queue.fail(db, claimed.id, claimed.token, exc.code, exc.message, retryable=exc.retryable)
     except Exception as exc:
         log_event(
             logger, "job failed", level=logging.ERROR, job_id=claimed.id, kind=job["kind"], error=type(exc).__name__

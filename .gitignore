@@ -31,3 +31,6 @@ media_cache/
 model_cache/
 *.bin
 *.safetensors
+
+# Sheets for people to read (Step 08 sample review): they quote third-party posts, so they are never committed.
+exports/

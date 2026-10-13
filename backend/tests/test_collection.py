@@ -307,8 +307,9 @@ def test_without_credentials_nothing_runs_and_coverage_says_so(db, settings, fic
     cov = coverage(db, run_id)
     assert {c["status"] for c in cov.values()} == {"access_pending"}
     assert cov["web_fetch"]["note"].startswith("not run: no discovery source")
-    assert db["ai_jobs"].count_documents({"run_id": run_id}) == 0
+    assert db["ai_jobs"].count_documents({"run_id": run_id, "kind": "collect"}) == 0
     assert db["ai_runs"].find_one({"_id": run_id})["stage"] == "analysing", "nothing to collect: the stage moves on"
+    assert db["ai_jobs"].count_documents({"run_id": run_id, "kind": "analyse"}) == 1, "and its analysis is queued"
 
 
 def test_cancelling_stops_the_jobs_and_keeps_what_was_found(db, settings, contracts, world):

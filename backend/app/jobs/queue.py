@@ -193,6 +193,22 @@ class Deferred(Exception):
         self.reason, self.seconds = reason, seconds
 
 
+class PausedForReview(Exception):
+    """The handler's graph reached a human-review interrupt: the job ends waiting_review at this checkpoint."""
+
+    def __init__(self, checkpoint_id: str) -> None:
+        super().__init__(checkpoint_id)
+        self.checkpoint_id = checkpoint_id
+
+
+class JobFailure(Exception):
+    """A handler's explicit failure with its own code; `retryable` decides whether the job waits and retries."""
+
+    def __init__(self, code: str, message: str, *, retryable: bool) -> None:
+        super().__init__(f"{code}: {message}")
+        self.code, self.message, self.retryable = code, message, retryable
+
+
 def defer(db: Database[dict[str, Any]], job_id: str, token: int, reason: str, seconds: float) -> str | None:
     """Back to retry_wait after about `seconds` (with jitter, so two waiting jobs do not keep meeting); the claim's
     attempt is given back."""
@@ -285,6 +301,6 @@ def job_view(doc: dict[str, Any]) -> dict[str, Any]:
     """Contract Job shape (operations.schema.json): internal fields removed."""
     from app.contracts import to_view
 
-    view = to_view({k: v for k, v in doc.items() if k not in ("fencing", "cancel_requested")})
+    view = to_view({k: v for k, v in doc.items() if k not in ("fencing", "cancel_requested", "resume_event")})
     assert view is not None
     return view

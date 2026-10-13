@@ -50,6 +50,20 @@ def evidence_view(
     return {"evidence": view, "anchor_view": anchor, "eligible": not reasons, "ineligibility_reasons": reasons}
 
 
+def aspects_by_source(db: Database[dict[str, Any]], project_id: str) -> dict[str, set[str]]:
+    """Source revision -> the aspects of the project's claims that its evidence supports (Step 08)."""
+    source_of = {
+        e["id"]: f"{e['source']['id']}@{e['source']['revision']}"
+        for e in db["ai_evidence"].find({"project_id": project_id}, {"id": 1, "source": 1})
+    }
+    found: dict[str, set[str]] = {}
+    for claim in db["ai_claims"].find({"project_id": project_id}, {"aspect": 1, "supporting_evidence.id": 1}):
+        for ref in claim["supporting_evidence"]:
+            if ref["id"] in source_of:
+                found.setdefault(source_of[ref["id"]], set()).add(claim["aspect"])
+    return found
+
+
 @router.get("/projects/{project_id}/sources", operation_id="listSources", summary="Sources linked to a project")
 def list_sources(
     project_id: str,
@@ -74,8 +88,9 @@ def list_sources(
         key = f"{link['source']['id']}@{link['source']['revision']}"
         if LINK_RANK[link["status"]] > LINK_RANK.get(best.get(key, ""), 0):
             best[key] = link["status"]
-    if aspect is not None:  # aspects come from claims (Steps 07-08); none are recorded yet
-        return {"items": [], "next_cursor": None}
+    aspects = aspects_by_source(db, project_id)
+    if aspect is not None:
+        best = {k: v for k, v in best.items() if aspect in aspects.get(k, set())}
     query: dict[str, Any] = {"_id": {"$in": sorted(best)}}
     for field, value in (("connector_id", connector_id), ("source_kind", source_kind), ("language", language)):
         if value is not None:
@@ -108,7 +123,7 @@ def list_sources(
             "capture_level": s["capture_level"],
             "lifecycle": s["lifecycle"],
             "link_status": best[s["_id"]],
-            "aspects": [],
+            "aspects": sorted(aspects.get(s["_id"], set())),
         }
         for s in rows
     ]

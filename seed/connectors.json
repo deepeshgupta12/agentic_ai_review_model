@@ -286,6 +286,35 @@
    "verification_ref": null
   },
   {
+   "id": "instagram_public",
+   "provider": "Instagram public posts and reels through Scrapfly (discovery by Brave Search)",
+   "policy_family": "instagram_public",
+   "acquisition_order": 7,
+   "demo_requirement": "optional",
+   "content_kinds": [
+    "post"
+   ],
+   "yields": "Public post and reel captions with the author's username and post time. Comments are not read in this version.",
+   "expected_capabilities": {
+    "search": true,
+    "archive": null,
+    "comments": false,
+    "transcripts": false,
+    "deletion_check": true
+   },
+   "credential_env": [
+    "SCRAPFLY_API_KEY",
+    "BRAVE_SEARCH_API_KEY"
+   ],
+   "quota": null,
+   "cursor_method": "Brave query restricted to instagram.com per project; each post read once (shortcode)",
+   "deletion_method": "Re-read on refresh: a removed post (HTTP 404/410) is marked gone and its caption erased",
+   "demonstration": "A real public post of one supplied project read through Scrapfly with the robots.txt verdict and the credits used recorded",
+   "status": "access_pending",
+   "last_verified": null,
+   "verification_ref": null
+  },
+  {
    "id": "meta_graph_api",
    "provider": "Meta (Facebook/Instagram) approved endpoints",
    "policy_family": "meta",
