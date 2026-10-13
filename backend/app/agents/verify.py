@@ -44,7 +44,7 @@ ROLE = "routine"  # D53: Sonnet 5 for verification
 CLAIMS_PER_TASK = 10
 CANDIDATES_PER_CLAIM = 3
 CANDIDATE_CHARS = 500
-MAX_OUTPUT_TOKENS = 3000
+MAX_OUTPUT_TOKENS = 6000  # 3,000 cut off 3 of 6 tasks on the real data (13 Oct 2026)
 MAX_REASON_CHARS = 400
 
 

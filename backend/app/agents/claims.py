@@ -36,7 +36,7 @@ SCHEMA_REF = "agents.schema.json#/$defs/ClaimExtraction"
 SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"
 ROLE = "light"  # D53: Claude Haiku 5.5 for bulk extraction; changed only on measured evaluation
-MAX_TASK_CHARS = 9000
+MAX_TASK_CHARS = 5000  # long comment threads made more claims than 8,000 output tokens hold (13 Oct 2026)
 MAX_STATEMENT_CHARS = 400
 MAX_OUTPUT_TOKENS = 8000  # a video with many comments passed 4,000 on the real data (13 Oct 2026)
 
