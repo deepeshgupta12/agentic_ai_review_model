@@ -61,6 +61,14 @@ def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -
         return InstagramPublic(
             key.get_secret_value(), client, RobotsCache(client, agent_token(settings)), db, settings, brave
         )
+    if connector_id == "google_alerts":  # D56: feed addresses from the product owner's own alerts
+        from app.connectors.alerts import GoogleAlerts, feed_list
+
+        feeds = feed_list(settings.google_alerts_feeds.get_secret_value() if settings.google_alerts_feeds else None)
+        if not feeds:
+            return None
+        client = safe_client(settings)
+        return GoogleAlerts(feeds, client, RobotsCache(client, agent_token(settings)), db)
     if connector_id == "web_fetch":
         from app.connectors.web import WebFetch
 

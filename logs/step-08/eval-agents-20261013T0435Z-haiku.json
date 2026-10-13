@@ -1,0 +1,602 @@
+{
+  "dataset": {
+    "name": "agents-synthetic",
+    "version": "1.0.0",
+    "synthetic": true,
+    "note": "SYNTHETIC and FICTIONAL: invented posts about the fictional catalogue in evals/identity/v1/catalogue.json. No real person, project or registration. Labels were written with the posts, before any model saw them. Used to compare model routing for A05 and A11 and to check A06/A07 end to end (Step 08.7, D53)."
+  },
+  "models": {
+    "A05/A11 (light)": "claude-haiku-5-5",
+    "A06/A07 (routine)": "claude-sonnet-5"
+  },
+  "prompt_versions": {
+    "A05": "a05_claim_extractor.1.0",
+    "A06": "a06_evidence_verifier.1.0",
+    "A07": "a07_findings_synthesiser.1.1",
+    "A11": "a11_review_curator.1.0"
+  },
+  "documents": 15,
+  "unlinked_documents": [],
+  "model_calls": 25,
+  "failed_tasks": 0,
+  "cost_usd": 0.151216,
+  "elapsed_s": 263.5,
+  "summary": {
+    "claim_recall": 1.0,
+    "forbidden_claims": 0,
+    "claims_beyond_labels": 11,
+    "flag_checks": "1/1",
+    "verification_checks": "3/3",
+    "review_checks": "12/12",
+    "review_accuracy": 1.0,
+    "finding_checks": "4/4"
+  },
+  "totals": {
+    "expected_claims": 12,
+    "found_claims": 12,
+    "forbidden_claims": 0,
+    "extra_claims": 11,
+    "flag_checks": 1,
+    "flag_passes": 1,
+    "verification_checks": 3,
+    "verification_passes": 3,
+    "review_checks": 12,
+    "review_passes": 12
+  },
+  "backend_drops": {
+    "a05": {},
+    "a06": {},
+    "a07": {},
+    "a11": {
+      "speaker_unknown": 2
+    }
+  },
+  "documents_scored": [
+    {
+      "id": "q01",
+      "label": "plain site visit, one negative and one positive point",
+      "claims": [
+        {
+          "statement": "The approach road from the expressway is still a dirt track.",
+          "aspect": "connectivity",
+          "type": "fact",
+          "polarity": "negative",
+          "perspective": "site_visit",
+          "verification": "unverified",
+          "flags": []
+        },
+        {
+          "statement": "The approach road from the expressway floods after rain.",
+          "aspect": "connectivity",
+          "type": "opinion",
+          "polarity": "negative",
+          "perspective": "site_visit",
+          "verification": "not_applicable",
+          "flags": []
+        },
+        {
+          "statement": "The sample flat had good cross ventilation.",
+          "aspect": "layout",
+          "type": "opinion",
+          "polarity": "positive",
+          "perspective": "site_visit",
+          "verification": "not_applicable",
+          "flags": []
+        }
+      ],
+      "expected_found": "2/2",
+      "forbidden": [],
+      "review_check": true,
+      "reviews": [
+        {
+          "rendering": "verbatim",
+          "polarity": "mixed",
+          "text": "Visited Quillon Residences in Sector 102 last Sunday. The approach road from the expressway is still a dirt track and floods after rain. The sample flat had good cross ventilation."
+        }
+      ]
+    },
+    {
+      "id": "q02",
+      "label": "Hinglish complaint about a moved possession date",
+      "claims": [
+        {
+          "statement": "Possession was earlier stated as March 2027.",
+          "aspect": "possession",
+          "type": "fact",
+          "polarity": "neutral",
+          "perspective": "unknown",
+          "verification": "unverified",
+          "flags": []
+        },
+        {
+          "statement": "The builder is now saying possession will be in 2028.",
+          "aspect": "possession",
+          "type": "fact",
+          "polarity": "negative",
+          "perspective": "unknown",
+          "verification": "unverified",
+          "flags": []
+        },
+        {
+          "statement": "Too much delay has happened in the possession timeline.",
+          "aspect": "possession",
+          "type": "opinion",
+          "polarity": "negative",
+          "perspective": "unknown",
+          "verification": "not_applicable",
+          "flags": []
+        }
+      ],
+      "expected_found": "1/1",
+      "forbidden": [],
+      "review_check": true,
+      "reviews": [
+        {
+          "rendering": "translated",
+          "polarity": "negative",
+          "text": "Quillon Residences Sector 102 in possession March 2027 was said, now the builder is saying 2028. A lot of delay has happened."
+        }
+      ]
+    },
+    {
+      "id": "q03",
+      "label": "sarcasm: praise that means the opposite",
+      "claims": [
+        {
+          "statement": "A wall in the sample flat at Quillon Residences Sector 102 cracked within a week.",
+          "aspect": "construction_quality",
+          "type": "fact",
+          "polarity": "negative",
+          "perspective": "unknown",
+          "verification": "unverified",
+          "flags": []
+        }
+      ],
+      "expected_found": "1/1",
+      "forbidden": [],
+      "review_check": true,
+      "reviews": [
+        {
+          "rendering": "verbatim",
+          "polarity": "negative",
+          "text": "Wow, Quillon Residences Sector 102 has such amazing construction quality, the wall in the sample flat cracked within a week. Great job Brightwell!"
+        }
+      ]
+    },
+    {
+      "id": "q04",
+      "label": "negation: denies a problem",
+      "claims": [
+        {
+          "statement": "There is no water logging in the basement of Quillon Residences Sector 102.",
+          "aspect": "water",
+          "type": "fact",
+          "polarity": "positive",
+          "perspective": "unknown",
+          "verification": "unverified",
+          "flags": []
+        },
+        {
+          "statement": "The sewage plant at Quillon Residences Sector 102 is not shut.",
+          "aspect": "other",
+          "type": "fact",
+          "polarity": "positive",
+          "perspective": "unknown",
+          "verification": "unverified",
+          "flags": []
+        }
+      ],
+      "expected_found": "1/1",
+      "forbidden": [],
+      "reviews": []
+    },
+    {
+      "id": "q05",
+      "label": "prompt injection",
+      "claims": [],
+      "expected_found": "0/0",
+      "forbidden": [],
+      "review_check": true,
+      "reviews": []
+    },
+    {
+      "id": "q06",
+      "label": "copied marketing campaign",
+      "claims": [
+        {
+          "statement": "The project offers luxurious 3 and 4 BHK homes.",
+          "aspect": "layout",
+          "type": "promotion",
+          "polarity": "positive",
+          "perspective": "broker_or_developer",
+          "verification": "not_applicable",
+          "flags": []
+        },
+        {
+          "statement": "The project has world-class amenities.",
+          "aspect": "amenities",
+          "type": "promotion",
+          "polarity": "positive",
+          "perspective": "broker_or_developer",
+          "verification": "not_applicable",
+          "flags": []
+        },
+        {
+          "statement": "The project has 80% open area.",
+          "aspect": "density",
+          "type": "promotion",
+          "polarity": "positive",
+          "perspective": "broker_or_developer",
+          "verification": "not_applicable",
+          "flags": []
+        },
+        {
+          "statement": "The project is 5 minutes from Dwarka Expressway.",
+          "aspect": "location",
+          "type": "promotion",
+          "polarity": "positive",
+          "perspective": "broker_or_developer",
+          "verification": "not_applicable",
+          "flags": []
+        },
+        {
+          "statement": "Booking is offered with a 10% down payment.",
+          "aspect": "value_perception",
+          "type": "promotion",
+          "polarity": "neutral",
+          "perspective": "broker_or_developer",
+          "verification": "not_applicable",
+          "flags": []
+        }
+      ],
+      "expected_found": "0/0",
+      "forbidden": [],
+      "review_check": true,
+      "reviews": []
+    },
+    {
+      "id": "q07",
+      "label": "claims residence in a project not yet handed over (D27)",
+      "claims": [
+        {
+          "statement": "The maintenance staff at Quillon Residences are very responsive.",
+          "aspect": "maintenance",
+          "type": "opinion",
+          "polarity": "positive",
+          "perspective": "resident_experience",
+          "verification": "not_applicable",
+          "flags": [
+            "occupancy_before_possession"
+          ]
+        }
+      ],
+      "expected_found": "1/1",
+      "forbidden": [],
+      "flag_check": true,
+      "review_flag_check": true,
+      "reviews": [
+        {
+          "rendering": "verbatim",
+          "polarity": "positive",
+          "text": "I have been living in Quillon Residences Sector 102 for two years and the maintenance staff are very responsive."
+        }
+      ]
+    },
+    {
+      "id": "q08",
+      "label": "a question, no claim",
+      "claims": [],
+      "expected_found": "0/0",
+      "forbidden": [],
+      "review_check": true,
+      "reviews": []
+    },
+    {
+      "id": "q09",
+      "label": "possession date from the sales office (one side of a dispute)",
+      "claims": [
+        {
+          "statement": "Brightwell's sales office says possession of Quillon Residences Sector 102 Phase 1 is December 2026.",
+          "aspect": "possession",
+          "type": "fact",
+          "polarity": "neutral",
+          "perspective": "broker_or_developer",
+          "verification": "unverified",
+          "flags": []
+        }
+      ],
+      "expected_found": "1/1",
+      "forbidden": [],
+      "verification_check": true,
+      "reviews": []
+    },
+    {
+      "id": "q10",
+      "label": "possession date from buyers (the other side of the dispute)",
+      "claims": [
+        {
+          "statement": "The Quillon Residences Sector 102 Phase 1 buyers' group was told that possession has moved to June 2028.",
+          "aspect": "possession",
+          "type": "fact",
+          "polarity": "negative",
+          "perspective": "unknown",
+          "verification": "unverified",
+          "flags": []
+        }
+      ],
+      "expected_found": "1/1",
+      "forbidden": [],
+      "verification_check": true,
+      "reviews": []
+    },
+    {
+      "id": "q11",
+      "label": "a registry fact a primary record can verify",
+      "claims": [
+        {
+          "statement": "Quillon Residences Phase 1 in Sector 102 is registered with HRERA under TST/901/801/2023/11, dated 18 December 2023.",
+          "aspect": "other",
+          "type": "fact",
+          "polarity": "neutral",
+          "perspective": "unknown",
+          "verification": "verified",
+          "flags": []
+        }
+      ],
+      "expected_found": "1/1",
+      "forbidden": [],
+      "verification_check": true,
+      "review_check": true,
+      "reviews": []
+    },
+    {
+      "id": "r01",
+      "label": "registry record (primary)",
+      "claims": [
+        {
+          "statement": "Quillon Residences Phase 1 is registered with Haryana RERA under registration TST/901/801/2023/11, dated 18 December 2023, with project ID RERA-TST-1406-2023.",
+          "aspect": "other",
+          "type": "fact",
+          "polarity": "neutral",
+          "perspective": "official_record",
+          "verification": "verified",
+          "flags": []
+        },
+        {
+          "statement": "The Haryana RERA registration for Quillon Residences Phase 1 is valid up to 30 June 2031.",
+          "aspect": "other",
+          "type": "fact",
+          "polarity": "neutral",
+          "perspective": "official_record",
+          "verification": "verified",
+          "flags": []
+        },
+        {
+          "statement": "No occupation, completion or part-completion certificate is listed for Quillon Residences Phase 1 on the Haryana RERA public list of registered projects.",
+          "aspect": "construction_progress",
+          "type": "fact",
+          "polarity": "neutral",
+          "perspective": "official_record",
+          "verification": "verified",
+          "flags": []
+        }
+      ],
+      "expected_found": "0/0",
+      "forbidden": [],
+      "review_check": true,
+      "reviews": []
+    },
+    {
+      "id": "t01",
+      "label": "Hindi complaint about parking",
+      "claims": [
+        {
+          "statement": "There is a serious parking problem at Tavira Vista, Sector 88, and cars are parked on the road.",
+          "aspect": "parking",
+          "type": "opinion",
+          "polarity": "negative",
+          "perspective": "unknown",
+          "verification": "not_applicable",
+          "flags": []
+        }
+      ],
+      "expected_found": "1/1",
+      "forbidden": [],
+      "review_check": true,
+      "reviews": [
+        {
+          "rendering": "translated",
+          "polarity": "negative",
+          "text": "There is a big parking problem in Tavira Vista Sector 88, cars stand on the road."
+        }
+      ]
+    },
+    {
+      "id": "t02",
+      "label": "buyer's positive site visit",
+      "claims": [
+        {
+          "statement": "The tower finishing looks solid.",
+          "aspect": "construction_quality",
+          "type": "opinion",
+          "polarity": "positive",
+          "perspective": "site_visit",
+          "verification": "not_applicable",
+          "flags": []
+        },
+        {
+          "statement": "The lobby is complete.",
+          "aspect": "construction_progress",
+          "type": "fact",
+          "polarity": "positive",
+          "perspective": "site_visit",
+          "verification": "unverified",
+          "flags": []
+        },
+        {
+          "statement": "The writer is happy with their booking.",
+          "aspect": "value_perception",
+          "type": "opinion",
+          "polarity": "positive",
+          "perspective": "site_visit",
+          "verification": "not_applicable",
+          "flags": []
+        }
+      ],
+      "expected_found": "1/1",
+      "forbidden": [],
+      "review_check": true,
+      "reviews": [
+        {
+          "rendering": "verbatim",
+          "polarity": "positive",
+          "text": "Tavira Vista Sector 88 site visit today: the tower finishing looks solid and the lobby is complete. Happy with my booking."
+        }
+      ]
+    },
+    {
+      "id": "z01",
+      "label": "resident of the ready phase (allowed when the phase is known)",
+      "claims": [
+        {
+          "statement": "The clubhouse at Zephyrine Crest East is open, but the gym equipment is still in boxes.",
+          "aspect": "amenities",
+          "type": "fact",
+          "polarity": "mixed",
+          "perspective": "resident_experience",
+          "verification": "unverified",
+          "flags": []
+        }
+      ],
+      "expected_found": "1/1",
+      "forbidden": [],
+      "review_check": true,
+      "reviews": [
+        {
+          "rendering": "verbatim",
+          "polarity": "mixed",
+          "text": "Zephyrine Crest East, Sector 65: we moved in last year and the clubhouse is finally open, though the gym equipment is still in boxes."
+        }
+      ]
+    }
+  ],
+  "findings_scored": [
+    {
+      "project": "Quillon Residences",
+      "aspect": "connectivity",
+      "expect": [
+        "con"
+      ],
+      "ok": true
+    },
+    {
+      "project": "Quillon Residences",
+      "aspect": "construction_quality",
+      "expect": [
+        "con"
+      ],
+      "ok": true
+    },
+    {
+      "project": "Quillon Residences",
+      "aspect": "connectivity",
+      "forbid": [
+        "verified_fact"
+      ],
+      "ok": true
+    },
+    {
+      "project": "Quillon Residences",
+      "aspect": "construction_quality",
+      "forbid": [
+        "verified_fact"
+      ],
+      "ok": true
+    },
+    {
+      "project": "Quillon Residences",
+      "made": [
+        {
+          "aspect": "connectivity",
+          "kind": "con",
+          "attribution": "reported_opinion",
+          "wording": "A site visitor reports that the approach road from the expressway is still a dirt track and floods after rain."
+        },
+        {
+          "aspect": "construction_progress",
+          "kind": "neutral",
+          "attribution": "verified_fact",
+          "wording": "The Haryana RERA public list of registered projects does not show an occupation, completion or part-completion certificate for Quillon Residences Phase 1."
+        },
+        {
+          "aspect": "construction_quality",
+          "kind": "con",
+          "attribution": "reported_opinion",
+          "wording": "One report states that a wall in the sample flat at Quillon Residences Sector 102 cracked within a week."
+        },
+        {
+          "aspect": "density",
+          "kind": "pro",
+          "attribution": "reported_opinion",
+          "wording": "The developer's advertising says the project has 80% open area."
+        },
+        {
+          "aspect": "layout",
+          "kind": "pro",
+          "attribution": "reported_opinion",
+          "wording": "A site visitor reports that the sample flat had good cross ventilation."
+        },
+        {
+          "aspect": "location",
+          "kind": "pro",
+          "attribution": "reported_opinion",
+          "wording": "The developer's advertising says the project is 5 minutes from Dwarka Expressway."
+        },
+        {
+          "aspect": "other",
+          "kind": "neutral",
+          "attribution": "verified_fact",
+          "wording": "Quillon Residences Phase 1 is registered with Haryana RERA under registration TST/901/801/2023/11, dated 18 December 2023, with project ID RERA-TST-1406-2023."
+        },
+        {
+          "aspect": "other",
+          "kind": "neutral",
+          "attribution": "verified_fact",
+          "wording": "The Haryana RERA registration for Quillon Residences Phase 1 is valid up to 30 June 2031."
+        },
+        {
+          "aspect": "other",
+          "kind": "pro",
+          "attribution": "reported_opinion",
+          "wording": "One report states that the sewage plant at Quillon Residences Sector 102 is not shut."
+        },
+        {
+          "aspect": "possession",
+          "kind": "neutral",
+          "attribution": "reported_opinion",
+          "wording": "Possession dates reported for Quillon Residences Sector 102 Phase 1 vary: the developer's sales office states December 2026, a buyers' group was told possession has moved to June 2028, an earlier statement gave March 2027, and other reports say the builder is now saying possession will be in 2028."
+        },
+        {
+          "aspect": "possession",
+          "kind": "con",
+          "attribution": "reported_opinion",
+          "wording": "Some report that too much delay has happened in the possession timeline."
+        },
+        {
+          "aspect": "value_perception",
+          "kind": "neutral",
+          "attribution": "reported_opinion",
+          "wording": "The developer's advertising offers booking with a 10% down payment."
+        },
+        {
+          "aspect": "water",
+          "kind": "pro",
+          "attribution": "reported_opinion",
+          "wording": "One report states that there is no water logging in the basement of Quillon Residences Sector 102."
+        }
+      ]
+    }
+  ],
+  "scratch_database_dropped": true,
+  "saved_as": "evl_01M4SR4WNBF9BW9SH3KYYZJ1K8"
+}

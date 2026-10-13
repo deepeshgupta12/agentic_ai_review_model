@@ -49,6 +49,7 @@ GROUPS = {
     "youtube_data_api": ("youtube_data_api",),
     "registry": ("harera_registry",),  # Step 08 (D53): dated primary records for verification
     "instagram": ("instagram_public",),  # Step 08 (D54): public posts through Scrapfly
+    "alerts": ("google_alerts",),  # Step 08 (D56): Google Alerts by RSS, the free listening source
 }
 TERMINAL_JOB = {"completed", "failed", "cancelled"}
 
@@ -350,6 +351,54 @@ class Collector:
         plan = build_query_plan(self.db, self.project_id, _registry(self.settings))["plan"]["queries"]
         return [q for q in plan if q["connector_id"] == connector_id]
 
+    def _read_pages(
+        self, web: WebFetch, urls: list[str], cov: dict[str, Any], outcomes: dict[str, int], limit: int
+    ) -> None:
+        """Read each distinct page once, within `limit`; store, identify and count it in `cov` and `outcomes`."""
+        seen: set[str] = set()
+        for url in urls:
+            if url in seen or len(seen) >= limit:
+                continue
+            seen.add(url)
+            self.check()
+            landed = self.db["ai_fetch_log"].find_one(
+                {"url": url, "outcome": "fetched", "final_url": {"$type": "string"}}, sort=[("at", -1)]
+            )
+            known = [url, landed["final_url"]] if landed else [url]  # a redirect is stored where it landed
+            existing = self.db["ai_sources"].find_one(
+                {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "active"}, {"_id": 1}
+            )
+            if existing is not None:
+                outcomes["already_read"] = outcomes.get("already_read", 0) + 1
+                continue
+            withdrawn = self.db["ai_sources"].distinct(
+                "id", {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "withdrawn"}
+            )
+            if any(withdrawn_on_request(self.db, source_id) for source_id in withdrawn):
+                outcomes["withdrawn_on_request"] = outcomes.get("withdrawn_on_request", 0) + 1
+                continue  # not even requested again
+            outcome = web.fetch(url, run_id=self.run_id)
+            cov["attempted_queries"] += 1
+            key = "error_will_retry" if outcome.status == "error" and outcome.retryable else outcome.status
+            outcomes[key] = outcomes.get(key, 0) + 1
+            if outcome.item is None or outcome.policy is None:
+                continue
+            page_source = self._store_one(outcome.item, outcome.policy)
+            if page_source.source["lifecycle"] == "withdrawn":
+                continue
+            cov["fetched"] += 1
+            report = identify_source(
+                self.client,
+                self.db,
+                self.contracts,
+                page_source.source,
+                focus_project_ids=[self.project_id],
+                gateway=self.gateway,
+            )
+            self.spent(report)
+            if any(r["status"] != "rejected" and r["project_id"] == self.project_id for r in report["links"]):
+                cov["matched"] += 1
+
     # --- web group: Brave discovery, then the web reader ---
 
     def run_web(self) -> None:
@@ -407,50 +456,8 @@ class Collector:
         brave_cov["note"] = _note(skipped, errors)
         # The web reader: each distinct URL once per run, within the page budget.
         if web is not None:
-            seen: set[str] = set()
-            for url in to_read:
-                if url in seen or len(seen) >= self.settings.web_pages_per_run:
-                    continue
-                seen.add(url)
-                self.check()
-                landed = self.db["ai_fetch_log"].find_one(
-                    {"url": url, "outcome": "fetched", "final_url": {"$type": "string"}}, sort=[("at", -1)]
-                )
-                known = [url, landed["final_url"]] if landed else [url]  # a redirect is stored where it landed
-                existing = self.db["ai_sources"].find_one(
-                    {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "active"}, {"_id": 1}
-                )
-                if existing is not None:
-                    outcomes["already_read"] = outcomes.get("already_read", 0) + 1
-                    continue
-                withdrawn = self.db["ai_sources"].distinct(
-                    "id", {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "withdrawn"}
-                )
-                if any(withdrawn_on_request(self.db, source_id) for source_id in withdrawn):
-                    outcomes["withdrawn_on_request"] = outcomes.get("withdrawn_on_request", 0) + 1
-                    continue  # not even requested again
-                assert isinstance(web, WebFetch)
-                outcome = web.fetch(url, run_id=self.run_id)
-                web_cov["attempted_queries"] += 1
-                key = "error_will_retry" if outcome.status == "error" and outcome.retryable else outcome.status
-                outcomes[key] = outcomes.get(key, 0) + 1
-                if outcome.item is None or outcome.policy is None:
-                    continue
-                page_source = self._store_one(outcome.item, outcome.policy)
-                if page_source.source["lifecycle"] == "withdrawn":
-                    continue
-                web_cov["fetched"] += 1
-                report = identify_source(
-                    self.client,
-                    self.db,
-                    self.contracts,
-                    page_source.source,
-                    focus_project_ids=[self.project_id],
-                    gateway=self.gateway,
-                )
-                self.spent(report)
-                if any(r["status"] != "rejected" and r["project_id"] == self.project_id for r in report["links"]):
-                    web_cov["matched"] += 1
+            assert isinstance(web, WebFetch)
+            self._read_pages(web, to_read, web_cov, outcomes, self.settings.web_pages_per_run)
             web_cov["last_success_at"] = utcnow() if web_cov["fetched"] else None
             web_cov["note"] = _note(outcomes, [])
             if outcomes.get("error_will_retry"):  # a page that may read next time; permanent outcomes are decided
@@ -618,6 +625,58 @@ class Collector:
         cov["note"] = (note + (f"; not listed: {', '.join(missing)}" if missing else ""))[:500] or None
         update_coverage(self.db, self.run_id, cov)
 
+    # --- alerts group: Google Alerts feeds name new mentions; allow-listed pages are read (D56) ---
+
+    def run_alerts(self) -> None:
+        from app.connectors.alerts import GoogleAlerts
+        from app.identity.text import normalise_text
+
+        alerts = self._build("google_alerts")
+        if alerts is None:
+            return
+        assert isinstance(alerts, GoogleAlerts)
+        cov = _coverage("google_alerts", "complete_for_query", None)
+        project = self.db["projects"].find_one({"_id": self.project_id}) or {}
+        config = self.db["ai_project_configs"].find_one({"_id": self.project_id}) or {}
+        names = [normalise_text(project.get("project_name", ""))] + [
+            normalise_text(a["text"]) for a in config.get("aliases", []) if a.get("mode") == "standalone"
+        ]
+        counts: dict[str, int] = {}
+        try:
+            self.check()
+            items, seen = alerts.mentions([n for n in names if n], run_id=self.run_id)
+        except ProviderError as exc:
+            cov.update(status="partial" if exc.retryable else "unavailable", note=f"{exc.code}: {exc.message}"[:500])
+            update_coverage(self.db, self.run_id, cov)
+            return
+        counts.update(seen)
+        cov["attempted_queries"] = seen.get("feeds_read", 0)
+        to_read: list[str] = []
+        for item in items:
+            resolution = policies.resolve(self.db, item.canonical_url)
+            if resolution.family in ("youtube", "instagram_public"):
+                key = f"{resolution.family.split('_')[0]}_left_to_its_connector"
+                counts[key] = counts.get(key, 0) + 1
+                continue
+            if not resolution.may_collect or resolution.policy is None:
+                key = f"not_collected:{resolution.family or 'unknown'}"
+                counts[key] = counts.get(key, 0) + 1
+                continue
+            self._store_one(item, resolution.policy)
+            cov["metadata_only"] += 1
+            if resolution.family in policies.WEB_FETCH_FAMILIES:
+                to_read.append(item.canonical_url)
+        # The web reader's own group may have finished already, so ask whether it was planned at all.
+        run = self.db[RUNS].find_one({"_id": self.run_id}, {"coverage": 1}) or {"coverage": []}
+        planned = any(c["connector_id"] == "web_fetch" and c["status"] != "access_pending" for c in run["coverage"])
+        web = build("web_fetch", self.db, self.settings) if planned else None
+        if web is not None and to_read:
+            assert isinstance(web, WebFetch)
+            self._read_pages(web, to_read, cov, counts, self.settings.alert_pages_per_run)
+        cov["last_success_at"] = utcnow()
+        cov["note"] = _note(counts, [])
+        update_coverage(self.db, self.run_id, cov)
+
     # --- Instagram group: Brave finds public posts, Scrapfly reads them (D54) ---
 
     def run_instagram(self) -> None:
@@ -721,6 +780,8 @@ def handle_collect(db: Database[dict[str, Any]], job: dict[str, Any], check: Any
         collector.run_registry()
     elif group == "instagram":
         collector.run_instagram()
+    elif group == "alerts":
+        collector.run_alerts()
     else:
         raise ValueError(f"unknown collect group {group}")
     finish_if_done(db.client, db, job["run_id"], exclude_job=job["_id"])

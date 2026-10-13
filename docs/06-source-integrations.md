@@ -27,6 +27,7 @@ Every platform/capability gets a row in DECISIONS.md: provider, enabled/mandator
 | X | Entitled X API or listening provider | Search window/archive access, pagination, quota, downstream permissions |
 | Meta platforms | Approved endpoints or contracted listening capabilities | Each promised public/account/comment/Reels capability |
 | Instagram public posts | Brave discovery → Scrapfly scrape API (unblocker, residential proxies; D54) | A real public post of a supplied project read, with its robots.txt verdict and credits recorded |
+| New web mentions (free listening) | The product owner's Google Alerts, delivered by RSS → web reader for allow-listed pages (D56) | A real alert feed for a supplied project read, with the mentions it named |
 | Quora/LinkedIn/other forums | Permitted indexed pages or licensed/partner feeds | Actual project-level coverage |
 | Official project facts | Public regulatory/developer pages fetched under policy; optional fields in the input file | Correct phase, effective date and authority of each record |
 
@@ -82,6 +83,8 @@ Commit a page's records before advancing its cursor/watermark. Replaying the pag
 
 - **HRERA registry** (`backend/app/connectors/harera.py`, D53). The public Gurugram list of registered projects is read once per collection job; one `registration_record` per supplied RERA ID holds registry facts only (certificate and date, project ID, registered name, promoter, location, validity, whether a completion or occupation certificate is listed). The project preview page is not read: it repeats other projects' dates and holds directors' personal details. Policy `official_records` v2 (robots.txt recorded, D46).
 - **Instagram public posts** (`backend/app/connectors/instagram.py`, D54, policy `instagram_public` v1). Brave Search restricted to instagram.com finds post and reel addresses; each is read once through Scrapfly's scrape API (`unblocker=true`, `proxy_pool=public_residential_pool`, no JavaScript rendering). The logged-out page embeds the post as JSON; the caption, the author's username and the post time are kept. Comments need a rendered page and more credits, so they are not read in this version. Credits are reserved before each request (`SCRAPFLY_CREDITS_PER_POST` of `SCRAPFLY_MONTHLY_CREDITS`), and a run reads at most `INSTAGRAM_POSTS_PER_PROJECT` posts per project. robots.txt is asked and recorded for every page and not enforced: instagram.com disallows unlisted crawlers. The connector stays `access_pending` until `SCRAPFLY_API_KEY` is set and a real post has been read. Brave hits on instagram.com found by the web group are left to this connector.
+
+- **Google Alerts by RSS** (`backend/app/connectors/alerts.py`, D56, policy `google_alerts` v1). The free listening source: one alert per project in the product owner's Google account, feed addresses in `GOOGLE_ALERTS_FEEDS`. A run reads the feeds whose title names the project, stores each mention as discovery metadata under the policy of the page it points to (Google's redirect link removed; the date is when Google found it, kept as approximate), and the web reader reads allow-listed pages (up to `ALERT_PAGES_PER_RUN`). Feed addresses are never logged in full; snippets are not stored. robots.txt (google.com disallows /alerts/ for crawlers) is recorded, not enforced.
 
 ## Media rules
 

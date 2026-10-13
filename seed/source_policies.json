@@ -379,6 +379,32 @@
    "review_owner": "Product owner",
    "accepted_on": "2026-10-09",
    "accepted_by": "Product owner (D54, 9 Oct 2026)"
+  },
+  {
+   "family": "google_alerts",
+   "policy_version": 1,
+   "collection_allowed": true,
+   "ai_processing_allowed": false,
+   "quotation_allowed": false,
+   "derived_publication_allowed": false,
+   "attribution_required": true,
+   "retention_days": 30,
+   "hosts": [
+    "google.com"
+   ],
+   "excluded_hosts": [],
+   "conditions": [
+    "Only the product owner's own alert feeds (GOOGLE_ALERTS_FEEDS); feed addresses are kept with the credentials and never logged in full",
+    "Feed entries are discovery metadata (page address, title, when Google found it), never evidence; snippets are not stored",
+    "Pages named by an alert are stored and read under their own policy (web reader rules, allow-list)",
+    "robots.txt is asked for every feed read and its verdict recorded; it does not block the read"
+   ],
+   "robots_txt": "record_only",
+   "basis": "D56 (product owner, 13 Oct 2026: 'Build the Google Alerts with RSS delivery'): Google Alerts RSS as the free listening source. google.com's robots.txt disallows /alerts/ for crawlers; reading one's own subscribed feeds is feed-reader use, so robots.txt is recorded, not enforced (as D46).",
+   "status": "accepted",
+   "review_owner": "Product owner",
+   "accepted_on": "2026-10-13",
+   "accepted_by": "Product owner (D56, 13 Oct 2026)"
   }
  ]
 }
