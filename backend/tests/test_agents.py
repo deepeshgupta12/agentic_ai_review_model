@@ -113,6 +113,28 @@ def test_status_in_force_follows_phase_then_project_and_dates():
     assert consistency_flags("site_visit", partly, None, None) == [], "only first-hand living experience is checked"
 
 
+def test_more_status_checks_once_the_project_was_ready():
+    """D63: after handover, 'still waiting for possession' and complaints about construction progress are flagged for
+    a person; before handover they are ordinary claims."""
+    ready = [{"status": "ready_to_move", "applies_to": {"kind": "project", "rera_id": None}, "as_of": "2026-01-01"}]
+    building = [
+        {"status": "under_construction", "applies_to": {"kind": "project", "rera_id": None}, "as_of": "2026-01-01"}
+    ]
+    after = date(2026, 6, 1)
+    assert consistency_flags("owner_awaiting_possession", ready, None, after) == ["awaiting_after_handover"]
+    assert consistency_flags("owner_awaiting_possession", building, None, after) == []
+    flagged = consistency_flags(
+        "site_visit", ready, None, after, aspects=["construction_progress"], polarity="negative"
+    )
+    assert flagged == ["construction_after_completion"]
+    assert (
+        consistency_flags("site_visit", building, None, after, aspects=["construction_progress"], polarity="negative")
+        == []
+    )
+    assert consistency_flags("site_visit", ready, None, after, aspects=["amenities"], polarity="negative") == []
+    assert consistency_flags("resident_experience", ready, None, after) == [], "living there after handover is fine"
+
+
 # --- UC-55: A05 claim extraction --------------------------------------------------------------------------------
 
 
@@ -587,7 +609,7 @@ def test_rendering_checks_compare_every_word_with_the_original():
     assert a11.rendering_problem("shortened", "Lifts are slow. Payment plan was fair!", original, ["en"], "") == (
         "not_whole_sentences"
     ), "sentences keep their order"
-    assert a11.rendering_problem("shortened", "Payment plan was fair.", original, ["en"], "") == "not_whole_sentences"
+    assert a11.rendering_problem("shortened", "Payment plan was good.", original, ["en"], "") == "not_whole_sentences"
     assert a11.rendering_problem("translated", "The lifts are slow.", original, ["en"], "") == (
         "translated_from_english"
     )
@@ -659,9 +681,13 @@ def test_a11_reviews_come_from_one_source_in_the_authors_own_words(db, settings,
         "invented_reference": 1,
         "not_a_first_person_review": 1,
         "verbatim_changed": 1,
+        "dashes_normalised": 1,
     }, "one review per source and spans: a second rendering of the same words is a duplicate"
     [first] = out["drafts"]
-    assert first["rendering"] == "verbatim" and first["source_kind"] == "comment"
+    assert first["rendering"] == "punctuation_normalised" and first["source_kind"] == "comment"
+    assert "-" not in first["text"] and "last year, the site office" in first["text"], (
+        "displayed reviews have no dashes (product owner, 28 Sep 2026); every word is kept"
+    )
     assert first["speaker_label"] == "an_owner_awaiting_possession" and first["timestamp_ms"] is None
     assert first["original_text"] == COMMENT and first["consistency_flags"] == []
     stored = a11.store_reviews(db, contracts, out["drafts"], run_id=None)

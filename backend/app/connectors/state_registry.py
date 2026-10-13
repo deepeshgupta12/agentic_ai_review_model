@@ -83,7 +83,7 @@ FACT_LABEL = re.compile(
 )
 CERTIFICATE = re.compile(
     r"registration certificate|certificate of registration|form[\s-]*['\"]?c['\"]?\b|project registration number|"
-    r"registration (?:no|number)\s*[:.-]",
+    r"registration (?:no|number)\s*[:.-]|project approval date|real estate regulatory authority",
     re.IGNORECASE,
 )
 PROCEEDINGS = re.compile(r"cause list|appeal no|complainant|respondent|appellant|advocate|hearing", re.IGNORECASE)

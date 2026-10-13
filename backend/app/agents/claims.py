@@ -157,7 +157,12 @@ def check(
         when = observed["value"] or ((source.get("publication_date") or {}).get("value"))
         link = db["ai_project_source_links"].find_one({"_id": cited[0]["link_id"]}, {"phase": 1}) or {}
         flags = consistency_flags(
-            item["perspective"], config.get("construction_status") or [], (link.get("phase") or {}).get("rera_id"), when
+            item["perspective"],
+            config.get("construction_status") or [],
+            (link.get("phase") or {}).get("rera_id"),
+            when,
+            aspects=[item["aspect"]],
+            polarity=item["polarity"],
         )
         drafts.append(
             {

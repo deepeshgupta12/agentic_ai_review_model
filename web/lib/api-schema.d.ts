@@ -1811,10 +1811,10 @@ export interface components {
          */
         ClaimPerspective: "resident_experience" | "owner_awaiting_possession" | "site_visit" | "prospective_buyer" | "broker_or_developer" | "third_party_report" | "official_record" | "unknown";
         /**
-         * @description Set by the backend, never by a model. A flagged claim or review is kept out of content until a moderator resolves it (D27).
+         * @description Set by the backend, never by a model. A flagged claim or review is kept out of content until a moderator resolves it (D27, D63): occupancy before possession, status unknown, still awaiting possession after handover, construction complaints after completion.
          * @enum {unknown}
          */
-        ConsistencyFlag: "occupancy_before_possession" | "status_unknown";
+        ConsistencyFlag: "occupancy_before_possession" | "status_unknown" | "awaiting_after_handover" | "construction_after_completion";
         /** @enum {unknown} */
         VerificationStatus: "unverified" | "verified" | "contradicted" | "disputed" | "not_applicable";
         Verification: {

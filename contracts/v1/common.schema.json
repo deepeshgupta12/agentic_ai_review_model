@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Common definitions",
   "description": "Shared vocabulary for contracts v1: IDs, revisions, hashes, time, anchors, confidence and every status enum. Backend, web and agent schemas reference these; none redefines them (D22).",
-  "x-contract-version": "1.1.0",
+  "x-contract-version": "1.2.0",
   "$defs": {
     "Ulid": { "type": "string", "pattern": "^[0-9A-HJKMNP-TV-Z]{26}$" },
     "ProjectId": { "type": "string", "pattern": "^prj_[0-9A-HJKMNP-TV-Z]{26}$" },
@@ -354,8 +354,8 @@
       ]
     },
     "ConsistencyFlag": {
-      "description": "Set by the backend, never by a model. A flagged claim or review is kept out of content until a moderator resolves it (D27).",
-      "enum": ["occupancy_before_possession", "status_unknown"]
+      "description": "Set by the backend, never by a model. A flagged claim or review is kept out of content until a moderator resolves it (D27, D63): occupancy before possession, status unknown, still awaiting possession after handover, construction complaints after completion.",
+      "enum": ["occupancy_before_possession", "status_unknown", "awaiting_after_handover", "construction_after_completion"]
     },
     "ReviewRendering": {
       "description": "How a source review is shown (D28). verbatim: the author's words; punctuation_normalised: only punctuation and spacing changed (e.g. dashes to commas); shortened: whole sentences left out, the rest verbatim; translated: Hindi or Hinglish rendered in English with the meaning kept.",

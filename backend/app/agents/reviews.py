@@ -32,6 +32,7 @@ from typing import Any
 from pymongo.database import Database
 
 from app import audit
+from app.agents import consistency
 from app.agents.common import Handles, cached_output, keep_output, numbers_in, record_run, stable_id
 from app.agents.consistency import consistency_flags
 from app.agents.gateway import GatewayResult, ModelGateway
@@ -185,6 +186,18 @@ def render(
     return "\n".join(lines), {"s": sources, "e": spans}
 
 
+DASH = re.compile("[" + "".join(re.escape(c) for c in consistency.rules()["review_text"]["forbidden_characters"]) + "]")
+
+
+def without_dashes(text: str) -> str:
+    """Dashes between phrases become commas, hyphens inside words become spaces; every word is kept."""
+    out = re.sub(r"\s*[\u2012-\u2015]\s*|\s+[-\u2010\u2011]+\s+", ", ", text)
+    out = DASH.sub(" ", out)
+    out = re.sub(r"\s+,", ",", out)
+    out = re.sub(r",(\s*,)+", ",", out)
+    return re.sub(r"[ \t]{2,}", " ", out).strip(" ,")
+
+
 def _spaced(text: str) -> str:
     return " ".join(text.split())
 
@@ -216,7 +229,8 @@ def rendering_problem(rendering: str, text: str, original: str, languages: list[
     if rendering == "punctuation_normalised":
         return None if words(text) == words(original) else "words_changed"
     if rendering == "shortened":
-        kept, all_sentences = sentences(text), sentences(original)
+        # whole sentences, compared word by word, so a shortened review may also have its dashes normalised (D28)
+        kept, all_sentences = [words(x) for x in sentences(text)], [words(x) for x in sentences(original)]
         position = 0
         for sentence in kept:
             while position < len(all_sentences) and all_sentences[position] != sentence:
@@ -281,6 +295,10 @@ def check(
         if problem:
             drops[problem] += 1
             continue
+        if DASH.search(text):  # displayed reviews have no dashes or hyphens (product owner, 28 Sep 2026)
+            text = without_dashes(text)
+            rendering = "punctuation_normalised" if rendering == "verbatim" else rendering
+            drops["dashes_normalised"] += 1
         if PHONE.search(text) or EMAIL.search(text):
             drops["personal_data"] += 1
             continue
@@ -306,6 +324,8 @@ def check(
             config.get("construction_status") or [],
             (link.get("phase") or {}).get("rera_id"),
             published.get("value"),
+            aspects=aspects,
+            polarity=polarity,
         )
         drafts.append(
             {

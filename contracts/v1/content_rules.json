@@ -1,31 +1,66 @@
 {
-  "description": "Content rules checked by the backend (D27, D28). Construction status decides whether first-hand living experience is possible, so evidence, reviews and page wording must agree with it. Status is context for these checks; the page does not state it as a fact unless it comes from a verified primary record. Source reviews show the author's own words.",
-  "version": "1.0.0",
-  "export_labels": {
-    "new launch": "new_launch",
-    "under construction": "under_construction",
-    "partially ready to move": "partially_ready",
-    "ready to move": "ready_to_move"
-  },
-  "occupancy_possible": {
-    "new_launch": "no",
-    "under_construction": "no",
-    "partially_ready": "phase_dependent",
-    "ready_to_move": "yes"
-  },
-  "occupancy_perspectives": ["resident_experience"],
-  "wording": {
-    "note": "Deterministic backstop for the client's own page text (overview, advantages, considerations, questions); A09 QA checks meaning as well. Terms match as whole words, case-insensitive. Before possession they block approval; in a partially ready project they ask the editor to name the phase. Source reviews are the authors' words and are checked through their perspective instead.",
-    "occupancy_terms": ["resident", "residents", "living here", "lived here", "live here", "living in the project", "moved in", "our society"],
-    "preferred_terms": {
-      "new_launch": "prospective buyers",
-      "under_construction": "buyers or owners awaiting possession",
-      "partially_ready": "residents of the ready phase (name it) and buyers awaiting other phases",
-      "ready_to_move": "residents and owners"
-    }
-  },
-  "review_text": {
-    "note": "Displayed review text contains no dashes or hyphens (product owner, 28 Sep 2026). A11 removes them with the punctuation_normalised rendering, which may change punctuation only; every word stays the author's.",
-    "forbidden_characters": ["-", "‐", "‑", "‒", "–", "—", "―"]
+ "description": "Content rules checked by the backend (D27, D28). Construction status decides whether first-hand living experience is possible, so evidence, reviews and page wording must agree with it. Status is context for these checks; the page does not state it as a fact unless it comes from a verified primary record. Source reviews show the author's own words.",
+ "version": "1.1.0",
+ "export_labels": {
+  "new launch": "new_launch",
+  "under construction": "under_construction",
+  "partially ready to move": "partially_ready",
+  "ready to move": "ready_to_move"
+ },
+ "occupancy_possible": {
+  "new_launch": "no",
+  "under_construction": "no",
+  "partially_ready": "phase_dependent",
+  "ready_to_move": "yes"
+ },
+ "occupancy_perspectives": [
+  "resident_experience"
+ ],
+ "wording": {
+  "note": "Deterministic backstop for the client's own page text (overview, advantages, considerations, questions); A09 QA checks meaning as well. Terms match as whole words, case-insensitive. Before possession they block approval; in a partially ready project they ask the editor to name the phase. Source reviews are the authors' words and are checked through their perspective instead.",
+  "occupancy_terms": [
+   "resident",
+   "residents",
+   "living here",
+   "lived here",
+   "live here",
+   "living in the project",
+   "moved in",
+   "our society"
+  ],
+  "preferred_terms": {
+   "new_launch": "prospective buyers",
+   "under_construction": "buyers or owners awaiting possession",
+   "partially_ready": "residents of the ready phase (name it) and buyers awaiting other phases",
+   "ready_to_move": "residents and owners"
   }
+ },
+ "review_text": {
+  "note": "Displayed review text contains no dashes or hyphens (product owner, 28 Sep 2026). A11 removes them with the punctuation_normalised rendering, which may change punctuation only; every word stays the author's.",
+  "forbidden_characters": [
+   "-",
+   "‐",
+   "‑",
+   "‒",
+   "–",
+   "—",
+   "―"
+  ]
+ },
+ "status_checks": {
+  "note": "D63: further checks of a claim or review against the status in force on its date. Each applies only when occupancy was possible then (ready, or the claim's ready phase).",
+  "awaiting_after_handover": {
+   "perspectives": [
+    "owner_awaiting_possession"
+   ]
+  },
+  "construction_after_completion": {
+   "aspects": [
+    "construction_progress"
+   ],
+   "polarities": [
+    "negative"
+   ]
+  }
+ }
 }
