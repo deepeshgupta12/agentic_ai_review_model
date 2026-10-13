@@ -641,7 +641,10 @@ def test_frames_need_the_policy_the_switch_and_a_video_file(db, settings, contra
         db["ai_sources"].update_one({"_id": video["_id"]}, {"$set": {"media.access_status": "metadata_only"}})
         db["ai_media_segments"].delete_many({})
 
-    monkeypatch.setattr(pipeline, "FRAMES_FROM_POLICY_VERSION", 4)  # as if the accepted policy did not cover frames
+    from app.sources import policies
+
+    newer = policies.current(db, "spoken_video_content")["policy_version"] + 1
+    monkeypatch.setattr(pipeline, "FRAMES_FROM_POLICY_VERSION", newer)  # as if the accepted policy did not cover frames
     audio = FakeDownload()
     result = process(db, settings, contracts, video, audio=audio, gateway=gateway)
     assert audio.with_video == [False] and "does not cover frames" in result["frames_skipped"] and not client.calls
