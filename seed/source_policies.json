@@ -95,7 +95,24 @@
     "homznspace.com",
     "client-site.example",
     "client-site.example",
-    "client-site.example"
+    "client-site.example",
+    "gujrera.gujarat.gov.in",
+    "maharera.mahaonline.gov.in",
+    "maharera.maharashtra.gov.in",
+    "rera.ap.gov.in",
+    "rera.bihar.gov.in",
+    "rera.delhi.gov.in",
+    "rera.goa.gov.in",
+    "rera.karnataka.gov.in",
+    "rera.kerala.gov.in",
+    "rera.mp.gov.in",
+    "rera.punjab.gov.in",
+    "rera.rajasthan.gov.in",
+    "rera.tn.gov.in",
+    "rera.wb.gov.in",
+    "rerait.telangana.gov.in",
+    "ukrera.uk.gov.in",
+    "up-rera.in"
    ],
    "conditions": [
     "Public pages only; never bypass login, paywall, CAPTCHA, rate limits or private groups",
@@ -203,7 +220,7 @@
   },
   {
    "family": "official_records",
-   "policy_version": 2,
+   "policy_version": 3,
    "collection_allowed": true,
    "ai_processing_allowed": true,
    "quotation_allowed": true,
@@ -211,17 +228,36 @@
    "attribution_required": true,
    "retention_days": 365,
    "hosts": [
-    "haryanarera.gov.in"
+    "haryanarera.gov.in",
+    "gujrera.gujarat.gov.in",
+    "maharera.mahaonline.gov.in",
+    "maharera.maharashtra.gov.in",
+    "rera.ap.gov.in",
+    "rera.bihar.gov.in",
+    "rera.delhi.gov.in",
+    "rera.goa.gov.in",
+    "rera.karnataka.gov.in",
+    "rera.kerala.gov.in",
+    "rera.mp.gov.in",
+    "rera.punjab.gov.in",
+    "rera.rajasthan.gov.in",
+    "rera.tn.gov.in",
+    "rera.wb.gov.in",
+    "rerait.telangana.gov.in",
+    "ukrera.uk.gov.in",
+    "up-rera.in"
    ],
    "conditions": [
     "Quote only registry facts (IDs, dates, registered names, status) together with the record date",
-    "robots.txt is asked for every page and its verdict recorded; it does not block the fetch (D46)"
+    "Registration certificates and project pages of the state RERA portals, found by the registration number (D57); a page is kept only if it states the number; telephone numbers, e-mail addresses and identity numbers are removed",
+    "robots.txt is asked for every page and its verdict recorded; it does not block the fetch (D46, D61)",
+    "A refused page is asked for once more through Scrapfly (D61)"
    ],
-   "basis": "Public regulatory records used as dated primary evidence. Version 2 (product owner, 1 Oct 2026, D46): robots.txt is recorded, not enforced. Pages that refuse our crawler are still not worked around (D33).",
+   "basis": "Public regulatory records used as dated primary evidence. Version 2 (product owner, 1 Oct 2026, D46): robots.txt is recorded, not enforced. Pages that refuse our crawler are still not worked around (D33). Version 3 (product owner, 13 Oct 2026, D57 and D61): the RERA portals of 16 other states, read by registration number.",
    "status": "accepted",
    "review_owner": "Product owner",
-   "accepted_on": "2026-10-01",
-   "accepted_by": "Product owner (robots.txt decision, 1 Oct 2026)",
+   "accepted_on": "2026-10-13",
+   "accepted_by": "Product owner (D57, D61, 13 Oct 2026)",
    "robots_txt": "record_only"
   },
   {

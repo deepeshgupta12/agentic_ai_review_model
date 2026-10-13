@@ -20,6 +20,7 @@ dependencies = [
     "trafilatura>=2.2,<3",
     "tzdata>=2025.1",
     "numpy>=2.5,<3",  # Step 07: cosine similarity over a project's evidence embeddings (D50)
+    "pypdf>=6",
 ]
 
 [dependency-groups]

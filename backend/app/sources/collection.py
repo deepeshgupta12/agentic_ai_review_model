@@ -589,7 +589,10 @@ class Collector:
         cov = _coverage("harera_registry", "complete_for_query", None)
         project = self.db["projects"].find_one({"_id": self.project_id}) or {}
         connector, reason = reader_for(project)
-        if connector != "harera_registry":  # another state's project: HRERA never answers for it (D57)
+        if connector == "state_registry":  # another state's portal, by registration number (D57)
+            self._run_state_registry(project, cov)
+            return
+        if connector != "harera_registry":  # a state without a reader: reported, never looked up elsewhere
             cov.update(status="access_pending", note=reason)
             update_coverage(self.db, self.run_id, cov)
             return
@@ -628,6 +631,47 @@ class Collector:
         cov["last_success_at"] = utcnow()
         note = _note(counts, []) or ""
         cov["note"] = (note + (f"; not listed: {', '.join(missing)}" if missing else ""))[:500] or None
+        update_coverage(self.db, self.run_id, cov)
+
+    def _run_state_registry(self, project: dict[str, Any], cov: dict[str, Any]) -> None:
+        from app.connectors.registries import state_of
+        from app.connectors.state_registry import PORTALS, StateRegistry
+
+        state = state_of(project) or ""
+        reader = build("state_registry", self.db, self.settings)
+        assert isinstance(reader, StateRegistry)
+        policy = policies.current(self.db, "official_records")
+        if policy is None or not policy["collection_allowed"]:
+            cov.update(status="unavailable", note="the official_records policy does not allow collection")
+            update_coverage(self.db, self.run_id, cov)
+            return
+        numbers = [r["id_normalised"] for r in project.get("rera_registrations", [])]
+        missing: list[str] = []
+        for number in numbers:
+            self.check()
+            cov["attempted_queries"] += 1
+            try:
+                item = reader.record(state, number, run_id=self.run_id)
+            except ProviderError as exc:
+                missing.append(f"{number} ({exc.code})")
+                continue
+            if item is None:
+                missing.append(number)
+                continue
+            stored = self._store_one(item, policy)
+            cov["fetched"] += 1
+            report = identify_source(
+                self.client, self.db, self.contracts, stored.source, focus_project_ids=[self.project_id]
+            )
+            if any(r["status"] != "rejected" and r["project_id"] == self.project_id for r in report["links"]):
+                cov["matched"] += 1
+        found = cov["fetched"]
+        note = f"{PORTALS[state].name}: {found} of {len(numbers)} registration records found"
+        if not numbers:
+            note = f"{PORTALS[state].name}: the project has no RERA number in its input; nothing to look up"
+        cov["note"] = (note + (f"; not found: {', '.join(missing)}" if missing else ""))[:500]
+        cov["status"] = "complete_for_query" if not missing else "partial"
+        cov["last_success_at"] = utcnow() if found else None
         update_coverage(self.db, self.run_id, cov)
 
     # --- Instagram group: Brave finds public posts, Scrapfly reads them (D54) ---

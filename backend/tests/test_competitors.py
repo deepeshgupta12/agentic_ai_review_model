@@ -80,14 +80,16 @@ def test_a_refused_competitor_page_is_read_through_scrapfly_and_logged(db, setti
     assert "test-only-scrapfly-key" not in json.dumps(entry, default=str)
 
 
-def test_the_open_web_is_read_and_unblocked_but_registries_never_are(db, settings, contracts):
+def test_the_open_web_and_registries_are_unblocked_but_blocked_families_are_never_fetched(db, settings, contracts):
     net, calls = network()
     outcome = reader(db, settings, net).fetch("https://forum.example.test/t/9")
     assert outcome.status == "fetched" and outcome.reason == "fetched_unblocked", (
         "any public host, refusal retried (D61)"
     )
     registry = reader(db, settings, net).fetch("https://haryanarera.gov.in/view_project/9")
-    assert registry.status == "refused" and calls == ["https://forum.example.test/t/9"], "official records: never"
+    assert registry.reason == "fetched_unblocked", "official records too: every data (D61)"
+    platform = reader(db, settings, net).fetch("https://www.reddit.com/r/gurgaon/1")
+    assert platform.status == "not_allowed" and len(calls) == 2, "a family that blocks collection is never fetched"
 
 
 def test_a_page_built_by_javascript_is_rendered_through_firecrawl_once(db, settings, contracts):

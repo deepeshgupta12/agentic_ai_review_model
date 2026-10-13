@@ -174,14 +174,14 @@
   },
   {
    "id": "harera_registry",
-   "provider": "Haryana RERA public registry (haryanarera.gov.in)",
+   "provider": "RERA registries: the Haryana RERA list (HRERA) and, for 16 other states, registration records found by number on the state portal (D57)",
    "policy_family": "official_records",
    "acquisition_order": 5,
    "demo_requirement": "optional",
    "content_kinds": [
     "registration_record"
    ],
-   "yields": "Registration details for the supplied RERA IDs: dated primary records for fact verification",
+   "yields": "Registration records for the supplied RERA IDs: dated primary records for fact verification. States without a configured portal are reported access_pending by name",
    "expected_capabilities": {
     "search": null,
     "archive": false,

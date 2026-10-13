@@ -4,8 +4,8 @@ Projects can be anywhere in India, and each state runs its own RERA portal with 
 comes from its `state` field when the input gives one, otherwise from its city (the table below lists the cities of
 the main property markets; it grows as projects are added). A run uses the reader built for that state; a state
 without a reader is reported as `access_pending` with its name, never skipped silently and never looked up in another
-state's registry. Readers are added one state at a time, each checked against the real portal first; a portal that
-puts a captcha or a sign-in in front of its records is not worked around (D33) and stays access_pending.
+state's registry. Haryana has its list reader (HRERA); 16 other states have the generic certificate reader
+(app.connectors.state_registry); the rest are reported access_pending by name.
 """
 
 from __future__ import annotations
@@ -14,7 +14,12 @@ from typing import Any
 
 from app.identity.text import normalise_text
 
-READERS = {"haryana": "harera_registry"}  # state -> connector; D57 adds the others one by one
+
+def _readers() -> dict[str, str]:
+    from app.connectors.state_registry import PORTALS
+
+    return {"haryana": "harera_registry", **{state: "state_registry" for state in PORTALS}}
+
 
 CITY_STATE = {
     "haryana": [
@@ -83,7 +88,7 @@ def reader_for(project: dict[str, Any]) -> tuple[str | None, str | None]:
     state = state_of(project)
     if state is None:
         return None, f"the state of {project.get('city') or 'this city'} is not known: add the project's state"
-    connector = READERS.get(state)
+    connector = _readers().get(state)
     if connector is None:
         return None, f"no registry reader for {state.title()} yet (D57); the {state.title()} RERA portal is not read"
     return connector, None

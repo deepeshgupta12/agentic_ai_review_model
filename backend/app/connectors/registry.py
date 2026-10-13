@@ -74,6 +74,18 @@ def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -
         if scrapfly is None or brave is None:
             return None
         return InstagramPublic(scrapfly, RobotsCache(safe_client(settings), agent_token(settings)), db, settings, brave)
+    if connector_id == "state_registry":  # D57: the other states' RERA portals, by registration number
+        from app.connectors.state_registry import StateRegistry
+
+        client = safe_client(settings)
+        client.max_bytes = max(client.max_bytes, 8_000_000)  # certificate PDFs
+        return StateRegistry(
+            client,
+            RobotsCache(client, agent_token(settings)),
+            db,
+            build("brave_search", db, settings),
+            scrapfly_for(db, settings),
+        )
     if connector_id == "web_fetch":
         from app.connectors.web import WebFetch
 

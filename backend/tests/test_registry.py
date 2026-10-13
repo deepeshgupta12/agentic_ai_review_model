@@ -165,7 +165,8 @@ def test_each_project_is_looked_up_in_its_own_states_registry_or_reported_as_not
     assert state_of({"city": "Pune"}) == "maharashtra" and state_of({"city": "Noida"}) == "uttar pradesh"
     assert state_of({"city": "Somewhere", "state": "Kerala"}) == "kerala", "the input's state wins"
     assert reader_for({"city": "Gurgaon"}) == ("harera_registry", None)
-    connector, reason = reader_for({"city": "Bengaluru"})
-    assert connector is None and "no registry reader for Karnataka yet" in reason
+    assert reader_for({"city": "Bengaluru"}) == ("state_registry", None), "Karnataka has a portal reader"
+    connector, reason = reader_for({"city": "Shimla", "state": "Himachal Pradesh"})
+    assert connector is None and "no registry reader for Himachal Pradesh yet" in reason
     connector, reason = reader_for({"city": "Unknownpur"})
     assert connector is None and "add the project's state" in reason
