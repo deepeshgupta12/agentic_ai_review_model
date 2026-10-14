@@ -275,7 +275,7 @@ def test_metadata_only_items_carry_no_payload(db):
         store_item(db, item(text=None, kind="search_result"), policy)
     assert db["ai_payloads"].count_documents({}) == 0
     with pytest.raises(PermissionError):
-        store_item(db, item(), current(db, "reddit"))
+        store_item(db, item(), current(db, "linkedin"))
 
 
 def test_cursor_state_advances_with_its_version(db):

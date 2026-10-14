@@ -62,6 +62,20 @@ export async function apiGet<T>(path: string, query?: Query): Promise<ApiResult<
   }
 }
 
+/** Every item of a paged list (the API pages at most 100), following next_cursor up to `pages` pages. */
+export async function apiGetAll<T>(path: string, query?: Query, pages = 10): Promise<ApiResult<{ items: T[] }>> {
+  const items: T[] = [];
+  let cursor: string | null = null;
+  for (let page = 0; page < pages; page++) {
+    const result: ApiResult<{ items: T[]; next_cursor: string | null }> = await apiGet(path, { ...query, limit: 100, cursor });
+    if (!result.data) return { ...result, data: null };
+    items.push(...result.data.items);
+    cursor = result.data.next_cursor;
+    if (!cursor) break;
+  }
+  return { status: 200, data: { items }, error: null, requestId: null };
+}
+
 /** Public, cookie-free GET (the public project page). */
 export async function apiGetPublic<T>(path: string): Promise<ApiResult<T>> {
   try {
@@ -72,14 +86,29 @@ export async function apiGetPublic<T>(path: string): Promise<ApiResult<T>> {
   }
 }
 
-export async function backendMode(): Promise<string> {
+export type BackendInfo = {
+  mode: string;
+  /** "reviews" (default, D68) or "full" (claims and findings as well). */
+  analysis_mode: string;
+  page_reviews_max: number;
+  review_words_min: number;
+  review_words_max: number;
+};
+
+/** The backend's mode and the page's review limits (D69), read from /healthz so the console never copies them. */
+export async function backendInfo(): Promise<BackendInfo> {
+  const fallback = { analysis_mode: "reviews", page_reviews_max: 20, review_words_min: 30, review_words_max: 80 };
   try {
     const response = await fetch(`${API}/healthz`, { cache: "no-store" });
-    const body = (await response.json()) as { mode?: string };
-    return body.mode ?? "unknown";
+    const body = (await response.json()) as Partial<BackendInfo>;
+    return { ...fallback, ...body, mode: body.mode ?? "unknown" };
   } catch {
-    return "unreachable";
+    return { ...fallback, mode: "unreachable" };
   }
+}
+
+export async function backendMode(): Promise<string> {
+  return (await backendInfo()).mode;
 }
 
 /** The signed-in user (the console layout guarantees one). */

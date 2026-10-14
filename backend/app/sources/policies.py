@@ -30,10 +30,12 @@ from app.ids import new_id
 COLLECTION = "ai_source_policies"
 GENERIC_WEB = "web_public_pages"
 # Families whose pages the web fetcher may read (by host). Others are reached only through their own API.
-WEB_FETCH_FAMILIES = {GENERIC_WEB, "competitor_portals", "official_records"}
+WEB_FETCH_FAMILIES = {GENERIC_WEB, "competitor_portals", "official_records", "quora"}  # quora: D67, signed-out pages
 # Families whose refused pages may be read through Scrapfly's unblocker: a product owner's decision per family
 # (competitor portals D60; the generic web and official records D61, "I need every data").
-UNBLOCK_FAMILIES = {"competitor_portals", GENERIC_WEB, "official_records"}
+UNBLOCK_FAMILIES = {"competitor_portals", GENERIC_WEB, "official_records", "quora"}
+# Families whose pages hold several people's reviews or answers, split into one source each (D68).
+REVIEW_PAGE_FAMILIES = {"competitor_portals", "quora"}
 IMMUTABLE_FIELDS = (
     "collection_allowed",
     "ai_processing_allowed",

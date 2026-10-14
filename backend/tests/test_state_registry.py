@@ -154,6 +154,7 @@ def test_a_run_for_a_project_in_another_state_stores_its_registry_record(
     net = network()
     settings.brave_search_api_key = SecretStr("test-only-brave-key-0000")
     settings.crawler_min_seconds_per_host = 0
+    settings.analysis_mode = "full"  # a reviews-only analysis reads no registry (D68)
     monkeypatch.setattr(registry, "safe_client", lambda _s: net.client())
     monkeypatch.setattr(collection, "get_settings", lambda: settings)
     q = fictional["Quillon Residences"]

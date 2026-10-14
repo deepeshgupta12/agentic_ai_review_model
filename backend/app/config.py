@@ -117,6 +117,20 @@ class Settings(BaseSettings):
     firecrawl_monthly_credits: int = Field(default=500, ge=0)
     firecrawl_credits_per_page: int = Field(default=1, ge=1)
     web_pages_per_run: int = Field(default=80, ge=0)  # 40 until D61 opened the generic web route
+    # Reddit through PullPush (D67, D68): names searched per project, posts and comment hits per name, threads read.
+    reddit_names_per_project: int = Field(default=4, ge=0)
+    reddit_posts_per_name: int = Field(default=25, ge=0, le=100)
+    reddit_comment_hits_per_name: int = Field(default=50, ge=0, le=100)
+    reddit_threads_per_run: int = Field(default=30, ge=0)
+    reddit_comments_per_thread: int = Field(default=100, ge=1, le=100)
+    # Threads PullPush has no comments for, read from Reddit's JSON through Scrapfly: spends credits, off by default.
+    reddit_threads_via_scrapfly_per_run: int = Field(default=0, ge=0)
+    # The analysis (D68): "reviews" curates first-person reviews only (A11); "full" also extracts claims and findings.
+    analysis_mode: str = Field(default="reviews", pattern="^(reviews|full)$")
+    # The published page (D69): at most this many reviews, each 30 to 80 words (A11 keeps only reviews in the range).
+    page_reviews_max: int = Field(default=20, ge=1, le=100)
+    review_words_min: int = Field(default=30, ge=1)
+    review_words_max: int = Field(default=80, ge=1)
     identity_agent_tasks_per_run: int = Field(default=10, ge=0)
     recheck_per_job: int = Field(default=200, ge=0)
 

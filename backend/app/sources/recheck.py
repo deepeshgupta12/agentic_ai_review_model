@@ -6,7 +6,10 @@ checked first, within a per-job budget:
 - an edited source becomes a new revision (the old one is superseded and its dependants invalidated) and is linked
   again to the projects its previous revision belonged to, without the identity agent;
 - a web page's stated date is corrected, with an audit event, when strict markup extraction no longer supports the
-  stored one (D44: dates come only from structured markup).
+  stored one (D44: dates come only from structured markup);
+- a person's review split from a portal or forum page (D68) is checked on its page by its key, never by comparing
+  the whole page with it.
+Reddit sources are not re-checked (the connector has no deletion check); their policy's retention expires them.
 """
 
 from __future__ import annotations
@@ -22,10 +25,12 @@ from pymongo.database import Database
 from app import audit
 from app.config import get_settings
 from app.connectors.base import Availability, ProviderError, QuotaExhausted
+from app.connectors.portal_reviews import page_reviews, review_item, review_key
 from app.connectors.registry import build
 from app.contracts import ContractStore, get_contracts
 from app.db import run_in_transaction, utcnow
-from app.identity.service import identify_metadata, identify_source
+from app.identity.service import identify_in_context, identify_metadata, identify_source
+from app.identity.text import nfc, sha256_text
 from app.jobs import queue
 from app.observability import log_event
 from app.sources import policies
@@ -68,6 +73,36 @@ def _linked_projects(db: Database[dict[str, Any]], source: dict[str, Any]) -> li
     )
 
 
+def _check_review(db: Database[dict[str, Any]], web: Any, source: dict[str, Any], key: str) -> Availability:
+    """A person's review split from a portal or forum page (D68): its page is read again and split the same way, and
+    the review is looked for by its key (on the portal's full review list too, since a project page shows only some).
+    Same words: present; other words: changed (a new revision of the review alone); not shown any more: gone."""
+    names = [
+        p["project_name"]
+        for p in db["projects"].find({"_id": {"$in": _linked_projects(db, source)}}, {"project_name": 1})
+    ]
+    url, tried = source["canonical_url"], 0
+    while url and tried < 2:
+        tried += 1
+        outcome = web.fetch(url)
+        if outcome.status == "gone" and tried == 1:
+            return Availability("gone", outcome.reason)
+        if outcome.status != "fetched" or not outcome.html:
+            return Availability("unknown", f"{outcome.status}: {outcome.reason}")
+        found = page_reviews(url, outcome.html, names)
+        review = next((r for r in found.reviews if r.key == key), None)
+        if review is not None:
+            if source.get("content_sha256") == sha256_text(nfc(review.text)):
+                return Availability("present", "unchanged")
+            parent = source.get("parent") or {}
+            page = db["ai_sources"].find_one({"id": parent.get("id")}, sort=[("revision", -1)])
+            if page is None:
+                return Availability("unknown", "its page is no longer stored")
+            return Availability("changed", "the review's words changed", review_item(page, review))
+        url = found.more_url
+    return Availability("gone", "the page no longer shows this review")
+
+
 def _store_revision(
     client: MongoClient[dict[str, Any]],
     db: Database[dict[str, Any]],
@@ -82,7 +117,9 @@ def _store_revision(
         policy = policies.current(db, "youtube")
     if policy is None or not policy["collection_allowed"]:
         return False
-    item.parent = source.get("parent")
+    review = review_key(str(source.get("native_id") or "")) is not None
+    if not review:  # a split review names its page as parent already
+        item.parent = source.get("parent")
     focus = _linked_projects(db, source)
 
     def write(session: ClientSession) -> Any:
@@ -93,6 +130,12 @@ def _store_revision(
         return False
     if item.capture_level == "metadata_only":
         identify_metadata(client, db, stored.source, item.title or "", focus_project_ids=focus)
+    elif review:  # matched on its own words, else it inherits its page's match again (D68)
+        page_link = db["ai_project_source_links"].find_one(
+            {"source.id": (item.parent or {}).get("id"), "project_id": {"$in": focus}, "status": {"$ne": "rejected"}},
+            sort=[("source.revision", -1)],
+        )
+        identify_in_context(client, db, contracts, stored.source, page_link)
     else:
         identify_source(client, db, contracts, stored.source, focus_project_ids=focus)
     return True
@@ -138,8 +181,11 @@ def handle_recheck(db: Database[dict[str, Any]], job: dict[str, Any], check: Any
         if connector is None:
             counts["not_checked_no_access"] += 1
             continue
+        key = review_key(str(source.get("native_id") or ""))
         try:
-            result: Availability = connector.check_availability(source)
+            result: Availability = (
+                _check_review(db, connector, source, key) if key else connector.check_availability(source)
+            )
         except QuotaExhausted:
             counts["stopped_at_quota"] += 1
             break

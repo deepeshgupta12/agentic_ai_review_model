@@ -70,8 +70,10 @@ def test_a_stored_version_cannot_change(db, contracts, tmp_path):
     ("url", "family", "may_collect"),
     [
         ("https://www.youtube.com/watch?v=abc", "youtube", True),
-        ("https://old.reddit.com/r/gurgaon/comments/1", "reddit", False),
-        ("https://www.quora.com/What-about-it", "quora", False),
+        ("https://old.reddit.com/r/gurgaon/comments/1", "reddit", True),  # D67, without the official API
+        ("https://www.quora.com/What-about-it", "quora", True),  # D67, as a signed-out visitor sees it
+        ("https://www.linkedin.com/posts/1", "linkedin", False),
+        ("https://x.com/someone/status/1", "x", False),
         ("https://m.facebook.com/groups/1", "meta", False),
         ("https://www.nobroker.in/some-project", "competitor_portals", True),
         ("https://www.99acres.com/some-project", "competitor_portals", True),

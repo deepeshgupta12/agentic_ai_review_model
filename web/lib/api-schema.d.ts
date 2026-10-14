@@ -1225,7 +1225,7 @@ export interface components {
             /** @description Spans of this one source revision that the review shows, in order. */
             evidence: components["schemas"]["EvidenceRef"][];
             /** @enum {unknown} */
-            source_kind: "forum_post" | "forum_thread" | "blog_post" | "comment" | "video" | "short";
+            source_kind: "forum_post" | "forum_thread" | "blog_post" | "comment" | "video" | "short" | "user_review";
             perspective: components["schemas"]["ClaimPerspective"];
             speaker_label: components["schemas"]["SpeakerLabel"];
             polarity: components["schemas"]["Polarity"] & unknown;
@@ -1570,7 +1570,7 @@ export interface components {
         ContentRevisionId: string;
         JobId: string;
         /** @enum {unknown} */
-        SourceKind: "search_result" | "forum_thread" | "forum_post" | "article" | "blog_post" | "news_article" | "video" | "short" | "comment" | "registration_record";
+        SourceKind: "search_result" | "forum_thread" | "forum_post" | "article" | "blog_post" | "news_article" | "video" | "short" | "comment" | "registration_record" | "user_review";
         /**
          * @description Aspect taxonomy v1 (docs/04). 'other' needs a proposed label for review.
          * @enum {unknown}
@@ -1888,7 +1888,7 @@ export interface components {
          * @description Who the credit line names, derived from the review's perspective and source kind; never a username.
          * @enum {unknown}
          */
-        SpeakerLabel: "a_buyer" | "a_resident" | "an_owner_awaiting_possession" | "a_site_visitor" | "a_prospective_buyer" | "a_viewer" | "a_video_creator";
+        SpeakerLabel: "a_buyer" | "a_resident" | "an_owner_awaiting_possession" | "a_site_visitor" | "a_prospective_buyer" | "a_viewer" | "a_video_creator" | "an_owner" | "a_user";
         /**
          * @description How a source review is shown (D28). verbatim: the author's words; punctuation_normalised: only punctuation and spacing changed (e.g. dashes to commas); shortened: whole sentences left out, the rest verbatim; translated: Hindi or Hinglish rendered in English with the meaning kept.
          * @enum {unknown}
@@ -1935,7 +1935,7 @@ export interface components {
                 speaker_label: components["schemas"]["SpeakerLabel"];
                 platform: string;
                 /** @enum {unknown} */
-                kind: "post" | "comment" | "video";
+                kind: "post" | "comment" | "video" | "review";
                 published: components["schemas"]["DatedValue"];
                 timestamp_ms: number | null;
                 translated_from: components["schemas"]["LanguageTag"] | null;
@@ -1993,8 +1993,8 @@ export interface components {
             sources: components["schemas"]["PublicSourceLink"][];
             coverage_note: string;
             reviewed_on: components["schemas"]["Date"];
-            /** @description Names the client as the compiler of a summary of public discussion. Never presented as a user review. */
-            attribution: string;
+            /** @description On a page with editorial findings, names who compiled the summary. Null on a reviews-only page (D69: the product owner wants no attribution or source line there). */
+            attribution: string | null;
             metadata: {
                 title: string;
                 description: string;

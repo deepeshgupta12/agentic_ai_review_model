@@ -130,6 +130,58 @@ def _defaults(seed_dir: Path) -> dict[str, Any]:
     }
 
 
+def registry_sources(
+    configured: list[dict[str, Any]], registered: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], bool]:
+    """A project's sources against the connector registry (D59): the kept choices, the connectors registered since
+    (each with its default: on unless optional) and whether any configured connector has left the registry, so the
+    configuration API never meets it."""
+    ids = {s["connector_id"] for s in registered}
+    have = {s["connector_id"] for s in configured}
+    kept = [s for s in configured if s["connector_id"] in ids]
+    return kept, [s for s in registered if s["connector_id"] not in have], len(kept) < len(configured)
+
+
+def sync_registry_sources(
+    client: MongoClient[dict[str, Any]],
+    db: Database[dict[str, Any]],
+    seed_dir: Path,
+    actor: dict[str, Any] = audit.SYSTEM_ACTOR,
+) -> list[dict[str, Any]]:
+    """Every project's sources follow the connector registry: a connector registered later (such as reddit_public,
+    D67) joins each existing project with its default, so a project added before it still uses it; the choices made
+    in Setup are kept. Run at every stack start (the db-setup service); a repeat changes nothing."""
+    defaults = _defaults(seed_dir)["sources"]
+    report: list[dict[str, Any]] = []
+    for config in db["ai_project_configs"].find({}, {"sources": 1}):
+
+        def write(session: ClientSession, config: dict[str, Any] = config) -> dict[str, Any] | None:
+            current = db["ai_project_configs"].find_one({"_id": config["_id"]}, session=session)
+            if current is None:
+                return None
+            kept, added, retired = registry_sources(current["sources"], defaults)
+            if not added and not retired:
+                return None
+            db["ai_project_configs"].update_one(
+                {"_id": current["_id"], "version": current["version"]},
+                {
+                    "$set": {"sources": kept + added, "updated_at": utcnow(), "updated_by": actor},
+                    "$inc": {"version": 1},
+                },
+                session=session,
+            )
+            details = {"added": ",".join(s["connector_id"] for s in added) or "none", "retired": retired}
+            audit.record(
+                db, "project.sources_synced", "project", current["_id"], actor, details=details, session=session
+            )
+            return {"project_id": current["_id"], **details}
+
+        row = run_in_transaction(client, write)
+        if row:
+            report.append(row)
+    return report
+
+
 def seed_projects(
     client: MongoClient[dict[str, Any]],
     db: Database[dict[str, Any]],
@@ -226,13 +278,7 @@ def import_projects(
                     for s in status_records
                 )
                 new_status = [] if have_export else status_records
-                # A connector added to the registry later joins with its default; existing choices are kept; a
-                # connector removed from the registry leaves (D59), so the configuration API never meets it.
-                registered = {s["connector_id"] for s in defaults["sources"]}
-                configured = {s["connector_id"] for s in config["sources"]}
-                new_sources = [s for s in defaults["sources"] if s["connector_id"] not in configured]
-                kept = [s for s in config["sources"] if s["connector_id"] in registered]
-                retired = len(kept) < len(config["sources"])
+                kept, new_sources, retired = registry_sources(config["sources"], defaults["sources"])
                 if new_aliases or new_status or new_sources or retired:
                     db["ai_project_configs"].update_one(
                         {"_id": project_id},

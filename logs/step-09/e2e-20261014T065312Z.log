@@ -1,0 +1,218 @@
+=== Step 09 browser journeys, 20261014T065312Z (database sy_poc_e2e, real .env, live mode) ===
+seed: {"database": "sy_poc_e2e", "project_id": "prj_01M4WJZM1MNFYAGNY5VA83CE4C", "slug": "quillon-residences-sector-102-gurgaon", "run_stage": "findings_review", "model_calls": ["A05", "A05", "A07", "A11"]}
+--- building the web app against the journey API
+$ next build
+▲ Next.js 16.3.6 (Turbopack)
+✓ Running next.config.ts took 232ms
+
+  Creating an optimized production build ...
+{"at": "2026-10-14T06:53:24.759100Z", "level": "INFO", "logger": "worker", "message": "worker started", "owner": "Deepeshs-MacBook-Pro-2.local:13814666", "role": "journeys", "kinds": ["deliver_publication", "erase_payloads", "invalidate_dependencies", "resume_after_review"]}
+INFO:     Started server process [6050]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8100 (Press CTRL+C to quit)
+✓ Compiled successfully in 5.5s
+  Running TypeScript ...
+  Finished TypeScript in 3.8s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/10) ...
+  Generating static pages using 7 workers (2/10) 
+  Generating static pages using 7 workers (4/10) 
+  Generating static pages using 7 workers (7/10) 
+✓ Generating static pages using 7 workers (10/10) in 137ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/revalidate
+├ ƒ /console
+├ ƒ /console/admin
+├ ƒ /console/corrections
+├ ƒ /console/login
+├ ƒ /console/operations
+├ ƒ /console/projects/[projectId]
+├ ƒ /console/projects/[projectId]/content
+├ ƒ /console/projects/[projectId]/content/[revisionId]
+├ ƒ /console/projects/[projectId]/content/[revisionId]/preview
+├ ƒ /console/projects/[projectId]/evidence
+├ ƒ /console/projects/[projectId]/evidence/[sourceId]/[revision]
+├ ƒ /console/projects/[projectId]/findings
+├ ƒ /console/projects/[projectId]/publishing
+├ ƒ /console/projects/[projectId]/reviews
+├ ƒ /console/projects/[projectId]/runs
+├ ƒ /console/projects/[projectId]/setup
+├ ƒ /console/projects/[projectId]/videos
+├ ƒ /console/runs/[runId]
+└ ƒ /projects/[slug]
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+{"at": "2026-10-14T06:53:36.776717Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50686 - \"GET /healthz HTTP/1.1\" 200"}
+▲ Next.js 16.3.6
+- Local:         http://localhost:3100
+- Network:       http://10.0.2.59:3100
+✓ Ready in 300ms
+✓ Running next.config.ts took 227ms
+⚠ "next start" does not work with "output: standalone" configuration. Use "node .next/standalone/server.js" instead.
+{"at": "2026-10-14T06:53:38.862671Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50690 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:39.017679Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50693 - \"GET /healthz HTTP/1.1\" 200"}
+API mode: live
+--- Playwright
+
+Running 6 tests using 1 worker
+
+{"at": "2026-10-14T06:53:47.629231Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50702 - \"POST /v1/auth/login HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:47.753758Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:47.824486Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50716 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:47.873507Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50710 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:47.886210Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50717 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:48.009054Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50711 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:48.010565Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50718 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:48.987506Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50702 - \"POST /v1/projects HTTP/1.1\" 201"}
+{"at": "2026-10-14T06:53:49.007329Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.027599Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50718 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.058648Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50717 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.059937Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50710 - \"GET /v1/projects/prj_01M4WK0JZYWHXDHQG1853WDCXQ HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.063188Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50716 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.158315Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/projects/prj_01M4WK0JZYWHXDHQG1853WDCXQ/runs?limit=20 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.158787Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50710 - \"GET /v1/projects/prj_01M4WK0JZYWHXDHQG1853WDCXQ/runs?limit=20 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.188688Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50723 - \"GET /v1/projects/prj_01M4WK0JZYWHXDHQG1853WDCXQ HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.244815Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50717 - \"GET /v1/connectors/health HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.254729Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50718 - \"GET /v1/connectors/health HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.332934Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50711 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.343875Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50724 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:49.461767Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/public/projects/journey-heights-28692-hinjewadi-pune/insights HTTP/1.1\" 404"}
+  ✓  1 [desktop] › e2e/journeys.spec.ts:35:7 › console to public page › the portfolio lists projects and a researcher adds one; starting a run asks first (4.9s)
+{"at": "2026-10-14T06:53:50.532030Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50702 - \"POST /v1/auth/login HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:50.552576Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:50.561423Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:50.562940Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50710 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:50.566191Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50716 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:50.695046Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50717 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:50.695977Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50711 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:51.232058Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50710 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:51.241770Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:51.262020Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50711 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:51.390545Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50717 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/findings?limit=20 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:51.400833Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50716 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:51.735526Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/public/projects/quillon-residences-sector-102-gurgaon/insights HTTP/1.1\" 404"}
+{"at": "2026-10-14T06:53:51.808103Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50702 - \"POST /v1/findings/fnd_032HM1KR7KMRMRSRB0E4C0K56J/decisions HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:51.939741Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50710 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:51.969560Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:51.983966Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50711 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:52.041742Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/public/projects/quillon-residences-sector-102-gurgaon/insights HTTP/1.1\" 404"}
+{"at": "2026-10-14T06:53:52.157341Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50717 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/findings?limit=20 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:52.204734Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50716 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:52.716118Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50710 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:52.730801Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:52.738463Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50711 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:52.806953Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50717 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/review-excerpts?limit=20 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:52.884967Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50716 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.090643Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/public/projects/quillon-residences-sector-102-gurgaon/insights HTTP/1.1\" 404"}
+{"at": "2026-10-14T06:53:53.153104Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50702 - \"POST /v1/review-excerpts/rex_0FBY5CRPQ9229WCJW7KSX9ZXR3/decisions HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.176741Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50710 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.184711Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.205740Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50711 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.215673Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/public/projects/quillon-residences-sector-102-gurgaon/insights HTTP/1.1\" 404"}
+{"at": "2026-10-14T06:53:53.256570Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50717 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/review-excerpts?limit=20 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.304645Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50716 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.459828Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50702 - \"POST /v1/review-excerpts/rex_07PPHS3R9FZ47BWKRWYVWVSJK8/decisions HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.481816Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50710 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.491478Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.540735Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50711 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.547935Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50709 - \"GET /v1/public/projects/quillon-residences-sector-102-gurgaon/insights HTTP/1.1\" 404"}
+{"at": "2026-10-14T06:53:53.649457Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50717 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/review-excerpts?limit=20 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:53.861486Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50716 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+  ✓  2 [desktop] › e2e/journeys.spec.ts:57:7 › console to public page › findings are decided beside their evidence; reviews are approved in the author's words (4.7s)
+{"at": "2026-10-14T06:53:58.064118Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50702 - \"POST /v1/auth/login HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:58.145166Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50743 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:58.154396Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50749 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:58.190831Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50744 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:58.257805Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50751 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:58.725584Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50745 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:58.744892Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50750 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:58.995183Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50744 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:59.042405Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50743 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:59.090413Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50745 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:59.385427Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50754 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/runs?limit=1 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:59.425471Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50744 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/content-revisions?limit=50 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:59.467849Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50751 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/findings?review_status=approved&limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:59.634084Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50750 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/review-excerpts?review_status=approved&limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:53:59.723928Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50749 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:00.059941Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50743 - \"GET /v1/public/projects/quillon-residences-sector-102-gurgaon/insights HTTP/1.1\" 404"}
+{"at": "2026-10-14T06:54:00.668065Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50702 - \"POST /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/content-revisions HTTP/1.1\" 202"}
+{"at": "2026-10-14T06:54:03.805219Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50702 - \"GET /v1/runs/run_01M4WJZPE6ZE5FHMCSV211PRY5 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:03.918288Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50743 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:03.982103Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50764 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:03.999952Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50762 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/publication HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.008057Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50763 - \"GET /v1/content-revisions/rev_00YV4HPY81WXSXDGAENTAD7FBR HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.008943Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50743 - \"GET /v1/auth/me HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.016543Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50765 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/content-revisions?limit=1 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.033373Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50775 - \"GET /healthz HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.115101Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50743 - \"GET /v1/public/projects/quillon-residences-sector-102-gurgaon/insights HTTP/1.1\" 404"}
+{"at": "2026-10-14T06:54:04.115511Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50778 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/publication HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.120211Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50777 - \"GET /v1/content-revisions/rev_00YV4HPY81WXSXDGAENTAD7FBR HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.124006Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50780 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/content-revisions?limit=1 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.151432Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50776 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.216615Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50766 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/review-excerpts?review_status=approved&limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.281480Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50781 - \"GET /v1/projects/prj_01M4WJZM1MNFYAGNY5VA83CE4C/review-excerpts?review_status=approved&limit=100 HTTP/1.1\" 200"}
+{"at": "2026-10-14T06:54:04.372969Z", "level": "INFO", "logger": "uvicorn.access", "message": "127.0.0.1:50779 - \"GET /v1/projects?limit=100 HTTP/1.1\" 200"}
+  ✘  3 [desktop] › e2e/journeys.spec.ts:79:7 › console to public page › content from approved reviews is generated, approved, published and verified on the public page (10.5s)
+  -  4 [desktop] › e2e/journeys.spec.ts:111:7 › console to public page › an edit is a new revision that needs its own approval; the page keeps serving the approved one
+  -  5 [desktop] › e2e/journeys.spec.ts:126:7 › console to public page › a reader reports a correction and a moderator resolves it
+  -  6 [desktop] › e2e/journeys.spec.ts:141:7 › console to public page › an analyst reads findings but has no decision controls
+
+
+  1) [desktop] › e2e/journeys.spec.ts:79:7 › console to public page › content from approved reviews is generated, approved, published and verified on the public page 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('Person 1')
+    Expected: visible
+    Error: strict mode violation: getByText('Person 1') resolved to 2 elements:
+        1) <p class="mb-2 text-ink-muted">Shown as Person 1, Person 2 and so on, exactly as…</p> aka getByText('Shown as Person 1, Person 2')
+        2) <span class="font-medium text-ink">Person 1</span> aka getByText('Person 1', { exact: true })
+
+    Call log:
+      - Expect "toBeVisible" getByText('Person 1') with timeout 15000ms
+      - waiting for getByText('Person 1')
+
+
+      85 |     // the form follows the run and opens the draft when it is ready
+      86 |     await expect(page).toHaveURL(/\/content\/rev_[^/]+$/, { timeout: 60_000 });
+    > 87 |     await expect(page.getByText("Person 1")).toBeVisible();
+         |                                              ^
+      88 |     await page.getByTestId("final-approve").click();
+      89 |     const dialog = page.getByRole("dialog", { name: "Final approval" });
+      90 |     await expect(dialog).toContainText("payload hash");
+        at /Users/deepeshgupta/Projects/agentic_ai_review_model/web/e2e/journeys.spec.ts:87:46
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/journeys-console-to-public-fdbe4-verified-on-the-public-page-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/journeys-console-to-public-fdbe4-verified-on-the-public-page-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/journeys-console-to-public-fdbe4-verified-on-the-public-page-desktop/trace.zip
+    Usage:
+
+        pnpm exec playwright show-trace test-results/journeys-console-to-public-fdbe4-verified-on-the-public-page-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    [desktop] › e2e/journeys.spec.ts:79:7 › console to public page › content from approved reviews is generated, approved, published and verified on the public page 
+  3 did not run
+  2 passed (24.3s)
+JOURNEYS FAILED (exit 1)
+{"at": "2026-10-14T06:54:05.604663Z", "level": "INFO", "logger": "worker", "message": "worker stopped", "owner": "Deepeshs-MacBook-Pro-2.local:13814666"}
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [6050]

@@ -257,6 +257,34 @@
    "verification_ref": null
   },
   {
+   "id": "reddit_public",
+   "provider": "Reddit public posts and comments through the PullPush archive (no Reddit API; D67)",
+   "policy_family": "reddit",
+   "acquisition_order": 7,
+   "demo_requirement": "mandatory",
+   "content_kinds": [
+    "post",
+    "comment"
+   ],
+   "yields": "Posts and comments that name the project, each one person's words, without usernames",
+   "expected_capabilities": {
+    "search": true,
+    "archive": true,
+    "comments": true,
+    "transcripts": false,
+    "deletion_check": false
+   },
+   "credential_env": [],
+   "no_credential_reason": "PullPush is a free public archive with no key; Reddit's own JSON is read through Scrapfly only within its per-run allowance (0 by default)",
+   "quota": null,
+   "cursor_method": "quoted project names since the run's window start; each post and comment stored once by its Reddit ID",
+   "deletion_method": "Re-read on refresh; a post or comment the archive shows as deleted or removed is withdrawn",
+   "demonstration": "A real PullPush search for a supplied project returns posts and comments",
+   "status": "access_pending",
+   "last_verified": null,
+   "verification_ref": null
+  },
+  {
    "id": "x_api",
    "provider": "X API",
    "policy_family": "x",

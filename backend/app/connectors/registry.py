@@ -86,6 +86,12 @@ def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -
             build("brave_search", db, settings),
             scrapfly_for(db, settings),
         )
+    if connector_id == "reddit_public":  # D67: the free PullPush archive; Scrapfly only within its allowance
+        from app.connectors.reddit import RedditPublic
+
+        client = safe_client(settings)
+        client.max_bytes = max(client.max_bytes, 8_000_000)  # a hundred comments with their metadata
+        return RedditPublic(client, db, settings, scrapfly_for(db, settings))
     if connector_id == "web_fetch":
         from app.connectors.web import WebFetch
 

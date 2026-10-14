@@ -4,7 +4,11 @@ Uses the project name, approved aliases (never unapproved proposals, D17), phase
 (RERA IDs; developer with sector) so unknown names can surface. A context-required alias is always paired
 with the developer or locality. Exclusions are the configured negative keywords and rejected proposals.
 Queries are deduplicated and capped per connector. The result has the DiscoveryPlan shape (A02 output)
-so collectors and A02 read the same thing.
+so collectors and A02 read the same thing. Rules 1.1 (D68, review-first): the first web searches look for the project's
+review pages on the property portals and Quora (`site:` queries, for Brave only; other connectors cannot use them).
+They have their own allowance of one per site, so they never push an approved alias out of the per-connector cap.
+Reddit is not planned here: its reader searches the project's names itself (collection.run_reddit), since a post
+rarely adds the city or locality a search-engine query would.
 """
 
 from __future__ import annotations
@@ -18,6 +22,16 @@ from app.identity.rules import ALIAS_ORIGIN_ORDER, MAX_QUERIES_PER_CONNECTOR, QU
 from app.identity.text import normalise_text
 
 PRIORITY_ORDER = {"high": 0, "normal": 1, "low": 2}
+# Where people's reviews of a project are (D68): the portals' review pages and Quora questions about it.
+REVIEW_SITES = (
+    "reviews site:magicbricks.com",
+    "reviews site:99acres.com",
+    "reviews site:housing.com",
+    "site:nobroker.in",
+    "site:quora.com",
+)
+# Search-capable connectors that search the project's names themselves and take no planned query.
+NAME_SEARCH_CONNECTORS = {"reddit_public"}
 
 
 def _script_language(text: str) -> str:
@@ -30,6 +44,7 @@ def query_texts(identity: ProjectIdentity, project: dict[str, Any]) -> list[tupl
     locality = project["locality"]
     developer = project.get("developer")
     pairs: list[tuple[str, str, int]] = [
+        *((("project_name", f'"{identity.name}" {site}', 0)) for site in REVIEW_SITES),
         ("project_name", f"{identity.name} {city}", 0),
         ("project_name", f"{identity.name} {locality}", 0),
         ("project_name", f"{identity.name} review", 0),
@@ -69,17 +84,23 @@ def build_query_plan(
     enabled = [
         s["connector_id"]
         for s in config["sources"]
-        if s["enabled"] and connectors.get(s["connector_id"], {}).get("expected_capabilities", {}).get("search") is True
+        if s["enabled"]
+        and s["connector_id"] not in NAME_SEARCH_CONNECTORS
+        and connectors.get(s["connector_id"], {}).get("expected_capabilities", {}).get("search") is True
     ]
     pairs = query_texts(identity, project)
     queries: list[dict[str, Any]] = []
     for connector_id in enabled:
         seen: set[str] = set()
+        sites: set[str] = set()
         for purpose, text in pairs:
-            key = normalise_text(text)
-            if not key or key in seen:
+            site = "site:" in text
+            if site and connector_id != "brave_search":
                 continue
-            seen.add(key)
+            key = normalise_text(text)
+            if not key or key in seen or key in sites:
+                continue
+            (sites if site else seen).add(key)
             queries.append(
                 {
                     "connector_id": connector_id,

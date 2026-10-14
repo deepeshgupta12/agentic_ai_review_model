@@ -1,13 +1,15 @@
 """Assembling the frozen page payload and its dependency manifest (Step 10.2-10.6; content.schema.json; D23, D28, D64).
 
 Everything the public page shows is in the payload; everything it depends on is in the manifest, both hashed:
-- reviews are the approved review revisions exactly as approved (the author's words, the credit line from the record,
-  no public link while `show_review_source_links` is off, D28);
+- reviews are the approved review revisions exactly as approved, in one balanced list (D69): positive, negative and
+  mixed alternate in proportion, at most `PAGE_REVIEWS_MAX`; the page shows them as Person 1, Person 2, ... with no
+  name, credit line or source line (the credit stays in the payload for moderators and withdrawal);
 - blocks written from findings (overview, advantages, considerations, questions) come from the editor and cite exact
   finding and claim revisions; a page built from reviews alone has no overview and no such blocks (D64);
 - "sources behind the findings" are the sources of the cited claims' supporting evidence whose current policy allows
   derived publication;
-- heading, attribution, coverage note and metadata have deterministic defaults that add no facts;
+- heading and metadata name the project for search ("<name> Reviews: What Buyers Say") and add no facts; a
+  reviews-only page has no attribution or coverage line (D69);
 - JSON-LD is built by the backend from the visible content (a WebPage about the project as a place); it never carries
   a rating, a review entity or an FAQ block (D66).
 """
@@ -44,12 +46,9 @@ PLATFORMS = {
     "nobroker.in": "NoBroker",
     "mouthshut.com": "MouthShut",
 }
-CREDIT_KIND = {"comment": "comment", "video": "video", "short": "video"}  # posts, threads and blogs are "post"
+CREDIT_KIND = {"comment": "comment", "video": "video", "short": "video", "user_review": "review"}  # else "post"
 ATTRIBUTION = "Compiled by the editorial team from public discussions; reviewed by our editorial team."
-REVIEWS_ATTRIBUTION = (
-    "Posts by people on other sites, selected and checked by the client editors. "
-    "They are not reviews written on the client."
-)
+REVIEWS_ATTRIBUTION = None  # D69: no attribution line on a reviews-only page
 
 
 def host_of(url: str | None) -> str:
@@ -61,8 +60,34 @@ def platform_name(url: str | None) -> str:
     host = host_of(url)
     for known, name in PLATFORMS.items():
         if host == known or host.endswith("." + known):
+            if name == "Reddit":  # the subreddit is where it was said (r/gurgaon)
+                parts = urlsplit(url or "").path.split("/")
+                return f"Reddit, r/{parts[2]}" if len(parts) > 2 and parts[1] == "r" and parts[2] else name
             return name
     return host or "the web"
+
+
+def balanced(reviews: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
+    """One list of at most `limit` reviews in which positive, negative and mixed alternate in proportion to how many
+    there are (D69), each side newest first; nothing negative is pushed to the end."""
+    sides: dict[str, list[dict[str, Any]]] = {}
+    for review in reviews:
+        sides.setdefault(review["polarity"], []).append(review)
+    for side in sides.values():
+        side.sort(key=lambda r: str((r.get("published") or {}).get("value") or ""), reverse=True)
+    total = sum(len(s) for s in sides.values())
+    shown = {k: 0 for k in sides}
+    out: list[dict[str, Any]] = []
+    while len(out) < min(limit, total):
+        # the side furthest behind its share goes next, measured at the middle of its next place (Webster's rule), so a
+        # side with a single review is placed in the middle of the list, not at its end
+        key = min(
+            (k for k in sides if shown[k] < len(sides[k])),
+            key=lambda k: (shown[k] + 0.5) / len(sides[k]),
+        )
+        out.append(sides[key][shown[key]])
+        shown[key] += 1
+    return out
 
 
 def shorten(text: str, limit: int) -> str:
@@ -218,37 +243,30 @@ def evidence_window(
 
 
 def default_heading(project: dict[str, Any]) -> str:
-    return f"What buyers say about {project['project_name']}"
+    return f"{project['project_name']} Reviews: What Buyers Say"
 
 
 def default_metadata(project: dict[str, Any], reviews: int, findings: int) -> dict[str, str]:
-    where = f"{project['locality']}, {project['city']}"
-    title = shorten(f"{project['project_name']}, {where}: what buyers say", TITLE_MAX)
-    parts = []
-    if reviews:
-        parts.append(f"{reviews} first-person {'post' if reviews == 1 else 'posts'} from other sites")
+    """Search title and description that name the project and its place (D69: no site name in the reviews)."""
+    name, where = project["project_name"], f"{project['locality']}, {project['city']}"
+    title = shorten(f"{name} Reviews, {where}: What Buyers Say", TITLE_MAX)
+    counted = f"{reviews} {'review' if reviews == 1 else 'reviews'}"
     if findings:
-        parts.append(f"{findings} reviewed {'point' if findings == 1 else 'points'} from public discussion")
-    description = shorten(
-        f"{project['project_name']} in {where}: " + " and ".join(parts) + ", checked by the client editors.",
-        DESCRIPTION_MAX,
-    )
-    return {"title": title, "description": description}
+        description = f"{name}, {where}: what buyers like and what concerns them, from {counted} and public discussion."
+    else:
+        description = f"Read {counted} of {name}, {where}: what owners and buyers like and what concerns them."
+    return {"title": title, "description": shorten(description, DESCRIPTION_MAX)}
 
 
 def default_coverage_note(reviews: list[dict[str, Any]], public: list[dict[str, Any]], findings: int) -> str:
-    platforms = sorted({r["credit"]["platform"] for r in public})
-    parts = []
-    if reviews:
-        parts.append(
-            f"{len(reviews)} first-person {'post' if len(reviews) == 1 else 'posts'} from {', '.join(platforms)}"
-        )
-    if findings:
-        parts.append(f"{findings} {'point' if findings == 1 else 'points'} drawn from public discussion")
-    return (
-        "Based on " + " and ".join(parts) + ". Selected and checked by the client editors; "
-        "they do not represent every buyer's view."
+    """What the page rests on. A reviews-only page does not show it (D69); it stays in the payload for moderators."""
+    sides = {k: sum(1 for r in public if r["polarity"] == k) for k in ("positive", "negative", "mixed")}
+    note = f"{len(public)} {'review' if len(public) == 1 else 'reviews'}: " + ", ".join(
+        f"{count} {side}" for side, count in sides.items() if count
     )
+    if findings:
+        note += f"; {findings} {'point' if findings == 1 else 'points'} drawn from public discussion"
+    return note + "."
 
 
 def json_ld(project: dict[str, Any], heading: str, metadata: dict[str, Any], reviewed_on: str) -> dict[str, Any]:

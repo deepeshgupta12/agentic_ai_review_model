@@ -25,7 +25,16 @@ from app.ids import new_id
 from app.sources import policies
 
 TRACKING_PARAMS = {"fbclid", "gclid", "igshid", "mc_cid", "mc_eid", "ref", "ref_src", "spm", "si"}
-TEXT_KINDS = {"forum_thread", "forum_post", "article", "blog_post", "news_article", "comment", "registration_record"}
+TEXT_KINDS = {
+    "forum_thread",
+    "forum_post",
+    "article",
+    "blog_post",
+    "news_article",
+    "comment",
+    "registration_record",
+    "user_review",
+}
 UNKNOWN_DATE = {"status": "unknown", "value": None, "precision": None, "basis": None}
 
 

@@ -215,7 +215,7 @@ GENERIC_TERMS = {
 }
 
 # Query builder (04.3): bounded and deduplicated.
-QUERY_RULES_VERSION = "query-rules.1.0"
+QUERY_RULES_VERSION = "query-rules.1.1"  # 1.1: portal and Quora review searches first (D68)
 MAX_QUERIES_PER_CONNECTOR = 12
 # Within a priority, names approved from proposals come first: finding them is the point of discovery (D17).
 ALIAS_ORIGIN_ORDER = {"approved_proposal": 0, "input_file": 1, "configuration": 2, "rera_registered_name": 3}

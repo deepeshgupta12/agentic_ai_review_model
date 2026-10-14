@@ -144,6 +144,8 @@ class ScriptedModel:
 
 @pytest.fixture
 def model(monkeypatch, settings):
+    """The full analysis (claims, findings and reviews); the reviews-only default (D68) is tested on its own."""
+    settings.analysis_mode = "full"
     client = ScriptedModel()
     monkeypatch.setattr(analysis, "get_settings", lambda: settings)
     monkeypatch.setattr(analysis, "default_embedder", lambda _s: None)

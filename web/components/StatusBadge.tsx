@@ -39,13 +39,14 @@ const TONES: Record<string, string> = {
   rolled_back: "text-idle border-idle",
 };
 
-/** A status always shows its text, never colour alone (WCAG, D25). */
-export function StatusBadge({ status }: { status: string | null | undefined }) {
+/** A status always shows its text, never colour alone (WCAG, D25). `text` replaces the stored name when a plainer
+ * word exists (run stages, lib/format STAGE_LABELS); the colour still follows the stored status. */
+export function StatusBadge({ status, text }: { status: string | null | undefined; text?: string }) {
   const value = status ?? "none";
   const tone = TONES[value] ?? "text-ink-muted border-line";
   return (
     <span className={`inline-flex items-center whitespace-nowrap rounded border px-1.5 py-0.5 font-mono text-xs ${tone}`}>
-      {value.replaceAll("_", " ")}
+      {text ?? value.replaceAll("_", " ")}
     </span>
   );
 }

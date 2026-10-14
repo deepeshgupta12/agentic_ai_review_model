@@ -27,8 +27,11 @@ from app import audit
 from app.agents.gateway import ModelGateway, gateway_for
 from app.config import Settings, get_settings
 from app.connectors.base import Page, ProviderError
+from app.connectors.portal_reviews import page_reviews, review_item
+from app.connectors.reddit import comment_item as reddit_comment_item
+from app.connectors.reddit import post_item as reddit_post_item
 from app.connectors.registry import build
-from app.connectors.web import WebFetch
+from app.connectors.web import FetchOutcome, WebFetch
 from app.contracts import ContractStore, get_contracts, to_view
 from app.db import run_in_transaction, utcnow
 from app.errors import ApiError
@@ -49,8 +52,10 @@ GROUPS = {
     "youtube_data_api": ("youtube_data_api",),
     "registry": ("harera_registry",),  # Step 08 (D53): dated primary records for verification
     "instagram": ("instagram_public",),  # Step 08 (D54): public posts through Scrapfly
+    "reddit": ("reddit_public",),  # D67, D68: public threads through the PullPush archive
 }
 TERMINAL_JOB = {"completed", "failed", "cancelled"}
+HELPER_CONNECTORS = {"firecrawl", "playwright_fetch"}  # used inside the web reader, never run as sources
 
 
 def run_view(doc: dict[str, Any]) -> dict[str, Any]:
@@ -129,11 +134,20 @@ def start_run(
             fields=[{"path": "connectors", "message": ", ".join(unknown)}],
         )
     window_days = body["window_days"] or config["refresh"]["lookback_days"]
+    # Helpers are not sources of their own: Firecrawl renders pages for the web reader (D62), and its pages are counted
+    # under web_fetch. Listing them as run sources showed a working Firecrawl key as "access pending".
+    chosen = [c for c in chosen if c not in HELPER_CONNECTORS]
     if "brave_search" in chosen and "web_fetch" not in chosen and "web_fetch" in enabled:
         chosen = [*chosen, "web_fetch"]  # discovery hits are read by the web reader
     coverage, groups = [], []
     runnable = {c for c in chosen if build(c, db, settings) is not None}
     for connector_id in chosen:
+        if connector_id == "harera_registry" and settings.analysis_mode == "reviews":
+            # D68: a reviews-only analysis uses no registry records, so the registries are not read (and cost nothing)
+            coverage.append(
+                _coverage(connector_id, "unavailable", "not run: reviews-only analysis takes no registry records (D68)")
+            )
+            continue
         if connector_id not in runnable:
             coverage.append(_coverage(connector_id, "access_pending", "no credential or adapter configured; not run"))
         elif connector_id == "web_fetch" and "brave_search" not in runnable:
@@ -380,23 +394,66 @@ class Collector:
             cov["attempted_queries"] += 1
             key = "error_will_retry" if outcome.status == "error" and outcome.retryable else outcome.status
             outcomes[key] = outcomes.get(key, 0) + 1
-            if outcome.item is None or outcome.policy is None:
+            more = self._read_one(outcome, cov, outcomes)
+            if more and more not in seen and len(seen) < limit:  # a portal's full review list, read once (D68)
+                seen.add(more)
+                extra = web.fetch(more, run_id=self.run_id)
+                cov["attempted_queries"] += 1
+                outcomes[extra.status] = outcomes.get(extra.status, 0) + 1
+                self._read_one(extra, cov, outcomes)
+
+    def _read_one(self, outcome: FetchOutcome, cov: dict[str, Any], outcomes: dict[str, int]) -> str | None:
+        """Store and identify one fetched page; split a portal or forum page into its reviews. Returns the URL of
+        the portal's full review list when the page shows only part of it."""
+        if outcome.item is None or outcome.policy is None:
+            return None
+        page_source = self._store_one(outcome.item, outcome.policy)
+        if page_source.source["lifecycle"] == "withdrawn":
+            return None
+        cov["fetched"] += 1
+        report = identify_source(
+            self.client,
+            self.db,
+            self.contracts,
+            page_source.source,
+            focus_project_ids=[self.project_id],
+            gateway=self.gateway,
+        )
+        self.spent(report)
+        mine = [r for r in report["links"] if r["status"] != "rejected" and r["project_id"] == self.project_id]
+        if mine:
+            cov["matched"] += 1
+        if outcome.policy["family"] not in policies.REVIEW_PAGE_FAMILIES or not outcome.html:
+            return None
+        found = page_reviews(page_source.source["canonical_url"], outcome.html, self._project_names())
+        for reason, count in found.dropped.items():
+            outcomes[f"reviews_left_out:{reason}"] = outcomes.get(f"reviews_left_out:{reason}", 0) + count
+        page_link = None
+        if mine:
+            page_link = self.db["ai_project_source_links"].find_one({"_id": mine[0]["link_id"]})
+        for review in found.reviews:
+            self.check()
+            stored = self._store_one(review_item(page_source.source, review), outcome.policy)
+            if stored.source["lifecycle"] == "withdrawn":
                 continue
-            page_source = self._store_one(outcome.item, outcome.policy)
-            if page_source.source["lifecycle"] == "withdrawn":
-                continue
-            cov["fetched"] += 1
-            report = identify_source(
-                self.client,
-                self.db,
-                self.contracts,
-                page_source.source,
-                focus_project_ids=[self.project_id],
-                gateway=self.gateway,
-            )
-            self.spent(report)
-            if any(r["status"] != "rejected" and r["project_id"] == self.project_id for r in report["links"]):
-                cov["matched"] += 1
+            outcomes["reviews_stored"] = outcomes.get("reviews_stored", 0) + (1 if stored.created else 0)
+            linked = identify_in_context(self.client, self.db, self.contracts, stored.source, page_link, self.gateway)
+            self.spent(linked)
+        return found.more_url
+
+    def _search_names(self) -> list[str]:
+        """Names that identify the project on their own (D17): its name and standalone aliases. A context-required
+        name ("Parq") searched alone on Reddit brings unrelated threads, each read and matched (A01 can be paid)."""
+        project = self.db["projects"].find_one({"_id": self.project_id}, {"project_name": 1}) or {}
+        config = self.db["ai_project_configs"].find_one({"_id": self.project_id}, {"aliases": 1}) or {}
+        standalone = [a["text"] for a in config.get("aliases", []) if a.get("mode") == "standalone"]
+        return [n for n in dict.fromkeys([project.get("project_name") or "", *standalone]) if n]
+
+    def _project_names(self) -> list[str]:
+        project = self.db["projects"].find_one({"_id": self.project_id}) or {}
+        config = self.db["ai_project_configs"].find_one({"_id": self.project_id}, {"aliases": 1}) or {}
+        names = [project.get("project_name") or "", *(project.get("alternate_names") or [])]
+        return [n for n in dict.fromkeys(names + [a["text"] for a in config.get("aliases", [])]) if n]
 
     # --- web group: Brave discovery, then the web reader ---
 
@@ -431,7 +488,7 @@ class Collector:
                     keep: list[tuple[Item, dict[str, Any]]] = []
                     for item in page.items:
                         resolution = policies.resolve(self.db, item.canonical_url)
-                        if resolution.family in ("youtube", "instagram_public"):
+                        if resolution.family in ("youtube", "instagram_public", "reddit"):
                             name = resolution.family.split("_")[0]
                             key = f"{name}_left_to_{name}_connector"
                             skipped[key] = skipped.get(key, 0) + 1
@@ -763,6 +820,108 @@ class Collector:
         cov["note"] = _note(counts, errors)
         update_coverage(self.db, self.run_id, cov)
 
+    # --- Reddit group: public threads naming the project, through PullPush (D67, D68) ---
+
+    def run_reddit(self) -> None:
+        reddit = self._build("reddit_public")
+        if reddit is None:
+            return
+        cov = _coverage("reddit_public", "complete_for_query", None)
+        counts: dict[str, int] = {}
+        errors: list[str] = []
+        policy = policies.current(self.db, "reddit")
+        if policy is None or not policy["collection_allowed"]:
+            cov.update(status="unavailable", note="the reddit policy does not allow collection")
+            update_coverage(self.db, self.run_id, cov)
+            return
+        s = self.settings
+        after = _reddit_after(self.db, self.run_id)
+        threads: dict[str, dict[str, Any]] = {}
+        loose: dict[str, dict[str, Any]] = {}
+        for name in self._search_names()[: s.reddit_names_per_project]:
+            self.check()
+            try:
+                for post in reddit.posts_naming(name, after, s.reddit_posts_per_name):
+                    threads.setdefault(post["id"], post)
+                for comment in reddit.comments_naming(name, after, s.reddit_comment_hits_per_name):
+                    loose.setdefault(comment["id"], comment)
+            except ProviderError as exc:
+                errors.append(exc.code)
+                cov["status"] = "partial"
+                continue
+            cov["attempted_queries"] += 2
+        for comment in loose.values():  # a comment naming the project in a thread whose post does not
+            post_id = str(comment.get("link_id") or "").removeprefix("t3_")
+            if post_id and post_id not in threads and len(threads) < s.reddit_threads_per_run:
+                try:
+                    post = reddit.post(post_id)
+                except ProviderError as exc:
+                    errors.append(exc.code)
+                    continue
+                if post is not None:
+                    threads[post_id] = post
+        for post in list(threads.values())[: s.reddit_threads_per_run]:
+            self.check()
+            try:
+                thread = reddit.thread(post, s.reddit_comments_per_thread)
+            except ProviderError as exc:
+                errors.append(exc.code)
+                cov["status"] = "partial"
+                continue
+            if thread.via != "pullpush":
+                counts[f"threads_read_via_{thread.via}"] = counts.get(f"threads_read_via_{thread.via}", 0) + 1
+            self._store_thread(
+                reddit_post_item(thread.post), [reddit_comment_item(c) for c in thread.comments], policy, cov, counts
+            )
+        cov["last_success_at"] = utcnow() if cov["fetched"] else None
+        cov["note"] = _note(counts, errors)
+        update_coverage(self.db, self.run_id, cov)
+
+    def _store_thread(
+        self,
+        post: Item,
+        comments: list[Item],
+        policy: dict[str, Any],
+        cov: dict[str, Any],
+        counts: dict[str, int],
+    ) -> None:
+        """A post, then its comments under it: the post is matched on its own words; a comment that names no project
+        inherits the post's accepted match (as YouTube comments inherit their video's)."""
+        stored = self._store_one(post, policy)
+        if stored.source["lifecycle"] == "withdrawn":
+            counts["withdrawn_on_request"] = counts.get("withdrawn_on_request", 0) + 1
+            return
+        cov["fetched"] += 1
+        report = identify_source(
+            self.client,
+            self.db,
+            self.contracts,
+            stored.source,
+            focus_project_ids=[self.project_id],
+            gateway=self.gateway,
+        )
+        self.spent(report)
+        mine = [r for r in report["links"] if r["status"] != "rejected" and r["project_id"] == self.project_id]
+        post_link = self.db["ai_project_source_links"].find_one({"_id": mine[0]["link_id"]}) if mine else None
+        if mine:
+            cov["matched"] += 1
+        for item in comments:
+            self.check()
+            item.parent = {"id": stored.source["id"], "revision": stored.source["revision"]}
+            child = self._store_one(item, policy)
+            if child.source["lifecycle"] == "withdrawn":
+                continue
+            cov["fetched"] += 1 if child.created else 0
+            linked = identify_in_context(self.client, self.db, self.contracts, child.source, post_link, self.gateway)
+            self.spent(linked)
+            if any(r["project_id"] == self.project_id and r["status"] != "rejected" for r in linked["links"]):
+                cov["matched"] += 1
+
+
+def _reddit_after(db: Database[dict[str, Any]], run_id: str) -> Any:
+    run = db[RUNS].find_one({"_id": run_id}, {"window": 1}) or {}
+    return (run.get("window") or {}).get("from") or utcnow() - timedelta(days=365)
+
 
 def _note(counts: dict[str, int], errors: list[str]) -> str | None:
     parts = [f"{k}: {v}" for k, v in sorted(counts.items())]
@@ -787,6 +946,8 @@ def handle_collect(db: Database[dict[str, Any]], job: dict[str, Any], check: Any
         collector.run_registry()
     elif group == "instagram":
         collector.run_instagram()
+    elif group == "reddit":
+        collector.run_reddit()
     else:
         raise ValueError(f"unknown collect group {group}")
     finish_if_done(db.client, db, job["run_id"], exclude_job=job["_id"])

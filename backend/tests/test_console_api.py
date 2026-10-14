@@ -207,7 +207,11 @@ def test_a_researcher_adds_one_project_from_the_console(api, db, make_user, cont
     duplicate = api.post("/v1/projects", json=body, headers={**researcher, "Idempotency-Key": "add-project-2"})
     assert duplicate.status_code == 409, "the console never updates an existing project"
     project = db["projects"].find_one({"_id": row["project_id"]})
-    assert project["state"] == "Maharashtra" and db["ai_project_configs"].find_one({"_id": row["project_id"]})
+    config = db["ai_project_configs"].find_one({"_id": row["project_id"]})
+    assert project["state"] == "Maharashtra" and config
+    sources = {s["connector_id"]: s["enabled"] for s in config["sources"]}
+    # Every mandatory source is on from the start, Reddit included (D67): a run from the console uses it at once.
+    assert sources["reddit_public"] and sources["brave_search"] and sources["web_fetch"] and sources["youtube_data_api"]
     page = api.get("/v1/projects", headers=researcher)
     assert page.status_code == 200 and contracts.errors(page.json(), "api.schema.json#/$defs/ProjectPage") == []
     listed = next(p for p in page.json()["items"] if p["project"]["id"] == row["project_id"])

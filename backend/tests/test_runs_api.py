@@ -65,7 +65,8 @@ def parse_sse(text):
 def test_run_events_stream_and_resume(api, db, make_user, contracts, fictional):
     q = fictional["Quillon Residences"]
     researcher = sign_in(api, make_user, ["researcher"])
-    run_id = start(api, researcher, q).json()["run_id"]  # no credentials: the run finishes at once
+    keyed = {"window_days": 30, "connectors": ["brave_search", "youtube_data_api"]}  # (PullPush needs no key, D67)
+    run_id = start(api, researcher, q, body=keyed).json()["run_id"]  # no credentials: the run finishes at once
     response = api.get(f"/v1/runs/{run_id}/events", headers=researcher)
     assert response.status_code == 200 and response.headers["content-type"].startswith("text/event-stream")
     events = parse_sse(response.text)

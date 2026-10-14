@@ -2,6 +2,7 @@
 
 python -m app.cli setup-db [--dry-run]
 python -m app.cli seed-policies
+python -m app.cli sync-catalogue   (at every stack start: policies loaded, new registry sources added to projects)
 python -m app.cli seed-projects [--input PATH]
 python -m app.cli seed-users [--reset-password]
 python -m app.cli smoke-model
@@ -70,6 +71,24 @@ def cmd_seed_policies(_: argparse.Namespace) -> int:
         print(f"seed-policies failed: {exc}", file=sys.stderr)
         return 1
     _print(report)
+    return 0
+
+
+def cmd_sync_catalogue(_: argparse.Namespace) -> int:
+    """At every stack start (the db-setup service): the repository's source policies are loaded (immutable versions;
+    nothing changes when they are current) and every project's sources follow the connector registry, so a source
+    added later (such as Reddit, D67) reaches the projects that existed before it. A new project gets it at once."""
+    from app.seed.projects import sync_registry_sources
+    from app.sources.policies import PolicyError, seed_policies
+
+    db, settings = get_db(), get_settings()
+    try:
+        policies = seed_policies(db.client, db, get_contracts(), settings.seed_dir / "source_policies.json")
+    except PolicyError as exc:
+        print(f"sync-catalogue failed: {exc}", file=sys.stderr)
+        return 1
+    changed = [p for p in policies if p.get("outcome") != "unchanged"]
+    _print({"policies_changed": changed, "projects_synced": sync_registry_sources(db.client, db, settings.seed_dir)})
     return 0
 
 
@@ -886,6 +905,9 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("seed-projects", help="load the five-project input file")
     p.add_argument("--input", default=str(REPO_ROOT / "contracts" / "five-project-input-template.json"))
     p.set_defaults(func=cmd_seed_projects)
+    sub.add_parser(
+        "sync-catalogue", help="load the source policies and give every project the registry's new sources"
+    ).set_defaults(func=cmd_sync_catalogue)
     sub.add_parser("seed-policies", help="load seed/source_policies.json (immutable versions)").set_defaults(
         func=cmd_seed_policies
     )

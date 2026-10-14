@@ -57,6 +57,7 @@ def create_content_revision(
                 "Select at least one approved finding or review",
                 fields=[{"path": "findings", "message": "nothing selected"}],
             )
+        service.check_review_limits(db, settings, request["reviews"])
         response.status_code = 202
         return run_idempotent(
             db,

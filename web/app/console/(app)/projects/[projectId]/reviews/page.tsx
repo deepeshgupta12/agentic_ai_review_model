@@ -4,7 +4,8 @@ import { DecisionButtons } from "@/components/DecisionButtons";
 import { EvidenceList } from "@/components/EvidenceList";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState, ErrorState, MoreLink } from "@/components/ui";
-import { apiGet, currentUser, type Schemas } from "@/lib/api-server";
+import { apiGet, backendInfo, currentUser, type Schemas } from "@/lib/api-server";
+import { fitsPage, wordCount } from "@/lib/flow";
 import { creditLine, label } from "@/lib/format";
 import { can } from "@/lib/roles";
 
@@ -12,7 +13,7 @@ import { ReviewEditor } from "./ReviewEditor";
 
 export const metadata: Metadata = { title: "Reviews" };
 
-const KIND: Record<string, string> = { comment: "comment", video: "video", short: "video" };
+const KIND: Record<string, string> = { comment: "comment", video: "video", short: "video", user_review: "review" };
 
 export default async function ReviewsPage({
   params,
@@ -23,9 +24,10 @@ export default async function ReviewsPage({
 }) {
   const { projectId } = await params;
   const search = await searchParams;
-  const [page, me] = await Promise.all([
+  const [page, me, info] = await Promise.all([
     apiGet<Schemas["ReviewExcerptPage"]>(`/v1/projects/${projectId}/review-excerpts`, { ...search, limit: 20 }),
     currentUser(),
+    backendInfo(),
   ]);
   if (!page.data) return <ErrorState status={page.status} error={page.error} requestId={page.requestId} />;
   const mayDecide = can(me?.roles, "decideReviewExcerpt");
@@ -33,8 +35,9 @@ export default async function ReviewsPage({
   return (
     <div className="space-y-4">
       <p className="max-w-3xl text-ink-muted">
-        First-person reviews from real posts, comments and videos, each from one source by one person, in the author&apos;s own words (D28).
-        Positive and negative are decided the same way. A flagged review or a rendering mismatch cannot be approved.
+        Each is one person&apos;s review from a portal, Reddit, Quora, a forum or YouTube, in their own words (D28). Approve the ones that are
+        real reviews of this project; positive and negative are decided the same way. A flagged review or a rendering mismatch cannot be
+        approved. The page shows reviews of {info.review_words_min} to {info.review_words_max} words.
       </p>
       <form className="flex items-end gap-3" aria-label="Filter reviews">
         <label>
@@ -75,8 +78,13 @@ export default async function ReviewsPage({
                   <StatusBadge status={r.review_status} />
                   <StatusBadge status={view.rendering_check} />
                   <span className="text-xs text-ink-muted">
-                    {label(r.rendering)} · revision {r.revision} · {r.aspects.map(label).join(", ")}
+                    {label(r.rendering)} · revision {r.revision} · {r.aspects.map(label).join(", ")} · {wordCount(r.text)} words
                   </span>
+                  {r.text && !fitsPage(r.text, info) ? (
+                    <span className="text-xs text-warn">
+                      outside {info.review_words_min} to {info.review_words_max} words: can be approved, not shown on the page
+                    </span>
+                  ) : null}
                 </div>
                 <blockquote className="border-l-2 border-ink-muted pl-3 text-[15px] leading-6">“{r.text ?? "(erased)"}”</blockquote>
                 <p className="text-ink-muted">{creditLine(credit)}</p>

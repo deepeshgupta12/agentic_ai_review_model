@@ -72,6 +72,11 @@ def main() -> int:
     # The real environment holds real keys: in this process no connector is built (each is recorded as not run) and
     # the analysis uses the scripted client, so seeding never reaches a provider.
     collection.build = lambda *_args, **_kwargs: None  # type: ignore[assignment]
+    # The full analysis, so the console journeys have findings to decide as well as reviews (the default is reviews
+    # only, D68); the content journey selects reviews only.
+    settings.analysis_mode = "full"
+    analysis.get_settings = lambda: settings  # type: ignore[assignment]
+    collection.get_settings = lambda: settings  # type: ignore[assignment]
     analysis.gateway_for = gateway  # type: ignore[assignment]
     analysis.default_embedder = lambda _s: None  # type: ignore[assignment]
     project, run = analysing_run(db, settings, contracts, fictional)

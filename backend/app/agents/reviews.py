@@ -1,8 +1,10 @@
 """A11 review curator and review storage (Step 08; docs/04 first-person source reviews; D27, D28, D53).
 
 The model proposes first-person reviews from single sources; the backend decides what a moderator sees.
-Sources offered: comments, forum posts, blog posts, and the speech of videos and shorts, when their evidence is
-eligible, their family's current policy allows quotation and their author is not a broker or the developer.
+Sources offered: comments, forum posts, portal user reviews (one record per review, D68), and the speech of videos
+and shorts, when their evidence is eligible, their family's current policy allows quotation and their author is not a
+broker or the developer. Blog posts are not offered (D68: on these projects they are brokers' and builders' writing).
+The model sees each source's platform and the reviewer's role as the platform badges it (never a name).
 Web pages kept as `forum_thread` mix the page author with commenters in one text, so no span of them can be credited
 to one person; they are left out until a connector stores posts one by one. On-screen text and frames are not
 anyone's spoken or written words and are left out too.
@@ -44,7 +46,7 @@ from app.evidence.retrieval import _translation_of
 from app.sources import policies
 
 AGENT_ID = "A11_review_curator"
-PROMPT_VERSION = "a11_review_curator.1.0"
+PROMPT_VERSION = "a11_review_curator.1.1"  # 1.1: portal reviews, platform and badge, sales pitches (D68)
 SCHEMA_REF = "agents.schema.json#/$defs/ReviewCandidates"
 SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"
@@ -55,7 +57,7 @@ MAX_REVIEW_CHARS = 1200
 MAX_NOTE_CHARS = 300
 OPEN_STATUSES = ("pending", "changes_requested")
 
-REVIEW_KINDS = {"comment", "forum_post", "blog_post", "video", "short"}
+REVIEW_KINDS = {"comment", "forum_post", "user_review", "video", "short"}
 SPOKEN_KINDS = {"video", "short"}
 EXCLUDED_ROLES = {"broker", "developer_official"}
 NOT_A_REVIEW = {"broker_or_developer", "official_record"}
@@ -66,6 +68,8 @@ SPEAKER = {
     "prospective_buyer": "a_prospective_buyer",
 }
 SPEAKER_BY_KIND = {"comment": "a_viewer", "video": "a_video_creator", "short": "a_video_creator"}
+SPEAKER_BY_ROLE = {"owner": "an_owner", "resident": "a_resident", "prospective_buyer": "a_prospective_buyer"}
+VIDEO_PLATFORMS = {"youtube_data_api", "spoken_video_transcripts", "instagram_public"}
 PHONE = re.compile(r"(?<!\d)(?:\+?91[\s-]?)?[6-9]\d{4}[\s-]?\d{5}(?!\d)")
 EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+")
 SENTENCE_END = re.compile(r"(?<=[.!?।|])\s+|\n+")
@@ -150,6 +154,12 @@ def _task(project_id: str, chunk: list[tuple[dict[str, Any], list[dict[str, Any]
     }
 
 
+def _platform(source: dict[str, Any]) -> str:
+    from app.content.build import platform_name  # the content builder's names (YouTube, MagicBricks, Reddit, ...)
+
+    return platform_name(source.get("canonical_url"))
+
+
 def render(
     db: Database[dict[str, Any]], project: dict[str, Any], task: dict[str, Any]
 ) -> tuple[str, dict[str, Handles]]:
@@ -165,9 +175,12 @@ def render(
     for entry in task["sources"]:
         source = entry["source"]
         published = (source.get("publication_date") or {}).get("value")
+        author = source.get("author") or {}
         item: dict[str, Any] = {
             "id": sources.add(entry),
             "kind": source["source_kind"],
+            "platform": _platform(source),
+            "reviewer_badge": author.get("role") if author.get("role_basis") == "platform_badge" else None,
             "title": source.get("title") if source["source_kind"] in SPOKEN_KINDS else None,
             "published": str(published)[:10] if published else None,
             "spans": [],
@@ -248,8 +261,17 @@ def rendering_problem(rendering: str, text: str, original: str, languages: list[
     return "unknown_rendering"
 
 
-def speaker_label(perspective: str, source_kind: str) -> str | None:
-    return SPEAKER.get(perspective) or SPEAKER_BY_KIND.get(source_kind)
+def speaker_label(perspective: str, source_kind: str, source: dict[str, Any] | None = None) -> str | None:
+    """Who the credit names: from what the author says (perspective), else the platform's badge, else the platform
+    (a YouTube commenter is a viewer; someone on Reddit, Quora or a portal forum is a user)."""
+    if perspective in SPEAKER:
+        return SPEAKER[perspective]
+    role = ((source or {}).get("author") or {}).get("role")
+    if role in SPEAKER_BY_ROLE:
+        return SPEAKER_BY_ROLE[role]
+    if source is not None and source.get("connector_id") not in VIDEO_PLATFORMS:
+        return "a_user" if source_kind in ("comment", "forum_post", "user_review") else SPEAKER_BY_KIND.get(source_kind)
+    return SPEAKER_BY_KIND.get(source_kind)
 
 
 def check(
@@ -280,7 +302,7 @@ def check(
         if perspective in NOT_A_REVIEW:
             drops["not_a_first_person_review"] += 1
             continue
-        label = speaker_label(perspective, source["source_kind"])
+        label = speaker_label(perspective, source["source_kind"], source)
         if label is None:
             drops["speaker_unknown"] += 1
             continue

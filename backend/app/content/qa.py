@@ -172,6 +172,7 @@ def check_payload(payload: dict[str, Any], basis: Basis) -> list[dict[str, Any]]
     ]
     own_text += [("metadata", None, f"{payload['metadata']['title']} {payload['metadata']['description']}")]
     counts = {str(len(payload["reviews"])), str(len(basis.findings)), str(len(basis.reviews))}
+    counts |= {str(sum(1 for r in payload["reviews"] if r["polarity"] == k)) for k in ("positive", "negative", "mixed")}
     for block, index, text in own_text:
         extra = numbers_in(text) - every_number - counts
         if extra:

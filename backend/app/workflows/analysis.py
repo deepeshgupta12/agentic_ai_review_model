@@ -6,6 +6,10 @@ One LangGraph thread per run (thread ID `analysis:<run ID>`), checkpointed in Mo
     claims -> findings -> reviews -> conclude -> review (interrupt) -> selected -> format -> end
                                          `-> end (insufficient_evidence)
 
+With `ANALYSIS_MODE=reviews` (the default since D68, product owner 13 Oct 2026: real users' reviews, not facts) the
+graph starts at `reviews`: no claims, verification or findings are made, so no facts and no registry records reach
+the output, and the analysis costs only A11's calls.
+
 - claims: A05 over every source task of the project's eligible evidence, A06 over the facts and allegations, then
   the claims are stored (app.agents.verify.store_claims).
 - findings: A07 over this run's usable claims, whole aspects packed into a few tasks; findings stored; open agent
@@ -319,7 +323,10 @@ def build_graph(ctx: Context, saver: MongoDBSaver) -> Any:
     graph.add_node("review", lambda s: review_node(ctx, s))
     graph.add_node("selected", lambda s: selected_node(ctx, s))
     graph.add_node("format", lambda s: format_node(ctx, s))
-    graph.add_edge(START, "claims")
+    if ctx.settings.analysis_mode == "reviews":  # D68: first-person reviews only
+        graph.add_edge(START, "reviews")
+    else:
+        graph.add_edge(START, "claims")
     graph.add_edge("claims", "findings")
     graph.add_edge("findings", "reviews")
     graph.add_edge("reviews", "conclude")

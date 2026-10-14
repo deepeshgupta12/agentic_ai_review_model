@@ -56,7 +56,9 @@ services:
         condition: service_completed_successfully
       mongodb:
         condition: service_healthy
-    command: ["python", "-m", "app.cli", "setup-db"]
+    # Collections, validators and indexes; then the repository's source policies and, for every project, any source
+    # registered since it was added (D67: Reddit). A repeat changes nothing.
+    command: ["sh", "-c", "python -m app.cli setup-db && python -m app.cli sync-catalogue"]
     restart: "no"
 
   api:

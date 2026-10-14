@@ -3,8 +3,8 @@ import Link from "next/link";
 
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState, ErrorState, MoreLink, Table, Td, Th } from "@/components/ui";
-import { apiGet, currentUser, type Schemas } from "@/lib/api-server";
-import { formatTime } from "@/lib/format";
+import { apiGet, backendInfo, currentUser, type Schemas } from "@/lib/api-server";
+import { connectorName, formatTime, stageLabel } from "@/lib/format";
 import { can } from "@/lib/roles";
 
 import { StartRunForm } from "./StartRunForm";
@@ -20,19 +20,23 @@ export default async function RunsPage({
 }) {
   const { projectId } = await params;
   const { cursor } = await searchParams;
-  const [runs, detail, me] = await Promise.all([
+  const me = await currentUser();
+  const mayStart = can(me?.roles, "startRun");
+  const [runs, detail, health, info] = await Promise.all([
     apiGet<Schemas["RunPage"]>(`/v1/projects/${projectId}/runs`, { cursor, limit: 20 }),
     apiGet<Schemas["ProjectDetail"]>(`/v1/projects/${projectId}`),
-    currentUser(),
+    mayStart ? apiGet<Schemas["ConnectorHealthList"]>("/v1/connectors/health") : null,
+    backendInfo(),
   ]);
   if (!runs.data) return <ErrorState status={runs.status} error={runs.error} requestId={runs.requestId} />;
   const enabled = (detail.data?.config.sources ?? []).filter((s) => s.enabled).map((s) => s.connector_id);
+  const status = Object.fromEntries((health?.data?.connectors ?? []).map((c) => [c.connector_id, c.status]));
 
   return (
     <div className="space-y-6">
-      {can(me?.roles, "startRun") ? <StartRunForm projectId={projectId} connectors={enabled} /> : null}
+      {mayStart ? <StartRunForm projectId={projectId} enabled={enabled} status={status} analysisMode={info.analysis_mode} /> : null}
       {runs.data.items.length === 0 ? (
-        <EmptyState>No run yet. A researcher starts the full run here: collection, analysis and the review queue.</EmptyState>
+        <EmptyState>No run yet. A researcher starts it here: it collects people&apos;s reviews, reads them and queues them for a moderator.</EmptyState>
       ) : (
         <Table label="Runs">
           <thead>
@@ -55,7 +59,7 @@ export default async function RunsPage({
                   <div className="text-ink-muted">{formatTime(run.created_at)}</div>
                 </Td>
                 <Td>
-                  <StatusBadge status={run.stage} />
+                  <StatusBadge status={run.stage} text={stageLabel(run.stage)} />
                 </Td>
                 <Td className="text-ink-muted">
                   {formatTime(run.window.from)} to {formatTime(run.window.to)}
@@ -63,7 +67,8 @@ export default async function RunsPage({
                 <Td>
                   {run.coverage.map((c) => (
                     <div key={c.connector_id} className="flex items-center gap-1">
-                      <span className="font-mono text-xs">{c.connector_id}</span> <StatusBadge status={c.status} />
+                      <span className="text-xs">{connectorName(c.connector_id)}</span> <StatusBadge status={c.status} />
+                      <span className="text-xs text-ink-muted">{c.fetched} read</span>
                     </div>
                   ))}
                 </Td>

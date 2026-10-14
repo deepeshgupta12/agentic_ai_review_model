@@ -84,7 +84,15 @@ def create_app() -> FastAPI:
 
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> dict[str, Any]:
-        return {"status": "ok", "mode": settings.app_mode.value}
+        # The console reads the analysis mode and the page's review limits from here, so they are never copied (D69).
+        return {
+            "status": "ok",
+            "mode": settings.app_mode.value,
+            "analysis_mode": settings.analysis_mode,
+            "page_reviews_max": settings.page_reviews_max,
+            "review_words_min": settings.review_words_min,
+            "review_words_max": settings.review_words_max,
+        }
 
     @app.get("/readyz", include_in_schema=False, response_model=None)
     def readyz() -> dict[str, Any] | JSONResponse:

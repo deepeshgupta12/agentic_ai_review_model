@@ -44,6 +44,9 @@ class FetchOutcome:
     item: Item | None = None
     policy: dict[str, Any] | None = None
     retryable: bool = False
+    html: str | None = (
+        None  # the page as read, for splitting it into individual reviews (app.connectors.portal_reviews)
+    )
 
 
 def _language(html: str) -> str | None:
@@ -251,7 +254,7 @@ class WebFetch(Connector):
             author={"display_name": str(author)[:200], "role": "unknown", "role_basis": "none"} if author else None,
         )
         log_fetch(self.db, {**entry, "outcome": outcome})
-        return FetchOutcome("fetched", final_url, outcome, item=item, policy=resolution.policy)
+        return FetchOutcome("fetched", final_url, outcome, item=item, policy=resolution.policy, html=html)
 
     def fetch_item(self, ref: str) -> Item:
         outcome = self.fetch(ref)

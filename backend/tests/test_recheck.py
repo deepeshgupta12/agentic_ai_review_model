@@ -96,5 +96,8 @@ def test_a_removed_video_is_deleted_after_two_checks_and_without_a_key_nothing_i
     assert lifecycle(db, video) == "deleted"
     assert db["ai_sources"].count_documents({"source_kind": "comment", "lifecycle": "active"}) > 0
     settings.youtube_api_key = None
-    comments = db["ai_sources"].count_documents({"source_kind": "comment", "lifecycle": "active"})
-    assert recheck(db)["not_checked_no_access"] == comments
+    comments = db["ai_sources"].count_documents(
+        {"connector_id": "youtube_data_api", "source_kind": "comment", "lifecycle": "active"}
+    )
+    result = recheck(db)
+    assert result["not_checked_no_access"] == comments, "Reddit is never re-checked (no deletion check; retention)"

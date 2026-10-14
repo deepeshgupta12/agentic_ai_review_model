@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Evidence contracts",
   "description": "Evidence spans, atomic claims and findings. IDs alone never point to mutable meaning: every reference carries a revision (docs/02 item 2).",
-  "x-contract-version": "1.0.0",
+  "x-contract-version": "1.1.0",
   "$defs": {
     "Evidence": {
       "description": "ai_evidence record: an anchored span of one eligible source revision, tied to one project association. Eligibility is computed at read, approval and publication time from lifecycle, policy and link status.",
@@ -292,7 +292,7 @@
           "minItems": 1,
           "items": { "$ref": "common.schema.json#/$defs/EvidenceRef" }
         },
-        "source_kind": { "enum": ["forum_post", "forum_thread", "blog_post", "comment", "video", "short"] },
+        "source_kind": { "enum": ["forum_post", "forum_thread", "blog_post", "comment", "video", "short", "user_review"] },
         "perspective": { "$ref": "common.schema.json#/$defs/ClaimPerspective" },
         "speaker_label": { "$ref": "common.schema.json#/$defs/SpeakerLabel" },
         "polarity": { "allOf": [{ "$ref": "common.schema.json#/$defs/Polarity" }, { "not": { "const": "neutral" } }] },

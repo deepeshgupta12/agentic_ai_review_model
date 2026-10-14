@@ -1,37 +1,62 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Panel } from "@/components/ui";
 import { newKey, send } from "@/lib/api-browser";
 import type { components } from "@/lib/api-schema";
+import { balancedPick, fitsPage, type ReviewLimits, wordCount } from "@/lib/flow";
 
 type Finding = components["schemas"]["Finding"];
 type Review = components["schemas"]["ReviewExcerpt"];
 type Accepted = components["schemas"]["Accepted"];
 
-/** Choose the exact approved findings and reviews for the page and generate a draft (Step 10). Reviews alone need no
- * model (D64); with findings, A08 writes and A09 checks the text through Claude within the model budget. */
+const SIDES = ["positive", "negative", "mixed"] as const;
+
+/** Choose the exact approved reviews (and, in the full analysis, findings) for the page and generate a draft
+ * (Step 10). Reviews alone need no model (D64); the backend orders them positive, negative and mixed in proportion
+ * and checks the limits again (D69). When the draft is ready the editor opens. */
 export function GenerateForm({
   projectId,
-  waiting,
-  stage,
   findings,
   reviews,
+  limits,
 }: {
   projectId: string;
-  waiting: boolean;
-  stage: string | null;
   findings: Finding[];
   reviews: Review[];
+  limits: ReviewLimits;
 }) {
   const router = useRouter();
   const key = useRef(newKey("generate"));
+  const publishable = reviews.filter((r) => fitsPage(r.text, limits));
   const [chosenFindings, setFindings] = useState<string[]>(findings.map((f) => f.id));
-  const [chosenReviews, setReviews] = useState<string[]>(reviews.map((r) => r.id));
-  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string; run?: string } | null>(null);
+  const [chosenReviews, setReviews] = useState<string[]>(() => balancedPick(publishable, limits.page_reviews_max).map((r) => r.id));
+  const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [waitingFor, setWaitingFor] = useState<string | null>(null);
+
+  // Follow the run until the draft exists, then open it.
+  useEffect(() => {
+    if (!waitingFor) return;
+    const timer = setInterval(async () => {
+      const response = await fetch(`/v1/runs/${waitingFor}`, { credentials: "same-origin", cache: "no-store" }).catch(() => null);
+      if (!response?.ok) return;
+      const run = (await response.json()) as { stage: string; content_revision_id: string | null; outcome_note: string | null };
+      if (run.content_revision_id) {
+        clearInterval(timer);
+        router.push(`/console/projects/${projectId}/content/${run.content_revision_id}`);
+        router.refresh();
+      } else if (!["findings_review", "formatting"].includes(run.stage)) {
+        clearInterval(timer);
+        setWaitingFor(null);
+        setMessage({ tone: "error", text: run.outcome_note ?? `The run is now ${run.stage.replaceAll("_", " ")}.` });
+        router.refresh();
+      }
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [waitingFor, projectId, router]);
 
   async function generate() {
     setBusy(true);
@@ -48,53 +73,74 @@ export function GenerateForm({
       return;
     }
     key.current = newKey("generate");
-    setMessage({ tone: "ok", text: "Generating in the background. The draft appears below when it is ready.", run: result.data.run_id ?? undefined });
-    router.refresh();
+    setMessage({ tone: "ok", text: "Generating in the background. The draft opens here when it is ready." });
+    setWaitingFor(result.data.run_id ?? null);
   }
 
   const usesModel = chosenFindings.length > 0;
+  const selected = reviews.filter((r) => chosenReviews.includes(r.id));
+  const mix = SIDES.map((side) => `${selected.filter((r) => r.polarity === side).length} ${side}`).join(", ");
+  const full = chosenReviews.length >= limits.page_reviews_max;
   return (
-    <Panel title="Generate page content">
-      {!waiting ? (
-        <p className="mb-3 text-warn">
-          The latest run is {stage ? stage.replaceAll("_", " ") : "missing"}: generation continues a run that waits at findings review.
-        </p>
-      ) : null}
-      <div className="grid gap-4 lg:grid-cols-2">
+    <Panel title="Build the page">
+      <p className="mb-3 max-w-3xl text-ink-muted">
+        Choose up to {limits.page_reviews_max} approved reviews of {limits.review_words_min} to {limits.review_words_max} words. The page shows
+        them as Person 1, Person 2 and so on, in the authors&apos; own words, with positive, negative and mixed reviews spread through the list.
+      </p>
+      <div className={findings.length ? "grid gap-4 lg:grid-cols-2" : ""}>
         <fieldset>
-          <legend className="mb-1 font-medium">Approved reviews ({reviews.length})</legend>
-          {reviews.length === 0 ? <p className="text-ink-muted">None approved yet.</p> : null}
-          <ul className="max-h-72 space-y-1 overflow-y-auto">
-            {reviews.map((r) => (
-              <li key={r.id}>
-                <label className="flex items-start gap-2">
-                  <input type="checkbox" checked={chosenReviews.includes(r.id)} onChange={(e) => setReviews(e.target.checked ? [...chosenReviews, r.id] : chosenReviews.filter((x) => x !== r.id))} />
-                  <span>
-                    <span className="mr-1 rounded border border-line px-1 text-xs">{r.polarity}</span>
-                    {r.text}
-                  </span>
-                </label>
-              </li>
-            ))}
+          <legend className="mb-1 font-medium">
+            Approved reviews: {chosenReviews.length} of at most {limits.page_reviews_max} selected ({mix})
+          </legend>
+          {reviews.length === 0 ? <p className="text-ink-muted">None approved yet. Approve reviews on the Reviews tab first.</p> : null}
+          {reviews.length > publishable.length ? (
+            <p className="mb-1 text-xs text-ink-muted">
+              {reviews.length - publishable.length} approved review(s) are outside {limits.review_words_min} to {limits.review_words_max} words
+              and cannot be shown; a moderator can shorten one to whole sentences on the Reviews tab.
+            </p>
+          ) : null}
+          <ul className="max-h-96 space-y-1 overflow-y-auto">
+            {reviews.map((r) => {
+              const fits = fitsPage(r.text, limits);
+              const on = chosenReviews.includes(r.id);
+              return (
+                <li key={r.id}>
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      disabled={!fits || (!on && full)}
+                      onChange={(e) => setReviews(e.target.checked ? [...chosenReviews, r.id] : chosenReviews.filter((x) => x !== r.id))}
+                    />
+                    <span className={fits ? "" : "text-ink-muted"}>
+                      <span className="mr-1 rounded border border-line px-1 text-xs">{r.polarity}</span>
+                      <span className="mr-1 text-xs text-ink-muted">{wordCount(r.text)} words</span>
+                      {r.text}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
           </ul>
         </fieldset>
-        <fieldset>
-          <legend className="mb-1 font-medium">Approved findings ({findings.length})</legend>
-          {findings.length === 0 ? <p className="text-ink-muted">None approved. A page can be built from reviews alone.</p> : null}
-          <ul className="max-h-72 space-y-1 overflow-y-auto">
-            {findings.map((f) => (
-              <li key={f.id}>
-                <label className="flex items-start gap-2">
-                  <input type="checkbox" checked={chosenFindings.includes(f.id)} onChange={(e) => setFindings(e.target.checked ? [...chosenFindings, f.id] : chosenFindings.filter((x) => x !== f.id))} />
-                  <span>
-                    <span className="mr-1 rounded border border-line px-1 text-xs uppercase">{f.kind}</span>
-                    {f.wording}
-                  </span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </fieldset>
+        {findings.length ? (
+          <fieldset>
+            <legend className="mb-1 font-medium">Approved findings ({findings.length})</legend>
+            <ul className="max-h-96 space-y-1 overflow-y-auto">
+              {findings.map((f) => (
+                <li key={f.id}>
+                  <label className="flex items-start gap-2">
+                    <input type="checkbox" checked={chosenFindings.includes(f.id)} onChange={(e) => setFindings(e.target.checked ? [...chosenFindings, f.id] : chosenFindings.filter((x) => x !== f.id))} />
+                    <span>
+                      <span className="mr-1 rounded border border-line px-1 text-xs uppercase">{f.kind}</span>
+                      {f.wording}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </fieldset>
+        ) : null}
       </div>
       <p className="mt-3 text-ink-muted">
         {usesModel
@@ -104,21 +150,16 @@ export function GenerateForm({
       {message ? (
         <p role={message.tone === "error" ? "alert" : "status"} className={`mt-2 ${message.tone === "error" ? "text-danger" : "text-ok"}`}>
           {message.text}
-          {message.run ? (
-            <a href={`/console/runs/${message.run}`} className="ml-2 underline">
-              follow the run
-            </a>
-          ) : null}
         </p>
       ) : null}
       <button
         type="button"
         data-testid="generate"
-        disabled={busy || (!chosenFindings.length && !chosenReviews.length)}
+        disabled={busy || waitingFor !== null || (!chosenFindings.length && !chosenReviews.length)}
         onClick={generate}
         className="mt-3 rounded bg-accent px-3 py-1.5 font-medium text-white disabled:opacity-50"
       >
-        {busy ? "Starting…" : "Generate draft"}
+        {busy ? "Starting…" : waitingFor ? "Generating…" : "Generate draft"}
       </button>
     </Panel>
   );

@@ -1,0 +1,726 @@
+Steps 09 and 10 checks
+date (UTC): 2026-10-14T07:18:58Z
+commit:     da5af4f (plus uncommitted changes)
+node:       v25.9.0 | pnpm 11.20.0 | docker 29.4.2
+
+=== Regression: Step 01 validator ===
+$ python3 scripts/validate_inputs.py
+Step 01 input validation
+========================
+
+Projects (contracts/five-project-input-template.json)
+  1. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana | dlf privana south | dlf privana west | dlf privana north
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         GGM/772/504/2023/116, GGM/819/551/2024/46, GGM/954/686/2025/57
+     Client id:        1170
+     status:       ready_to_move
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+     status:       under_construction
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+     status:       new_launch
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+     status:       new_launch
+  5. M3M Antalya Hills
+     slug:         m3m-antalya-hills-sector-79-gurgaon
+     search names: m3m antalya hills | m3m antalya hills phase 1 | m3m antalya hills phase ii | m3m antalya hills 3 | commercial 01 in m3m antalya hills phase i
+     place:        sector 79, new gurgaon, gurgaon
+     developer:    m3m
+     RERA:         GGM/650/382/2022/125, GGM/833/565/2024/60, GGM/844/576/2024/71, GGM/867/599/2024/94
+     Client id:        201749
+     status:       partially_ready
+
+Connectors + model providers: 14 (7 access_pending, 7 live)
+Source policies: 13 (13 accepted)
+Operating defaults: 14 (12 accepted, 2 open)
+
+Warnings (1):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+
+Result: PASS (0 errors, 1 warnings)
+--> OK (exit 0, expected 0)
+
+=== Regression: Step 01-02 use-case suites ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python -m unittest discover -s scripts/tests -q
+----------------------------------------------------------------------
+Ran 130 tests in 2.602s
+
+OK
+--> OK (exit 0, expected 0)
+
+=== Contracts: checker, fixtures and the JavaScript hash cross-check (api 1.4.0, content 1.2.0, common 1.3.0, evidence 1.1.0, routes 1.1.0) ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/check_contracts.py
+Step 02 contract checks
+=======================
+9 schema files, 218 definitions, 51 operations, 14 state machines, 19 journeys, 115 fixture cases
+
+  PASS      Schema files are valid and every $ref resolves
+  PASS      Status vocabulary and state machines
+  PASS      Route table and generated OpenAPI
+  PASS      Journeys: actors, operations and state paths
+  PASS      Agent outputs fit Claude structured outputs
+  PASS      Fixtures: valid pass, invalid fail for the stated reason
+  PASS      Canonical hashing (D23)
+  PASS      Text anchors, code points and UTF-16 (D24)
+  PASS      Approval and public-read rules
+  PASS      Construction status and first-person source reviews (D27, D28)
+  PASS      Step 01 seed data uses the contract vocabulary
+  PASS      Docs: journeys doc current, screen references valid
+  PASS      JavaScript cross-check (Node)
+
+Result: PASS (13/13 sections passed)
+--> OK (exit 0, expected 0)
+
+=== Backend: ruff lint and format ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run ruff check . && env -u VIRTUAL_ENV uv run ruff format --check .
+All checks passed!
+166 files already formatted
+--> OK (exit 0, expected 0)
+
+=== Backend: mypy ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run mypy
+Success: no issues found in 129 source files
+--> OK (exit 0, expected 0)
+
+=== UC-17..UC-81: backend tests against the Compose replica set (no real credentials, no model call) ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run pytest -q -p no:cacheprovider
+........................................................................ [ 17%]
+........................................................................ [ 34%]
+........................................................................ [ 51%]
+........................................................................ [ 69%]
+........................................................................ [ 86%]
+........................................................                 [100%]
+416 passed in 1415.47s (0:23:35)
+--> OK (exit 0, expected 0)
+
+=== Web: eslint, TypeScript, API types, unit tests (role map equals the contract) ===
+$ bash -c cd web && pnpm -s lint && pnpm -s typecheck >/dev/null && pnpm -s check:api && pnpm -s test >/dev/null && echo 'web gates OK'
+$ eslint
+$ next typegen && tsc --noEmit
+$ openapi-typescript ../contracts/v1/openapi.json -o lib/api-schema.d.ts --check
+✨ openapi-typescript 7.13.0
+$ vitest run
+web gates OK
+--> OK (exit 0, expected 0)
+
+=== Images build ===
+$ docker compose build
+ Image agentic_ai_review_model-embedder Building 
+ Image agentic_ai_review_model-api Building 
+ Image agentic_ai_review_model-worker Building 
+ Image agentic_ai_review_model-scheduler Building 
+ Image agentic_ai_review_model-db-setup Building 
+ Image agentic_ai_review_model-web Building 
+ Image agentic_ai_review_model-media-worker Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 3.69kB done
+#1 DONE 0.0s
+
+#2 [scheduler internal] load build definition from Dockerfile
+#2 transferring dockerfile: 938B 0.0s done
+#2 ...
+
+#3 [web internal] load build definition from Dockerfile
+#3 transferring dockerfile: 877B 0.1s done
+#3 DONE 0.6s
+
+#2 [db-setup internal] load build definition from Dockerfile
+#2 transferring dockerfile: 938B 0.0s done
+#2 DONE 0.6s
+
+#4 [media-worker internal] load build definition from Dockerfile.media
+#4 transferring dockerfile: 1.41kB 0.0s done
+#4 DONE 0.7s
+
+#5 [embedder internal] load build definition from Dockerfile.embed
+#5 transferring dockerfile: 1.13kB 0.1s done
+#5 DONE 0.7s
+
+#6 [media-worker internal] load metadata for ghcr.io/astral-sh/uv:0.10.2
+#6 ...
+
+#7 [scheduler internal] load metadata for docker.io/library/python:3.13-slim
+#7 DONE 1.5s
+
+#8 [web internal] load metadata for docker.io/library/node:24-alpine
+#8 DONE 3.2s
+
+#6 [embedder internal] load metadata for ghcr.io/astral-sh/uv:0.10.2
+#6 ...
+
+#9 [web internal] load .dockerignore
+#9 transferring context: 195B 0.0s done
+#9 DONE 0.0s
+
+#10 [web internal] load build context
+#10 DONE 0.0s
+
+#11 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1
+#11 resolve docker.io/library/node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 0.0s done
+#11 DONE 0.1s
+
+#6 [embedder internal] load metadata for ghcr.io/astral-sh/uv:0.10.2
+#6 ...
+
+#10 [web internal] load build context
+#10 transferring context: 494.88kB 0.1s done
+#10 DONE 0.2s
+
+#12 [web deps 2/5] WORKDIR /srv/web
+#12 CACHED
+
+#13 [web deps 3/5] RUN corepack enable
+#13 CACHED
+
+#14 [web deps 4/5] COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
+#14 CACHED
+
+#15 [web deps 5/5] RUN pnpm install --frozen-lockfile
+#15 CACHED
+
+#16 [web build 4/6] COPY --from=deps /srv/web/node_modules ./node_modules
+#16 CACHED
+
+#17 [web build 5/6] COPY web/ ./
+#17 DONE 0.4s
+
+#6 [embedder internal] load metadata for ghcr.io/astral-sh/uv:0.10.2
+#6 DONE 4.4s
+
+#9 [worker internal] load .dockerignore
+#9 transferring context: 195B 0.0s done
+#9 DONE 0.0s
+
+#18 [worker] FROM ghcr.io/astral-sh/uv:0.10.2@sha256:94a23af2d50e97b87b522d3cea24aaf8a1faedec1344c952767434f69585cbf9
+#18 resolve ghcr.io/astral-sh/uv:0.10.2@sha256:94a23af2d50e97b87b522d3cea24aaf8a1faedec1344c952767434f69585cbf9 0.0s done
+#18 DONE 0.1s
+
+#19 [worker stage-0  1/12] FROM docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b
+#19 resolve docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b 0.0s done
+#19 DONE 0.1s
+
+#20 [api internal] load build context
+#20 transferring context: 470.07kB 0.1s done
+#20 transferring context: 470.07kB 0.1s done
+#20 DONE 0.2s
+
+#21 [embedder internal] load build context
+#21 transferring context: 464.75kB 0.1s done
+#21 DONE 0.2s
+
+#22 [scheduler stage-0  4/12] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#22 CACHED
+
+#23 [api stage-0  5/12] RUN uv sync --frozen --no-dev --no-install-project
+#23 CACHED
+
+#24 [media-worker stage-0  4/13] WORKDIR /srv/backend
+#24 CACHED
+
+#25 [media-worker stage-0  3/13] RUN sed -i "s|http://deb.debian.org|https://deb.debian.org|g" /etc/apt/sources.list.d/debian.sources  && apt-get update  && apt-get install -y --no-install-recommends ffmpeg  && rm -rf /var/lib/apt/lists/*
+#25 CACHED
+
+#26 [media-worker stage-0  5/13] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#26 CACHED
+
+#27 [media-worker stage-0  6/13] RUN uv sync --frozen --no-dev --group media --no-install-project
+#27 CACHED
+
+#28 [embedder stage-0  2/12] COPY --from=ghcr.io/astral-sh/uv:0.10.2 /uv /uvx /bin/
+#28 CACHED
+
+#29 [embedder stage-0  4/10] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#29 CACHED
+
+#30 [embedder stage-0  3/12] WORKDIR /srv/backend
+#30 CACHED
+
+#31 [embedder stage-0  5/10] RUN uv sync --frozen --no-dev --group embed --no-install-project
+#31 CACHED
+
+#32 [api stage-0  6/12] COPY backend/app ./app
+#32 DONE 1.1s
+
+#33 [media-worker stage-0  7/13] COPY backend/app ./app
+#33 DONE 1.1s
+
+#34 [embedder stage-0  6/10] COPY backend/app ./app
+#34 DONE 1.1s
+
+#35 [worker stage-0  7/12] RUN uv sync --frozen --no-dev
+#35 1.303    Building sy-poc-backend @ file:///srv/backend
+#35 ...
+
+#36 [web build 6/6] RUN pnpm build
+#36 1.138 ! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-11.20.0.tgz
+#36 ...
+
+#37 [embedder stage-0  7/10] RUN uv sync --frozen --no-dev --group embed
+#37 1.299    Building sy-poc-backend @ file:///srv/backend
+#37 ...
+
+#38 [media-worker stage-0  8/13] RUN uv sync --frozen --no-dev --group media
+#38 1.303    Building sy-poc-backend @ file:///srv/backend
+#38 10.75       Built sy-poc-backend @ file:///srv/backend
+#38 10.78 Prepared 1 package in 9.48s
+#38 10.83 Installed 1 package in 38ms
+#38 ...
+
+#35 [worker stage-0  7/12] RUN uv sync --frozen --no-dev
+#35 10.75       Built sy-poc-backend @ file:///srv/backend
+#35 10.77 Prepared 1 package in 9.49s
+#35 10.83 Installed 1 package in 42ms
+#35 13.17 Bytecode compiled 5904 files in 2.33s
+#35 13.17  + sy-poc-backend==0.1.0 (from file:///srv/backend)
+#35 DONE 13.4s
+
+#37 [embedder stage-0  7/10] RUN uv sync --frozen --no-dev --group embed
+#37 10.75       Built sy-poc-backend @ file:///srv/backend
+#37 10.77 Prepared 1 package in 9.48s
+#37 10.83 Installed 1 package in 49ms
+#37 13.25 Bytecode compiled 6591 files in 2.42s
+#37 13.25  + sy-poc-backend==0.1.0 (from file:///srv/backend)
+#37 DONE 13.5s
+
+#39 [scheduler stage-0  8/12] COPY contracts /srv/contracts
+#39 DONE 0.6s
+
+#38 [media-worker stage-0  8/13] RUN uv sync --frozen --no-dev --group media
+#38 13.79 Bytecode compiled 7757 files in 2.96s
+#38 13.79  + sy-poc-backend==0.1.0 (from file:///srv/backend)
+#38 DONE 14.1s
+
+#40 [embedder stage-0  8/10] COPY contracts /srv/contracts
+#40 DONE 0.6s
+
+#41 [scheduler stage-0  9/12] COPY seed /srv/seed
+#41 DONE 0.3s
+
+#42 [media-worker stage-0  9/13] COPY contracts /srv/contracts
+#42 DONE 0.3s
+
+#43 [embedder stage-0  9/10] COPY seed /srv/seed
+#43 DONE 0.3s
+
+#44 [embedder stage-0 10/10] RUN useradd --system --uid 10001 --create-home app  && mkdir -p /srv/embeddings  && chown app /srv/embeddings
+#44 ...
+
+#45 [media-worker stage-0 10/13] COPY seed /srv/seed
+#45 DONE 0.3s
+
+#46 [worker stage-0 10/12] COPY prompts /srv/prompts
+#46 DONE 0.4s
+
+#47 [scheduler stage-0 11/12] COPY evals /srv/evals
+#47 ...
+
+#48 [media-worker stage-0 11/13] COPY prompts /srv/prompts
+#48 DONE 0.2s
+
+#47 [api stage-0 11/12] COPY evals /srv/evals
+#47 DONE 0.2s
+
+#49 [media-worker stage-0 12/13] COPY evals /srv/evals
+#49 DONE 0.1s
+
+#50 [media-worker stage-0 13/13] RUN useradd --system --uid 10001 --create-home app  && mkdir -p /srv/models /tmp/media  && chown app /srv/models /tmp/media
+#50 0.338 useradd warning: app's uid 10001 is greater than SYS_UID_MAX 999
+#50 DONE 0.4s
+
+#51 [db-setup stage-0 12/12] RUN useradd --system --uid 10001 --no-create-home app
+#51 0.351 useradd warning: app's uid 10001 is greater than SYS_UID_MAX 999
+#51 DONE 0.4s
+
+#44 [embedder stage-0 10/10] RUN useradd --system --uid 10001 --create-home app  && mkdir -p /srv/embeddings  && chown app /srv/embeddings
+#44 0.969 useradd warning: app's uid 10001 is greater than SYS_UID_MAX 999
+#44 DONE 1.0s
+
+#52 [media-worker] exporting to image
+#52 exporting layers
+#52 exporting layers 1.0s done
+#52 exporting manifest sha256:15c9b2c0e7ab2a19a6221bb0865c15181bbca236fbb631bcf4df1ca58387c28c 0.0s done
+#52 exporting config sha256:742e651f059ec7b477b14f395127455e10473813eeb5c50f804047937904f85f 0.0s done
+#52 exporting attestation manifest sha256:526e6f5d5f1839d5656e8e276a063472b1ee84277c4149758ba6279e5d3c4de0
+#52 exporting attestation manifest sha256:526e6f5d5f1839d5656e8e276a063472b1ee84277c4149758ba6279e5d3c4de0 0.3s done
+#52 exporting manifest list sha256:5c7c5b86481a8bffb14c3071dd101d83e90ebf062d339f71dd57a95cc4d9738c 0.1s done
+#52 naming to docker.io/library/agentic_ai_review_model-media-worker:latest
+#52 naming to docker.io/library/agentic_ai_review_model-media-worker:latest 0.0s done
+#52 unpacking to docker.io/library/agentic_ai_review_model-media-worker:latest
+#52 unpacking to docker.io/library/agentic_ai_review_model-media-worker:latest 1.7s done
+#52 ...
+
+#53 [embedder] exporting to image
+#53 exporting layers 0.9s done
+#53 exporting manifest sha256:6404398bfd01685bd71d4c23e5e4a4e2c55fe7462f6267a7961ecfd596f17188 0.0s done
+#53 exporting config sha256:f9ed83ab1bcf5d965a623dd582985251537a74fff2f267b119e6b1e795e6706b 0.1s done
+#53 exporting attestation manifest sha256:3dc448a5b4fa98c864a23c6c070d6ca8cca042319c9be5a7e53db21d78ce8ace 0.1s done
+#53 exporting manifest list sha256:abcaac5263294d7d08488d53fca1e7c9c18e31b7640e0f14a802bb156c483311 0.2s done
+#53 naming to docker.io/library/agentic_ai_review_model-embedder:latest 0.1s done
+#53 unpacking to docker.io/library/agentic_ai_review_model-embedder:latest 1.5s done
+#53 DONE 3.4s
+
+#54 [db-setup] exporting to image
+#54 exporting layers 0.9s done
+#54 exporting manifest sha256:a11551e5174800d7532f077ec10d12eab7fd986ec8d05cddc4fac38a41de9078 0.1s done
+#54 exporting config sha256:0202f97f0b0b6d6a78aa37a3013a3ad4bcb2bf4808ee7868e8049e8e905170a1 0.1s done
+#54 exporting attestation manifest sha256:fae39be459975d7fdc51fa4d56db4d7dfd51a87094814abad3ed395adca4c1ce 0.2s done
+#54 exporting manifest list sha256:b6ff8960b62473ce350b5c05dae8888e4a3e1f56943033ace4e42e4e21516ffe 0.2s done
+#54 naming to docker.io/library/agentic_ai_review_model-db-setup:latest 0.0s done
+#54 unpacking to docker.io/library/agentic_ai_review_model-db-setup:latest 1.6s done
+#54 DONE 4.0s
+
+#55 [scheduler] exporting to image
+#55 exporting layers 0.9s done
+#55 exporting manifest sha256:6377130b620f5da21c20dc22a6563e2d0eb670e8449bdfa1018b7e67e309cbc9 0.1s done
+#55 exporting config sha256:5f30e54d6723101fc3bc411dc6af28e19b9cb74b3a089d2562563c17f80936dc 0.0s done
+#55 exporting attestation manifest sha256:fbe66a302866ebd7d44fffa101aaae8198d976f3471301d5c102106b15ffab85 0.2s done
+#55 exporting manifest list sha256:4edc43f57b684753c94bb8cc324cf8d767945d959451f3e7c32e3252eac54be3 0.2s done
+#55 naming to docker.io/library/agentic_ai_review_model-scheduler:latest 0.0s done
+#55 unpacking to docker.io/library/agentic_ai_review_model-scheduler:latest 1.7s done
+#55 DONE 4.1s
+
+#56 [worker] exporting to image
+#56 exporting layers 0.9s done
+#56 exporting manifest sha256:0d6c032b12151fd0acbc814fcece1847241c0efd61306df6f98d4fbe59590522 0.1s done
+#56 exporting config sha256:33907caeb8e2bd5b41e8feece17ecd0e431932465ae9b39e95a9b095a17c1f23 0.0s done
+#56 exporting attestation manifest sha256:8334314b65105bc43e53b33e648b50687b368c37c6bb92b293f77014b9cf9878 0.2s done
+#56 exporting manifest list sha256:254d9564def587129123099bbaa52adbae68b9745a3498bd5c41db6540457618 0.2s done
+#56 naming to docker.io/library/agentic_ai_review_model-worker:latest 0.0s done
+#56 unpacking to docker.io/library/agentic_ai_review_model-worker:latest 1.6s done
+#56 DONE 4.1s
+
+#57 [api] exporting to image
+#57 exporting layers 0.9s done
+#57 exporting manifest sha256:1c3909e5898986fc1ffe0daa183aff7ec73e0eb4b9786258a1b8c49bb5b09b9c 0.1s done
+#57 exporting config sha256:b62ce44f6c1abbccc1f0ab91f6a22e66e742d48d68387633a8ae78f42c69733a 0.1s done
+#57 exporting attestation manifest sha256:586a1205ab7049c9aeaec6a42b0c5685e27accee88c6b35ab53d7263eb830255 0.2s done
+#57 exporting manifest list sha256:415e24ccf8c6ff6f0375f44369dd9c192596f9d7b6ee20aac39ccd85eabb8ab5 0.2s done
+#57 naming to docker.io/library/agentic_ai_review_model-api:latest 0.0s done
+#57 unpacking to docker.io/library/agentic_ai_review_model-api:latest 1.7s done
+#57 DONE 4.3s
+
+#36 [web build 6/6] RUN pnpm build
+#36 14.32 $ next build
+#36 17.11 ▲ Next.js 16.3.6 (Turbopack)
+#36 17.31 ✓ Running next.config.ts took 190ms
+#36 17.34 
+#36 17.43   Creating an optimized production build ...
+#36 ...
+
+#52 [media-worker] exporting to image
+#52 DONE 4.5s
+
+#36 [web build 6/6] RUN pnpm build
+#36 ...
+
+#58 [embedder] resolving provenance for metadata file
+#58 ...
+
+#59 [api] resolving provenance for metadata file
+#59 DONE 0.8s
+
+#58 [embedder] resolving provenance for metadata file
+#58 DONE 2.6s
+
+#60 [scheduler] resolving provenance for metadata file
+#60 DONE 1.6s
+
+#61 [worker] resolving provenance for metadata file
+#61 DONE 1.2s
+
+#62 [db-setup] resolving provenance for metadata file
+#62 DONE 2.1s
+
+#63 [media-worker] resolving provenance for metadata file
+#63 DONE 0.5s
+
+#36 [web build 6/6] RUN pnpm build
+#36 102.1 ✓ Compiled successfully in 84s
+#36 102.2   Running TypeScript ...
+#36 125.4   Finished TypeScript in 23.1s ...
+#36 125.4   Collecting page data using 7 workers ...
+#36 129.3   Generating static pages using 7 workers (0/10) ...
+#36 129.8   Generating static pages using 7 workers (2/10) 
+#36 129.9   Generating static pages using 7 workers (4/10) 
+#36 130.0   Generating static pages using 7 workers (7/10) 
+#36 130.1 ✓ Generating static pages using 7 workers (10/10) in 826ms
+#36 130.1   Finalizing page optimization ...
+#36 131.0 
+#36 131.0 Route (app)
+#36 131.0 ┌ ○ /
+#36 131.0 ├ ○ /_not-found
+#36 131.0 ├ ƒ /api/revalidate
+#36 131.0 ├ ƒ /console
+#36 131.0 ├ ƒ /console/admin
+#36 131.0 ├ ƒ /console/corrections
+#36 131.0 ├ ƒ /console/login
+#36 131.0 ├ ƒ /console/operations
+#36 131.0 ├ ƒ /console/projects/[projectId]
+#36 131.0 ├ ƒ /console/projects/[projectId]/content
+#36 131.0 ├ ƒ /console/projects/[projectId]/content/[revisionId]
+#36 131.0 ├ ƒ /console/projects/[projectId]/content/[revisionId]/preview
+#36 131.0 ├ ƒ /console/projects/[projectId]/evidence
+#36 131.0 ├ ƒ /console/projects/[projectId]/evidence/[sourceId]/[revision]
+#36 131.0 ├ ƒ /console/projects/[projectId]/findings
+#36 131.0 ├ ƒ /console/projects/[projectId]/publishing
+#36 131.0 ├ ƒ /console/projects/[projectId]/reviews
+#36 131.0 ├ ƒ /console/projects/[projectId]/runs
+#36 131.0 ├ ƒ /console/projects/[projectId]/setup
+#36 131.0 ├ ƒ /console/projects/[projectId]/videos
+#36 131.0 ├ ƒ /console/runs/[runId]
+#36 131.0 └ ƒ /projects/[slug]
+#36 131.0 
+#36 131.0 
+#36 131.0 ƒ Proxy (Middleware)
+#36 131.0 
+#36 131.0 ○  (Static)   prerendered as static content
+#36 131.0 ƒ  (Dynamic)  server-rendered on demand
+#36 131.0 
+#36 DONE 131.4s
+
+#12 [web deps 2/5] WORKDIR /srv/web
+#12 CACHED
+
+#64 [web run 3/5] COPY --from=build /srv/web/.next/standalone ./
+#64 DONE 1.5s
+
+#65 [web run 4/5] COPY --from=build /srv/web/.next/static ./.next/static
+#65 DONE 0.3s
+
+#66 [web run 5/5] COPY --from=build /srv/web/public ./public
+#66 DONE 0.6s
+
+#67 [web] exporting to image
+#67 exporting layers
+#67 exporting layers 15.0s done
+#67 exporting manifest sha256:8bc789fbf9deae5500d235035c624b9d4904390dc290850a736de169450c4547 0.0s done
+#67 exporting config sha256:dfb369b98cc39e6b2d74a787e12db8a4ff4073d494fabf0c9c143103d895cbcb 0.0s done
+#67 exporting attestation manifest sha256:5b1cf043872ac12b4949465f759cc01f24e793d0f7024df172f9c9c07461095b done
+#67 exporting manifest list sha256:1e4f688ed2c6503fd973cfad7683ee890a15aea15bdc695ca1fb3ea405e006d7 done
+#67 naming to docker.io/library/agentic_ai_review_model-web:latest done
+#67 unpacking to docker.io/library/agentic_ai_review_model-web:latest
+#67 unpacking to docker.io/library/agentic_ai_review_model-web:latest 0.6s done
+#67 DONE 15.7s
+
+#68 [web] resolving provenance for metadata file
+#68 DONE 0.3s
+ Image agentic_ai_review_model-embedder Built 
+ Image agentic_ai_review_model-web Built 
+ Image agentic_ai_review_model-media-worker Built 
+ Image agentic_ai_review_model-worker Built 
+ Image agentic_ai_review_model-scheduler Built 
+ Image agentic_ai_review_model-api Built 
+ Image agentic_ai_review_model-db-setup Built 
+--> OK (exit 0, expected 0)
+
+=== MongoDB is healthy again after the builds ===
+$ mongodb_healthy
+mongodb healthy after 0 s
+--> OK (exit 0, expected 0)
+
+=== Stack starts and every service is healthy ===
+$ docker compose up -d --wait
+ Container agentic_ai_review_model-mongodb-1 Running 
+ Container agentic_ai_review_model-embedder-1 Recreate 
+ Container agentic_ai_review_model-db-setup-1 Recreate 
+ Container agentic_ai_review_model-db-setup-1 Recreated 
+ Container agentic_ai_review_model-worker-1 Recreate 
+ Container agentic_ai_review_model-scheduler-1 Recreate 
+ Container agentic_ai_review_model-api-1 Recreate 
+ Container agentic_ai_review_model-media-worker-1 Recreate 
+ Container agentic_ai_review_model-embedder-1 Recreated 
+ Container agentic_ai_review_model-scheduler-1 Recreated 
+ Container agentic_ai_review_model-api-1 Recreated 
+ Container agentic_ai_review_model-web-1 Recreate 
+ Container agentic_ai_review_model-web-1 Recreated 
+ Container agentic_ai_review_model-media-worker-1 Recreated 
+ Container agentic_ai_review_model-worker-1 Recreated 
+ Container agentic_ai_review_model-mongo-init-1 Starting 
+ Container agentic_ai_review_model-embedder-1 Starting 
+ Container agentic_ai_review_model-embedder-1 Started 
+ Container agentic_ai_review_model-mongo-init-1 Started 
+ Container agentic_ai_review_model-mongodb-1 Waiting 
+ Container agentic_ai_review_model-mongo-init-1 Waiting 
+ Container agentic_ai_review_model-mongodb-1 Healthy 
+ Container agentic_ai_review_model-mongo-init-1 Exited 
+ Container agentic_ai_review_model-db-setup-1 Starting 
+ Container agentic_ai_review_model-db-setup-1 Started 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-scheduler-1 Starting 
+ Container agentic_ai_review_model-media-worker-1 Starting 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-api-1 Starting 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-worker-1 Starting 
+ Container agentic_ai_review_model-api-1 Started 
+ Container agentic_ai_review_model-api-1 Waiting 
+ Container agentic_ai_review_model-scheduler-1 Started 
+ Container agentic_ai_review_model-media-worker-1 Started 
+ Container agentic_ai_review_model-worker-1 Started 
+ Container agentic_ai_review_model-api-1 Healthy 
+ Container agentic_ai_review_model-web-1 Starting 
+ Container agentic_ai_review_model-web-1 Started 
+ Container agentic_ai_review_model-mongodb-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-api-1 Waiting 
+ Container agentic_ai_review_model-embedder-1 Waiting 
+ Container agentic_ai_review_model-mongo-init-1 Waiting 
+ Container agentic_ai_review_model-media-worker-1 Waiting 
+ Container agentic_ai_review_model-web-1 Waiting 
+ Container agentic_ai_review_model-worker-1 Waiting 
+ Container agentic_ai_review_model-scheduler-1 Waiting 
+ Container agentic_ai_review_model-web-1 Healthy 
+ Container agentic_ai_review_model-worker-1 Healthy 
+ Container agentic_ai_review_model-mongo-init-1 Exited 
+ Container agentic_ai_review_model-media-worker-1 Healthy 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-api-1 Healthy 
+ Container agentic_ai_review_model-scheduler-1 Healthy 
+ Container agentic_ai_review_model-mongodb-1 Healthy 
+ Container agentic_ai_review_model-embedder-1 Healthy 
+--> OK (exit 0, expected 0)
+
+=== Long-running services up ===
+$ services_running
+mongodb running
+api running
+worker running
+media-worker running
+embedder running
+scheduler running
+web running
+--> OK (exit 0, expected 0)
+model calls, spent USD and provider quota use now: 192 2.475547 [('brave_search:requests:2026-09-01', 100), ('brave_search:requests:2026-10-01', 180), ('firecrawl:credits:2026-10-01', 1), ('instagram_public:credits:2026-10-01', 60), ('scrapfly:credits:2026-10-01', 60), ('youtube_data_api:search:2026-09-29', 24), ('youtube_data_api:search:2026-10-01', 20), ('youtube_data_api:search:2026-10-12', 20), ('youtube_data_api:units:2026-09-29', 334), ('youtube_data_api:units:2026-09-30', 456), ('youtube_data_api:units:2026-10-01', 238), ('youtube_data_api:units:2026-10-12', 240)]
+
+=== D64: the stack runs in live mode and the API holds the real credentials (names only) ===
+$ live_with_real_credentials
+API mode: live (expected live)
+credentials present in the API container (names only): ['ANTHROPIC_API_KEY', 'BRAVE_SEARCH_API_KEY', 'FIRECRAWL_API_KEY', 'SCRAPFLY_API_KEY', 'YOUTUBE_API_KEY']
+--> OK (exit 0, expected 0)
+
+=== Database setup has the Step 09-10 collections; a repeat changes nothing ===
+$ setup_has_new_collections
+Step 09-10 collections present: ['ai_corrections', 'ai_content_qa', 'ai_publication_state', 'ai_publication_operations', 'ai_content_revisions']; changed on repeat: none
+--> OK (exit 0, expected 0)
+
+=== Sign in through the web app ===
+$ sign_in
+HTTP 200 (expected 200)
+--> OK (exit 0, expected 0)
+
+=== Step 09: every console screen renders for a real project, without the fixture banner; signed out redirects ===
+$ console_screens_render
+  200 /console
+  200 /console/corrections
+  200 /console/operations
+  200 /console/admin
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/setup
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/runs
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/evidence
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/videos
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/findings
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/reviews
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/content
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/publishing
+  signed out, /console answers 307 (a redirect to sign in)
+--> OK (exit 0, expected 0)
+
+=== Step 09-10: portfolio, content, publication, corrections and users through the API match their contracts ===
+$ portfolio_and_content_contracts
+listProjects HTTP 200
+ProjectPage: matches the contract
+listContentRevisions HTTP 200
+ContentRevisionPage: matches the contract
+getPublicationState HTTP 200
+PublicationStateView: matches the contract
+listCorrections HTTP 200
+CorrectionPage: matches the contract
+listUsers HTTP 200
+UserPage: matches the contract
+--> OK (exit 0, expected 0)
+
+=== Step 10: the public page serves only an active revision (empty state otherwise, never a draft) ===
+$ public_page_serves_only_active
+public insights for conscient-parq-sector-80-gurgaon: HTTP 404; serving state unpublished
+data-insights-state="empty"
+--> OK (exit 0, expected 0)
+
+=== D65: prompt caching marks the instructions of the cacheable agents ===
+$ prompt_caching_configured
+  prompt cache True; live 5m, batches 1h; minimums {'claude-haiku-5-5': 512, 'claude-sonnet-5': 1024, 'claude-sonnet-5-5': 512, 'claude-opus-5-5': 512}
+  a05_claim_extractor.1.0        claude-haiku-5-5   breakpoint on the instructions
+  a11_review_curator.1.0         claude-haiku-5-5   breakpoint on the instructions
+  a07_findings_synthesiser.1.2   claude-sonnet-5    breakpoint on the instructions
+  a08_seo_aeo_editor.1.0         claude-sonnet-5    breakpoint on the instructions
+  a09_editorial_qa.1.0           claude-sonnet-5    breakpoint on the instructions
+--> OK (exit 0, expected 0)
+
+=== Step 09.7: browser journeys (journey database, real environment, no run started) ===
+$ browser_journeys
+  seed: {"database": "sy_poc_e2e", "project_id": "prj_01M4WP24YR35R9Q4XD0SKVJ1MH", "slug": "quillon-residences-sector-102-gurgaon", "run_stage": "findings_review", "model_calls": ["A05", "A05", "A07", "A11"]}
+  API mode: live
+    ✓  1 [desktop] › e2e/journeys.spec.ts:35:7 › console to public page › the portfolio lists projects and a researcher adds one; starting a run asks first (3.3s)
+    ✓  2 [desktop] › e2e/journeys.spec.ts:57:7 › console to public page › findings are decided beside their evidence; reviews are approved in the author's words (4.1s)
+    ✓  3 [desktop] › e2e/journeys.spec.ts:79:7 › console to public page › content from approved reviews is generated, approved, published and verified on the public page (9.4s)
+    ✓  4 [desktop] › e2e/journeys.spec.ts:111:7 › console to public page › an edit is a new revision that needs its own approval; the page keeps serving the approved one (2.9s)
+    ✓  5 [desktop] › e2e/journeys.spec.ts:126:7 › console to public page › a reader reports a correction and a moderator resolves it (1.2s)
+    ✓  6 [desktop] › e2e/journeys.spec.ts:141:7 › console to public page › an analyst reads findings but has no decision controls (698ms)
+    6 passed (24.0s)
+  ALL JOURNEYS PASSED
+--> OK (exit 0, expected 0)
+
+=== These checks spent nothing: model calls and provider quotas unchanged ===
+$ no_spend_during_checks
+before: 192 2.475547 [('brave_search:requests:2026-09-01', 100), ('brave_search:requests:2026-10-01', 180), ('firecrawl:credits:2026-10-01', 1), ('instagram_public:credits:2026-10-01', 60), ('scrapfly:credits:2026-10-01', 60), ('youtube_data_api:search:2026-09-29', 24), ('youtube_data_api:search:2026-10-01', 20), ('youtube_data_api:search:2026-10-12', 20), ('youtube_data_api:units:2026-09-29', 334), ('youtube_data_api:units:2026-09-30', 456), ('youtube_data_api:units:2026-10-01', 238), ('youtube_data_api:units:2026-10-12', 240)]
+after:  192 2.475547 [('brave_search:requests:2026-09-01', 100), ('brave_search:requests:2026-10-01', 180), ('firecrawl:credits:2026-10-01', 1), ('instagram_public:credits:2026-10-01', 60), ('scrapfly:credits:2026-10-01', 60), ('youtube_data_api:search:2026-09-29', 24), ('youtube_data_api:search:2026-10-01', 20), ('youtube_data_api:search:2026-10-12', 20), ('youtube_data_api:units:2026-09-29', 334), ('youtube_data_api:units:2026-09-30', 456), ('youtube_data_api:units:2026-10-01', 238), ('youtube_data_api:units:2026-10-12', 240)]
+--> OK (exit 0, expected 0)
+
+=== Hygiene: nothing generated, secret or downloaded is tracked ===
+$ no_tracked_secrets_or_env
+no .env, .venv, node_modules, .next, Playwright output or exports tracked
+--> OK (exit 0, expected 0)
+
+=== Hygiene: secret values absent from commits, service logs and logs/ ===
+$ secrets_not_in_repo_or_logs
+SEED_USER_PASSWORD: not in committed files, service logs or logs/
+SESSION_SECRET: not in committed files, service logs or logs/
+REVALIDATION_SECRET: not in committed files, service logs or logs/
+ANTHROPIC_API_KEY: not in committed files, service logs or logs/
+BRAVE_SEARCH_API_KEY: not in committed files, service logs or logs/
+YOUTUBE_API_KEY: not in committed files, service logs or logs/
+SCRAPFLY_API_KEY: not in committed files, service logs or logs/
+FIRECRAWL_API_KEY: not in committed files, service logs or logs/
+--> OK (exit 0, expected 0)
+
+=== Hygiene: latest CI run on main is not failing ===
+$ ci_not_failing
+latest CI run on main: da5af4f completed success Record D67: Reddit and Quora without their official APIs (Quora only …
+--> OK (exit 0, expected 0)
+
+ALL CHECKS OK
+log: logs/step-09/checks-20261014T071854Z.log

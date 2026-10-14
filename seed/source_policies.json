@@ -262,22 +262,29 @@
   },
   {
    "family": "reddit",
-   "policy_version": 1,
-   "collection_allowed": false,
-   "ai_processing_allowed": false,
-   "quotation_allowed": false,
-   "derived_publication_allowed": false,
+   "policy_version": 2,
+   "collection_allowed": true,
+   "ai_processing_allowed": true,
+   "quotation_allowed": true,
+   "derived_publication_allowed": true,
    "attribution_required": true,
-   "retention_days": null,
+   "retention_days": 30,
    "hosts": [
     "reddit.com"
    ],
-   "conditions": [],
-   "basis": "Needs approved API access covering analysis and derived use (docs/06). Blocked until obtained.",
+   "conditions": [
+    "Public posts and comments that name a catalogue project, read through the PullPush archive (no Reddit API, no login, no account); Reddit's own public JSON through Scrapfly only within REDDIT_THREADS_VIA_SCRAPFLY_PER_RUN",
+    "One post or comment is one source; usernames are never stored; deleted, removed, moderator and bot posts are left out",
+    "Published as real users' words without names (D69); no private subreddits, no content behind a login",
+    "robots.txt is not consulted for the archive API; Reddit pages read through Scrapfly have it recorded, not enforced (D61)"
+   ],
+   "basis": "D67 (product owner, 13 Oct 2026: 'Reddit and Quora: Quora limited to answers visible without signing in'): read without the official API; the product owner accepts Reddit's terms-of-service and legal risk. Version 1 blocked collection until approved API access. Retention 30 days as for other social sources.",
    "status": "accepted",
    "review_owner": "Product owner",
-   "accepted_on": "2026-09-25",
-   "accepted_by": "Product owner (GitHub: deepeshgupta12)"
+   "accepted_on": "2026-10-13",
+   "accepted_by": "Product owner (D67, 13 Oct 2026)",
+   "excluded_hosts": [],
+   "robots_txt": "record_only"
   },
   {
    "family": "x",
@@ -301,22 +308,29 @@
   },
   {
    "family": "quora",
-   "policy_version": 1,
-   "collection_allowed": false,
-   "ai_processing_allowed": false,
-   "quotation_allowed": false,
-   "derived_publication_allowed": false,
+   "policy_version": 2,
+   "collection_allowed": true,
+   "ai_processing_allowed": true,
+   "quotation_allowed": true,
+   "derived_publication_allowed": true,
    "attribution_required": true,
-   "retention_days": null,
+   "retention_days": 30,
    "hosts": [
     "quora.com"
    ],
-   "conditions": [],
-   "basis": "No licensed feed; terms review required before any collection.",
+   "conditions": [
+    "Only what a signed-out visitor is served: the answers in the question page's public markup; nothing behind the sign-in wall; no account",
+    "Read by the web reader; a refused page once more through Scrapfly within the run's allowance (D60, D61)",
+    "One answer is one source; authors' names are never stored",
+    "robots.txt is asked for every page and its verdict recorded; it does not block the fetch (D61)"
+   ],
+   "basis": "D67 (product owner, 13 Oct 2026): Quora limited to answers visible without signing in; the product owner accepts Quora's terms-of-service risk. Version 1 blocked collection pending a terms review.",
    "status": "accepted",
    "review_owner": "Product owner",
-   "accepted_on": "2026-09-25",
-   "accepted_by": "Product owner (GitHub: deepeshgupta12)"
+   "accepted_on": "2026-10-13",
+   "accepted_by": "Product owner (D67, 13 Oct 2026)",
+   "excluded_hosts": [],
+   "robots_txt": "record_only"
   },
   {
    "family": "linkedin",

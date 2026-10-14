@@ -165,3 +165,28 @@ def test_a_connector_removed_from_the_registry_leaves_existing_configs(db, contr
     after = db["ai_project_configs"].find_one({"_id": project_id})
     sources = {s["connector_id"]: s["enabled"] for s in after["sources"]}
     assert "google_alerts" not in sources and sources["firecrawl"] is False
+
+
+def test_a_source_registered_later_joins_every_existing_project_at_stack_start(db, contracts):
+    """D67: projects added before reddit_public was registered get it at the next stack start (db-setup runs
+    sync-catalogue), enabled by its default; the choices made in Setup are kept and a repeat changes nothing."""
+    from app.seed.projects import sync_registry_sources
+
+    seed_projects(db.client, db, contracts, INPUT, SEED)
+    for config in db["ai_project_configs"].find():  # as configured before D67, with one Setup choice made
+        older = [
+            {**s, "enabled": False} if s["connector_id"] == "firecrawl" else s
+            for s in config["sources"]
+            if s["connector_id"] != "reddit_public"
+        ]
+        db["ai_project_configs"].update_one({"_id": config["_id"]}, {"$set": {"sources": older}})
+    versions = {c["_id"]: c["version"] for c in db["ai_project_configs"].find()}
+    report = sync_registry_sources(db.client, db, SEED)
+    assert len(report) == 5 and all(r["added"] == "reddit_public" for r in report)
+    for config in db["ai_project_configs"].find():
+        sources = {s["connector_id"]: s["enabled"] for s in config["sources"]}
+        assert sources["reddit_public"] is True and sources["firecrawl"] is False, "the Setup choice is kept"
+        assert config["version"] == versions[config["_id"]] + 1
+        assert contracts.errors(to_view(config, id_field=None), "catalogue.schema.json#/$defs/ProjectConfig") == []
+    assert db["ai_audit_events"].count_documents({"action": "project.sources_synced"}) == 5
+    assert sync_registry_sources(db.client, db, SEED) == [], "a repeat changes nothing"

@@ -104,12 +104,31 @@ def enable_registry(db, project_id):
 def run_registry(db, settings, project_id):
     from app.sources.collection import start_run
 
+    settings.analysis_mode = "full"  # a reviews-only analysis reads no registry (D68)
     accepted = start_run(
         db.client, db, settings, project_id, {"window_days": 90, "connectors": ["harera_registry"]}, RESEARCHER
     )
     run_all_jobs(db)
     run = db["ai_runs"].find_one({"_id": accepted["run_id"]})
     return {c["connector_id"]: c for c in run["coverage"]}["harera_registry"]
+
+
+def test_a_reviews_only_run_reads_no_registry_and_says_so(db, settings, world):  # noqa: F811
+    from app.sources.collection import start_run
+
+    harera_page(world, PAGE)
+    enable_registry(db, world["q"])
+    assert settings.analysis_mode == "reviews", "the default (D68)"
+    accepted = start_run(
+        db.client, db, settings, world["q"], {"window_days": 90, "connectors": ["harera_registry"]}, RESEARCHER
+    )
+    run_all_jobs(db)
+    run = db["ai_runs"].find_one({"_id": accepted["run_id"]})
+    cov = {c["connector_id"]: c for c in run["coverage"]}["harera_registry"]
+    assert cov["status"] == "unavailable" and "(D68)" in cov["note"] and cov["attempted_queries"] == 0
+    assert db["ai_jobs"].count_documents({"run_id": run["_id"], "kind": "collect"}) == 0
+    assert "haryanarera.gov.in" not in world["net"].hosts_requested()
+    assert db["ai_sources"].count_documents({"source_kind": "registration_record"}) == 0
 
 
 def test_a_run_stores_each_registration_as_a_dated_official_record_matched_to_its_phase(db, settings, world):  # noqa: F811

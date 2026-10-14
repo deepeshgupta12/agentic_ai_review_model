@@ -1,5 +1,5 @@
 import type { components } from "@/lib/api-schema";
-import { creditLine, formatDated, formatDay, moment } from "@/lib/format";
+import { formatDated, formatDay, moment } from "@/lib/format";
 
 type Payload = components["schemas"]["ContentPayload"];
 
@@ -63,9 +63,11 @@ export function InsightsModule({ payload, revisionId, payloadHash, mode = "activ
         {payload.heading}
       </h2>
       <p className="mt-1 text-[15px] text-ink-muted">
-        Public discussion from {formatDay(window.from)} to {formatDay(window.to)} · Last reviewed {formatDay(payload.reviewed_on)}
+        {payload.overview
+          ? `Public discussion from ${formatDay(window.from)} to ${formatDay(window.to)} · Last reviewed ${formatDay(payload.reviewed_on)}`
+          : `Updated ${formatDay(payload.reviewed_on)}`}
       </p>
-      <p className="mt-2 text-[15px] text-ink-muted">{payload.attribution}</p>
+      {payload.attribution ? <p className="mt-2 text-[15px] text-ink-muted">{payload.attribution}</p> : null}
 
       {payload.overview ? <p className="mt-5">{payload.overview.text}</p> : null}
 
@@ -77,25 +79,22 @@ export function InsightsModule({ payload, revisionId, payloadHash, mode = "activ
       ) : null}
 
       <section aria-labelledby="reviews-heading" className="mt-8">
-        <h3 id="reviews-heading" className="text-lg font-semibold">
+        <h3 id="reviews-heading" className="mb-3 text-lg font-semibold">
           What buyers are saying
         </h3>
-        <p className="mb-3 text-[15px] text-ink-muted">
-          Posts by people on other sites, in their own words, selected and checked by the client. They were not written on the client.
-        </p>
         {payload.reviews.length === 0 ? (
-          <p className="text-ink-muted">No first-person review is shown for this project yet.</p>
+          <p className="text-ink-muted">No review is shown for this project yet.</p>
         ) : (
-          <ul className="space-y-4">
+          <ol className="space-y-4">
             {payload.reviews.map((review, index) => (
               <li key={index} data-testid="public-review">
+                <p className="text-[15px] font-medium">Person {index + 1}</p>
                 <blockquote className="border-l-2 border-ink-muted pl-3">
-                  <p>“{review.text}”</p>
+                  <p>{review.text}</p>
                 </blockquote>
-                <p className="mt-1 pl-3 text-[15px] text-ink-muted">{creditLine(review.credit)}</p>
               </li>
             ))}
-          </ul>
+          </ol>
         )}
       </section>
 
@@ -137,7 +136,7 @@ export function InsightsModule({ payload, revisionId, payloadHash, mode = "activ
         </section>
       ) : null}
 
-      <p className="mt-8 text-[15px] text-ink-muted">{payload.coverage_note}</p>
+      {payload.overview ? <p className="mt-8 text-[15px] text-ink-muted">{payload.coverage_note}</p> : null}
       {correction}
     </section>
   );

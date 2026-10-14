@@ -281,8 +281,9 @@ class UC04SourcePolicies(unittest.TestCase):
         self.assertEqual(families - policy_families(), set())
 
     def test_families_without_an_agreement_are_blocked(self):
-        # spoken_video_content left this list with D33 (product owner, 28 Sep 2026), applied as version 2 (D47).
-        for family in ("reddit", "x", "meta", "quora", "linkedin", "listening_provider"):
+        # spoken_video_content left this list with D33 (product owner, 28 Sep 2026), applied as version 2 (D47);
+        # reddit and quora left it with D67 (product owner, 13 Oct 2026), applied as version 2 of each.
+        for family in ("x", "meta", "linkedin", "listening_provider"):
             with self.subTest(family=family):
                 policy = self.policy(family)
                 self.assertFalse(policy["collection_allowed"])
@@ -300,10 +301,18 @@ class UC04SourcePolicies(unittest.TestCase):
         errors, _, _ = vi.validate_policies(self.data)
         assert_error(self, errors, "reddit.com", "excluded_hosts")
 
+    def test_reddit_and_quora_are_allowed_only_under_their_recorded_decision(self):
+        for family in ("reddit", "quora"):
+            with self.subTest(family=family):
+                policy = self.policy(family)
+                self.assertGreaterEqual(policy["policy_version"], 2)
+                self.assertTrue(policy["collection_allowed"] and policy["ai_processing_allowed"])
+                self.assertIn("D67", policy["basis"])
+
     def test_ai_processing_requires_collection(self):
-        self.policy("reddit")["ai_processing_allowed"] = True
+        self.policy("linkedin")["ai_processing_allowed"] = True
         errors, _, _ = vi.validate_policies(self.data)
-        assert_error(self, errors, "reddit", "AI processing allowed without collection")
+        assert_error(self, errors, "linkedin", "AI processing allowed without collection")
 
     def test_quotation_requires_derived_publication(self):
         policy = self.policy("youtube")

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ActionDialog } from "@/components/ActionDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ErrorState, Field, Mono, Panel } from "@/components/ui";
-import { apiGet, currentUser, type Schemas } from "@/lib/api-server";
+import { apiGet, apiGetAll, backendInfo, currentUser, type Schemas } from "@/lib/api-server";
 import { formatTime, shortHash } from "@/lib/format";
 import { can } from "@/lib/roles";
 
@@ -16,15 +16,21 @@ export const metadata: Metadata = { title: "Content revision" };
 
 export default async function RevisionPage({ params }: { params: Promise<{ projectId: string; revisionId: string }> }) {
   const { projectId, revisionId } = await params;
-  const [view, state, me] = await Promise.all([
+  const [view, state, me, latest, approved, info] = await Promise.all([
     apiGet<Schemas["ContentRevisionView"]>(`/v1/content-revisions/${revisionId}`),
     apiGet<Schemas["PublicationStateView"]>(`/v1/projects/${projectId}/publication`),
     currentUser(),
+    apiGet<Schemas["ContentRevisionPage"]>(`/v1/projects/${projectId}/content-revisions`, { limit: 1 }),
+    apiGetAll<Schemas["ReviewExcerptView"]>(`/v1/projects/${projectId}/review-excerpts`, { review_status: "approved" }),
+    backendInfo(),
   ]);
   if (view.status === 404) notFound();
   if (!view.data) return <ErrorState status={view.status} error={view.error} requestId={view.requestId} />;
   const { revision, qa_issues: issues } = view.data;
   const blocking = issues.filter((i) => i.severity === "blocking");
+  const newest = latest.data?.items[0]?.revision;
+  // Only the newest revision can be edited (the backend refuses an older base); an older one says where to go.
+  const isLatest = !newest || newest.id === revision.id;
 
   return (
     <div className="space-y-6">
@@ -39,11 +45,22 @@ export default async function RevisionPage({ params }: { params: Promise<{ proje
           Preview with the page template
         </Link>
       </div>
+      {!isLatest && newest ? (
+        <p className="rounded border border-warn bg-surface px-3 py-2 text-warn">
+          This is an earlier revision. Revision {newest.revision} is the latest;{" "}
+          <Link href={`/console/projects/${projectId}/content/${newest.id}`} className="underline">
+            open it to edit or approve
+          </Link>
+          .
+        </p>
+      ) : null}
       <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
         <ContentEditor
           revision={revision}
           issues={issues}
-          editable={can(me?.roles, "createContentRevision") && !["superseded", "withdrawn"].includes(revision.lifecycle)}
+          editable={isLatest && can(me?.roles, "createContentRevision") && !["superseded", "withdrawn"].includes(revision.lifecycle)}
+          available={approved.data?.items ?? []}
+          limits={info}
         />
         <div className="space-y-4">
           <Panel title="Exact revision">

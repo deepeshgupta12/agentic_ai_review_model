@@ -7,7 +7,7 @@ import json
 import pytest
 
 from app.config import REPO_ROOT
-from app.identity.queries import build_query_plan
+from app.identity.queries import REVIEW_SITES, build_query_plan
 from app.identity.rules import MAX_QUERIES_PER_CONNECTOR, QUERY_RULES_VERSION
 from app.seed.projects import seed_projects
 
@@ -39,7 +39,20 @@ def test_only_enabled_search_connectors_and_a_cap_per_connector(db, real):
     assert connectors == {"brave_search", "youtube_data_api"}, "mandatory search connectors; optional ones are off"
     for connector in connectors:
         texts = [q["query_text"].casefold() for q in queries if q["connector_id"] == connector]
-        assert len(texts) <= MAX_QUERIES_PER_CONNECTOR and len(texts) == len(set(texts))
+        sites = [t for t in texts if "site:" in t]
+        assert len(texts) - len(sites) <= MAX_QUERIES_PER_CONNECTOR and len(texts) == len(set(texts))
+        # The portal and Quora review pages (D68): Brave only, one query per site on top of the cap.
+        assert len(sites) == (len(REVIEW_SITES) if connector == "brave_search" else 0)
+        assert texts[: len(sites)] == sites, "the review pages are searched first"
+
+
+def test_reddit_searches_the_names_itself_and_takes_no_planned_query(db, real):
+    project = db["projects"].find_one({"slug": "m3m-antalya-hills-sector-79-gurgaon"})
+    config = db["ai_project_configs"].find_one({"_id": project["_id"]})
+    assert any(s["connector_id"] == "reddit_public" and s["enabled"] for s in config["sources"])
+    assert real["reddit_public"]["expected_capabilities"]["search"] is True
+    queries = build_query_plan(db, project["_id"], real)["plan"]["queries"]
+    assert not [q for q in queries if q["connector_id"] == "reddit_public"]
 
 
 def test_identifier_queries_let_unknown_names_surface(db, real):

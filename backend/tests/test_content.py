@@ -29,6 +29,7 @@ from .test_workflow import MODERATOR, analysing_run, approve_all, model, work  #
 
 def generated(db, settings, contracts, fictional, *, findings=True):
     """A project whose analysis waited for review, everything approved, and content generated from the selection."""
+    settings.review_words_min = 1  # the fixture comment is shorter than a published review (D69); edits check it
     q, run = analysing_run(db, settings, contracts, fictional)
     work(db)
     approve_all(db, q)
@@ -47,6 +48,16 @@ def generated(db, settings, contracts, fictional, *, findings=True):
     run = db["ai_runs"].find_one({"_id": run["_id"]})
     revision = db["ai_content_revisions"].find_one({"_id": run["content_revision_id"]})
     return q, run, revision
+
+
+def schema_terms(value):
+    """Every key and every @type in a JSON-LD tree."""
+    if isinstance(value, dict):
+        own = set(value) | ({value["@type"]} if isinstance(value.get("@type"), str) else set())
+        return own.union(*(schema_terms(v) for v in value.values()))
+    if isinstance(value, list):
+        return set().union(*(schema_terms(v) for v in value))
+    return set()
 
 
 def basis_for(db, revision):
@@ -71,7 +82,11 @@ def test_a_page_from_reviews_alone_needs_no_model(db, settings, contracts, ficti
         assert shown["text"] == record["text"] and shown["source_url"] is None, "the approved words, no public link"
         assert shown["credit"]["speaker_label"] == record["speaker_label"]
     assert revision["payload_sha256"] == content_hash(payload) and revision["manifest"]["findings"] == []
-    assert "aggregateRating" not in str(payload["json_ld"]) and "Review" not in str(payload["json_ld"])
+    assert not {"Review", "AggregateRating", "aggregateRating", "review"} & schema_terms(payload["json_ld"]), (
+        "no review or rating markup about the page's own reviews"
+    )
+    assert payload["heading"] == "Quillon Residences Reviews: What Buyers Say"
+    assert "the client" not in payload["metadata"]["title"] + payload["metadata"]["description"]
     view = service.revision_view(db, revision)
     assert contracts.errors(view, "api.schema.json#/$defs/ContentRevisionView") == []
 
@@ -94,7 +109,9 @@ def test_a_page_from_findings_cites_only_approved_revisions_and_keeps_caveats(
         for ref in item["support"]["findings"]:
             for caveat in findings[ref["id"]]["caveats"]:
                 assert caveat in (item["caveat"] or ""), "the finding's caveat travels with the item"
-    assert payload["heading"] == f"What buyers say about {payload['project']['name']}", "model heading lacked the name"
+    assert payload["heading"] == f"{payload['project']['name']} Reviews: What Buyers Say", (
+        "model heading lacked the name"
+    )
     assert check_payload(payload, basis_for(db, revision)) == [] or all(
         i["severity"] == "nonblocking" for i in check_payload(payload, basis_for(db, revision))
     )

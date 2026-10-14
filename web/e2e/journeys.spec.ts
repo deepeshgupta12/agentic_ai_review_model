@@ -34,7 +34,9 @@ test.describe.serial("console to public page", () => {
 
   test("the portfolio lists projects and a researcher adds one; starting a run asks first", async ({ page }) => {
     await signIn(page, MODERATOR);
-    await expect(page.getByTestId("portfolio-row").filter({ hasText: "Quillon Residences" })).toBeVisible();
+    const quillon = page.getByTestId("portfolio-row").filter({ hasText: "Quillon Residences" });
+    await expect(quillon).toBeVisible();
+    await expect(quillon).toContainText("waiting for a decision"); // the next step (D68): the seeded reviews
     const form = page.getByTestId("add-project-form");
     const name = `Journey Heights ${Date.now() % 100000}`;
     await form.getByLabel("Project name (required)").fill(name);
@@ -44,6 +46,8 @@ test.describe.serial("console to public page", () => {
     await form.getByRole("button", { name: "Add project" }).click();
     await expect(page).toHaveURL(/\/console\/projects\/prj_[0-9A-Z]+\/runs$/);
     await expect(page.getByRole("heading", { name })).toBeVisible();
+    await expect(page.getByTestId("next-step")).toContainText("Start the first run");
+    await expect(page.getByText("Reddit", { exact: true })).toBeVisible();
     await page.getByTestId("start-run").click();
     await expect(page.getByRole("dialog")).toContainText("paid services");
     await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
@@ -78,12 +82,9 @@ test.describe.serial("console to public page", () => {
     await expect(page.getByText("Reviews only: no model is called")).toBeVisible();
     await page.getByTestId("generate").click();
     await expect(page.getByText("Generating in the background")).toBeVisible();
-    const link = page.getByRole("link", { name: "revision 1" });
-    await expect(async () => {
-      await page.reload();
-      await expect(link).toBeVisible({ timeout: 2_000 });
-    }).toPass({ timeout: 60_000 });
-    await link.click();
+    // the form follows the run and opens the draft when it is ready
+    await expect(page).toHaveURL(/\/content\/rev_[^/]+$/, { timeout: 60_000 });
+    await expect(page.getByText("Person 1", { exact: true })).toBeVisible();
     await page.getByTestId("final-approve").click();
     const dialog = page.getByRole("dialog", { name: "Final approval" });
     await expect(dialog).toContainText("payload hash");
@@ -99,8 +100,12 @@ test.describe.serial("console to public page", () => {
     const insights = page.locator("[data-insights-state='active']");
     await expect(insights).toHaveAttribute("data-insights-revision", /^rev_/);
     await expect(insights).toHaveAttribute("data-insights-hash", /^sha256:/);
-    await expect(page.getByTestId("public-review").first()).toContainText("From an owner awaiting possession");
-    await expect(page.getByText("They were not written on the client")).toBeVisible();
+    // D69: each review under "Person N" in the author's words; no credit, intro or disclosure line of ours.
+    const reviews = page.getByTestId("public-review");
+    await expect(reviews.first()).toContainText("Person 1");
+    await expect(reviews.first().locator("blockquote")).toContainText("Quillon Residences");
+    await expect(insights).not.toContainText("From a");
+    await expect(insights).not.toContainText("the client");
   });
 
   test("an edit is a new revision that needs its own approval; the page keeps serving the approved one", async ({ page }) => {
@@ -108,7 +113,7 @@ test.describe.serial("console to public page", () => {
     await page.goto(`/projects/${SLUG}`);
     const served = await page.locator("[data-insights-state='active']").getAttribute("data-insights-revision");
     await page.goto(`/console/projects/${PROJECT}/content`);
-    await page.getByRole("link", { name: "revision 1" }).click();
+    await page.getByRole("link", { name: "revision 1", exact: true }).click();
     await page.getByLabel("Heading").fill("Buyers on Quillon Residences");
     await page.getByLabel("Reason for the edit (required)").fill("shorter heading");
     await page.getByTestId("save-revision").click();

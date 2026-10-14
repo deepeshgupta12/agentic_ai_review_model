@@ -3,6 +3,8 @@ The worker runs the real collect jobs. Fictional catalogue, hosts and texts only
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 import pytest
 from pydantic import SecretStr
 
@@ -127,7 +129,60 @@ def internet(youtube_status=200, forum_status=200):
         return 404, {}
 
     net.json("www.googleapis.com", youtube)
+    net.json("api.pullpush.io", pullpush)
     return net
+
+
+def _reddit(entry_id: str, days_ago: int, **fields):
+    created = (utcnow() - timedelta(days=days_ago)).timestamp()
+    return {"id": entry_id, "created_utc": created, "subreddit": "gurgaon", "author": "someone", **fields}
+
+
+def pullpush(request):
+    """The PullPush archive (D67): one thread naming the project, with an owner's comment, a deleted comment and the
+    subreddit bot; and a comment naming the project in a thread whose post does not. Fictional texts only."""
+    kind = request.url.path.rstrip("/").rsplit("/", 1)[-1]
+    params = request.url.params
+    post = _reddit(
+        "p1",
+        5,
+        title="Quillon Residences Sector 102, owners please share",
+        selftext="Thinking of buying in Quillon Residences. How is the construction going?",
+        permalink="/r/gurgaon/comments/p1/quillon_residences/",
+        num_comments=3,
+    )
+    other = _reddit(
+        "p2", 6, title="Sector 102 projects compared", selftext="", permalink="/r/gurgaon/comments/p2/s102/"
+    )
+    owner = _reddit(
+        "c1",
+        4,
+        link_id="t3_p1",
+        permalink="/r/gurgaon/comments/p1/quillon_residences/c1/",
+        body="I booked a flat here last year. The towers are going up on time but the approach road floods.",
+    )
+    deleted = _reddit("c2", 4, link_id="t3_p1", permalink="/r/gurgaon/comments/p1/x/c2/", body="[deleted]")
+    bot = _reddit(
+        "c3", 4, link_id="t3_p1", permalink="/r/gurgaon/comments/p1/x/c3/", body="Rules", author="AutoModerator"
+    )
+    loose = _reddit(
+        "c4",
+        5,
+        link_id="t3_p2",
+        permalink="/r/gurgaon/comments/p2/s102/c4/",
+        body="Quillon Residences has the better layouts of the two I visited.",
+    )
+    if kind == "submission":
+        if params.get("ids") == "p2":
+            return 200, {"data": [other]}
+        return 200, {"data": [post] if "Quillon Residences" in params.get("q", "") else []}
+    if kind == "comment":
+        if params.get("link_id") == "p1":
+            return 200, {"data": [owner, deleted, bot]}
+        if params.get("link_id") == "p2":
+            return 200, {"data": [loose]}
+        return 200, {"data": [loose] if "Quillon Residences" in params.get("q", "") else []}
+    return 404, {}
 
 
 @pytest.fixture
@@ -160,7 +215,7 @@ def test_a_run_collects_every_live_source_and_reports_coverage(db, settings, con
     accepted = start(db, settings, world["q"])
     assert contracts.errors(accepted, "api.schema.json#/$defs/Accepted") == []
     run_id = accepted["run_id"]
-    assert db["ai_jobs"].count_documents({"run_id": run_id, "kind": "collect"}) == 2
+    assert db["ai_jobs"].count_documents({"run_id": run_id, "kind": "collect"}) == 3  # discovery, youtube, reddit
     run_all_jobs(db)
     run = db["ai_runs"].find_one({"_id": run_id})
     from app.sources.collection import run_view
@@ -172,20 +227,36 @@ def test_a_run_collects_every_live_source_and_reports_coverage(db, settings, con
     cov = coverage(db, run_id)
     assert cov["brave_search"]["status"] == "complete_for_query" and cov["brave_search"]["attempted_queries"] > 0
     assert (
-        "not_collected:reddit" in cov["brave_search"]["note"]
+        "reddit_left_to_reddit_connector" in cov["brave_search"]["note"]
         and "youtube_left_to_youtube_connector" in cov["brave_search"]["note"]
     )
     assert "not_collected:web_public_pages" in cov["brave_search"]["note"], "client-site.example is not on the allow-list"
     assert cov["web_fetch"]["fetched"] == 1 and cov["web_fetch"]["matched"] == 1
     assert cov["youtube_data_api"]["matched"] >= 1 and cov["youtube_data_api"]["metadata_only"] >= 1
-    for pending in ("firecrawl", "playwright_fetch"):
-        assert cov[pending]["status"] == "access_pending" and cov[pending]["attempted_queries"] == 0
+    assert not {"firecrawl", "playwright_fetch"} & set(cov), "helpers of the web reader are not run sources"
+    # Reddit through PullPush (D67): two threads, the owner's comment and the loose one; no deleted or bot comment.
+    reddit = cov["reddit_public"]
+    assert reddit["status"] == "complete_for_query" and reddit["fetched"] == 4 and reddit["attempted_queries"] > 0
+    stored = {s["native_id"]: s for s in db["ai_sources"].find({"connector_id": "reddit_public"})}
+    assert set(stored) == {"t3_p1", "t3_p2", "t1_c1", "t1_c4"}
+    assert stored["t1_c1"]["parent"] == {"id": stored["t3_p1"]["id"], "revision": 1}
+    assert all(s["author"]["display_name"] is None for s in stored.values()), "no username is kept"
+    assert stored["t3_p1"]["title"].endswith("(r/gurgaon)")
+    status = {
+        s["native_id"]: link["status"]
+        for s in stored.values()
+        for link in db["ai_project_source_links"].find({"source.id": s["id"], "project_id": world["q"]})
+    }
+    assert status["t3_p1"] == "auto_accepted" and status["t1_c1"] == "auto_accepted", "the comment inherits its post"
+    assert status["t1_c4"] == "needs_review", "named without its place: a moderator decides"
+    assert status.get("t3_p2", "rejected") == "rejected", "the other thread's post never names the project"
     kinds = {s["source_kind"] for s in db["ai_sources"].find()}
-    assert kinds == {"search_result", "article", "video", "comment"}
-    assert db["ai_sources"].count_documents({"canonical_url": {"$regex": "reddit|client-site"}}) == 0, (
-        "not collected at all"
+    assert kinds == {"search_result", "article", "video", "comment", "forum_post"}
+    assert (
+        db["ai_sources"].count_documents({"connector_id": "brave_search", "canonical_url": {"$regex": "reddit"}}) == 0
     )
-    assert "www.reddit.com" not in world["net"].hosts_requested()
+    assert db["ai_sources"].count_documents({"canonical_url": {"$regex": "client-site"}}) == 0, "not collected at all"
+    assert "www.reddit.com" not in world["net"].hosts_requested(), "Reddit itself is never asked (Scrapfly allowance 0)"
 
 
 def test_metadata_never_becomes_evidence_and_links_say_why(db, settings, world):
@@ -301,16 +372,22 @@ def test_a_redirected_page_is_not_read_again_on_the_next_run(db, settings, world
     assert [r.url.path for r in net.requests].count("/old") == 1, "read once, where it landed"
 
 
-def test_without_credentials_nothing_runs_and_coverage_says_so(db, settings, fictional, contracts, monkeypatch):
+def test_without_credentials_only_the_keyless_reader_runs_and_coverage_says_so(
+    db, settings, fictional, contracts, monkeypatch
+):
     monkeypatch.setattr(collection, "get_settings", lambda: settings)
     assert settings.brave_search_api_key is None and settings.youtube_api_key is None
     run_id = start(db, settings, fictional["Quillon Residences"])["run_id"]
     cov = coverage(db, run_id)
-    assert {c["status"] for c in cov.values()} == {"access_pending"}
+    assert {k: c["status"] for k, c in cov.items() if c["status"] != "access_pending"} == {"reddit_public": "partial"}
     assert cov["web_fetch"]["note"].startswith("not run: no discovery source")
-    assert db["ai_jobs"].count_documents({"run_id": run_id, "kind": "collect"}) == 0
-    assert db["ai_runs"].find_one({"_id": run_id})["stage"] == "analysing", "nothing to collect: the stage moves on"
-    assert db["ai_jobs"].count_documents({"run_id": run_id, "kind": "analyse"}) == 1, "and its analysis is queued"
+    assert db["ai_jobs"].count_documents({"run_id": run_id, "kind": "collect"}) == 1, "PullPush needs no key (D67)"
+    keyed = start(db, settings, fictional["Quillon Residences"], connectors=["brave_search", "youtube_data_api"])
+    cov = coverage(db, keyed["run_id"])
+    assert {c["status"] for c in cov.values()} == {"access_pending"}
+    assert db["ai_jobs"].count_documents({"run_id": keyed["run_id"], "kind": "collect"}) == 0
+    assert db["ai_runs"].find_one({"_id": keyed["run_id"]})["stage"] == "analysing", "nothing to collect: moves on"
+    assert db["ai_jobs"].count_documents({"run_id": keyed["run_id"], "kind": "analyse"}) == 1, "analysis is queued"
 
 
 def test_cancelling_stops_the_jobs_and_keeps_what_was_found(db, settings, contracts, world):

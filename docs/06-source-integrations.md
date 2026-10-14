@@ -23,11 +23,13 @@ Every platform/capability gets a row in DECISIONS.md: provider, enabled/mandator
 | Public forums/blogs/news | Brave discovery → web reader for allow-listed hosts (D40, D41) | Full thread context, dates, author role, pagination, deleted-content handling |
 | YouTube videos/Shorts | YouTube Data API for discovery/metadata/comments | Query match, quota, comments disabled, removed video, unknown format |
 | Spoken video content | Creator-supplied files, licensed transcript/media feed, or content the team itself is authorised to process | Actual permitted transcript/media processed with timing preserved |
-| Reddit | Commercially approved API/provider agreement | Analysis and derived-content permissions plus required fields |
+| Reddit | PullPush archive search (free, no key) for posts and comments naming the project, then each thread's comments; Reddit's own public JSON through Scrapfly only within a per-run allowance, 0 by default (D67) | A real PullPush result for a supplied project, stored per post and comment without usernames |
 | X | Entitled X API or listening provider | Search window/archive access, pagination, quota, downstream permissions |
 | Meta platforms | Approved endpoints or contracted listening capabilities | Each promised public/account/comment/Reels capability |
 | Instagram public posts | Brave discovery → Scrapfly scrape API (unblocker, residential proxies; D54) | A real public post of a supplied project read, with its robots.txt verdict and credits recorded |
-| Quora/LinkedIn/other forums | Permitted indexed pages or licensed/partner feeds | Actual project-level coverage |
+| Quora | Brave discovery (`site:quora.com`) → web reader, Scrapfly only when refused; only the answers a signed-out visitor is served, one source per answer (D67, D68) | Answers of a real question about a supplied project |
+| Competitor portals and forums | Brave discovery (`"<name>" reviews site:` per portal) → web reader → one source per person's review, split from the site's own review data (D68: MagicBricks, 99acres, NoBroker, schema.org reviews) | Individual reviews of a supplied project, agents' and locality reviews left out |
+| LinkedIn | Permitted indexed pages or licensed/partner feeds | Actual project-level coverage |
 | Official project facts | Public regulatory/developer pages fetched under policy; optional fields in the input file | Correct phase, effective date and authority of each record |
 
 ## Scraping policy (applies to the web reader, Firecrawl, Playwright and any custom adapter)

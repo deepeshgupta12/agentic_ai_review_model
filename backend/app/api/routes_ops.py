@@ -100,7 +100,13 @@ def connector_health(
     from app.sources import quota
 
     registry = json.loads((settings.seed_dir / "connectors.json").read_text(encoding="utf-8"))
-    buckets = {"brave_search": "requests", "youtube_data_api": "search"}
+    # Ledger per connector: Instagram reads through Scrapfly and shares its monthly credits (D54, D60).
+    buckets = {
+        "brave_search": ("brave_search", "requests"),
+        "youtube_data_api": ("youtube_data_api", "search"),
+        "firecrawl": ("firecrawl", "credits"),
+        "instagram_public": ("scrapfly", "credits"),
+    }
     now = utcnow()
     out = []
     for item in registry["model_providers"] + registry["connectors"]:
@@ -114,12 +120,15 @@ def connector_health(
                 {"connector_id": "web_fetch", "outcome": "fetched"}, sort=[("at", -1)]
             )
             successes += [fetched["at"]] if fetched else []
+        elif item["id"] == "firecrawl":  # a helper of the web reader: its record is the pages it rendered
+            rendered = db["ai_fetch_log"].find_one({"outcome": "fetched_rendered"}, sort=[("at", -1)])
+            successes += [rendered["at"]] if rendered else []
         elif item["id"] == "anthropic":
             call = db["ai_agent_runs"].find_one({"outcome": "completed"}, sort=[("created_at", -1)])
             successes += [call["created_at"]] if call else []
         errors = [s["last_error"] for s in states if s.get("last_error")]
         latest = max(errors, key=lambda e: e["at"]) if errors else None
-        usage = quota.usage(db, settings, item["id"], buckets[item["id"]], now) if item["id"] in buckets else None
+        usage = quota.usage(db, settings, *buckets[item["id"]], now) if item["id"] in buckets else None
         out.append(
             {
                 "connector_id": item["id"],

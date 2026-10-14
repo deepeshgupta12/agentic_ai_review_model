@@ -3,8 +3,9 @@ import Link from "next/link";
 
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState, ErrorState, PageTitle, Table, Td, Th } from "@/components/ui";
-import { apiGet, currentUser, type Schemas } from "@/lib/api-server";
-import { formatTime } from "@/lib/format";
+import { apiGet, backendInfo, currentUser, type Schemas } from "@/lib/api-server";
+import { nextStep } from "@/lib/flow";
+import { connectorName, formatTime, stageLabel } from "@/lib/format";
 import { can } from "@/lib/roles";
 
 import { AddProjectForm } from "./AddProjectForm";
@@ -18,9 +19,9 @@ function coverage(rows: Schemas["RunCoverage"][]) {
     <ul className="space-y-0.5">
       {rows.map((c) => (
         <li key={c.connector_id} className="flex items-center gap-1">
-          <span className="font-mono text-xs">{c.connector_id}</span>
+          <span className="text-xs">{connectorName(c.connector_id)}</span>
           <StatusBadge status={c.status} />
-          <span className="text-ink-muted">{c.fetched} fetched</span>
+          <span className="text-ink-muted">{c.fetched} read</span>
         </li>
       ))}
     </ul>
@@ -28,7 +29,11 @@ function coverage(rows: Schemas["RunCoverage"][]) {
 }
 
 export default async function PortfolioPage() {
-  const [page, me] = await Promise.all([apiGet<Schemas["ProjectPage"]>("/v1/projects", { limit: 100 }), currentUser()]);
+  const [page, me, info] = await Promise.all([
+    apiGet<Schemas["ProjectPage"]>("/v1/projects", { limit: 100 }),
+    currentUser(),
+    backendInfo(),
+  ]);
   if (!page.data) return <ErrorState status={page.status} error={page.error} requestId={page.requestId} />;
   const projects = page.data.items;
   const mayAdd = can(me?.roles, "createProject");
@@ -36,7 +41,8 @@ export default async function PortfolioPage() {
   return (
     <section className="space-y-6">
       <PageTitle title="Portfolio">
-        Every project in the catalogue with its latest run, coverage, open review work and what the public page shows.
+        Every project with what it needs next: run, approve the reviews found, build the page from approved reviews, then approve and
+        publish it.
       </PageTitle>
       {projects.length === 0 ? (
         <EmptyState>No projects yet. {mayAdd ? "Add one below or import the input file." : "A researcher can add projects."}</EmptyState>
@@ -45,47 +51,56 @@ export default async function PortfolioPage() {
           <thead>
             <tr>
               <Th>Project</Th>
+              <Th>Next step</Th>
               <Th>Latest run</Th>
-              <Th>Coverage</Th>
-              <Th>Pending review</Th>
+              <Th>Waiting for a decision</Th>
               <Th>Page</Th>
+              <Th>Coverage</Th>
               <Th>Spend 30 days</Th>
             </tr>
           </thead>
           <tbody>
             {projects.map((row) => {
               const pending = row.pending_review;
+              const next = nextStep(row, row.project.id, row.project.slug, info.page_reviews_max);
               return (
                 <tr key={row.project.id} data-testid="portfolio-row">
                   <Td>
-                    <Link href={`/console/projects/${row.project.id}/setup`} className="font-medium text-accent underline">
+                    <Link href={`/console/projects/${row.project.id}/runs`} className="font-medium text-accent underline">
                       {row.project.project_name}
                     </Link>
                     <div className="text-ink-muted">
                       {row.project.locality}, {row.project.city}
                     </div>
                   </Td>
+                  <Td className="max-w-[16rem]">
+                    <Link href={next.href} target={next.href.startsWith("/projects/") ? "_blank" : undefined} className="text-accent underline">
+                      {next.title}
+                    </Link>
+                    <div className="text-xs text-ink-muted">step {next.step} of 4</div>
+                  </Td>
                   <Td>
                     {row.latest_run ? (
                       <Link href={`/console/runs/${row.latest_run.id}`} className="space-y-1">
-                        <StatusBadge status={row.latest_run.stage} />
+                        <StatusBadge status={row.latest_run.stage} text={stageLabel(row.latest_run.stage)} />
                         <div className="text-ink-muted">{formatTime(row.latest_run.updated_at)}</div>
                       </Link>
                     ) : (
                       <span className="text-ink-muted">never run</span>
                     )}
                   </Td>
-                  <Td>{coverage(row.coverage)}</Td>
                   <Td>
                     <ul className="space-y-0.5">
                       <li>
-                        <Link href={`/console/projects/${row.project.id}/findings`}>{pending.findings} findings</Link>
+                        <Link href={`/console/projects/${row.project.id}/reviews?review_status=pending`}>{pending.review_excerpts} reviews</Link>
                       </li>
-                      <li>
-                        <Link href={`/console/projects/${row.project.id}/reviews`}>{pending.review_excerpts} reviews</Link>
-                      </li>
+                      {info.analysis_mode === "full" || pending.findings ? (
+                        <li>
+                          <Link href={`/console/projects/${row.project.id}/findings?review_status=pending`}>{pending.findings} findings</Link>
+                        </li>
+                      ) : null}
                       <li className="text-ink-muted">
-                        {pending.links} links · {pending.alias_proposals} names · {pending.corrections} corrections
+                        {pending.links} matches · {pending.alias_proposals} names · {pending.corrections} corrections
                       </li>
                     </ul>
                   </Td>
@@ -96,6 +111,7 @@ export default async function PortfolioPage() {
                     </div>
                     {row.publication.delivery_status ? <StatusBadge status={row.publication.delivery_status} /> : null}
                   </Td>
+                  <Td>{coverage(row.coverage)}</Td>
                   <Td>${row.spend_usd_30d.toFixed(2)}</Td>
                 </tr>
               );

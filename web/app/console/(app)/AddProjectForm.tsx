@@ -13,9 +13,18 @@ const STATES = [
   "Punjab", "Rajasthan", "Tamil Nadu", "Telangana", "Uttar Pradesh", "Uttarakhand", "West Bengal",
 ];
 
+/** Names: one per line or comma separated. */
 function lines(value: FormDataEntryValue | null): string[] {
   return String(value ?? "")
     .split(/[\n,]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/** RERA lines: one per line only, since a registered name may contain a comma ("Privana West, Phase 1"). */
+function reraLines(value: FormDataEntryValue | null): string[] {
+  return String(value ?? "")
+    .split("\n")
     .map((s) => s.trim())
     .filter(Boolean);
 }
@@ -32,10 +41,12 @@ export function AddProjectForm() {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const optional = (name: string) => String(form.get(name) ?? "").trim() || null;
-    const rera = lines(form.get("rera")).map((line) => {
-      const [id, name] = line.split("|").map((s) => s.trim());
-      return { id, registered_name: name || String(form.get("project_name")).trim() };
-    });
+    const rera = reraLines(form.get("rera"))
+      .map((line) => {
+        const [id, ...name] = line.split("|").map((s) => s.trim());
+        return { id, registered_name: name.join(" ").trim() || String(form.get("project_name")).trim() };
+      })
+      .filter((r) => r.id);
     const body = {
       project_name: String(form.get("project_name") ?? "").trim(),
       alternate_names: lines(form.get("alternate_names")),

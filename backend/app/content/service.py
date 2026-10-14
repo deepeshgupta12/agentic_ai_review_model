@@ -7,9 +7,10 @@ and hashing"; state machines `content_lifecycle` and `workflow_stage`; D23, D64,
   approved, plus A08 blocks when findings were selected; deterministic QA, then A09 on model-written text. Without a
   blocking issue the revision goes to final review; otherwise it stays a draft for the moderator to edit.
 - Edits: the moderator sends the whole payload; the backend keeps only what an editor may change (heading, blocks,
-  coverage note, metadata title and description, which selected reviews to show and in which order), rebuilds the rest
-  (credits, sources, manifest, JSON-LD, dates) and runs the same checks. Blocks may cite only the findings of the base
-  revision; a review is always the approved record (D28).
+  coverage note, metadata title and description, which approved reviews to show and in which order), rebuilds the
+  rest (credits, sources, manifest, JSON-LD, dates) and runs the same checks. Blocks may cite only the findings of the
+  base revision; a review is always the approved record (D28) and may be any approved review of the project (D69),
+  within the page's review limits.
 - Final approval binds the exact revision, recomputed payload and manifest hashes, the eligibility epoch and the
   publication state version (ContentBinding). Every finding and review is checked again; the actor is the signed-in
   moderator. An approval of one hash can never authorise another revision.
@@ -137,6 +138,31 @@ def _exact(
             raise ApiError(409, "ineligible_dependency", f"{ref['id']} revision {ref['revision']} is missing")
         out.append(doc)
     return out
+
+
+def check_review_limits(db: Database[dict[str, Any]], settings: Settings, refs: list[dict[str, Any]]) -> None:
+    """The published review list (D69): at most `page_reviews_max` reviews, each `review_words_min` to
+    `review_words_max` words as approved. Checked on generation and on every edit."""
+    out_of_range = []
+    for ref in refs:
+        review = db["ai_review_excerpts"].find_one({"id": ref["id"], "revision": ref["revision"]}, {"text": 1})
+        count = len(((review or {}).get("text") or "").split())
+        if not settings.review_words_min <= count <= settings.review_words_max:
+            out_of_range.append(f"{ref['id']} ({count} words)")
+    if out_of_range:
+        raise ApiError(
+            422,
+            "validation_failed",
+            f"Published reviews have {settings.review_words_min} to {settings.review_words_max} words (D69)",
+            fields=[{"path": "reviews", "message": "; ".join(out_of_range)[:300]}],
+        )
+    if len(refs) > settings.page_reviews_max:
+        raise ApiError(
+            422,
+            "validation_failed",
+            f"A page shows at most {settings.page_reviews_max} reviews (D69); select fewer",
+            fields=[{"path": "reviews", "message": f"{len(refs)} selected"}],
+        )
 
 
 def _left_out(
@@ -302,7 +328,8 @@ def generate(
     if project is None or config is None:
         raise LookupError("the project or its configuration is missing")
     findings = _exact(db, "ai_findings", selection["findings"], None)
-    reviews = _exact(db, "ai_review_excerpts", selection["reviews"], None)
+    # one balanced list (D69): positive, negative and mixed alternate in proportion, at most PAGE_REVIEWS_MAX
+    reviews = build.balanced(_exact(db, "ai_review_excerpts", selection["reviews"], None), settings.page_reviews_max)
     basis, claims, public = _basis(db, project, config, findings, reviews, None)
     blocks: dict[str, Any] = {"overview": None}
     metadata = None
@@ -477,8 +504,15 @@ def save_edit(
         )
     base_reviews = {(r["id"], r["revision"]) for r in base["manifest"]["reviews"]}
     shown = [(r["support"]["review"]["id"], r["support"]["review"]["revision"]) for r in edited["reviews"]]
-    if any(key not in base_reviews for key in shown) or len(set(shown)) != len(shown):
-        raise ApiError(422, "validation_failed", "Only the base revision's approved reviews can be shown, each once")
+    if len(set(shown)) != len(shown):
+        raise ApiError(422, "validation_failed", "Each review can be shown once")
+    # D69: an edit may also add another approved review of this project (its words as approved; no model is involved).
+    # It must be the latest, approved and approvable revision; the new revision needs its own final approval.
+    added = [{"id": i, "revision": r} for i, r in shown if (i, r) not in base_reviews]
+    problems = dependency_problems(db, {"findings": [], "reviews": added})
+    if problems:
+        raise ApiError(409, "ineligible_dependency", "Cannot show: " + "; ".join(problems))
+    check_review_limits(db, settings, [{"id": i, "revision": r} for i, r in shown])
     project = db["projects"].find_one({"_id": project_id})
     config = db["ai_project_configs"].find_one({"_id": project_id})
     assert project is not None and config is not None
@@ -489,11 +523,21 @@ def save_edit(
         None,
     )
     reviews = _exact(db, "ai_review_excerpts", [{"id": i, "revision": r} for i, r in shown], None)
+    if any(r["project_id"] != project_id for r in reviews):
+        raise ApiError(422, "validation_failed", "A review of another project cannot be shown")
     basis, claims, public = _basis(db, project, config, findings, reviews, None)
     blocks = {
         k: edited[k] for k in ("heading", "overview", "advantages", "considerations", "questions", "coverage_note")
     }
     metadata = {k: edited["metadata"][k] for k in ("title", "description")}
+    # Text the backend wrote from the counts (coverage note, search title and description) follows the reviews now
+    # shown; text the moderator wrote is kept as written, and QA checks its numbers.
+    base_findings = len(base["manifest"]["findings"])
+    if blocks["coverage_note"] == build.default_coverage_note([], base["payload"]["reviews"], base_findings):
+        blocks["coverage_note"] = None
+    was = build.default_metadata(project, len(base["manifest"]["reviews"]), base_findings)
+    now = build.default_metadata(project, len(reviews), len(findings))
+    metadata = {k: now[k] if metadata[k] == was[k] else metadata[k] for k in metadata}
     epoch = publication_state(db, project_id, locale)["eligibility_epoch"]
     payload, manifest = _assemble(
         db, settings, contracts, project, findings, reviews, public, claims, blocks, metadata, epoch, None

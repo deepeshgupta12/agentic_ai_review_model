@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Panel } from "@/components/ui";
 import { send } from "@/lib/api-browser";
 import type { components } from "@/lib/api-schema";
+import { connectorName } from "@/lib/format";
 
 type Config = components["schemas"]["ProjectConfig"];
 
@@ -66,7 +67,8 @@ export function ConfigForm({ config, connectorStatus, canEdit }: { config: Confi
                 checked={s.enabled}
                 onChange={(e) => setSources(sources.map((x, j) => (j === i ? { ...x, enabled: e.target.checked } : x)))}
               />
-              <span className="font-mono text-xs">{s.connector_id}</span>
+              <span>{connectorName(s.connector_id)}</span>
+              <span className="font-mono text-[11px] text-ink-muted">{s.connector_id}</span>
               <StatusBadge status={connectorStatus[s.connector_id] ?? "unknown"} />
             </label>
           ))}
