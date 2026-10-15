@@ -66,7 +66,7 @@ def ld(*items):
 # --- the page splitters (portal_reviews) --------------------------------------------------------------------------
 
 
-def test_magicbricks_keeps_owners_and_residents_and_leaves_out_agents_sponsored_short_and_repeated():
+def test_magicbricks_keeps_owners_residents_and_agents_and_leaves_out_sponsored_short_and_repeated():
     page = magicbricks_page(
         [
             mb("r1", OWNER),
@@ -82,15 +82,16 @@ def test_magicbricks_keeps_owners_and_residents_and_leaves_out_agents_sponsored_
     assert [(r.key, r.role, r.role_basis, r.kind) for r in found.reviews] == [
         ("mb-r1", "owner", "platform_badge", "user_review"),
         ("mb-r2", "resident", "platform_badge", "user_review"),
+        ("mb-r3", "broker", "platform_badge", "user_review"),  # kept with its badge; the moderator decides (D73)
     ]
-    assert found.dropped == {"agent_written": 1, "sponsored": 1, "too_short": 1, "duplicate": 1}
+    assert found.dropped == {"sponsored": 1, "too_short": 1, "duplicate": 1}
     assert found.reviews[0].published["value"] == "2026-03-12T00:00:00Z"
     assert found.more_url == MORE, "9 reviews, 6 listed: the full list is read once"
     assert FICTIONAL_NAME not in repr(found), "the reviewer's name is never kept"
     assert pr.magicbricks(magicbricks_page([mb("r1", OWNER)])).more_url is None
 
 
-def test_99acres_leaves_out_the_locality_reviews_the_page_marks_up_as_the_projects():
+def test_99acres_keeps_the_locality_reviews_the_page_marks_up_as_the_projects_titled_as_the_localitys():
     state = {"pageData": {"localityReviews": [{"review": LOCALITY}], "other": "x"}}
     page = (
         f"<html><body><script>window.__initialData__ = {json.dumps(state)};</script>"
@@ -114,9 +115,14 @@ def test_99acres_leaves_out_the_locality_reviews_the_page_marks_up_as_the_projec
         + "</body></html>"
     )
     found = pr.page_reviews("https://www.99acres.com/quillon-residences-npxid-r1", page, [])
-    assert [(r.text, r.role) for r in found.reviews] == [(OWNER, "owner"), (RESIDENT, "unknown")]
-    assert found.dropped == {"locality_review": 1, "agent_written": 1}
-    assert found.reviews[0].published["precision"] == "day"
+    assert [(r.text, r.role, r.title) for r in found.reviews] == [
+        (LOCALITY, "resident", pr.LOCALITY_TITLE),  # kept for the moderator to decide (D73)
+        (OWNER, "owner", None),
+        (AGENT, "broker", None),
+        (RESIDENT, "unknown", None),
+    ]
+    assert found.dropped == {}
+    assert found.reviews[1].published["precision"] == "day"
 
 
 def test_nobroker_keeps_the_answers_not_the_question():
@@ -235,7 +241,12 @@ def test_a_portal_page_becomes_one_source_per_review_under_it_and_a_review_on_tw
     pages = list(db["ai_sources"].find({"connector_id": "web_fetch", "source_kind": "article"}))
     reviews = {r["native_id"]: r for r in db["ai_sources"].find({"source_kind": "user_review"})}
     assert len(pages) == 2, "the project page and its full review list"
-    assert set(reviews) == {"magicbricks.com#review-mb-r1", "magicbricks.com#review-mb-r2"}, "agents left out"
+    assert set(reviews) == {
+        "magicbricks.com#review-mb-r1",
+        "magicbricks.com#review-mb-r2",
+        "magicbricks.com#review-mb-r3",
+    }, "an agent's review is kept with its badge (D73)"
+    assert reviews["magicbricks.com#review-mb-r3"]["author"]["role"] == "broker"
     assert {r["parent"]["id"] for r in reviews.values()} <= {p["id"] for p in pages}
     assert reviews["magicbricks.com#review-mb-r1"]["author"] == {
         "display_name": None,
@@ -249,8 +260,28 @@ def test_a_portal_page_becomes_one_source_per_review_under_it_and_a_review_on_tw
     stored = json.dumps([str(d) for c in ("ai_sources", "ai_payloads") for d in db[c].find()])
     assert FICTIONAL_NAME not in stored.replace("\\", ""), "no reviewer name anywhere"
     note = coverage(db, run_id)["web_fetch"]["note"]
-    assert "reviews_left_out:agent_written: 2" in note and "reviews_stored: 2" in note
+    assert "agent_written" not in note and "reviews_stored: 3" in note
     assert [r.url.path for r in net.requests].count(MORE.removeprefix("https://www.magicbricks.com")) == 1
+
+
+def test_a_portal_page_is_read_again_on_the_next_run_and_its_reviews_are_not_stored_twice(
+    db, settings, world, monkeypatch
+):
+    """D73: people add reviews to a portal page, and the rules that split it change; a page read once used to be
+    never read again."""
+    from .test_collection import start_again
+
+    net, _ = portal(db, settings, world, monkeypatch)
+    first = db["ai_sources"].count_documents({"source_kind": "user_review"})
+    page_reads = [r.url.path for r in net.requests if r.url.host == "www.magicbricks.com"]
+    second = start_again(db, settings, world["q"], connectors=["brave_search"])["run_id"]
+    run_all_jobs(db)
+    again = [r.url.path for r in net.requests if r.url.host == "www.magicbricks.com"]
+    assert len(again) > len(page_reads), "the review pages were read again"
+    assert db["ai_sources"].count_documents({"source_kind": "user_review"}) == first, "no review stored twice"
+    assert db["ai_sources"].count_documents({"connector_id": "web_fetch", "source_kind": "article"}) == 2
+    note = coverage(db, second)["web_fetch"]["note"]
+    assert "reviews_stored: 0" in note and "already_read" not in note, note
 
 
 # --- Reddit through PullPush (D67) ----------------------------------------------------------------------------------

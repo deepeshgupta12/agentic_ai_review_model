@@ -170,6 +170,8 @@ class WebFetch(Connector):
         if response.status in REFUSED or response.status >= 400:
             outcome = "refused" if response.status in REFUSED else "error"
             log_fetch(self.db, {**entry, "outcome": outcome})
+            if outcome == "refused":  # D74: Scrapfly cannot or may not help; Firecrawl may still read it
+                return self._through_firecrawl(url, entry, resolution, f"HTTP {response.status}; not worked around")
             return FetchOutcome(outcome, url, f"HTTP {response.status}; not worked around")
         final_url = normalise_url(response.url)
         if final_url != url:  # every hop was checked; the page is governed by the policy where it landed
@@ -179,11 +181,13 @@ class WebFetch(Connector):
 
     def _failed_through_scrapfly(self, url: str) -> bool:
         """A page Scrapfly could not read in the last week is not paid for again."""
+        return self._failed_lately(url, "^(unblock_refused|unblock_error)")
+
+    def _failed_lately(self, url: str, outcomes: str) -> bool:
         since = utcnow() - timedelta(days=7)
         return (
             self.db["ai_fetch_log"].find_one(
-                {"url": url, "at": {"$gte": since}, "outcome": {"$regex": "^(unblock_refused|unblock_error)"}},
-                {"_id": 1},
+                {"url": url, "at": {"$gte": since}, "outcome": {"$regex": outcomes}}, {"_id": 1}
             )
             is not None
         )
@@ -191,7 +195,9 @@ class WebFetch(Connector):
     def _unblocked(self, url: str, entry: dict[str, Any], resolution: policies.Resolution) -> FetchOutcome:
         """The refused competitor page once more through Scrapfly (D60), while this job's allowance lasts."""
         if self.unblock_left <= 0:
-            return FetchOutcome("refused", url, "refused; this run's allowance of pages read through Scrapfly is used")
+            return self._through_firecrawl(
+                url, entry, resolution, "refused; this run's allowance of pages read through Scrapfly is used"
+            )
         self.unblock_left -= 1
         attempt = {**entry, "status_code": None}
         try:
@@ -201,7 +207,7 @@ class WebFetch(Connector):
             return FetchOutcome("refused", url, "refused; the month's Scrapfly credits are spent")
         except ProviderError as exc:
             log_fetch(self.db, {**attempt, "outcome": f"unblock_error:{exc.code}"})
-            return FetchOutcome("refused", url, f"refused; Scrapfly: {exc.code}")
+            return self._through_firecrawl(url, entry, resolution, f"refused; Scrapfly: {exc.code}")
         except FetchError as exc:
             log_fetch(self.db, {**attempt, "outcome": f"unblock_error:{exc.code}"[:100]})
             return FetchOutcome("error", url, exc.message, retryable=exc.retryable)
@@ -211,27 +217,52 @@ class WebFetch(Connector):
             return FetchOutcome("gone", url, f"HTTP {page.upstream_status} through Scrapfly")
         if page.upstream_status >= 400 or not page.html:
             log_fetch(self.db, {**attempt, "outcome": "unblock_refused"})
-            return FetchOutcome("refused", url, f"refused even through Scrapfly (HTTP {page.upstream_status})")
+            return self._through_firecrawl(
+                url, entry, resolution, f"refused even through Scrapfly (HTTP {page.upstream_status})"
+            )
         return self._page(page.html, url, url, attempt, resolution, "fetched_unblocked")
 
-    def _rendered(
-        self, url: str, final_url: str, entry: dict[str, Any], resolution: policies.Resolution
+    def _through_firecrawl(
+        self, url: str, entry: dict[str, Any], resolution: policies.Resolution, reason: str
     ) -> FetchOutcome:
-        """The nearly empty page once more, rendered by Firecrawl (D62), while this job's allowance lasts."""
+        """A refused page that Scrapfly could not or may not read, once more through Firecrawl (D74: on 15 Oct 2026
+        every Housing.com page and most 99acres pages for DLF Privana were refused, and Scrapfly's five pages a run
+        were used), within the same families and the same per-run allowance as rendering (D62)."""
+        if (
+            resolution.family in policies.UNBLOCK_FAMILIES
+            and self.renderer
+            and self._paid_now
+            and self.render_left > 0
+            # a page that refused even Firecrawl in the last week is not paid for again (as for Scrapfly, D70);
+            # Firecrawl's own errors (rate limit, plan) are not the page's and do not count
+            and not self._failed_lately(url, "^render_refused")
+        ):
+            return self._rendered(url, url, entry, resolution, failed="refused")
+        return FetchOutcome("refused", url, reason)
+
+    def _rendered(
+        self,
+        url: str,
+        final_url: str,
+        entry: dict[str, Any],
+        resolution: policies.Resolution,
+        failed: str = "thin",
+    ) -> FetchOutcome:
+        """The nearly empty page (D62), or a refused one (D74, `failed` "refused"), once more through Firecrawl,
+        while this job's allowance lasts."""
+        why = "script-rendered" if failed == "thin" else "refused"
         if self.render_left <= 0:
-            return FetchOutcome(
-                "thin", url, "script-rendered; this run's allowance of pages rendered by Firecrawl is used"
-            )
+            return FetchOutcome(failed, url, f"{why}; this run's allowance of pages read through Firecrawl is used")
         self.render_left -= 1
         attempt = {**entry, "status_code": None}
         try:
             page = self.renderer.render(final_url)
         except QuotaExhausted:
             log_fetch(self.db, {**attempt, "outcome": "render_quota_exhausted"})
-            return FetchOutcome("thin", url, "script-rendered; the month's Firecrawl credits are spent")
+            return FetchOutcome(failed, url, f"{why}; the month's Firecrawl credits are spent")
         except ProviderError as exc:
             log_fetch(self.db, {**attempt, "outcome": f"render_error:{exc.code}"})
-            return FetchOutcome("thin", url, f"script-rendered; Firecrawl: {exc.code}")
+            return FetchOutcome(failed, url, f"{why}; Firecrawl: {exc.code}")
         except FetchError as exc:
             log_fetch(self.db, {**attempt, "outcome": f"render_error:{exc.code}"[:100]})
             return FetchOutcome("error", url, exc.message, retryable=exc.retryable)

@@ -42,7 +42,8 @@ export function StartRunForm({
   ].filter((g) => g.connectors.length > 0);
   const unused = (g: Group) => g.key === "registry" && analysisMode === "reviews";
   const [chosen, setChosen] = useState<string[]>(groups.filter((g) => !unused(g)).map((g) => g.key));
-  const [days, setDays] = useState(90);
+  // the product owner's default look-back (I08: 90 days, raised to 120 on 15 Oct 2026); any 1 to 3650 may be chosen
+  const [days, setDays] = useState(120);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const connectors = groups.filter((g) => chosen.includes(g.key)).flatMap((g) => g.connectors);

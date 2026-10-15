@@ -1,7 +1,7 @@
 import { SourceIcon } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProgressBar } from "@/components/ui";
-import { activity, connectorName, countLabel, coverageState, formatTime } from "@/lib/format";
+import { activity, connectorName, countLabel, coverageState, formatTime, isSearchEngine } from "@/lib/format";
 
 type Coverage = {
   connector_id: string;
@@ -23,12 +23,22 @@ export function SourceCard({ c, stage }: { c: Coverage; stage: string }) {
   const said = activity(state.detail);
   const pending = c.status === "access_pending";
   const queued = state.text === "queued";
-  const numbers = [
-    ["Queries", c.attempted_queries],
-    ["Read", c.fetched],
-    ["Matched", c.matched],
-    ["Analysed", c.analysed],
-  ] as const;
+  const search = isSearchEngine(c.connector_id);
+  // a search engine's results are addresses: the web reader reads and matches the pages (its card has those counts)
+  // results stored but left unread (not naming the project, single listings); results never collected are not stored
+  const unread = said.counts.filter((n) => n.key.startsWith("not_read:")).reduce((sum, n) => sum + (Number(n.value) || 0), 0);
+  const numbers: [string, number][] = search
+    ? [
+        ["Searches", c.attempted_queries],
+        ["Results", c.fetched],
+        ["Name the project", Math.max(0, c.fetched - unread)],
+      ]
+    : [
+        ["Queries", c.attempted_queries],
+        ["Read", c.fetched],
+        ["Matched", c.matched],
+        ["Analysed", c.analysed],
+      ];
   return (
     <article
       aria-label={connectorName(c.connector_id)}
@@ -81,7 +91,7 @@ export function SourceCard({ c, stage }: { c: Coverage; stage: string }) {
           {pending ? said.doing || "No credential or adapter configured; not read." : "Waiting for its turn; it starts when a worker is free."}
         </p>
       ) : (
-        <dl className="mt-3 grid grid-cols-4 gap-2">
+        <dl className={`mt-3 grid gap-2 ${search ? "grid-cols-3" : "grid-cols-4"}`}>
           {numbers.map(([name, value]) => (
             <div key={name} className="rounded-md bg-surface-sunken px-2 py-1.5">
               <dt className="text-[10px] font-medium uppercase tracking-wide text-ink-muted">{name}</dt>
@@ -92,6 +102,9 @@ export function SourceCard({ c, stage }: { c: Coverage; stage: string }) {
       )}
 
       {!pending && !running && said.doing ? <p className="mt-2 text-xs text-ink-muted">{said.doing}</p> : null}
+      {search && !pending && !queued ? (
+        <p className="mt-2 text-xs text-ink-muted">Results are addresses only: the web reader reads the ones that name the project and matches them.</p>
+      ) : null}
       {!pending && said.counts.length ? (
         <ul className="mt-2 flex flex-wrap gap-1" aria-label="Counts">
           {said.counts.map((count) => (

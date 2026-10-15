@@ -117,7 +117,8 @@ class Settings(BaseSettings):
     # Paid providers (Scrapfly, Firecrawl): longer than their own timeouts; one attempt (a resend may be billed).
     paid_provider_timeout_seconds: float = Field(default=180.0, ge=10)
     # Step 08 (D62): pages built by JavaScript rendered through Firecrawl, per collection job, from a monthly ledger.
-    rendered_pages_per_run: int = Field(default=10, ge=0)
+    # pages read through Firecrawl per run: script-built ones (D62) and refused ones Scrapfly could not read (D74)
+    rendered_pages_per_run: int = Field(default=20, ge=0)
     firecrawl_monthly_credits: int = Field(default=500, ge=0)
     firecrawl_credits_per_page: int = Field(default=1, ge=1)
     # Firecrawl search (D72): results per query, 2 credits per 10, from the same monthly Firecrawl credits.

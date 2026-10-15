@@ -249,3 +249,44 @@ def test_an_instagram_search_that_finds_nothing_says_so(db, settings, world):  #
     run_all_jobs(db)
     note = coverage(db, accepted["run_id"])["instagram_public"]["note"]
     assert note and note.startswith("no public post or reel naming the project was found"), note
+
+
+def test_instagram_posts_are_found_through_both_search_engines_each_once(db, settings):
+    """D74: Brave's index holds few Instagram posts; Firecrawl search is asked too."""
+    from app.connectors.base import Page
+    from app.connectors.instagram import InstagramPublic
+    from app.sources.store import Item
+
+    class Engine:
+        def __init__(self, urls, fail=False):
+            self.urls, self.fail, self.queries = urls, fail, []
+
+        def discover(self, query, cursor):
+            self.queries.append(query["query_text"])
+            if self.fail:
+                raise ProviderError("rate_limited", "busy", retryable=True)
+            items = [
+                Item(
+                    connector_id="x",
+                    native_id=u,
+                    canonical_url=u,
+                    source_kind="search_result",
+                    capture_level="metadata_only",
+                    title="Quillon Residences",
+                )
+                for u in self.urls
+            ]
+            return Page(items=items, next_cursor=None)
+
+    brave = Engine(["https://www.instagram.com/p/AAAAAAAAAAA/"])
+    firecrawl = Engine(["https://www.instagram.com/p/AAAAAAAAAAA/", "https://www.instagram.com/reel/BBBBBBBBBBB/"])
+    ig = InstagramPublic(None, None, db, settings, brave, firecrawl)  # type: ignore[arg-type]
+    page = ig.discover({"query_text": '"Quillon Residences"', "window_days": 120, "exclusions": []}, None)
+    assert [i.native_id for i in page.items] == ["AAAAAAAAAAA", "BBBBBBBBBBB"] and page.attempted == 2
+    assert brave.queries == firecrawl.queries == ['site:instagram.com "Quillon Residences"']
+    only_firecrawl = InstagramPublic(None, None, db, settings, Engine([], fail=True), firecrawl)  # type: ignore[arg-type]
+    assert len(only_firecrawl.discover({"query_text": "q", "window_days": 120, "exclusions": []}, None).items) == 2
+    with pytest.raises(ProviderError):
+        InstagramPublic(None, None, db, settings, Engine([], fail=True), None).discover(  # type: ignore[arg-type]
+            {"query_text": "q", "window_days": 120, "exclusions": []}, None
+        )

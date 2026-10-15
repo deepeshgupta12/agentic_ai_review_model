@@ -88,9 +88,12 @@ def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -
 
         scrapfly = scrapfly_for(db, settings)
         brave = build("brave_search", db, settings)
-        if scrapfly is None or brave is None:
+        firecrawl_search = build("firecrawl_search", db, settings)  # D74: a second index of public posts
+        if scrapfly is None or (brave is None and firecrawl_search is None):
             return None
-        return InstagramPublic(scrapfly, RobotsCache(safe_client(settings), agent_token(settings)), db, settings, brave)
+        return InstagramPublic(
+            scrapfly, RobotsCache(safe_client(settings), agent_token(settings)), db, settings, brave, firecrawl_search
+        )
     if connector_id == "state_registry":  # D57: the other states' RERA portals, by registration number
         from app.connectors.state_registry import StateRegistry
 

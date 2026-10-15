@@ -30,10 +30,10 @@
       "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     "discovery_lookback_days": {
-      "value": 90,
+      "value": 120,
       "status": "accepted",
       "ref": "I08",
-      "accepted_on": "2026-09-25",
+      "accepted_on": "2026-10-15",
       "accepted_by": "Product owner (GitHub: deepeshgupta12)"
     },
     "display_timezone": {

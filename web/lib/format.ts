@@ -206,6 +206,14 @@ export const RUN_SOURCES = [
 
 export const HELPER_CONNECTORS = ["firecrawl", "playwright_fetch"];
 
+/** Search engines find addresses only (metadata, never read or matched themselves): the web reader reads and
+ * matches the pages they find, so their own counts are queries and results (D72). */
+export const SEARCH_ENGINES = ["brave_search", "firecrawl_search"];
+
+export function isSearchEngine(connectorId: string): boolean {
+  return SEARCH_ENGINES.includes(connectorId);
+}
+
 const SPEAKERS: Record<string, string> = {
   a_buyer: "a buyer",
   a_resident: "a resident",

@@ -83,9 +83,10 @@ def test_an_unexpected_magicbricks_state_never_crashes(state):
     assert pr.magicbricks(page, PROJECT_PAGE).reviews == []
 
 
-def test_99acres_without_its_page_state_keeps_no_review():
+def test_99acres_without_its_page_state_keeps_its_reviews_untitled():
+    """D73: a locality review cannot be told apart without the page state; every review is kept for the moderator."""
     found = pr.ninety_nine_acres(ld({"@type": "Review", "reviewBody": OWNER}))
-    assert found.reviews == [] and found.dropped == {"locality_guard_unavailable": 1}
+    assert [(r.text, r.title) for r in found.reviews] == [(OWNER, None)] and found.dropped == {}
 
 
 def test_the_full_review_list_followed_is_the_projects_own():

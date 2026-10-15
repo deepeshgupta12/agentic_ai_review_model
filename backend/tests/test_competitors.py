@@ -20,9 +20,9 @@ from .fakenet import FakeNet, article
 REVIEW = "Quillon Residences Sector 102 owner review: possession is late but the build quality is good. " * 4
 
 
-def network(scrapfly_status=200, upstream=200, firecrawl_status=200):
+def network(scrapfly_status=200, upstream=200, firecrawl_status=200, firecrawl_upstream=200):
     net = FakeNet()
-    net.html("www.99acres.com", {"/quillon-review": (403, "Access denied")})
+    net.html("www.99acres.com", {"/quillon-review": (403, "Access denied"), "/other-review": (403, "Access denied")})
     net.html("forum.example.test", {"/t/9": (403, "Forbidden")})
     net.html("haryanarera.gov.in", {"/view_project/9": (403, "Forbidden")})
     net.html(
@@ -38,7 +38,8 @@ def network(scrapfly_status=200, upstream=200, firecrawl_status=200):
         if firecrawl_status != 200:
             return httpx.Response(firecrawl_status, headers={"content-type": "application/json"}, content=b"{}")
         page = article("Quillon Residences builder page", REVIEW)
-        out = {"success": True, "data": {"rawHtml": page, "metadata": {"statusCode": 200}}, "creditsUsed": 1}
+        data = {"rawHtml": page, "metadata": {"statusCode": firecrawl_upstream}}
+        out = {"success": True, "data": data, "creditsUsed": 1}
         return httpx.Response(200, headers={"content-type": "application/json"}, content=json.dumps(out).encode())
 
     net.route("api.firecrawl.dev", firecrawl)
@@ -118,10 +119,14 @@ def test_firecrawl_refusals_and_missing_keys_leave_the_page_thin(db, settings, c
 
 def test_the_per_job_allowance_bounds_the_unblocking(db, settings, contracts):
     net, calls = network()
-    web = reader(db, settings, net, limit=1)
+    web = reader(db, settings, net, limit=1, with_firecrawl=False)
     assert web.fetch("https://www.99acres.com/quillon-review").status == "fetched"
     second = web.fetch("https://www.99acres.com/quillon-review")
     assert second.status == "refused" and "allowance" in second.reason and len(calls) == 1
+    # D74: with Firecrawl configured, a page past Scrapfly's allowance is read through Firecrawl instead
+    web = reader(db, settings, net, limit=0)
+    third = web.fetch("https://www.99acres.com/quillon-review")
+    assert (third.status, third.reason) == ("fetched", "fetched_rendered") and len(calls) == 1
 
 
 def test_the_months_credits_bound_the_unblocking(db, settings, contracts):
@@ -134,25 +139,57 @@ def test_the_months_credits_bound_the_unblocking(db, settings, contracts):
 
 def test_a_page_refused_even_through_scrapfly_stays_refused(db, settings, contracts):
     net, _ = network(upstream=403)
-    outcome = reader(db, settings, net).fetch("https://www.99acres.com/quillon-review")
+    outcome = reader(db, settings, net, with_firecrawl=False).fetch("https://www.99acres.com/quillon-review")
     assert outcome.status == "refused" and "even through Scrapfly" in outcome.reason
     net, calls = network()
-    again = reader(db, settings, net).fetch("https://www.99acres.com/quillon-review")
+    again = reader(db, settings, net, with_firecrawl=False).fetch("https://www.99acres.com/quillon-review")
     assert again.status == "refused" and calls == [], (
         "refused even through Scrapfly this week: not paid for again (D70)"
     )
+    # D74: Firecrawl is tried for a page Scrapfly could not read; when Firecrawl cannot help it stays refused
+    net, calls = network(upstream=403, firecrawl_status=402)
+    outcome = reader(db, settings, net).fetch("https://www.99acres.com/quillon-review")
+    assert outcome.status == "refused" and "Firecrawl" in outcome.reason and calls == []
+    net, _ = network(upstream=403, firecrawl_upstream=403)  # Firecrawl's own error did not count; the site refuses
+    outcome = reader(db, settings, net).fetch("https://www.99acres.com/quillon-review")
+    assert outcome.status == "refused" and "even through Firecrawl" in outcome.reason and len(net.rendered) == 1
+    net, calls = network(upstream=403)
+    again = reader(db, settings, net).fetch("https://www.99acres.com/quillon-review")
+    assert again.status == "refused" and net.rendered == [], "refused even through Firecrawl this week: not paid again"
+    db["ai_fetch_log"].delete_many({"outcome": {"$regex": "^render_"}})  # a week later
+    net, calls = network(upstream=403)
+    outcome = reader(db, settings, net).fetch("https://www.99acres.com/quillon-review")
+    assert (outcome.status, outcome.reason) == ("fetched", "fetched_rendered") and calls == []
     db["ai_fetch_log"].delete_many({})  # a week later: Scrapfly may be tried again
     net, _ = network(scrapfly_status=401)
+    outcome = reader(db, settings, net, with_firecrawl=False).fetch("https://www.99acres.com/quillon-review")
+    assert outcome.status == "refused" and "access_refused" in outcome.reason
+
+
+def test_a_scrape_scrapfly_could_not_do_goes_on_to_firecrawl_at_once(db, settings, contracts):
+    """Scrapfly answers 422 when a valid request's scrape failed (its unblocker did not get through, D74): the page
+    is read through Firecrawl now instead of waiting as a temporary error, and Scrapfly is not paid again this week."""
+    net, calls = network(scrapfly_status=422)
     outcome = reader(db, settings, net).fetch("https://www.99acres.com/quillon-review")
+    assert (outcome.status, outcome.reason) == ("fetched", "fetched_rendered") and len(calls) == 1
+    logged = {e["outcome"] for e in db["ai_fetch_log"].find({}, {"outcome": 1})}
+    assert "unblock_error:unblock_failed" in logged
+    net, calls = network(scrapfly_status=403)
+    outcome = reader(db, settings, net, with_firecrawl=False).fetch("https://www.99acres.com/other-review")
     assert outcome.status == "refused" and "access_refused" in outcome.reason
 
 
 def test_without_a_scrapfly_key_refusals_stay_refused(db, settings, contracts):
     net, calls = network()
     assert (
-        reader(db, settings, net, with_scrapfly=False).fetch("https://www.99acres.com/quillon-review").status
+        reader(db, settings, net, with_scrapfly=False, with_firecrawl=False)
+        .fetch("https://www.99acres.com/quillon-review")
+        .status
         == "refused"
     )
+    # D74: without Scrapfly, Firecrawl still reads a refused page
+    outcome = reader(db, settings, net, with_scrapfly=False).fetch("https://www.99acres.com/quillon-review")
+    assert (outcome.status, outcome.reason) == ("fetched", "fetched_rendered")
     settings.scrapfly_api_key = None
     web = registry.build("web_fetch", db, settings)
     assert web.unblocker is None and calls == []

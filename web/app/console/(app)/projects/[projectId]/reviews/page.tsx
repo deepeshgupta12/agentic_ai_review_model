@@ -84,6 +84,12 @@ export default async function ReviewsPage({
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded border border-line px-1.5 text-xs font-medium">{r.polarity}</span>
+                  {r.perspective === "broker_or_developer" ? (
+                    // D73: kept for the moderator to decide, never hidden and never shown as a buyer's review
+                    <span className="rounded-full bg-warn-soft px-2 py-0.5 text-xs font-medium text-warn ring-1 ring-inset ring-warn/25">
+                      agent, dealer or sales talk
+                    </span>
+                  ) : null}
                   <StatusBadge status={r.review_status} />
                   <StatusBadge status={view.rendering_check} />
                   <span className="text-xs text-ink-muted">

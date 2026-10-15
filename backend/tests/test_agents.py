@@ -673,7 +673,14 @@ def test_a11_reviews_come_from_one_source_in_the_authors_own_words(db, settings,
             review("The site office was very helpful.", [span], rendering="shortened", source=mine),
             review(COMMENT, [span, other_span], source=mine),  # merges two people's comments
             review(COMMENT, [span], source="s9"),
-            review(COMMENT, [span], source=mine, perspective="broker_or_developer"),
+            review(COMMENT, [span], source=mine, perspective="official_record"),  # not anyone's review
+            # an agent's or dealer's own view is kept, marked by its perspective, for the moderator (D73)
+            review(
+                "Quillon Residences Sector 102: avoid, the builder never answers calls.",
+                [other_span],
+                source=other,
+                perspective="broker_or_developer",
+            ),
             review("Call me on 98765 43210 for the best deal in Quillon Residences.", [span], source=mine),
         ],
     }
@@ -688,7 +695,8 @@ def test_a11_reviews_come_from_one_source_in_the_authors_own_words(db, settings,
         "verbatim_changed": 1,
         "dashes_normalised": 1,
     }, "one review per source and spans: a second rendering of the same words is a duplicate"
-    [first] = out["drafts"]
+    first, agent = out["drafts"]
+    assert agent["perspective"] == "broker_or_developer" and agent["polarity"] and "avoid" in agent["text"]
     assert first["rendering"] == "punctuation_normalised" and first["source_kind"] == "comment"
     assert "-" not in first["text"] and "last year, the site office" in first["text"], (
         "displayed reviews have no dashes (product owner, 28 Sep 2026); every word is kept"
@@ -700,7 +708,9 @@ def test_a11_reviews_come_from_one_source_in_the_authors_own_words(db, settings,
     assert contracts.errors(to_view(doc, id_field=None), "evidence.schema.json#/$defs/ReviewExcerpt") == []
     assert doc["review_status"] == "pending" and doc["created_by"]["kind"] == "agent"
     assert a11.store_reviews(db, contracts, out["drafts"], run_id=None) == stored
-    assert db["ai_review_excerpts"].count_documents({}) == 1, "the same review from a rerun is not written again"
+    assert db["ai_review_excerpts"].count_documents({}) == 2, "the same reviews from a rerun are not written again"
+    marked = db["ai_review_excerpts"].find_one({"perspective": "broker_or_developer"})
+    assert marked is not None and marked["review_status"] == "pending", "an agent's review waits for the moderator"
     assert len(client.calls) == 1
 
 

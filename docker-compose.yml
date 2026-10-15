@@ -8,7 +8,11 @@ services:
     # The cache is capped: by default it takes about half of the 4 GB Docker VM (2.1 GB seen during tests), leaving
     # too little for the media worker; the data is about 6 MB plus 3 MB of indexes. 0.25 GB was tried on 5 Oct 2026:
     # tests ran three times slower and MongoDB's memory did not fall, so 0.75 GB stays (Step 06, D48).
-    command: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.75"]
+    # Dropped tables are kept for the snapshot history window (5 minutes by default). The test suite creates and
+    # drops a database of about 100 files per test, so after a day of runs 14,789 files stood for 133 collections
+    # and every create took 0.4 s (suite 11 min -> over an hour; 15 Oct 2026). Five seconds keeps the backlog
+    # bounded; transactions here are short and a single node has no lagging reader.
+    command: ["--replSet", "rs0", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.75", "--setParameter", "minSnapshotHistoryWindowInSeconds=5"]
     oom_score_adj: -500  # under memory pressure the kernel kills other services before the database (Step 06)
     ports:
       - "127.0.0.1:27017:27017"

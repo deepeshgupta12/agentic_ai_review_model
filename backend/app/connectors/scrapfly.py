@@ -65,12 +65,18 @@ class Scrapfly:
             raise FetchError(exc.code, "Scrapfly request failed", retryable=exc.retryable, status=exc.status) from exc
         reported = response.headers.get("x-scrapfly-api-cost")
         credits = int(reported) if reported and reported.isdigit() else None
-        if response.status in (401, 402):
+        # Scrapfly's codes (scrapfly.io/docs/scrape-api/getting-started, checked 15 Oct 2026): 401 no valid key,
+        # 402 payment, 403 the key lacks the permission, 422 a valid request whose scrape failed (for example the
+        # site's protection held; X-Scrapfly-Reject-Code says why), 429 quota or concurrency, 5xx and 504 its own.
+        if response.status in (401, 402, 403):
             raise ProviderError(
                 "access_refused", f"Scrapfly refused the request (HTTP {response.status})", retryable=False
             )
         if response.status == 429:
             raise ProviderError("quota_exhausted", "Scrapfly quota or concurrency used up", retryable=True)
+        if response.status == 422:  # D74: the page goes on to Firecrawl now instead of waiting for a retry
+            reason = response.headers.get("x-scrapfly-reject-code") or "HTTP 422"
+            raise ProviderError("unblock_failed", f"Scrapfly could not read the page: {reason}", retryable=False)
         if response.status >= 400:
             reason = response.headers.get("x-scrapfly-reject-code") or f"HTTP {response.status}"
             raise FetchError("scrape_failed", f"Scrapfly could not read the page: {reason}", retryable=True)

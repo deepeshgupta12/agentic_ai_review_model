@@ -9,15 +9,16 @@ review data the site itself publishes, never a model:
   the reviewer's type and relation ("Owner", "Lives in Project", "Agent in Project"), date and title. Locality
   reviews on the same page are not about the project and are not read.
 - 99acres: schema.org `Review` items; the project page labels the locality's reviews as the project's in its
-  markup, so any review whose words are among the page's locality reviews is left out.
+  markup, so a review whose words are among the page's locality reviews is kept titled as the locality's (D73).
 - NoBroker forum pages: the answers (`Comment`) of the `DiscussionForumPosting`; the question text is NoBroker's own
   summary and is left out.
 - Quora (D67): the answers in the page's `QAPage` markup, which is what a signed-out visitor is served.
 - Any other page (Housing.com and others): schema.org `Review` items whose reviewed item, when named, is the project.
 
-Left out and counted: reviews written by agents or marked sponsored, locality reviews, empty or very short texts,
-and duplicates. Reviewer names are never kept: only the role the platform's badge states (owner, resident, broker),
-or unknown.
+Reviews written by agents or dealers are kept with their badge (role broker), and 99acres' locality reviews with a
+title saying so, for the moderator to decide (D73). Left out and counted: reviews marked sponsored, empty or very
+short texts, and duplicates. Reviewer names are never kept: only the role the platform's badge states (owner,
+resident, broker), or unknown.
 """
 
 from __future__ import annotations
@@ -203,9 +204,6 @@ def magicbricks(page: str, url: str = "") -> PageReviews:
     listed = [i for i in listed if isinstance(i, dict)] if isinstance(listed, list) else []
     for item in listed:
         role, basis = _magicbricks_role(str(item.get("userType") or ""), str(item.get("userRelation") or ""))
-        if role == "broker":
-            out.drop("agent_written")
-            continue
         if str(item.get("isSponsered") or item.get("isSponsored") or "").lower() == "true":
             out.drop("sponsored")
             continue
@@ -280,34 +278,31 @@ def _role_from_name(name: str) -> tuple[str, str]:
     return "unknown", "none"
 
 
+LOCALITY_TITLE = "A review of the locality, shown on the project's page"
+
+
 def ninety_nine_acres(page: str) -> PageReviews:
+    """The page's reviews. It marks up its locality's reviews as the project's: they are kept too, titled as the
+    locality's, for the moderator to decide (D73); without the page state they cannot be told apart and are kept
+    untitled."""
     out = PageReviews()
     state = _json_after(page, NN_STATE)
-    candidates = [i for i in ld_items(page) if "Review" in _types(i) and i.get("reviewBody")]
-    if state is None and candidates:
-        # without the page state the locality reviews cannot be told apart: none is kept, and it is counted
-        for _ in candidates:
-            out.drop("locality_guard_unavailable")
-        return out
-    locality = _locality_texts(state)
+    locality = _locality_texts(state) if state is not None else set()
     seen: set[str] = set()
     for item in ld_items(page):
         if "Review" not in _types(item) or not item.get("reviewBody"):
             continue
         text = clean(item.get("reviewBody"))
-        if _digest(text) in locality:
-            out.drop("locality_review")
-            continue
+        title = LOCALITY_TITLE if _digest(text) in locality else None
         role, basis = _role_from_name(
             clean((item.get("author") or {}).get("name") if isinstance(item.get("author"), dict) else "")
         )
-        if role == "broker":
-            out.drop("agent_written")
-            continue
         _keep(
             out,
             seen,
-            PageReview(f"nn-{_digest(text)}", text, None, role, basis, dated(item.get("datePublished")), "user_review"),
+            PageReview(
+                f"nn-{_digest(text)}", text, title, role, basis, dated(item.get("datePublished")), "user_review"
+            ),
         )
     return out
 
@@ -383,9 +378,6 @@ def generic(page: str, project_names: list[str]) -> PageReviews:
         text = clean(item.get("reviewBody"))
         author = item.get("author")
         role, basis = _role_from_name(clean(author.get("name")) if isinstance(author, dict) else "")
-        if role == "broker":
-            out.drop("agent_written")
-            continue
         _keep(
             out,
             seen,

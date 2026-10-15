@@ -482,7 +482,10 @@ class Collector:
                 self._fetch_and_read(web, more, named, cov, outcomes, timeouts)
 
     def _known(self, url: str, outcomes: dict[str, int]) -> bool:
-        """A page already stored (where it landed after redirects) or withdrawn on request is not read again."""
+        """A page already stored (where it landed after redirects) or withdrawn on request is not read again. A portal
+        or Quora review page is read again on each later run, once per run: people add reviews to it, and its reviews
+        are split by the current rules (D73: the 15 Oct 2026 run left agents' reviews out, and a page read once was
+        never read again). Its unchanged text is the same revision; reviews already stored are not stored twice."""
         landed = self.db["ai_fetch_log"].find_one(
             {"url": url, "outcome": "fetched", "final_url": {"$type": "string"}}, sort=[("at", -1)]
         )
@@ -491,6 +494,12 @@ class Collector:
             {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "active"}, {"_id": 1}
         )
         if existing is not None:
+            review_page = policies.resolve(self.db, url).family in policies.REVIEW_PAGE_FAMILIES
+            read_this_run = self.db["ai_fetch_log"].find_one(
+                {"run_id": self.run_id, "url": {"$in": known}, "outcome": {"$regex": "^fetched"}}, {"_id": 1}
+            )
+            if review_page and read_this_run is None:
+                return False
             _count(outcomes, "already_read")
             return True
         withdrawn = self.db["ai_sources"].distinct(
@@ -1095,7 +1104,7 @@ class Collector:
             searches = cov["attempted_queries"]
             cov["note"] = (
                 f"no public post or reel naming the project was found ({searches} search{'es' if searches != 1 else ''}"
-                " of instagram.com through Brave)" + (f"; {cov['note']}" if cov["note"] else "")
+                " of instagram.com through Brave and Firecrawl search)" + (f"; {cov['note']}" if cov["note"] else "")
             )
         update_coverage(self.db, self.run_id, cov)
 

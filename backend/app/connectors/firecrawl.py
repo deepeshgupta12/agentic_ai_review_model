@@ -72,6 +72,8 @@ class Firecrawl:
             raise ProviderError("access_refused", "Firecrawl refused the API key (HTTP 401)", retryable=False)
         if response.status == 402:
             raise ProviderError("quota_exhausted", "Firecrawl plan credits are used up (HTTP 402)", retryable=False)
+        if response.status == 403:  # a feature not enabled on the plan, or terms not accepted (docs.firecrawl.dev)
+            raise ProviderError("access_refused", "Firecrawl refused the request (HTTP 403)", retryable=False)
         if response.status == 429:
             raise ProviderError("rate_limited", "Firecrawl rate limit (HTTP 429)", retryable=True)
         if response.status >= 400:

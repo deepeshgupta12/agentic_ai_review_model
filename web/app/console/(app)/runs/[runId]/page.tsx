@@ -9,7 +9,7 @@ import { SourceCard } from "@/components/SourceCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { BUTTON, Card, ErrorState, Notice, ProgressBar, Stat } from "@/components/ui";
 import { apiGet, currentUser, type Schemas } from "@/lib/api-server";
-import { ago, coverageState, duration, formatDay, formatTime, runBadge, runIsWorking, since, STOPPED } from "@/lib/format";
+import { ago, coverageState, duration, formatDay, formatTime, isSearchEngine, runBadge, runIsWorking, since, STOPPED } from "@/lib/format";
 import { can } from "@/lib/roles";
 
 import { RunProgress } from "./RunProgress";
@@ -67,7 +67,9 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
   const runnable = states.filter(({ c }) => c.status !== "access_pending");
   const finished = runnable.filter(({ state }) => state.text !== "queued" && state.text !== "running").length;
   const notAvailable = states.length - runnable.length;
-  const total = (key: "fetched" | "matched" | "analysed") => r.coverage.reduce((sum, c) => sum + c[key], 0);
+  // search results are addresses, not pages read: the totals count what the readers stored (D72)
+  const total = (key: "fetched" | "matched" | "analysed") =>
+    r.coverage.filter((c) => !isSearchEngine(c.connector_id)).reduce((sum, c) => sum + c[key], 0);
   const cards = [...states].sort(
     (a, b) => (a.c.status === "access_pending" ? 3 : (ORDER[a.state.text] ?? 1)) - (b.c.status === "access_pending" ? 3 : (ORDER[b.state.text] ?? 1)),
   );
@@ -181,7 +183,7 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
             <ProgressBar value={finished} max={runnable.length} tone={finished === runnable.length ? "ok" : "info"} live={working && r.stage === "collecting"} label="Sources done" size="sm" />
           </div>
         </Stat>
-        <Stat label="Read" icon="page" value={total("fetched")} hint="pages, posts and comments stored" tone="neutral" />
+        <Stat label="Read" icon="page" value={total("fetched")} hint="pages, posts and comments read" tone="neutral" />
         <Stat label="Matched" icon="pin" value={total("matched")} hint="belong to this project" tone="accent" />
         <Stat label="Analysed" icon="quote" value={total("analysed")} hint="read for first-person reviews" tone="info" />
         <Stat

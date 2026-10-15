@@ -94,33 +94,56 @@ class InstagramPublic(Connector):
         db: Database[dict[str, Any]],
         settings: Settings,
         brave: Connector | None,
+        firecrawl_search: Connector | None = None,
     ) -> None:
         self.scrapfly, self.robots, self.db = scrapfly, robots, db
-        self.settings, self.brave = settings, brave
+        self.settings, self.brave, self.firecrawl_search = settings, brave, firecrawl_search
 
     def discover(self, query: dict[str, Any], cursor: str | None) -> Page:
-        """Post and reel addresses for one query, from Brave restricted to instagram.com (metadata only)."""
-        if self.brave is None:
-            raise ProviderError("access_pending", "discovery needs the Brave Search key", retryable=False)
-        page = self.brave.discover({**query, "query_text": f"site:instagram.com {query['query_text']}"}, cursor)
-        items, skipped = [], 0
-        for hit in page.items:
-            found = post_url(hit.canonical_url)
-            if found is None:
-                skipped += 1
+        """Post and reel addresses for one query, from Brave and Firecrawl search restricted to instagram.com
+        (metadata only). Brave's index holds few Instagram posts (15 Oct 2026: none for DLF Privana or Conscient
+        Parq), so Firecrawl's is searched too when its key is configured (D74); each post is listed once."""
+        engines = [e for e in (self.brave, self.firecrawl_search) if e is not None]
+        if not engines:
+            raise ProviderError("access_pending", "discovery needs the Brave or Firecrawl key", retryable=False)
+        items: list[Item] = []
+        seen: set[str] = set()
+        skipped = attempted = 0
+        failures: list[ProviderError] = []
+        for engine in engines:
+            try:
+                page = engine.discover({**query, "query_text": f"site:instagram.com {query['query_text']}"}, cursor)
+            except ProviderError as exc:
+                failures.append(exc)
                 continue
-            items.append(
-                Item(
-                    connector_id=self.id,
-                    native_id=found[1],
-                    canonical_url=found[0],
-                    source_kind="search_result",
-                    capture_level="metadata_only",
-                    title=hit.title,
-                    publication_date=hit.publication_date,
+            attempted += page.attempted
+            for hit in page.items:
+                found = post_url(hit.canonical_url)
+                if found is None:
+                    skipped += 1
+                    continue
+                if found[0] in seen:
+                    continue
+                seen.add(found[0])
+                items.append(
+                    Item(
+                        connector_id=self.id,
+                        native_id=found[1],
+                        canonical_url=found[0],
+                        source_kind="search_result",
+                        capture_level="metadata_only",
+                        title=hit.title,
+                        publication_date=hit.publication_date,
+                    )
                 )
-            )
-        return Page(items=items, next_cursor=page.next_cursor, skipped={"not_a_post": skipped} if skipped else {})
+        if failures and len(failures) == len(engines):
+            raise failures[0]
+        return Page(
+            items=items,
+            next_cursor=None,
+            attempted=attempted,
+            skipped={"not_a_post": skipped} if skipped else {},
+        )
 
     def fetch_item(self, ref: str, run_id: str | None = None) -> Item:
         """Read one public post through Scrapfly. `ref` is the post address or its shortcode."""
@@ -153,6 +176,9 @@ class InstagramPublic(Connector):
             log_fetch(self.db, {**entry, "outcome": "quota_exhausted"})
             raise
         except ProviderError as exc:
+            if exc.code == "unblock_failed":  # Scrapfly could not get through for this post only (HTTP 422)
+                log_fetch(self.db, {**entry, "outcome": "error:scrape_failed"})
+                raise FetchError("scrape_failed", exc.message, retryable=True) from exc
             log_fetch(
                 self.db, {**entry, "outcome": "provider_refused" if exc.code == "access_refused" else "provider_quota"}
             )

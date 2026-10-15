@@ -5,6 +5,14 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Agents' reviews for the moderator, refused pages read, Instagram searched twice — 15 October 2026 (after the DLF Privana run)
+
+- **Reviews that were dropped now reach the moderator** (D73): agents' and dealers' reviews, sales talk and locality reviews are kept and marked ("agent, dealer or sales talk"; the aspect location), positive and negative alike; the moderator accepts or rejects each. Before, 15 MagicBricks reviews and 2 99acres locality reviews of DLF Privana were left out, and the model left out sales talk and views of the locality.
+- **Portal and Quora review pages are read on every run,** so new reviews are collected and nothing left out by an older rule is lost; no review is stored twice (D73).
+- **Refused pages are read through Firecrawl** when Scrapfly cannot or may not read them, up to 20 pages a run (D74). Housing.com and most 99acres pages refused the reader.
+- **Instagram posts are searched through Brave and Firecrawl search** (D74).
+- **Default look-back of 120 days** (D74).
+
 ## More reviews found, the right pages kept, and a new console look — 15 October 2026 (after the Conscient Parq run)
 
 - **Why the Conscient Parq run found nothing:** 52 of the 61 pages read were about something else (Parq Casino, parking apps, the developer's other projects); the project's MagicBricks page went to review because its "similar projects" box named another project; a page about another project was accepted from its sidebar; the model read a page's menu. All fixed: every page read must name the project in its title or address, a page is about the project its title names, and the model reads the part of a page that names the project (D71).

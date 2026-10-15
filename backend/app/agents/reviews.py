@@ -2,8 +2,9 @@
 
 The model proposes first-person reviews from single sources; the backend decides what a moderator sees.
 Sources offered: comments, forum posts, portal user reviews (one record per review, D68), and the speech of videos
-and shorts, when their evidence is eligible, their family's current policy allows quotation and their author is not a
-broker or the developer. Blog posts are not offered (D68: on these projects they are brokers' and builders' writing).
+and shorts, when their evidence is eligible, their family's current policy allows quotation and their author is not
+the developer (an agent's or dealer's review is offered and kept, marked, D73). Blog posts are not offered (D68: on
+these projects they are brokers' and builders' writing).
 The model sees each source's platform and the reviewer's role as the platform badges it (never a name).
 Web pages kept as `forum_thread` mix the page author with commenters in one text, so no span of them can be credited
 to one person; they are left out until a connector stores posts one by one. On-screen text and frames are not
@@ -15,7 +16,8 @@ The model sees handles (s1, e1, ...), never IDs. The backend then:
   `punctuation_normalised` must keep every word, `shortened` may only leave out whole sentences; `translated` is
   only from a language other than English and may only state numbers the original or its kept translation states;
   the moderator sees the original beside every translation;
-- drops reviews holding a phone number or e-mail address, broker or developer perspectives, and over-long text;
+- drops reviews holding a phone number or e-mail address, official records, and over-long text; an agent's or
+  dealer's review is kept with the perspective broker_or_developer, which the console shows (D73);
 - sets the credit line (`speaker_label`) from the perspective and source kind, and the construction-status flags
   (D27) from the perspective and the status in force on the source's date; a flagged review cannot be approved.
 Reviews get stable IDs from their source and spans; a changed rendering is a new pending revision.
@@ -46,7 +48,8 @@ from app.evidence.retrieval import _translation_of
 from app.sources import policies
 
 AGENT_ID = "A11_review_curator"
-PROMPT_VERSION = "a11_review_curator.1.1"  # 1.1: portal reviews, platform and badge, sales pitches (D68)
+# 1.1: portal reviews, platform and badge, sales pitches (D68); 1.2: agents' reviews kept, marked (D73)
+PROMPT_VERSION = "a11_review_curator.1.2"
 SCHEMA_REF = "agents.schema.json#/$defs/ReviewCandidates"
 SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"
@@ -62,8 +65,11 @@ OPEN_STATUSES = ("pending", "changes_requested")
 
 REVIEW_KINDS = {"comment", "forum_post", "user_review", "video", "short"}
 SPOKEN_KINDS = {"video", "short"}
-EXCLUDED_ROLES = {"broker", "developer_official"}
-NOT_A_REVIEW = {"broker_or_developer", "official_record"}
+# The developer's own statements and registry records are not anyone's review. A review written by an agent or
+# dealer is kept, marked by its perspective, for the moderator to decide (D73: product owner, 15 Oct 2026, "they could
+# have given good reviews and negative reviews as well").
+EXCLUDED_ROLES = {"developer_official"}
+NOT_A_REVIEW = {"official_record"}
 SPEAKER = {
     "resident_experience": "a_resident",
     "owner_awaiting_possession": "an_owner_awaiting_possession",
