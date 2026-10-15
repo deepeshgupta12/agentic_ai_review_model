@@ -68,8 +68,8 @@
    "credential_env": [
     "FIRECRAWL_API_KEY"
    ],
-   "quota": "2 credits per 10 results, from FIRECRAWL_MONTHLY_CREDITS (shared with the Firecrawl page renderer)",
-   "cursor_method": "one request per planned query (FIRECRAWL_SEARCH_RESULTS results), within the run's look-back window",
+   "quota": null,
+   "cursor_method": "one request per planned query (FIRECRAWL_SEARCH_RESULTS results, 2 credits per 10 from FIRECRAWL_MONTHLY_CREDITS, shared with the Firecrawl renderer), within the run's look-back window",
    "deletion_method": "Not applicable: search results are discovery metadata; pages are re-read by the web reader",
    "demonstration": "A real Firecrawl search for a supplied project returns pages naming it",
    "status": "access_pending",
