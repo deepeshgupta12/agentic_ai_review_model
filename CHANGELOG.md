@@ -5,6 +5,14 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## More reviews found, the right pages kept, and a new console look — 15 October 2026 (after the Conscient Parq run)
+
+- **Why the Conscient Parq run found nothing:** 52 of the 61 pages read were about something else (Parq Casino, parking apps, the developer's other projects); the project's MagicBricks page went to review because its "similar projects" box named another project; a page about another project was accepted from its sidebar; the model read a page's menu. All fixed: every page read must name the project in its title or address, a page is about the project its title names, and the model reads the part of a page that names the project (D71).
+- **More sources (D72):** Firecrawl search runs beside Brave with the same searches, and searches the portals' project pages, where the reviews are, instead of single-flat listings.
+- **The run's look-back now reaches the searches;** before, every run searched only the last 90 days whatever was chosen.
+- **Said in words:** a portal page with a rating but no review text, and an Instagram search that finds no post.
+- **Console redesign:** dark top bar, project header with the four-step flow, pill tabs, headline numbers, a stepper and a card per source with its own live progress bar, and source cards to choose when starting a run.
+
 ## Failures handled honestly, live progress, and fixes from four audits — 14 October 2026 (after the first live run)
 
 - **The first live run's failure:** a review task with 36 sources was cut off at its output limit and the run ended as "insufficient evidence". Now a task the model cannot answer whole is split down to single passages; what still fails is skipped and reported; anything else stops the run so it can be continued (D70). Review tasks hold at most 12 sources.

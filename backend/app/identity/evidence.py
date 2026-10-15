@@ -5,6 +5,7 @@ Eligibility is computed when used, never stored, by the shared rule in app.evide
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from pymongo.client_session import ClientSession
@@ -29,6 +30,23 @@ def segment_bounds(segment_key: str, text_length: int) -> tuple[int, int] | None
     return (start, end) if 0 <= start < end <= text_length else None
 
 
+def densest_window(text: str, name: str | None) -> tuple[int, int]:
+    """The EVIDENCE_MAX_CHARS stretch of a long page that names the project most often, from the start of the line
+    of a mention: the opening of a page is mostly its menu (15 Oct 2026: the model read a portal's navigation and
+    found no review). The start of the page when the name is not found."""
+    if not name:
+        return 0, EVIDENCE_MAX_CHARS
+    mentions = [m.start() for m in re.finditer(re.escape(name), text, flags=re.IGNORECASE)]
+    best, best_count = 0, 0
+    for at in mentions:
+        line = text.rfind("\n", max(0, at - 300), at)
+        start = min(line + 1 if line != -1 else max(0, at - 300), len(text) - EVIDENCE_MAX_CHARS)
+        count = sum(1 for m in mentions if start <= m < start + EVIDENCE_MAX_CHARS)
+        if count > best_count:
+            best, best_count = start, count
+    return best, best + EVIDENCE_MAX_CHARS
+
+
 def create_link_evidence(
     db: Database[dict[str, Any]],
     link: dict[str, Any],
@@ -45,6 +63,8 @@ def create_link_evidence(
     if existing is not None:
         return existing
     start, end = bounds
+    if link["segment_key"] == "whole" and len(text) > EVIDENCE_MAX_CHARS:
+        start, end = densest_window(text, (link.get("match") or {}).get("matched_alias"))
     evidence_id = new_id("evd")
     anchor = text_anchor(text, start, end)
     doc = {

@@ -24,8 +24,11 @@ export function AutoRefresh({ active, seconds = 5 }: { active: boolean; seconds?
   }, [active, pending, visible, seconds, router]);
 
   return active ? (
-    <span role="status" className="inline-flex items-center gap-1 text-xs text-ink-muted" data-testid="live">
-      <span aria-hidden="true" className="inline-block h-2 w-2 animate-pulse rounded-full bg-ok" />
+    <span role="status" className="inline-flex items-center gap-1.5 rounded-full bg-ok-soft px-2.5 py-1 text-xs font-medium text-ok ring-1 ring-inset ring-ok/20" data-testid="live">
+      <span aria-hidden="true" className="relative inline-flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-ok opacity-60" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-ok" />
+      </span>
       updating live
     </span>
   ) : null;

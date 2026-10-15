@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { BUTTON } from "@/components/ui";
 import { newKey, send } from "@/lib/api-browser";
 
 type Props = {
@@ -26,11 +27,7 @@ type Props = {
   testId?: string;
 };
 
-const TONES = {
-  primary: "bg-accent text-white border-accent",
-  danger: "border-danger text-danger bg-surface",
-  neutral: "border-line text-ink bg-surface",
-};
+const TONES = { primary: BUTTON.primary, danger: BUTTON.danger, neutral: BUTTON.secondary };
 
 /** A button that opens a confirmation dialog and sends one mutation. A 409 never overwrites anything: it says what
  * changed and offers a reload (docs/09 conflicts). */
@@ -79,20 +76,20 @@ export function ActionDialog(props: Props) {
           setConflict(false);
           dialog.current?.showModal();
         }}
-        className={`rounded border px-2.5 py-1 text-[13px] font-medium disabled:cursor-not-allowed disabled:opacity-50 ${TONES[tone]}`}
+        className={TONES[tone]}
       >
         {label}
       </button>
-      <dialog ref={dialog} aria-label={title} className="w-full max-w-lg rounded-lg border border-line p-0 backdrop:bg-black/30">
+      <dialog ref={dialog} aria-label={title} className="m-auto w-full max-w-lg rounded-xl border border-line p-0">
         <form
           method="dialog"
-          className="space-y-3 p-5"
+          className="space-y-4 p-6"
           onSubmit={(event) => {
             event.preventDefault();
             void confirm();
           }}
         >
-          <h2 className="text-base font-semibold">{title}</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
           {description ? <div className="text-ink-muted">{description}</div> : null}
           {reason !== "none" ? (
             <label className="block">
@@ -101,13 +98,13 @@ export function ActionDialog(props: Props) {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={3}
-                className="w-full rounded border border-line px-2 py-1"
+                className="w-full rounded border border-line-strong px-3 py-2"
                 required={reason === "required"}
               />
             </label>
           ) : null}
           {error ? (
-            <p role="alert" className="text-danger">
+            <p role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-danger">
               {error}
               {conflict ? (
                 <button type="button" className="ml-2 underline" onClick={() => router.refresh()}>
@@ -116,11 +113,11 @@ export function ActionDialog(props: Props) {
               ) : null}
             </p>
           ) : null}
-          <div className="flex justify-end gap-2">
-            <button type="button" className="rounded border border-line px-3 py-1" onClick={() => dialog.current?.close()}>
+          <div className="flex justify-end gap-2 border-t border-line pt-4">
+            <button type="button" className={BUTTON.secondary} onClick={() => dialog.current?.close()}>
               Cancel
             </button>
-            <button type="submit" disabled={busy} className={`rounded border px-3 py-1 font-medium disabled:opacity-60 ${TONES[tone]}`}>
+            <button type="submit" disabled={busy} className={TONES[tone]}>
               {busy ? "Working…" : label}
             </button>
           </div>

@@ -17,6 +17,7 @@ import json
 import logging
 import re
 import time
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 from urllib.parse import urlsplit
@@ -30,7 +31,7 @@ from app import audit
 from app.agents.gateway import ModelGateway, gateway_for
 from app.config import Settings, get_settings
 from app.connectors.base import Page, ProviderError
-from app.connectors.portal_reviews import page_reviews, review_item
+from app.connectors.portal_reviews import listing_page, page_reviews, review_item
 from app.connectors.reddit import comment_item as reddit_comment_item
 from app.connectors.reddit import post_item as reddit_post_item
 from app.connectors.registry import build
@@ -40,6 +41,7 @@ from app.db import run_in_transaction, utcnow
 from app.errors import ApiError
 from app.identity.links import ACTIVE_STATUSES
 from app.identity.queries import build_query_plan
+from app.identity.rules import CITY_SYNONYMS
 from app.identity.service import identify_in_context, identify_metadata, identify_source
 from app.identity.text import normalise_text
 from app.ids import new_id
@@ -52,8 +54,10 @@ from app.sources.store import Item, Stored, store_item, withdrawn_on_request
 logger = logging.getLogger(__name__)
 RUNS = "ai_runs"
 EVENTS = "ai_run_events"
+# The web group's search engines, in the order they run (D72: Firecrawl search beside Brave).
+SEARCH_ENGINES = ("brave_search", "firecrawl_search")
 GROUPS = {
-    "web": ("brave_search", "web_fetch"),
+    "web": (*SEARCH_ENGINES, "web_fetch"),
     "youtube_data_api": ("youtube_data_api",),
     "registry": ("harera_registry",),  # Step 08 (D53): dated primary records for verification
     "instagram": ("instagram_public",),  # Step 08 (D54): public posts through Scrapfly
@@ -178,8 +182,10 @@ def start_run(
             continue
         if connector_id not in runnable:
             coverage.append(_coverage(connector_id, "access_pending", "no credential or adapter configured; not run"))
-        elif connector_id == "web_fetch" and "brave_search" not in runnable:
-            coverage.append(_coverage(connector_id, "access_pending", "not run: no discovery source (brave_search)"))
+        elif connector_id == "web_fetch" and not set(SEARCH_ENGINES) & set(runnable):
+            coverage.append(
+                _coverage(connector_id, "access_pending", f"not run: no search engine ({', '.join(SEARCH_ENGINES)})")
+            )
         else:
             coverage.append(_coverage(connector_id, "partial", QUEUED))
     for group, members in GROUPS.items():
@@ -431,7 +437,13 @@ class Collector:
     def _queries(self, connector_id: str) -> list[dict[str, Any]]:
         reviews_only = self.settings.analysis_mode == "reviews"
         plan = build_query_plan(self.db, self.project_id, _registry(self.settings), reviews_only)["plan"]["queries"]
-        return [q for q in plan if q["connector_id"] == connector_id]
+        # the searches look back as far as the run does (the look-back chosen when it started), not the project's
+        # default: on 15 Oct 2026 a run of 90 days and one of 3650 searched the same 90 days
+        window = (self.db[RUNS].find_one({"_id": self.run_id}, {"window": 1}) or {}).get("window") or {}
+        days = None
+        if window.get("from") and window.get("to"):
+            days = max(1, round((window["to"] - window["from"]).total_seconds() / 86400))
+        return [{**q, "window_days": days or q["window_days"]} for q in plan if q["connector_id"] == connector_id]
 
     def _read_pages(
         self,
@@ -551,6 +563,9 @@ class Collector:
         found = page_reviews(page_source.source["canonical_url"], outcome.html, self._project_names())
         for reason, count in found.dropped.items():
             outcomes[f"reviews_left_out:{reason}"] = outcomes.get(f"reviews_left_out:{reason}", 0) + count
+        if not found.reviews and not found.dropped and not found.more_url:
+            # a portal page with a rating but no review text (a new project), said rather than left silent
+            _count(outcomes, "reviews_not_split:no_review_text_on_page")
         page_link = None
         if mine:
             page_link = self.db["ai_project_source_links"].find_one({"_id": mine[0]["link_id"]})
@@ -580,18 +595,27 @@ class Collector:
                 names.append(name)
         return names
 
-    def _name_keys(self) -> list[list[str]]:
-        """For the relevance test of search hits: each name's own words without the developer's ("DLF Privana" ->
-        "privana", "Conscient Parq" -> "parq"), so "Privana by DLF" and "DLF's Privana" count too."""
-        project = self.db["projects"].find_one({"_id": self.project_id}, {"developer": 1}) or {}
+    def _name_keys(self) -> NameKeys:
+        """For the relevance test of search hits (names_the_project): each name's words; the same words without the
+        developer's ("Conscient Parq" -> "parq"), which count only beside the project's place; and that place."""
+        project = self.db["projects"].find_one({"_id": self.project_id}) or {}
         developer = set(normalise_text(project.get("developer") or "").split())
-        keys = []
+        names: list[list[str]] = []
+        own: list[list[str]] = []
         for name in self._search_names():
             words = normalise_text(name).split()
-            own = [w for w in words if w not in developer] or words
-            if own not in keys:
-                keys.append(own)
-        return keys
+            if words and words not in names:
+                names.append(words)
+            short = [w for w in words if w not in developer]
+            if short and short != words and short not in own:
+                own.append(short)
+        places: list[str] = []
+        for value in (project.get("locality"), project.get("micromarket"), project.get("city")):
+            place = normalise_text(value or "")
+            for spelling in [place, *CITY_SYNONYMS.get(place, [])]:
+                if spelling and spelling not in places:
+                    places.append(spelling)
+        return NameKeys(names=names, own=own, places=places)
 
     def _project_names(self) -> list[str]:
         project = self.db["projects"].find_one({"_id": self.project_id}) or {}
@@ -602,105 +626,29 @@ class Collector:
     # --- web group: Brave discovery, then the web reader ---
 
     def run_web(self) -> None:
-        brave = self._build("brave_search")
+        """The web group: each search engine (Brave, Firecrawl search, D72) runs the planned queries; the hits that
+        name the project are read once each by the web reader, in the order found."""
         web = self._build("web_fetch")
-        brave_cov = _coverage("brave_search", "complete_for_query", None)
+        engines = [(cid, engine) for cid in SEARCH_ENGINES if (engine := self._build(cid)) is not None]
         web_cov = _coverage("web_fetch", "complete_for_query", None)
-        skipped: dict[str, int] = {}
         outcomes: dict[str, int] = {}
         to_read: list[tuple[str, bool]] = []
         errors: list[str] = []
-        # A portal or Quora hit is read only when its title or address names the project, and only a hit that names
-        # the project may use Scrapfly or Firecrawl: the first live run read 80 MagicBricks pages of other DLF
-        # projects for "DLF Privana" (14 Oct 2026).
+        searched = 0
+        if engines and web is not None:
+            self.progress(web_cov, "waiting for the search results", now=True)
         keys = self._name_keys()
-        if brave is not None:
-            queries = self._queries("brave_search")
-            if web is not None:
-                self.progress(web_cov, "waiting for the search results", now=True)
-            for number, query in enumerate(queries, 1):
-                self.check()
-                self.progress(brave_cov, f"search {number} of {len(queries)}", skipped, now=number == 1)
-                done_before = self.db[SEARCHES].find_one({"_id": f"{self.run_id}|{query['query_text']}"})
-                if done_before is not None:  # a retried job: this search was finished and paid for already
-                    to_read += [(url, named) for url, named in done_before["to_read"]]
-                    for key, count in done_before["skipped"].items():
-                        skipped[key] = skipped.get(key, 0) + count
-                    brave_cov["attempted_queries"] += done_before["attempted"]
-                    brave_cov["fetched"] += done_before["stored"]
-                    brave_cov["metadata_only"] += done_before["stored"]
-                    continue
-                found: list[tuple[str, bool]] = []
-                found_skipped: dict[str, int] = {}
-                attempted = stored_count = 0
-                st, cursor = self._state("brave_search", query["query_text"])
-                finished = False
-                while True:
-                    try:
-                        page = brave.discover(query, cursor)
-                    except ProviderError as exc:
-                        errors.append(exc.code)
-                        state.save(
-                            self.db,
-                            st,
-                            cursor=st["cursor"],
-                            coverage="partial",
-                            error={"code": exc.code, "message": exc.message, "retryable": exc.retryable},
-                        )
-                        brave_cov["status"] = "unavailable" if exc.code == "access_refused" else "partial"
-                        break
-                    attempted += page.attempted
-                    keep: list[tuple[Item, dict[str, Any]]] = []
-                    for item in page.items:
-                        resolution = policies.resolve(self.db, item.canonical_url)
-                        if resolution.family in ("youtube", "instagram_public", "reddit"):
-                            name = resolution.family.split("_")[0]
-                            _count(found_skipped, f"{name}_left_to_{name}_connector")
-                            continue
-                        if not resolution.may_collect or resolution.policy is None:
-                            _count(found_skipped, f"not_collected:{resolution.family or 'unknown'}")
-                            continue
-                        keep.append((item, resolution.policy))
-                        if resolution.family not in policies.WEB_FETCH_FAMILIES:
-                            continue
-                        named = names_the_project(item, keys)
-                        if resolution.family in policies.REVIEW_PAGE_FAMILIES and not named:
-                            _count(found_skipped, "not_read:no_project_name_in_title_or_address")
-                            continue
-                        found.append((item.canonical_url, named))
-                    done = page.next_cursor is None
-                    stored = self._store_page("brave_search", st, page, keep, done)
-                    stored_count += len(stored)
-                    st = state.get(self.db, "brave_search", self.project_id, query["query_text"])
-                    if done:
-                        finished = True
-                        break
-                    cursor = page.next_cursor
-                to_read += found
-                for key, count in found_skipped.items():
-                    skipped[key] = skipped.get(key, 0) + count
-                brave_cov["attempted_queries"] += attempted
-                brave_cov["fetched"] += stored_count
-                brave_cov["metadata_only"] += stored_count
-                if finished:
-                    self.db[SEARCHES].update_one(
-                        {"_id": f"{self.run_id}|{query['query_text']}"},
-                        {
-                            "$setOnInsert": {
-                                "run_id": self.run_id,
-                                "to_read": [[url, named] for url, named in found],
-                                "skipped": found_skipped,
-                                "attempted": attempted,
-                                "stored": stored_count,
-                                "at": utcnow(),
-                            }
-                        },
-                        upsert=True,
-                    )
-            brave_cov["last_success_at"] = utcnow() if brave_cov["attempted_queries"] else None
-            # the searches are done; the coverage stays partial until the pages are read, so a retried job reads them
-            self.progress(brave_cov, "searches done; reading the pages found", skipped, now=True)
-        brave_cov["note"] = _note(skipped, errors)
+        covs = []
+        for connector_id, engine in engines:
+            cov, found, failed = self._search(connector_id, engine, keys)
+            covs.append(cov)
+            errors += failed
+            searched += cov["attempted_queries"]
+            seen = {url for url, _ in to_read}
+            for url, named in found:
+                if url not in seen:
+                    to_read.append((url, named))
+                    seen.add(url)
         if web is not None:
             assert isinstance(web, WebFetch)
             # the paid fallbacks' allowances are per run: what earlier attempts of this run used is counted
@@ -710,7 +658,7 @@ class Collector:
             web.render_left = max(
                 0, self.settings.rendered_pages_per_run - self._fetch_log_count("^(fetched_rendered|render_)")
             )
-            if brave is not None and not brave_cov["attempted_queries"] and errors:
+            if engines and not searched and errors:
                 web_cov.update(
                     status="unavailable", note=f"not run: every search failed ({', '.join(sorted(set(errors)))})"
                 )
@@ -724,10 +672,114 @@ class Collector:
                     or outcomes.get("error:internal")
                 ):
                     web_cov["status"] = "partial"  # pages that may be read next time, or were left unread
-        if brave is not None:
-            update_coverage(self.db, self.run_id, brave_cov)
-        if web is not None and brave is not None:
+        for cov in covs:
+            update_coverage(self.db, self.run_id, cov)
+        if web is not None and engines:
             update_coverage(self.db, self.run_id, web_cov)
+
+    def _search(
+        self, connector_id: str, engine: Any, keys: NameKeys
+    ) -> tuple[dict[str, Any], list[tuple[str, bool]], list[str]]:
+        """One search engine's planned queries: its coverage, the hits worth reading and its errors. A hit is read
+        only when its title or address names the project (names_the_project): the first live run read 80 MagicBricks
+        pages of other DLF projects for "DLF Privana" (14 Oct 2026), the 15 Oct run 52 pages about Parq Casino,
+        "conscience" and other projects for "Conscient Parq". A finished search is recorded, so a retried job reuses
+        it instead of paying again."""
+        cov = _coverage(connector_id, "complete_for_query", None)
+        skipped: dict[str, int] = {}
+        errors: list[str] = []
+        to_read: list[tuple[str, bool]] = []
+        queries = self._queries(connector_id)
+        for number, query in enumerate(queries, 1):
+            self.check()
+            self.progress(cov, f"search {number} of {len(queries)}", skipped, now=number == 1)
+            # Brave's records keep their earlier key, so a run started before D72 still finds them
+            prefix = "" if connector_id == "brave_search" else f"{connector_id}|"
+            record = f"{self.run_id}|{prefix}{query['query_text']}"
+            done_before = self.db[SEARCHES].find_one({"_id": record})
+            if done_before is not None:  # a retried job: this search was finished and paid for already
+                to_read += [(url, named) for url, named in done_before["to_read"]]
+                for key, count in done_before["skipped"].items():
+                    skipped[key] = skipped.get(key, 0) + count
+                cov["attempted_queries"] += done_before["attempted"]
+                cov["fetched"] += done_before["stored"]
+                cov["metadata_only"] += done_before["stored"]
+                continue
+            found: list[tuple[str, bool]] = []
+            found_skipped: dict[str, int] = {}
+            attempted = stored_count = 0
+            st, cursor = self._state(connector_id, query["query_text"])
+            finished = False
+            while True:
+                try:
+                    page = engine.discover(query, cursor)
+                except ProviderError as exc:
+                    errors.append(exc.code)
+                    state.save(
+                        self.db,
+                        st,
+                        cursor=st["cursor"],
+                        coverage="partial",
+                        error={"code": exc.code, "message": exc.message, "retryable": exc.retryable},
+                    )
+                    cov["status"] = "unavailable" if exc.code == "access_refused" else "partial"
+                    break
+                attempted += page.attempted
+                keep: list[tuple[Item, dict[str, Any]]] = []
+                for item in page.items:
+                    resolution = policies.resolve(self.db, item.canonical_url)
+                    if resolution.family in ("youtube", "instagram_public", "reddit"):
+                        name = resolution.family.split("_")[0]
+                        _count(found_skipped, f"{name}_left_to_{name}_connector")
+                        continue
+                    if not resolution.may_collect or resolution.policy is None:
+                        _count(found_skipped, f"not_collected:{resolution.family or 'unknown'}")
+                        continue
+                    keep.append((item, resolution.policy))
+                    if resolution.family not in policies.WEB_FETCH_FAMILIES:
+                        continue
+                    if listing_page(item.canonical_url):  # one flat for sale: never anyone's review (D72)
+                        _count(found_skipped, "not_read:single_listing_page")
+                        continue
+                    named = names_the_project(item, keys)
+                    if not named:  # every page read must name the project (15 Oct 2026: 52 of 61 did not)
+                        _count(found_skipped, "not_read:no_project_name_in_title_or_address")
+                        continue
+                    found.append((item.canonical_url, named))
+                done = page.next_cursor is None
+                stored = self._store_page(connector_id, st, page, keep, done)
+                stored_count += len(stored)
+                st = state.get(self.db, connector_id, self.project_id, query["query_text"])
+                if done:
+                    finished = True
+                    break
+                cursor = page.next_cursor
+            to_read += found
+            for key, count in found_skipped.items():
+                skipped[key] = skipped.get(key, 0) + count
+            cov["attempted_queries"] += attempted
+            cov["fetched"] += stored_count
+            cov["metadata_only"] += stored_count
+            if finished:
+                self.db[SEARCHES].update_one(
+                    {"_id": record},
+                    {
+                        "$setOnInsert": {
+                            "run_id": self.run_id,
+                            "to_read": [[url, named] for url, named in found],
+                            "skipped": found_skipped,
+                            "attempted": attempted,
+                            "stored": stored_count,
+                            "at": utcnow(),
+                        }
+                    },
+                    upsert=True,
+                )
+        cov["last_success_at"] = utcnow() if cov["attempted_queries"] else None
+        # the searches are done; the coverage stays partial until the pages are read, so a retried job reads them
+        self.progress(cov, "searches done; reading the pages found", skipped, now=True)
+        cov["note"] = _note(skipped, errors)
+        return cov, to_read, errors
 
     def _fetch_log_count(self, outcomes: str) -> int:
         return self.db["ai_fetch_log"].count_documents({"run_id": self.run_id, "outcome": {"$regex": outcomes}})
@@ -1039,6 +1091,12 @@ class Collector:
                 cov["matched"] += 1
         cov["last_success_at"] = utcnow() if cov["fetched"] else None
         cov["note"] = _note(counts, errors)
+        if not posts and not errors:  # say it in words, never an empty note (15 Oct 2026)
+            searches = cov["attempted_queries"]
+            cov["note"] = (
+                f"no public post or reel naming the project was found ({searches} search{'es' if searches != 1 else ''}"
+                " of instagram.com through Brave)" + (f"; {cov['note']}" if cov["note"] else "")
+            )
         update_coverage(self.db, self.run_id, cov)
 
     # --- Reddit group: public threads naming the project, through PullPush (D67, D68) ---
@@ -1150,18 +1208,33 @@ class Collector:
                 cov["matched"] += 1
 
 
-def names_the_project(item: Item, keys: list[list[str]]) -> bool:
-    """Whether a search hit's title or address carries the project's own name words (Collector._name_keys): all words
-    of one key, as words or run together ("dlfprivana"). Portal and Quora addresses are made from the page title
-    (magicbricks.com/dlf-privana-south-sector-77-gurgaon-pdpid-...). A title in Devanagari cannot be judged this way
-    and is read."""
+@dataclass(frozen=True)
+class NameKeys:
+    """The project's names for the relevance test of search hits (Collector._name_keys)."""
+
+    names: list[list[str]]
+    own: list[list[str]]
+    places: list[str]
+
+
+def names_the_project(item: Item, keys: NameKeys) -> bool:
+    """Whether a search hit's title or address names the project, so it is worth reading: all words of one of its
+    names, in any order ("Privana by DLF"), or run together as an address slug has them ("dlfprivana"). A name
+    without the developer's word ("Parq") counts only beside the project's place ("Parq, Sector 80 Gurgaon"): alone
+    it brought Parq Casino, Parqet and parking apps into the 15 Oct 2026 run. Portal and Quora addresses are made
+    from the page title. A title in Devanagari cannot be judged this way and is read."""
     title = item.title or ""
     if any("\u0900" <= ch <= "\u097f" for ch in title):
         return True
     text = f"{title} {re.sub(r'[^0-9A-Za-z]+', ' ', item.canonical_url)}"
-    words = set(normalise_text(text).split())
+    spaced = f" {normalise_text(text)} "
+    words = set(spaced.split())
     compact = re.sub(r"[^0-9a-z]+", "", text.lower())
-    return any(key and (all(w in words for w in key) or "".join(key) in compact) for key in keys)
+    for name in keys.names:
+        if all(w in words for w in name) or (len(name) > 1 and "".join(name) in compact):
+            return True
+    placed = any(f" {place} " in spaced for place in keys.places)
+    return placed and any(all(w in words for w in own) for own in keys.own)
 
 
 def _reddit_after(db: Database[dict[str, Any]], run_id: str) -> Any:

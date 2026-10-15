@@ -1,18 +1,30 @@
 @import "tailwindcss";
 
-/* Design tokens (D25, docs/09). Status colours always come with text. */
+/* Design tokens (D25, docs/09). Status colours always come with text; each tone has a strong colour for text and a
+ * soft one for the background behind it. */
 :root {
   --ink: #0f172a;
-  --ink-muted: #475569;
+  --ink-muted: #526077;
   --surface: #ffffff;
-  --surface-sunken: #f8fafc;
+  --surface-sunken: #f2f5f9;
   --line: #e2e8f0;
+  --line-strong: #cbd5e1;
   --accent: #0f766e;
+  --accent-strong: #115e59;
+  --accent-soft: #e3f4f1;
   --ok: #15803d;
+  --ok-soft: #e5f5ea;
   --warn: #b45309;
+  --warn-soft: #fdf2e0;
   --danger: #b91c1c;
+  --danger-soft: #fdeaea;
   --idle: #64748b;
+  --idle-soft: #eef2f6;
+  --info: #1d4ed8;
+  --info-soft: #e6edfd;
   --fixture: #a21caf;
+  --shell: #0b1324;
+  --shell-line: #1e293b;
 }
 
 @theme inline {
@@ -21,14 +33,43 @@
   --color-surface: var(--surface);
   --color-surface-sunken: var(--surface-sunken);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
   --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
   --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --color-idle: var(--idle);
+  --color-idle-soft: var(--idle-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
   --color-fixture: var(--fixture);
+  --color-shell: var(--shell);
+  --color-shell-line: var(--shell-line);
   --font-sans: var(--font-inter), var(--font-devanagari), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+/* Softer corners everywhere: bare `rounded` (buttons, inputs, chips) and `rounded-lg` (panels, tables). */
+@theme {
+  --radius: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 2px 6px -1px rgb(15 23 42 / 0.06);
+  --shadow-lift: 0 4px 10px -2px rgb(15 23 42 / 0.08), 0 12px 28px -8px rgb(15 23 42 / 0.12);
+}
+
+@keyframes stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 16px 0;
+  }
 }
 
 body {
@@ -37,9 +78,85 @@ body {
   font-family: var(--font-sans);
   font-size: 14px;
   line-height: 20px;
+  font-feature-settings: "cv11", "ss01";
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.011em;
+  }
+
+  a {
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea {
+    background-color: var(--surface);
+    transition:
+      border-color 150ms,
+      box-shadow 150ms;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+    outline: none;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--accent);
+  }
+
+  dialog {
+    box-shadow:
+      0 4px 10px -2px rgb(15 23 42 / 0.08),
+      0 24px 48px -12px rgb(15 23 42 / 0.25);
+  }
+
+  dialog::backdrop {
+    background: rgb(15 23 42 / 0.45);
+    backdrop-filter: blur(2px);
+  }
 }
 
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* A bar that is still filling (a source at work): moving stripes over its colour. */
+.bar-live {
+  background-image: linear-gradient(
+    135deg,
+    rgb(255 255 255 / 0.28) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgb(255 255 255 / 0.28) 50%,
+    rgb(255 255 255 / 0.28) 75%,
+    transparent 75%,
+    transparent
+  );
+  background-size: 16px 16px;
+  animation: stripes 1s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar-live,
+  .animate-pulse,
+  .animate-ping {
+    animation: none;
+  }
 }

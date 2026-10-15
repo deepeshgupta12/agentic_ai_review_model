@@ -97,16 +97,78 @@ export function coverageState(c: Coverage, stage?: string): { status: string; te
   if (open && stage && stage !== "collecting") {
     return { status: "partial", text: "not finished", detail: note.startsWith("in progress: ") ? note.slice(13) : null };
   }
-  if (c.status === "partial" && note === "queued") return { status: "pending", text: "queued", detail: null };
+  if (c.status === "partial" && note === "queued") return { status: "queued", text: "queued", detail: null };
   if (c.status === "partial" && note.startsWith("in progress: ")) {
     return { status: "running", text: "running", detail: note.slice("in progress: ".length) };
   }
-  return { status: c.status, text: label(c.status), detail: c.note };
+  return { status: c.status, text: c.status === "complete_for_query" ? "complete" : label(c.status), detail: c.note };
+}
+
+/** What a working source says it is doing, split from its counts so far ("24 of up to 80 pages read; fetched: 20;
+ * refused: 4"), with the step it is on when the note names one ("search 3 of 9", "thread 2 of 10", "post 4 of up
+ * to 12"). The numbers come from the backend's own note (Collector.progress); nothing is estimated. */
+export function activity(detail: string | null | undefined): {
+  doing: string;
+  step: { done: number; total: number; upTo: boolean } | null;
+  counts: { key: string; value: string }[];
+} {
+  const parts = (detail ?? "").split("; ").filter(Boolean);
+  const isCount = (part: string) => /^[^:]+(:[^:]+)?: .+$/.test(part) && !/ of /.test(part);
+  const lead = parts.findIndex(isCount);
+  const said = lead === -1 ? parts : parts.slice(0, lead);
+  const doing = said.join("; ");
+  const match = doing.match(/(\d+) of (up to )?(\d+)/);
+  const step = match ? { done: Number(match[1]), total: Number(match[3]), upTo: Boolean(match[2]) } : null;
+  const counts = parts.slice(said.length).map((part) => {
+    const at = part.lastIndexOf(": ");
+    return at > 0 ? { key: part.slice(0, at), value: part.slice(at + 2) } : { key: part, value: "" };
+  });
+  return { doing, step, counts };
+}
+
+/** A note's count key in words: "not_collected:linkedin" reads "not collected · linkedin". */
+export function countLabel(key: string): string {
+  return label(key).replace(":", " · ");
+}
+
+/** A span of time in minutes and hours ("under a minute", "7 min", "2 h 5 min", "3 days"). */
+export function duration(ms: number): string {
+  if (!Number.isFinite(ms) || ms < 60_000) return "under a minute";
+  const minutes = Math.floor(ms / 60_000);
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return minutes % 60 ? `${hours} h ${minutes % 60} min` : `${hours} h`;
+  return `${Math.floor(hours / 24)} days`;
+}
+
+/** Milliseconds from `start` to `end` (now when omitted). */
+export function since(start: string, end?: string): number {
+  return (end ? Date.parse(end) : Date.now()) - Date.parse(start);
+}
+
+/** How long ago, for "updated 3 min ago". */
+export function ago(value: string | null | undefined, now = Date.now()): string {
+  if (!value) return "never";
+  const at = Date.parse(value);
+  if (Number.isNaN(at)) return value;
+  const span = now - at;
+  return span < 60_000 ? "just now" : `${duration(span)} ago`;
+}
+
+/** A run's stage as a badge: a stage the system works in shows as working only while it does; a stopped analysis
+ * says "stopped" (the stored stage stays analysing or formatting until someone continues it). */
+export function runBadge(run: RunLike): { status: string; text: string } {
+  if (STOPPED.test(run.outcome_note ?? "")) return { status: "partial", text: "stopped" };
+  if (["collecting", "analysing", "formatting", "publishing"].includes(run.stage) && !runIsWorking(run)) {
+    return { status: run.stage === "formatting" ? "needs_review" : "partial", text: stageLabel(run.stage) };
+  }
+  return { status: run.stage, text: stageLabel(run.stage) };
 }
 
 /** What each connector is, for people who did not build it. */
 export const CONNECTOR_NAMES: Record<string, string> = {
   brave_search: "Brave web search",
+  firecrawl_search: "Firecrawl web search",
   web_fetch: "Web reader",
   firecrawl: "Firecrawl page renderer",
   playwright_fetch: "Browser page renderer",
@@ -131,8 +193,9 @@ export const RUN_SOURCES = [
   {
     key: "web",
     label: "Review pages on the web",
-    detail: "Brave finds the project's pages on MagicBricks, 99acres, Housing.com, NoBroker, Quora and forums; the web reader keeps each person's review.",
-    connectors: ["brave_search", "web_fetch"],
+    detail:
+      "Brave and Firecrawl search find the project's pages on MagicBricks, 99acres, Housing.com, NoBroker, Quora and forums, and the portals' project pages; the web reader keeps each person's review.",
+    connectors: ["brave_search", "firecrawl_search", "web_fetch"],
   },
   { key: "youtube", label: "YouTube", detail: "Videos about the project and their comments.", connectors: ["youtube_data_api"] },
   { key: "reddit", label: "Reddit", detail: "Posts and comments naming the project, through the free PullPush archive.", connectors: ["reddit_public", "reddit_api"] },

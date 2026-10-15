@@ -105,6 +105,7 @@ def connector_health(
         "brave_search": ("brave_search", "requests"),
         "youtube_data_api": ("youtube_data_api", "search"),
         "firecrawl": ("firecrawl", "credits"),
+        "firecrawl_search": ("firecrawl", "credits"),
         "instagram_public": ("scrapfly", "credits"),
     }
     now = utcnow()

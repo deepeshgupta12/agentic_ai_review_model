@@ -588,7 +588,7 @@ def test_coverage_shows_queued_then_running_then_final(db, settings, world):
 
 
 def test_a_portal_page_of_another_project_is_not_read(db, settings, world, monkeypatch):
-    from app.sources.collection import names_the_project
+    from app.sources.collection import NameKeys, names_the_project
     from app.sources.store import Item
 
     def hit(url, title):
@@ -601,7 +601,7 @@ def test_a_portal_page_of_another_project_is_not_read(db, settings, world, monke
             title=title,
         )
 
-    names = [["quillon", "residences"]]
+    names = NameKeys(names=[["quillon", "residences"]], own=[], places=["sector 102", "gurgaon"])
     assert names_the_project(hit("https://www.magicbricks.com/quillon-residences-sector-102-pdpid-1", "Reviews"), names)
     assert names_the_project(hit("https://www.quora.com/Is-it-good", "Is Quillon Residences worth it?"), names)
     assert not names_the_project(

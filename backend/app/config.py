@@ -120,6 +120,8 @@ class Settings(BaseSettings):
     rendered_pages_per_run: int = Field(default=10, ge=0)
     firecrawl_monthly_credits: int = Field(default=500, ge=0)
     firecrawl_credits_per_page: int = Field(default=1, ge=1)
+    # Firecrawl search (D72): results per query, 2 credits per 10, from the same monthly Firecrawl credits.
+    firecrawl_search_results: int = Field(default=20, ge=1, le=100)
     web_pages_per_run: int = Field(default=80, ge=0)
     # A collect job (one source group) stops where it is after this long, keeping what it stored (audit, 14 Oct 2026).
     collect_job_max_minutes: int = Field(default=30, ge=1)  # 40 until D61 opened the generic web route

@@ -5,8 +5,9 @@ Uses the project name, approved aliases (never unapproved proposals, D17), phase
 with the developer or locality. Exclusions are the configured negative keywords and rejected proposals.
 Queries are deduplicated and capped per connector. The result has the DiscoveryPlan shape (A02 output)
 so collectors and A02 read the same thing. Rules 1.1 (D68, review-first): the first web searches look for the project's
-review pages on the property portals and Quora (`site:` queries, for Brave only; other connectors cannot use them).
-They have their own allowance of one per site, so they never push an approved alias out of the per-connector cap.
+review pages on the property portals and Quora (`site:` queries, for the search engines only). They have their own
+allowance of one per site, so they never push an approved alias out of the per-connector cap. Rules 1.3 (D72): Firecrawl
+search takes the same queries and the portals' project pages (`inurl:`), which Brave cannot search.
 Reddit is not planned here: its reader searches the project's names itself (collection.run_reddit), since a post
 rarely adds the city or locality a search-engine query would.
 """
@@ -30,6 +31,17 @@ REVIEW_SITES = (
     "site:nobroker.in",
     "site:quora.com",
 )
+# The portals' project pages, where a project's reviews and ratings are, rather than single-flat listings, which have
+# none (D72, rules 1.3): Brave returned 99acres listings for Conscient Parq on 15 Oct 2026. `inurl:` is understood by
+# Firecrawl's search only.
+PROJECT_PAGE_SITES = (
+    "site:99acres.com inurl:npxid",
+    "site:housing.com inurl:projects",
+    "site:magicbricks.com inurl:pdpid",
+)
+# Connectors that take `site:` queries, and those that also take `inurl:`.
+SITE_CONNECTORS = {"brave_search", "firecrawl_search"}
+INURL_CONNECTORS = {"firecrawl_search"}
 # Search-capable connectors that search the project's names themselves and take no planned query.
 NAME_SEARCH_CONNECTORS = {"reddit_public"}
 
@@ -49,6 +61,7 @@ def query_texts(
     developer = project.get("developer")
     pairs: list[tuple[str, str, int]] = [
         *((("project_name", f'"{identity.name}" {site}', 0)) for site in REVIEW_SITES),
+        *((("project_name", f'"{identity.name}" {site}', 0)) for site in PROJECT_PAGE_SITES),
         ("project_name", f"{identity.name} {city}", 0),
         ("project_name", f"{identity.name} {locality}", 0),
         ("project_name", f"{identity.name} review", 0),
@@ -99,7 +112,9 @@ def build_query_plan(
         sites: set[str] = set()
         for purpose, text in pairs:
             site = "site:" in text
-            if site and connector_id != "brave_search":
+            if (site and connector_id not in SITE_CONNECTORS) or (
+                "inurl:" in text and connector_id not in INURL_CONNECTORS
+            ):
                 continue
             key = normalise_text(text)
             if not key or key in seen or key in sites:

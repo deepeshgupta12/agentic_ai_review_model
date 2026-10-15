@@ -36,17 +36,24 @@ export function ProjectTabs({
         key={slug}
         href={href}
         aria-current={active ? "page" : undefined}
-        className={`-mb-px border-b-2 px-3 py-2 ${active ? "border-accent font-medium text-ink" : "border-transparent text-ink-muted hover:text-ink"}`}
+        className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[13px] font-medium transition ${
+          active ? "bg-surface text-ink shadow-card ring-1 ring-line" : "text-ink-muted hover:bg-surface/70 hover:text-ink"
+        }`}
       >
         {label}
-        {count ? <span className="ml-1 rounded bg-warn px-1 text-xs text-white">{count}</span> : null}
+        {count ? (
+          <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-warn px-1.5 text-[11px] font-semibold leading-[18px] text-white">
+            {count}
+            <span className="sr-only"> waiting</span>
+          </span>
+        ) : null}
       </Link>
     );
   };
   return (
-    <nav aria-label="Project" className="mb-5 flex flex-wrap items-end gap-1 border-b border-line">
+    <nav aria-label="Project" className="mb-6 flex flex-wrap items-center gap-1 rounded-lg bg-idle-soft/80 p-1 ring-1 ring-inset ring-line">
       {FLOW.map(tab)}
-      <span aria-hidden="true" className="mx-2 mb-2 h-5 border-l border-line" />
+      <span aria-hidden="true" className="mx-1.5 h-5 border-l border-line-strong" />
       {MORE.filter(([slug]) => slug !== "findings" || showFindings).map(tab)}
     </nav>
   );

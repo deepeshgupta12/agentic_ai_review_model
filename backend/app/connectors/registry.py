@@ -67,6 +67,11 @@ def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -
 
         key = settings.brave_search_api_key
         return BraveSearch(key.get_secret_value(), safe_client(settings), db, settings) if key else None
+    if connector_id == "firecrawl_search":  # D72: a second discovery engine, with the Firecrawl key
+        from app.connectors.firecrawl_search import FirecrawlSearch
+
+        key = settings.firecrawl_api_key
+        return FirecrawlSearch(key.get_secret_value(), paid_client(settings), db, settings) if key else None
     if connector_id == "youtube_data_api":
         from app.connectors.youtube import YouTubeDataApi
 

@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Icon } from "@/components/icons";
 import { NextStepBanner } from "@/components/NextStep";
 import { ProjectTabs } from "@/components/ProjectTabs";
 import { StatusBadge } from "@/components/StatusBadge";
-import { ErrorState } from "@/components/ui";
+import { BUTTON, ErrorState } from "@/components/ui";
 import { apiGet, apiGetAll, backendInfo, type Schemas } from "@/lib/api-server";
 import { nextStep } from "@/lib/flow";
-import { stageLabel } from "@/lib/format";
+import { ago, runBadge } from "@/lib/format";
 
 export default async function ProjectLayout({ children, params }: { children: React.ReactNode; params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
@@ -22,22 +23,43 @@ export default async function ProjectLayout({ children, params }: { children: Re
   const project = detail.data.project;
   // Findings exist only in the full analysis (D68); the tab stays while any finding waits for a decision.
   const showFindings = info.analysis_mode === "full" || (summary?.pending_review.findings ?? 0) > 0;
+  const run = summary?.latest_run;
+  const badge = run ? runBadge(run) : null;
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-baseline gap-3">
-        <h1 className="text-xl font-semibold">{project.project_name}</h1>
-        <span className="text-ink-muted">
-          {project.locality}, {project.city}
+      <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-1.5 text-xs text-ink-muted">
+        <Link href="/console" className="hover:text-ink hover:underline">
+          Portfolio
+        </Link>
+        <span aria-hidden="true">/</span>
+        <span className="text-ink">{project.project_name}</span>
+      </nav>
+      <div className="mb-5 flex flex-wrap items-center gap-4">
+        <span
+          aria-hidden="true"
+          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-teal-500 to-emerald-700 text-lg font-semibold text-white shadow-card"
+        >
+          {project.project_name.slice(0, 1).toUpperCase()}
         </span>
-        {summary?.latest_run ? (
-          <Link href={`/console/runs/${summary.latest_run.id}`} className="flex items-center gap-1 text-ink-muted">
-            latest run <StatusBadge status={summary.latest_run.stage} text={stageLabel(summary.latest_run.stage)} />
-          </Link>
-        ) : (
-          <span className="text-ink-muted">no run yet</span>
-        )}
-        <Link href={`/projects/${project.slug}`} className="ml-auto text-accent underline" target="_blank">
-          Public page
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{project.project_name}</h1>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-ink-muted">
+            <span className="inline-flex items-center gap-1">
+              <Icon name="pin" className="h-3.5 w-3.5" />
+              {project.locality}, {project.city}
+            </span>
+            {run && badge ? (
+              <Link href={`/console/runs/${run.id}`} className="inline-flex items-center gap-1.5 hover:text-ink">
+                latest run <StatusBadge status={badge.status} text={badge.text} />
+                <span className="text-xs">updated {ago(run.updated_at)}</span>
+              </Link>
+            ) : (
+              <span>no run yet</span>
+            )}
+          </p>
+        </div>
+        <Link href={`/projects/${project.slug}`} className={BUTTON.secondary} target="_blank">
+          Public page <Icon name="external" />
         </Link>
       </div>
       {summary ? <NextStepBanner next={nextStep(summary, projectId, project.slug, info.page_reviews_max)} /> : null}

@@ -7,7 +7,7 @@ import json
 import pytest
 
 from app.config import REPO_ROOT
-from app.identity.queries import REVIEW_SITES, build_query_plan
+from app.identity.queries import PROJECT_PAGE_SITES, REVIEW_SITES, build_query_plan
 from app.identity.rules import MAX_QUERIES_PER_CONNECTOR, QUERY_RULES_VERSION
 from app.seed.projects import seed_projects
 
@@ -36,13 +36,17 @@ def test_plans_fit_the_discovery_plan_contract(db, contracts, real):
 def test_only_enabled_search_connectors_and_a_cap_per_connector(db, real):
     queries = plan_for(db, "m3m-antalya-hills-sector-79-gurgaon", real)["plan"]["queries"]
     connectors = {q["connector_id"] for q in queries}
-    assert connectors == {"brave_search", "youtube_data_api"}, "mandatory search connectors; optional ones are off"
+    assert connectors == {"brave_search", "firecrawl_search", "youtube_data_api"}, (
+        "mandatory search connectors (Firecrawl search, D72); optional ones are off"
+    )
     for connector in connectors:
         texts = [q["query_text"].casefold() for q in queries if q["connector_id"] == connector]
         sites = [t for t in texts if "site:" in t]
         assert len(texts) - len(sites) <= MAX_QUERIES_PER_CONNECTOR and len(texts) == len(set(texts))
-        # The portal and Quora review pages (D68): Brave only, one query per site on top of the cap.
-        assert len(sites) == (len(REVIEW_SITES) if connector == "brave_search" else 0)
+        # The portal and Quora review pages (D68): the search engines only, one query per site on top of the cap;
+        # Firecrawl search also takes the portals' project pages (inurl:, D72).
+        expected = {"brave_search": len(REVIEW_SITES), "firecrawl_search": len(REVIEW_SITES) + len(PROJECT_PAGE_SITES)}
+        assert len(sites) == expected.get(connector, 0)
         assert texts[: len(sites)] == sites, "the review pages are searched first"
 
 

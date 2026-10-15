@@ -49,6 +49,34 @@
    "verification_ref": "logs/step-05/live-connectors-20260930T110436Z.log"
   },
   {
+   "id": "firecrawl_search",
+   "provider": "Firecrawl Search API (a second web search engine beside Brave; D72)",
+   "policy_family": "web_public_pages",
+   "acquisition_order": 2,
+   "demo_requirement": "mandatory",
+   "content_kinds": [
+    "search_result"
+   ],
+   "yields": "URL and title of pages naming the project, including the portals' project pages (inurl: queries). Discovery metadata only, never evidence.",
+   "expected_capabilities": {
+    "search": true,
+    "archive": null,
+    "comments": false,
+    "transcripts": false,
+    "deletion_check": false
+   },
+   "credential_env": [
+    "FIRECRAWL_API_KEY"
+   ],
+   "quota": "2 credits per 10 results, from FIRECRAWL_MONTHLY_CREDITS (shared with the Firecrawl page renderer)",
+   "cursor_method": "one request per planned query (FIRECRAWL_SEARCH_RESULTS results), within the run's look-back window",
+   "deletion_method": "Not applicable: search results are discovery metadata; pages are re-read by the web reader",
+   "demonstration": "A real Firecrawl search for a supplied project returns pages naming it",
+   "status": "access_pending",
+   "last_verified": null,
+   "verification_ref": null
+  },
+  {
    "id": "firecrawl",
    "provider": "Firecrawl",
    "policy_family": "web_public_pages",

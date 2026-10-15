@@ -360,7 +360,14 @@ def test_a_redirected_page_is_not_read_again_on_the_next_run(db, settings, world
     body = article("Quillon Residences review", PAGE_TEXT * 4)
     net.json(
         "api.search.brave.com",
-        lambda r: (200, {"query": {}, "web": {"results": [{"url": "https://forum.example.test/old", "title": "x"}]}}),
+        # the hit names the project: a hit that does not is never read (D71)
+        lambda r: (
+            200,
+            {
+                "query": {},
+                "web": {"results": [{"url": "https://forum.example.test/old", "title": "Quillon Residences"}]},
+            },
+        ),
     )
     net.route(
         "forum.example.test",
@@ -389,7 +396,7 @@ def test_without_credentials_only_the_keyless_reader_runs_and_coverage_says_so(
     run_id = start(db, settings, fictional["Quillon Residences"])["run_id"]
     cov = coverage(db, run_id)
     assert {k: c["status"] for k, c in cov.items() if c["status"] != "access_pending"} == {"reddit_public": "partial"}
-    assert cov["web_fetch"]["note"].startswith("not run: no discovery source")
+    assert cov["web_fetch"]["note"].startswith("not run: no search engine")
     assert db["ai_jobs"].count_documents({"run_id": run_id, "kind": "collect"}) == 1, "PullPush needs no key (D67)"
     keyed = start_again(db, settings, fictional["Quillon Residences"], connectors=["brave_search", "youtube_data_api"])
     cov = coverage(db, keyed["run_id"])

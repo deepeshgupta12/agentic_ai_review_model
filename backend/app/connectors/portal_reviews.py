@@ -419,6 +419,15 @@ def review_item(page: dict[str, Any], review: PageReview) -> Item:
     )
 
 
+# Portal pages of one flat for sale: a seller's description, never anyone's review (D72). 99acres listings carry
+# "-spid-" (15 Oct 2026: Brave's 99acres results for Conscient Parq were all listings), MagicBricks "propertyDetails".
+LISTING_PAGES = re.compile(r"99acres\.com/[^?#]*-spid-|magicbricks\.com/propertydetails/", re.IGNORECASE)
+
+
+def listing_page(url: str) -> bool:
+    return bool(LISTING_PAGES.search(url))
+
+
 def page_reviews(url: str, page: str, project_names: list[str]) -> PageReviews:
     """The individual reviews on a fetched page, by the site that published it."""
     host = host_of(url)

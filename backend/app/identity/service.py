@@ -7,6 +7,7 @@ Collectors (Step 05) call identify_source after storing each source revision.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from pymongo import MongoClient
@@ -26,6 +27,17 @@ from app.identity.links import ACTIVE_STATUSES, insert_outcomes, new_link
 from app.identity.matching import Segment, match_text
 from app.ids import new_id
 
+# Web pages: the kinds whose title and address say what the page is about (identity.matching.match_text).
+SUBJECT_KINDS = {"article", "forum_thread"}
+
+
+def page_subject(source: dict[str, Any]) -> str | None:
+    """A web page's title and address words, or None for every other kind of source."""
+    if source.get("source_kind") not in SUBJECT_KINDS or source.get("parent"):
+        return None
+    address = re.sub(r"[^0-9A-Za-z]+", " ", source.get("canonical_url") or "")
+    return f"{source.get('title') or ''} {address}".strip() or None
+
 
 def identify_source(
     client: MongoClient[dict[str, Any]],
@@ -43,7 +55,7 @@ def identify_source(
         report["note"] = "no stored text: metadata-only or erased sources are not matched"
         return report
     identities = load_identities(db)
-    outcomes = match_text(identities, text, focus_project_ids)
+    outcomes = match_text(identities, text, focus_project_ids, subject=page_subject(source))
 
     def write(session: ClientSession) -> list[tuple[dict[str, Any], dict[str, Any] | None, bool]]:
         rows = []

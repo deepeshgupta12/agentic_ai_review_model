@@ -23,7 +23,7 @@ from app.db import utcnow
 from app.errors import ApiError
 from app.jobs import queue
 from app.sources import collection
-from app.sources.collection import cancel_run, names_the_project
+from app.sources.collection import NameKeys, cancel_run, names_the_project
 from app.sources.http import FetchError, Response
 from app.sources.store import Item
 
@@ -115,17 +115,36 @@ def hit(url, title):
 
 
 def test_the_project_name_is_recognised_in_its_usual_forms():
-    keys = [["privana"]]
+    keys = NameKeys(names=[["dlf", "privana"]], own=[["privana"]], places=["sector 77", "gurgaon", "gurugram"])
     for url, title in [
         ("https://www.quora.com/Is-Privana-by-DLF-a-good-investment", "Is Privana by DLF a good investment?"),
         ("https://www.magicbricks.com/dlfprivana-sector-76-gurgaon-pdpid-1", ""),
         ("https://housing.com/in/buy/projects/page/315591-privana-south-by-dlf-in-sector-77", ""),
         ("https://x.test/a", "डीएलएफ प्राइवाना"),
+        ("https://x.test/b", "Privana South, Sector 77 Gurgaon: a resident's view"),
     ]:
         assert names_the_project(hit(url, title), keys), url
     assert not names_the_project(
         hit("https://www.magicbricks.com/dlf-the-magnolias-pdpid-2", "DLF The Magnolias"), keys
     )
+
+
+def test_a_short_name_without_its_place_or_developer_is_not_the_project():
+    """15 Oct 2026: "parq" alone read Parq Casino, Parqet, parking apps and French pages on "conscience"."""
+    keys = NameKeys(names=[["conscient", "parq"]], own=[["parq"]], places=["sector 80", "gurgaon", "gurugram"])
+    for url, title in [
+        ("https://en.wikipedia.org/wiki/Parq_Casino", "Parq Casino - Wikipedia"),
+        ("https://www.finanzlennard.de/en/blog/parqet-review", "Parqet Review 2026"),
+        ("https://www.apartments.com/parq-on-5th-apartments-tempe-az/wevrjgh", "Parq on 5th Apartments"),
+        ("https://fr.wikipedia.org/wiki/Conscience", "Conscience — Wikipédia"),
+        ("https://conscient.in/elevate", "Luxury Apartments in Sector 59, Gurgaon - Elevate"),
+    ]:
+        assert not names_the_project(hit(url, title), keys), url
+    for url, title in [
+        ("https://www.magicbricks.com/conscient-parq-sector-80-gurgaon-pdpid-4d42", "Conscient PARQ in Sector 80"),
+        ("https://x.test/c", "Parq, Sector 80 Gurugram: possession update"),
+    ]:
+        assert names_the_project(hit(url, title), keys), url
 
 
 # --- a collect job retried after a crash ---------------------------------------------------------------------------

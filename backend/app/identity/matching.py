@@ -223,13 +223,37 @@ def _paragraph_segments(text: str, identities: list[ProjectIdentity]) -> dict[st
     }
 
 
+def _in_passing(identity_id: str, segment: Segment, candidate: Candidate, about: str) -> MatchOutcome:
+    return MatchOutcome(
+        project_id=identity_id,
+        segment=segment,
+        status="rejected",
+        rule_score=candidate.score,
+        signals=candidate.signals,
+        matched_alias=candidate.matched_alias,
+        phase=candidate.phase,
+        rationale=(
+            f"named only in passing on a page about {about} (its title or address names that project, not this "
+            f"one); rule score {candidate.score} of {MAX_SCORE} ({RULES_VERSION})"
+        ),
+    )
+
+
 def match_text(
     identities: list[ProjectIdentity],
     text: str,
     focus_project_ids: list[str] | None = None,
     segments: list[Segment] | None = None,
+    subject: str | None = None,
 ) -> list[MatchOutcome]:
-    """Outcomes for every project the text names, plus a rejection for each focus project it does not name."""
+    """Outcomes for every project the text names, plus a rejection for each focus project it does not name.
+
+    `subject` is a web page's title and address. A project they name is what the page is about; another project
+    named only in its body (a portal's "similar projects" box, a developer's list of its projects) is named in
+    passing and rejected, and a project named only in the body of a page whose title and address name no project
+    goes to review rather than being accepted: on 15 Oct 2026 every portal page went to review because its
+    similar-projects box named another catalogue project, and a page about another project was accepted because
+    its sidebar named this one."""
     text = nfc(text)
     focus = list(dict.fromkeys(focus_project_ids or []))
     by_id = {i.id: i for i in identities}
@@ -244,13 +268,22 @@ def match_text(
     else:
         whole = Segment("whole", text, None)
         named = [(i, c) for i in identities if (c := evaluate(i, text)).identifier]
-        split = _paragraph_segments(text, [i for i, _ in named]) if len(named) > 1 else None
-        if split:
+        about = {i.id for i, _ in named if evaluate(i, nfc(subject)).identifier} if subject else set()
+        split = _paragraph_segments(text, [i for i, _ in named]) if len(named) > 1 and not about else None
+        if about:
+            main = [(i, c) for i, c in named if i.id in about]
+            extra = ["multiple_projects"] if len(main) > 1 else None
+            outcomes += [_outcome(i.id, whole, c, extra) for i, c in main]
+            subject_names = ", ".join(i.name for i, _ in main)
+            outcomes += [_in_passing(i.id, whole, c, subject_names) for i, c in named if i.id not in about]
+        elif split:
             for pid, pid_segments in split.items():
                 outcomes += [_outcome(pid, s, evaluate(by_id[pid], s.text)) for s in pid_segments]
         else:
-            extra = ["multiple_projects"] if len(named) > 1 else None
-            outcomes += [_outcome(i.id, whole, c, extra) for i, c in named]
+            extra = ["multiple_projects"] if len(named) > 1 else []
+            if subject is not None:
+                extra.append("named_only_in_the_body")
+            outcomes += [_outcome(i.id, whole, c, extra or None) for i, c in named]
 
     linked = {o.project_id for o in outcomes}
     for pid in focus:

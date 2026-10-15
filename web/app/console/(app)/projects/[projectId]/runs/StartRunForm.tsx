@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
+import { SourceIcon } from "@/components/icons";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Panel } from "@/components/ui";
+import { BUTTON, Panel } from "@/components/ui";
 import { newKey, send } from "@/lib/api-browser";
 import { connectorName, HELPER_CONNECTORS, RUN_SOURCES } from "@/lib/format";
 
@@ -67,36 +68,46 @@ export function StartRunForm({
   }
 
   return (
-    <Panel title="Start a run">
+    <Panel title="Start a run" icon="search" description="Collect people's reviews from the chosen sources, then read them for the moderator.">
       <div className="space-y-4">
         <fieldset>
-          <legend className="mb-2 text-ink-muted">Where to look for people&apos;s reviews (the sources enabled in Setup)</legend>
+          <legend className="mb-3 text-[13px] font-medium text-ink-muted">Where to look for people&apos;s reviews (the sources enabled in Setup)</legend>
           {groups.length === 0 ? <p className="text-warn">No source is enabled for this project. Enable one in Setup.</p> : null}
-          <ul className="grid gap-2 lg:grid-cols-2">
-            {groups.map((g) => (
-              <li key={g.key}>
-                <label className="flex items-start gap-2 rounded border border-line p-2">
-                  <input
-                    type="checkbox"
-                    className="mt-1"
-                    checked={chosen.includes(g.key)}
-                    onChange={(e) => setChosen(e.target.checked ? [...chosen, g.key] : chosen.filter((x) => x !== g.key))}
-                  />
-                  <span className="min-w-0">
-                    <span className="font-medium">{g.label}</span>
-                    {g.detail ? <span className="block text-ink-muted">{g.detail}</span> : null}
-                    {unused(g) ? <span className="block text-warn">Not read in the reviews-only analysis.</span> : null}
-                    <span className="mt-1 flex flex-wrap gap-1">
-                      {g.connectors.map((c) => (
-                        <span key={c} className="flex items-center gap-1 text-xs text-ink-muted">
-                          {connectorName(c)} <StatusBadge status={status[c] ?? "unknown"} />
-                        </span>
-                      ))}
+          <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {groups.map((g) => {
+              const on = chosen.includes(g.key);
+              return (
+                <li key={g.key}>
+                  <label
+                    className={`flex h-full cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition ${
+                      on ? "border-accent/50 bg-accent-soft/60 ring-1 ring-accent/20" : "border-line bg-surface hover:border-line-strong"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="mt-1 h-4 w-4"
+                      checked={on}
+                      onChange={(e) => setChosen(e.target.checked ? [...chosen, g.key] : chosen.filter((x) => x !== g.key))}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2">
+                        <SourceIcon connectorId={g.connectors[0]} size="sm" />
+                        <span className="font-semibold">{g.label}</span>
+                      </span>
+                      {g.detail ? <span className="mt-1 block text-[13px] text-ink-muted">{g.detail}</span> : null}
+                      {unused(g) ? <span className="mt-1 block text-[13px] text-warn">Not read in the reviews-only analysis.</span> : null}
+                      <span className="mt-2 flex flex-wrap gap-1.5">
+                        {g.connectors.map((c) => (
+                          <span key={c} className="flex items-center gap-1 text-xs text-ink-muted">
+                            {connectorName(c)} <StatusBadge status={status[c] ?? "unknown"} />
+                          </span>
+                        ))}
+                      </span>
                     </span>
-                  </span>
-                </label>
-              </li>
-            ))}
+                  </label>
+                </li>
+              );
+            })}
           </ul>
           <p className="mt-2 text-xs text-ink-muted">A source that is access pending has no working credential yet; the run records it as not read.</p>
         </fieldset>
@@ -109,7 +120,7 @@ export function StartRunForm({
               max={3650}
               value={Number.isNaN(days) ? "" : days}
               onChange={(e) => setDays(e.target.valueAsNumber)}
-              className="w-28 rounded border border-line px-2 py-1"
+              className="w-28 rounded border border-line-strong px-3 py-2"
             />
           </label>
           <button
@@ -120,7 +131,7 @@ export function StartRunForm({
               setError(null);
               dialog.current?.showModal();
             }}
-            className="rounded bg-accent px-3 py-1.5 font-medium text-white disabled:opacity-50"
+            className={BUTTON.primary}
           >
             Start run
           </button>
@@ -137,9 +148,9 @@ export function StartRunForm({
           {!validDays ? <span className="text-warn">Look back 1 to 3650 days.</span> : null}
         </div>
       </div>
-      <dialog ref={dialog} aria-label="Start run" className="w-full max-w-lg rounded-lg border border-line p-0 backdrop:bg-black/30">
-        <div className="space-y-3 p-5">
-          <h2 className="text-base font-semibold">Start a run now?</h2>
+      <dialog ref={dialog} aria-label="Start run" className="m-auto w-full max-w-lg rounded-xl border border-line p-0">
+        <div className="space-y-4 p-6">
+          <h2 className="text-lg font-semibold tracking-tight">Start a run now?</h2>
           <p className="text-ink-muted">
             This calls paid services: web search, page scraping and video sources as selected, then the Claude model to read the reviews
             within the model budget. It continues in the background; the reviews found then wait for a moderator.
@@ -152,11 +163,11 @@ export function StartRunForm({
               {error}
             </p>
           ) : null}
-          <div className="flex justify-end gap-2">
-            <button type="button" className="rounded border border-line px-3 py-1" onClick={() => dialog.current?.close()}>
+          <div className="flex justify-end gap-2 border-t border-line pt-4">
+            <button type="button" className={BUTTON.secondary} onClick={() => dialog.current?.close()}>
               Cancel
             </button>
-            <button type="button" disabled={busy} onClick={start} className="rounded bg-accent px-3 py-1 font-medium text-white disabled:opacity-60">
+            <button type="button" disabled={busy} onClick={start} className={BUTTON.primary}>
               {busy ? "Starting…" : "Start the run"}
             </button>
           </div>
