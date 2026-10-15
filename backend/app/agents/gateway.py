@@ -132,9 +132,12 @@ class ModelGateway:
         if self._client is None:
             assert self.settings.anthropic_api_key is not None
             workspace = self.settings.anthropic_workspace_id
+            # The gateway retries itself (model_max_attempts); the SDK does not retry inside it, and a call waits at
+            # most model_timeout_seconds, so a stalled connection cannot hold a job for an hour (audit, 14 Oct 2026).
             self._client = anthropic.Anthropic(
                 api_key=self.settings.anthropic_api_key.get_secret_value(),
-                max_retries=2,
+                max_retries=0,
+                timeout=self.settings.model_timeout_seconds,
                 default_headers={"anthropic-workspace-id": workspace} if workspace else None,
             )
         return self._client
@@ -214,7 +217,20 @@ class ModelGateway:
                         f"of {state['limit_usd']:.2f} USD spent",
                     }
                     return result
-            response = self._call(model, system_param, messages, schema, limit, result)
+            try:
+                response = self._call(model, system_param, messages, schema, limit, result)
+            except Exception:
+                # an error outside the provider's own (for example the SDK refusing the request): the hold is released
+                if reservation is not None and self.ledger is not None:
+                    self.ledger.settle(
+                        reservation,
+                        None,
+                        purpose=purpose or schema_ref.rsplit("/", 1)[-1],
+                        outcome="not_billed",
+                        error_code="exception",
+                        request_id=None,
+                    )
+                raise
             if reservation is not None and self.ledger is not None:
                 billed = self._billed_usage(response)
                 result.cost_usd += self.ledger.settle(

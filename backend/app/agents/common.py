@@ -70,6 +70,35 @@ class Handles:
         return known, invented
 
 
+def version_digest(prompt_path: Any, role: str) -> str:
+    """What a cached task output depends on besides its inputs: the prompt's exact text and the model behind the role
+    (a prompt edited without a new version, or another model, never reuses old outputs; audit, 14 Oct 2026)."""
+    from app.config import get_settings
+
+    model = get_settings().model_for_role(role)
+    return hashlib.sha256(f"{model}|{prompt_path.read_text('utf-8')}".encode()).hexdigest()[:16]
+
+
+def mark_split(db: Database[dict[str, Any]], key: str) -> None:
+    """A task whose answer was cut off was split: a later pass goes straight to its halves, never paying again for
+    the whole (audit, 14 Oct 2026)."""
+    keep_output(db, f"{key}:split", "split", {"split": True})
+
+
+def failed_before(db: Database[dict[str, Any]], key: str, code: str) -> bool:
+    """Whether this task already failed with this code in an earlier pass; records it now. A task failing the same way
+    twice is skipped and reported, so one bad task cannot block every Continue (audit, 14 Oct 2026)."""
+    marker = f"{key}:failed:{code}"
+    seen = db[OUTPUTS].find_one({"_id": marker}, {"_id": 1}) is not None
+    if not seen:
+        keep_output(db, marker, "failed", {"code": code})
+    return seen
+
+
+def was_split(db: Database[dict[str, Any]], key: str) -> bool:
+    return db[OUTPUTS].find_one({"_id": f"{key}:split"}, {"_id": 1}) is not None
+
+
 def cached_output(db: Database[dict[str, Any]], key: str) -> dict[str, Any] | None:
     doc = db[OUTPUTS].find_one({"_id": key})
     return doc["data"] if doc else None
@@ -96,9 +125,14 @@ def record_run(
     outcome: str,
     started: float,
 ) -> str:
-    """One ai_agent_runs record per task and run (AgentRun contract); a restarted node replaces its own record.
-    `result` is None when the cached output was reused (no model call, no cost)."""
+    """One ai_agent_runs record per task and run (AgentRun contract); a restarted node replaces its own record but
+    keeps what earlier attempts cost: each paid attempt adds to it, and a reused cached output (`result` None, no
+    model call) adds nothing (audit, 14 Oct 2026: a cache hit used to erase the recorded cost)."""
     task_id = stable_id("tsk", task_key, run_id or "")
+    prior = db["ai_agent_runs"].find_one({"_id": task_id}, {"estimated_cost_usd": 1}) or {}
+    spent = float(prior.get("estimated_cost_usd") or 0.0) + float(
+        result.cost_usd if result and result.cost_usd else 0.0
+    )
     db["ai_agent_runs"].replace_one(
         {"_id": task_id},
         {
@@ -120,7 +154,7 @@ def record_run(
             "usage": result.usage
             if result
             else {"input_tokens": None, "output_tokens": None, "cache_read_input_tokens": None, "audio_seconds": None},
-            "estimated_cost_usd": round(result.cost_usd, 6) if result and result.cost_usd else None,
+            "estimated_cost_usd": round(spent, 6) if spent else None,
             "provider_request_id": result.provider_request_id if result else None,
             "elapsed_ms": int((time.monotonic() - started) * 1000),
             "error": {"code": result.error["code"], "message": result.error["message"][:300]}

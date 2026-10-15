@@ -89,7 +89,8 @@ def analyse_frames(
         SCHEMA_REF,
         PROMPT_PATH.read_text(encoding="utf-8"),
         build_content(frames, video),
-        max_tokens=MAX_OUTPUT_TOKENS,
+        # about 700 tokens a frame (its description and the words on it): 20 frames would pass a fixed 8,192
+        max_tokens=min(16000, max(MAX_OUTPUT_TOKENS, 1000 + 700 * len(frames))),
     )
     elapsed_ms = int((time.monotonic() - started) * 1000)
     by_id = {f"fr{i}": frame for i, frame in enumerate(frames)}
@@ -112,6 +113,8 @@ def analyse_frames(
                 "uncertainty": item.get("uncertainty"),
             }
     outcome = _record_run(db, result, video, project_id, elapsed_ms, session)
+    if outcome == "failed" and result.error:  # the code goes with it, so a budget or outage is not a skip for good
+        outcome = f"failed:{result.error['code']}"
     return sorted(kept.values(), key=lambda o: (o["frame_ms"], o["modality"])), outcome
 
 

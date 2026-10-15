@@ -45,3 +45,10 @@ def test_naming_matches_the_step_01_validator():
         assert slugify(project["project_name"], project["locality"], project["city"]) == registration["slug"]
         assert normalise_text(project["project_name"]) == registration["search_names"][0]
         assert [normalise_rera_id(r["id"]) for r in project["rera_ids"]] == registration["rera_ids"]
+
+
+def test_every_operation_in_the_route_table_is_implemented(contracts):
+    """The other direction (audit, 14 Oct 2026: receiveWebhook was in the table with no route)."""
+    implemented = {op["operationId"] for methods in create_app().openapi()["paths"].values() for op in methods.values()}
+    missing = [r["operation_id"] for r in contracts.routes["routes"] if r["operation_id"] not in implemented]
+    assert missing == []

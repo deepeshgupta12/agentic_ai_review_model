@@ -20,6 +20,7 @@ export function StartRunForm({
   enabled,
   status,
   analysisMode,
+  busyRunId,
 }: {
   projectId: string;
   /** The project's enabled connectors (Setup). */
@@ -27,6 +28,8 @@ export function StartRunForm({
   /** Connector health, when the role may read it. */
   status: Record<string, string>;
   analysisMode: string;
+  /** A run of this project that is still working: a second one is not started (the backend refuses it too). */
+  busyRunId: string | null;
 }) {
   const router = useRouter();
   const dialog = useRef<HTMLDialogElement>(null);
@@ -112,7 +115,7 @@ export function StartRunForm({
           <button
             type="button"
             data-testid="start-run"
-            disabled={connectors.length === 0 || !validDays}
+            disabled={connectors.length === 0 || !validDays || busyRunId !== null}
             onClick={() => {
               setError(null);
               dialog.current?.showModal();
@@ -121,6 +124,15 @@ export function StartRunForm({
           >
             Start run
           </button>
+          {busyRunId ? (
+            <span className="text-warn">
+              A run of this project is still working;{" "}
+              <a href={`/console/runs/${busyRunId}`} className="underline">
+                follow it
+              </a>{" "}
+              or cancel it first.
+            </span>
+          ) : null}
           {connectors.length === 0 ? <span className="text-warn">Choose at least one source.</span> : null}
           {!validDays ? <span className="text-warn">Look back 1 to 3650 days.</span> : null}
         </div>

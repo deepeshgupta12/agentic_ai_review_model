@@ -188,14 +188,19 @@ def _magicbricks_role(user_type: str, relation: str) -> tuple[str, str]:
     return "unknown", "none"
 
 
-def magicbricks(page: str) -> PageReviews:
+def _dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def magicbricks(page: str, url: str = "") -> PageReviews:
     out = PageReviews()
     state = _json_after(page, MB_STATE)
     if not isinstance(state, dict):
         return out
-    block = ((state.get("projectPageSeoStaticData") or {}).get("projectReviews")) or {}
+    block = _dict(_dict(state.get("projectPageSeoStaticData")).get("projectReviews"))
     seen: set[str] = set()
-    listed = block.get("resultList") or []
+    listed = block.get("resultList")
+    listed = [i for i in listed if isinstance(i, dict)] if isinstance(listed, list) else []
     for item in listed:
         role, basis = _magicbricks_role(str(item.get("userType") or ""), str(item.get("userRelation") or ""))
         if role == "broker":
@@ -222,8 +227,11 @@ def magicbricks(page: str) -> PageReviews:
     except (TypeError, ValueError):
         total = 0
     if total > len(listed):
-        found = re.search(r"https://www\.magicbricks\.com/[a-z0-9-]+-reviews-[a-z0-9-]*pdpid-[0-9a-f]+", page)
-        out.more_url = found.group(0) if found else None
+        # the full review list of THIS project (its own pdpid), never another project's from a "similar projects" block
+        own = re.search(r"pdpid-([0-9a-f]+)", url)
+        pdpid = own.group(1) if own else "[0-9a-f]+"
+        found = re.search(rf"https://www\.magicbricks\.com/[a-z0-9-]+-reviews-[a-z0-9-]*pdpid-{pdpid}\b", page)
+        out.more_url = found.group(0) if found and found.group(0) != url else None
     return out
 
 
@@ -274,7 +282,14 @@ def _role_from_name(name: str) -> tuple[str, str]:
 
 def ninety_nine_acres(page: str) -> PageReviews:
     out = PageReviews()
-    locality = _locality_texts(_json_after(page, NN_STATE))
+    state = _json_after(page, NN_STATE)
+    candidates = [i for i in ld_items(page) if "Review" in _types(i) and i.get("reviewBody")]
+    if state is None and candidates:
+        # without the page state the locality reviews cannot be told apart: none is kept, and it is counted
+        for _ in candidates:
+            out.drop("locality_guard_unavailable")
+        return out
+    locality = _locality_texts(state)
     seen: set[str] = set()
     for item in ld_items(page):
         if "Review" not in _types(item) or not item.get("reviewBody"):
@@ -408,7 +423,7 @@ def page_reviews(url: str, page: str, project_names: list[str]) -> PageReviews:
     """The individual reviews on a fetched page, by the site that published it."""
     host = host_of(url)
     if host.endswith("magicbricks.com"):
-        return magicbricks(page)
+        return magicbricks(page, url)
     if host.endswith("99acres.com"):
         return ninety_nine_acres(page)
     if host.endswith("nobroker.in"):

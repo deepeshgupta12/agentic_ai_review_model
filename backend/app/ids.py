@@ -30,6 +30,7 @@ PREFIXES = {
     "cor",
     "rex",
     "mcl",  # a model call ledger entry (D53); internal, not in the contracts
+    "hld",  # a hold on the model budget for one call in flight (audit, 14 Oct 2026); internal
 }
 ID_PATTERN = re.compile(r"^([a-z]{3})_[0-9A-HJKMNP-TV-Z]{26}$")
 

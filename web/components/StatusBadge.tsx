@@ -15,6 +15,7 @@ const TONES: Record<string, string> = {
   stale: "text-warn border-warn",
   retry_wait: "text-warn border-warn",
   pending: "text-warn border-warn",
+  running: "text-accent border-accent",
   needs_review: "text-warn border-warn",
   changes_requested: "text-warn border-warn",
   final_review: "text-warn border-warn",

@@ -1,33 +1,18 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { StatusBadge } from "@/components/StatusBadge";
-import { stageLabel } from "@/lib/format";
+import { runIsWorking, stageLabel } from "@/lib/format";
 
 const STAGES = ["collecting", "analysing", "findings_review", "formatting", "final_review", "approved", "publishing", "published"];
-// Stages in which the system is working: the page refreshes on every poll so coverage counts move as sources are read.
-const WORKING = ["collecting", "analysing", "formatting", "publishing"];
 
-/** Stage timeline that follows the run by polling getRun every few seconds (the documented fallback for SSE,
- * docs/03). While the system works the whole page refreshes, so the coverage table updates as it goes. */
-export function RunProgress({ runId, initialStage, terminal }: { runId: string; initialStage: string; terminal: string[] }) {
-  const router = useRouter();
-  const [stage, setStage] = useState(initialStage);
+type Run = { stage: string; outcome_note: string | null; content_revision_id: string | null; updated_at: string };
 
-  useEffect(() => {
-    if (terminal.includes(stage)) return;
-    const timer = setInterval(async () => {
-      const response = await fetch(`/v1/runs/${runId}`, { credentials: "same-origin", cache: "no-store" }).catch(() => null);
-      if (!response?.ok) return;
-      const body = (await response.json()) as { stage: string };
-      if (body.stage !== stage) setStage(body.stage);
-      if (body.stage !== stage || WORKING.includes(body.stage)) router.refresh();
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [runId, stage, terminal, router]);
-
+/** Stage timeline. While the system works on the run the page refreshes itself (AutoRefresh: one refresh after the
+ * other, none while the tab is hidden), so the coverage table moves live; in a stage that waits for a person it stays
+ * still and the page says what to do (audit, 14 Oct 2026). */
+export function RunProgress({ run }: { run: Run }) {
+  const stage = run.stage;
   const reached = STAGES.indexOf(stage);
   return (
     <ol className="flex flex-wrap items-center gap-2" aria-label="Stages">
@@ -38,6 +23,9 @@ export function RunProgress({ runId, initialStage, terminal }: { runId: string; 
         </li>
       ))}
       {!STAGES.includes(stage) ? <StatusBadge status={stage} text={stageLabel(stage)} /> : null}
+      <li className="ml-2">
+        <AutoRefresh active={runIsWorking(run)} />
+      </li>
     </ol>
   );
 }

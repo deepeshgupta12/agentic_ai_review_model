@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Agentic Project Intelligence API",
-    "version": "1.1.0",
+    "version": "1.3.0",
     "description": "Generated from contracts/v1/routes.json by scripts/build_openapi.py. Do not edit by hand."
   },
   "servers": [
@@ -301,6 +301,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Error403"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -557,6 +560,9 @@
           },
           "404": {
             "$ref": "#/components/responses/Error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -676,6 +682,59 @@
         }
       }
     },
+    "/v1/runs/{run_id}/analysis": {
+      "post": {
+        "operationId": "continueAnalysis",
+        "summary": "Continue an analysis that stopped (model budget or model access) from its last checkpoint; finished tasks are reused, nothing is paid twice",
+        "tags": [
+          "runs"
+        ],
+        "x-access": "session",
+        "x-roles": [
+          "researcher"
+        ],
+        "security": [
+          {
+            "sessionCookie": [],
+            "csrfToken": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "common.schema.json#/$defs/RunId"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Accepted"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          }
+        }
+      }
+    },
     "/v1/runs/{run_id}/cancel": {
       "post": {
         "operationId": "cancelRun",
@@ -735,6 +794,9 @@
           },
           "409": {
             "$ref": "#/components/responses/Error409"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -855,6 +917,9 @@
           },
           "404": {
             "$ref": "#/components/responses/Error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -1008,6 +1073,9 @@
           },
           "404": {
             "$ref": "#/components/responses/Error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -1224,6 +1292,9 @@
           },
           "404": {
             "$ref": "#/components/responses/Error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -1387,6 +1458,9 @@
           },
           "404": {
             "$ref": "#/components/responses/Error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -1599,6 +1673,9 @@
           },
           "404": {
             "$ref": "#/components/responses/Error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -1885,6 +1962,9 @@
           },
           "404": {
             "$ref": "#/components/responses/Error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -2534,6 +2614,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Error403"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -2768,6 +2851,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Error403"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -2869,6 +2955,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Error403"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }
@@ -2926,6 +3015,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Error403"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       },
@@ -3098,6 +3190,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Error403"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       },
@@ -3243,6 +3338,9 @@
           },
           "403": {
             "$ref": "#/components/responses/Error403"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error422"
           }
         }
       }

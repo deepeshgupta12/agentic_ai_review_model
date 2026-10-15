@@ -136,6 +136,12 @@ def test_a_page_refused_even_through_scrapfly_stays_refused(db, settings, contra
     net, _ = network(upstream=403)
     outcome = reader(db, settings, net).fetch("https://www.99acres.com/quillon-review")
     assert outcome.status == "refused" and "even through Scrapfly" in outcome.reason
+    net, calls = network()
+    again = reader(db, settings, net).fetch("https://www.99acres.com/quillon-review")
+    assert again.status == "refused" and calls == [], (
+        "refused even through Scrapfly this week: not paid for again (D70)"
+    )
+    db["ai_fetch_log"].delete_many({})  # a week later: Scrapfly may be tried again
     net, _ = network(scrapfly_status=401)
     outcome = reader(db, settings, net).fetch("https://www.99acres.com/quillon-review")
     assert outcome.status == "refused" and "access_refused" in outcome.reason

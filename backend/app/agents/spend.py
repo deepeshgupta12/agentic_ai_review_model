@@ -25,6 +25,9 @@ from app.ids import new_id
 
 BUDGETS = "ai_model_budget"
 CALLS = "ai_model_calls"
+# Each open hold on the budget, so a hold left by a worker killed mid-call is released later (audit, 14 Oct 2026).
+HOLDS = "ai_model_holds"
+HOLD_MINUTES = 60  # longer than any call with its retries; an older hold was left behind
 IMAGE_TOKENS = 1600  # a frame scaled to 768 px is at most about 1,600 input tokens
 CHARS_PER_TOKEN = 2.0  # conservative for Hindi and JSON; real counts come back in usage
 
@@ -39,6 +42,7 @@ class Reservation:
     amount_usd: float
     model: str
     batch: bool
+    hold_id: str | None = None
 
 
 def price_of(settings: Settings, model: str) -> dict[str, float]:
@@ -138,7 +142,13 @@ class SpendLedger:
             {"$inc": {"reserved_usd": amount_usd}, "$set": {"updated_at": utcnow()}},
             return_document=ReturnDocument.AFTER,
         )
-        return Reservation(self.budget_id, amount_usd, model, batch) if held else None
+        if not held:
+            return None
+        hold_id = new_id("hld")
+        self.db[HOLDS].insert_one(
+            {"_id": hold_id, "budget": self.budget_id, "amount_usd": amount_usd, "model": model, "at": utcnow()}
+        )
+        return Reservation(self.budget_id, amount_usd, model, batch, hold_id)
 
     def settle(
         self,
@@ -152,6 +162,10 @@ class SpendLedger:
     ) -> float:
         """Release the hold, add the actual cost (zero when nothing was billed) and write the ledger entry."""
         cost = actual_usd(self.settings, reservation.model, usage or {}, batch=reservation.batch) if usage else 0.0
+        if reservation.hold_id is not None:
+            released = self.db[HOLDS].delete_one({"_id": reservation.hold_id}).deleted_count
+            if not released:  # the hold was released as stale already: only the cost is added now
+                reservation = Reservation(reservation.budget_id, 0.0, reservation.model, reservation.batch)
         self.db[BUDGETS].update_one(
             {"_id": reservation.budget_id},
             {
@@ -180,3 +194,16 @@ class SpendLedger:
 
 def since(settings: Settings) -> datetime:
     return settings.model_budget_since
+
+
+def release_stale_holds(db: Database[dict[str, Any]], older_than_minutes: int = HOLD_MINUTES) -> int:
+    """Holds older than any call can take were left by a worker that stopped mid-call: their amount goes back to the
+    budget (the scheduler runs this), so the budget never shrinks for nothing."""
+    from datetime import timedelta
+
+    released = 0
+    for hold in db[HOLDS].find({"at": {"$lt": utcnow() - timedelta(minutes=older_than_minutes)}}):
+        if db[HOLDS].delete_one({"_id": hold["_id"]}).deleted_count:
+            db[BUDGETS].update_one({"_id": hold["budget"]}, {"$inc": {"reserved_usd": -hold["amount_usd"]}})
+            released += 1
+    return released

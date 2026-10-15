@@ -60,7 +60,9 @@ class ModelUnavailable(Exception):
         self.error = error
 
 
-EDITABLE_BASE = {"draft", "final_review", "changes_requested", "approved", "rejected"}
+# A withdrawn revision (its evidence was withdrawn) is the way back: an edit rebuilds the page from the reviews and
+# findings approved now, without the withdrawn ones, and needs a new final approval (audit, 14 Oct 2026).
+EDITABLE_BASE = {"draft", "final_review", "changes_requested", "approved", "rejected", "withdrawn"}
 LOCALE = build.LOCALE
 
 
@@ -348,7 +350,11 @@ def generate(
             run_id=run["_id"],
         )
         task_id = written["task_id"]
-        if written["outcome"] == "failed" and written["error"]["code"] in UNAVAILABLE:
+        # a cut-off or invalid draft is not stored as an empty page: the page building stops and can be continued
+        if written["outcome"] == "failed" and written["error"]["code"] in UNAVAILABLE | {
+            "incomplete",
+            "invalid_output",
+        }:
             raise ModelUnavailable(written["error"])
         if written["outcome"] == "failed":
             model_error = written["error"]
@@ -455,16 +461,28 @@ def _latest(db: Database[dict[str, Any]], project_id: str, locale: str, session:
 
 
 def _move_run(
-    db: Database[dict[str, Any]], contracts: ContractStore, project_id: str, to: str, role: str, note: str
+    db: Database[dict[str, Any]],
+    contracts: ContractStore,
+    project_id: str,
+    to: str,
+    role: str,
+    note: str,
+    actor: dict[str, Any] | None = None,
 ) -> None:
     from app.workflows.analysis import move_stage  # the graph imports this module; import late
 
     run = db["ai_runs"].find_one(
-        {"project_id": project_id, "content_revision_id": {"$ne": None}}, sort=[("created_at", -1)]
+        # the run that holds the page now: never a cancelled or published one (audit, 14 Oct 2026)
+        {
+            "project_id": project_id,
+            "content_revision_id": {"$ne": None},
+            "stage": {"$nin": ["published", "insufficient_evidence", "cancelled"]},
+        },
+        sort=[("created_at", -1)],
     )
     if run is None or run["stage"] == to or not contracts.transition_allowed("workflow_stage", run["stage"], to, role):
         return
-    move_stage(contracts, db, run["_id"], run["stage"], to, role, note, None)
+    move_stage(contracts, db, run["_id"], run["stage"], to, role, note, None, actor)
 
 
 def save_edit(
@@ -506,6 +524,8 @@ def save_edit(
     shown = [(r["support"]["review"]["id"], r["support"]["review"]["revision"]) for r in edited["reviews"]]
     if len(set(shown)) != len(shown):
         raise ApiError(422, "validation_failed", "Each review can be shown once")
+    if not shown and not cited:  # an edit may not empty the page (generation refuses an empty selection too)
+        raise ApiError(422, "validation_failed", "The page needs at least one review or finding")
     # D69: an edit may also add another approved review of this project (its words as approved; no model is involved).
     # It must be the latest, approved and approvable revision; the new revision needs its own final approval.
     added = [{"id": i, "revision": r} for i, r in shown if (i, r) not in base_reviews]
@@ -598,9 +618,10 @@ def save_edit(
             "formatting",
             "moderator",
             f"Edited as revision {doc['revision']}; QA found blocking issues",
+            actor,
         )
     else:
-        _move_run(db, contracts, project_id, "formatting", "moderator", f"Edited as revision {doc['revision']}")
+        _move_run(db, contracts, project_id, "formatting", "moderator", f"Edited as revision {doc['revision']}", actor)
         _move_run(db, contracts, project_id, "final_review", "system", f"Revision {doc['revision']} passed QA")
     return revision_view(db, doc)
 
@@ -761,7 +782,13 @@ def approve(
     decision_id = run_in_transaction(db.client, write)
     doc = db[REVISIONS].find_one({"_id": revision_id}) or {}
     _move_run(
-        db, contracts, doc.get("project_id", ""), "approved", "moderator", f"Revision {doc.get('revision')} approved"
+        db,
+        contracts,
+        doc.get("project_id", ""),
+        "approved",
+        "moderator",
+        f"Revision {doc.get('revision')} approved",
+        actor,
     )
     view = to_view(db["ai_review_decisions"].find_one({"_id": decision_id}))
     assert view is not None
@@ -812,7 +839,13 @@ def decide(
     if to == "changes_requested":
         doc = db[REVISIONS].find_one({"_id": revision_id}) or {}
         _move_run(
-            db, contracts, doc.get("project_id", ""), "formatting", "moderator", "Changes requested on the page content"
+            db,
+            contracts,
+            doc.get("project_id", ""),
+            "formatting",
+            "moderator",
+            "Changes requested on the page content",
+            actor,
         )
     view = to_view(db["ai_review_decisions"].find_one({"_id": decision_id}))
     assert view is not None

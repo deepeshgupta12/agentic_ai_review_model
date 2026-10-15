@@ -55,7 +55,9 @@ class Settings(BaseSettings):
     model_routine: str = "claude-sonnet-5"
     model_reasoning: str = "claude-sonnet-5"
     model_difficult: str = "claude-opus-5-5"
-    model_max_output_tokens: int = Field(default=16000, ge=256)
+    # Below 21,333 the SDK allows a non-streaming call (3,600 s per 128,000 tokens over 600 s); agents set their own.
+    model_max_output_tokens: int = Field(default=16000, ge=256, le=21000)
+    model_timeout_seconds: float = Field(default=300.0, ge=30)
     model_max_attempts: int = Field(default=3, ge=1, le=6)
     # Prompt caching (D65, product owner 13 Oct 2026: "Use Claude's Prompt caching as well"). One explicit cache
     # breakpoint on the agent's instructions (the system prompt), the prefix every task of that agent shares; never on
@@ -112,11 +114,15 @@ class Settings(BaseSettings):
     instagram_queries_per_project: int = Field(default=2, ge=0)
     # Step 08 (D60): competitor-portal pages that refuse the web reader, read through Scrapfly, per collection job.
     unblocked_pages_per_run: int = Field(default=5, ge=0)
+    # Paid providers (Scrapfly, Firecrawl): longer than their own timeouts; one attempt (a resend may be billed).
+    paid_provider_timeout_seconds: float = Field(default=180.0, ge=10)
     # Step 08 (D62): pages built by JavaScript rendered through Firecrawl, per collection job, from a monthly ledger.
     rendered_pages_per_run: int = Field(default=10, ge=0)
     firecrawl_monthly_credits: int = Field(default=500, ge=0)
     firecrawl_credits_per_page: int = Field(default=1, ge=1)
-    web_pages_per_run: int = Field(default=80, ge=0)  # 40 until D61 opened the generic web route
+    web_pages_per_run: int = Field(default=80, ge=0)
+    # A collect job (one source group) stops where it is after this long, keeping what it stored (audit, 14 Oct 2026).
+    collect_job_max_minutes: int = Field(default=30, ge=1)  # 40 until D61 opened the generic web route
     # Reddit through PullPush (D67, D68): names searched per project, posts and comment hits per name, threads read.
     reddit_names_per_project: int = Field(default=4, ge=0)
     reddit_posts_per_name: int = Field(default=25, ge=0, le=100)

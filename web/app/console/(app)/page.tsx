@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AutoRefresh } from "@/components/AutoRefresh";
+import { CoverageList } from "@/components/CoverageList";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState, ErrorState, PageTitle, Table, Td, Th } from "@/components/ui";
-import { apiGet, backendInfo, currentUser, type Schemas } from "@/lib/api-server";
+import { apiGetAll, backendInfo, currentUser, type Schemas } from "@/lib/api-server";
 import { nextStep } from "@/lib/flow";
-import { connectorName, formatTime, stageLabel } from "@/lib/format";
+import { formatTime, runIsWorking, stageLabel } from "@/lib/format";
 import { can } from "@/lib/roles";
 
 import { AddProjectForm } from "./AddProjectForm";
@@ -13,36 +15,22 @@ import { ImportForm } from "./ImportForm";
 
 export const metadata: Metadata = { title: "Portfolio" };
 
-function coverage(rows: Schemas["RunCoverage"][]) {
-  if (rows.length === 0) return <span className="text-ink-muted">no run yet</span>;
-  return (
-    <ul className="space-y-0.5">
-      {rows.map((c) => (
-        <li key={c.connector_id} className="flex items-center gap-1">
-          <span className="text-xs">{connectorName(c.connector_id)}</span>
-          <StatusBadge status={c.status} />
-          <span className="text-ink-muted">{c.fetched} read</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export default async function PortfolioPage() {
   const [page, me, info] = await Promise.all([
-    apiGet<Schemas["ProjectPage"]>("/v1/projects", { limit: 100 }),
+    apiGetAll<Schemas["ProjectSummary"]>("/v1/projects"),
     currentUser(),
     backendInfo(),
   ]);
   if (!page.data) return <ErrorState status={page.status} error={page.error} requestId={page.requestId} />;
   const projects = page.data.items;
   const mayAdd = can(me?.roles, "createProject");
+  const running = projects.some((row) => runIsWorking(row.latest_run));
 
   return (
     <section className="space-y-6">
       <PageTitle title="Portfolio">
         Every project with what it needs next: run, approve the reviews found, build the page from approved reviews, then approve and
-        publish it.
+        publish it. <AutoRefresh active={running} />
       </PageTitle>
       {projects.length === 0 ? (
         <EmptyState>No projects yet. {mayAdd ? "Add one below or import the input file." : "A researcher can add projects."}</EmptyState>
@@ -111,7 +99,9 @@ export default async function PortfolioPage() {
                     </div>
                     {row.publication.delivery_status ? <StatusBadge status={row.publication.delivery_status} /> : null}
                   </Td>
-                  <Td>{coverage(row.coverage)}</Td>
+                  <Td>
+                    <CoverageList rows={row.coverage} stage={row.latest_run?.stage} />
+                  </Td>
                   <Td>${row.spend_usd_30d.toFixed(2)}</Td>
                 </tr>
               );

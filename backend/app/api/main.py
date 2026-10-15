@@ -25,6 +25,7 @@ from app.api import (
     routes_publication,
     routes_runs,
     routes_sources,
+    routes_webhooks,
 )
 from app.config import get_settings
 from app.db import get_db
@@ -81,6 +82,7 @@ def create_app() -> FastAPI:
     app.include_router(routes_corrections.router)
     app.include_router(routes_content.router)
     app.include_router(routes_publication.router)
+    app.include_router(routes_webhooks.router)
 
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> dict[str, Any]:

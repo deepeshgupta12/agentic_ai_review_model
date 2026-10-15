@@ -32,6 +32,15 @@ describe("nextStep", () => {
     expect([live.tone, live.href]).toEqual(["done", "/projects/q-slug"]);
     expect(nextStep({ ...base, latest_run: { id: "r", stage: "insufficient_evidence" } }, "p", "q").tone).toBe("stop");
   });
+
+  it("asks to publish a newer approved revision after the page went live", () => {
+    const edited = nextStep(
+      { ...base, latest_run: { id: "r", stage: "published" }, publication: { ...base.publication, approved_revision: 3, active_revision: 2 } },
+      "p",
+      "q",
+    );
+    expect([edited.title, edited.tone, edited.href]).toEqual(["Publish revision 3", "todo", "/console/projects/p/publishing"]);
+  });
 });
 
 describe("balancedPick", () => {

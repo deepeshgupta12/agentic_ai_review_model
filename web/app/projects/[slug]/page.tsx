@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
 import { CorrectionForm } from "@/components/CorrectionForm";
 import { InsightsModule } from "@/components/InsightsModule";
@@ -30,6 +31,11 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const result = await insights(slug);
 
+  if (!result.data && result.status === 404 && result.error === "No such project") notFound();
+  if (!result.data && result.status !== 404) {
+    // a server error is not "nothing published": the page fails visibly and the delivery check sees it (audit, 14 Oct)
+    throw new Error(result.error ?? "The insights could not be loaded");
+  }
   if (!result.data) {
     return (
       <main className="mx-auto max-w-[68ch] px-4 py-10">

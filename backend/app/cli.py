@@ -211,7 +211,7 @@ def cmd_plan_queries(args: argparse.Namespace) -> int:
     ids = [_slug_to_id(db, args.project)] if args.project else [p["_id"] for p in db["projects"].find({}, {"_id": 1})]
     plans = []
     for project_id in ids:
-        plan = build_query_plan(db, project_id, connectors)
+        plan = build_query_plan(db, project_id, connectors, get_settings().analysis_mode == "reviews")
         errors = get_contracts().errors(plan["plan"], "agents.schema.json#/$defs/DiscoveryPlan")
         if errors:
             print(
@@ -247,7 +247,9 @@ def cmd_discover_hosts(args: argparse.Namespace) -> int:
     for project_id in ids:
         queries = [
             q
-            for q in build_query_plan(db, project_id, connectors)["plan"]["queries"]
+            for q in build_query_plan(db, project_id, connectors, get_settings().analysis_mode == "reviews")["plan"][
+                "queries"
+            ]
             if q["connector_id"] == "brave_search"
         ]
         for query in queries[: args.queries]:

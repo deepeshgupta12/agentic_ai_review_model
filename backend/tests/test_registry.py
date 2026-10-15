@@ -105,6 +105,9 @@ def run_registry(db, settings, project_id):
     from app.sources.collection import start_run
 
     settings.analysis_mode = "full"  # a reviews-only analysis reads no registry (D68)
+    db["ai_runs"].update_many(  # an earlier run of the test, still analysing (no model here), is ended first (D70)
+        {"project_id": project_id, "stage": {"$in": ["collecting", "analysing"]}}, {"$set": {"stage": "cancelled"}}
+    )
     accepted = start_run(
         db.client, db, settings, project_id, {"window_days": 90, "connectors": ["harera_registry"]}, RESEARCHER
     )

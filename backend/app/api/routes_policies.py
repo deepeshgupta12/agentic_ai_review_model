@@ -5,10 +5,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Body, Depends, Query
+from fastapi import APIRouter, Body, Depends, Header, Query
 from pymongo.database import Database
 
 from app.api.deps import Principal, contract_body, contracts_dep, db_dep, require
+from app.api.idempotency import HEADER, run_idempotent
 from app.api.routes_ops import decode_cursor, encode_cursor
 from app.contracts import ContractStore
 from app.sources.policies import COLLECTION, create_version, policy_view
@@ -42,9 +43,18 @@ def list_source_policies(
 )
 def create_source_policy_version(
     body: Any = Body(...),
+    idempotency_key: str | None = Header(default=None, alias=HEADER),
     principal: Principal = Depends(require("createSourcePolicyVersion")),
     db: Database[dict[str, Any]] = Depends(db_dep),
     contracts: ContractStore = Depends(contracts_dep),
 ) -> dict[str, Any]:
+    """Idempotent as the route table says: a resent request stores one version, not two (audit, 14 Oct 2026)."""
     request = contract_body(contracts, body, "api.schema.json#/$defs/PolicyVersionRequest")
-    return create_version(db.client, db, contracts, request, principal.actor)
+    return run_idempotent(
+        db,
+        operation_id="createSourcePolicyVersion",
+        user_id=principal.user_id,
+        key=idempotency_key,
+        body=request,
+        compute=lambda: create_version(db.client, db, contracts, request, principal.actor),
+    )

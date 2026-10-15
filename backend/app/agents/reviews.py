@@ -35,7 +35,7 @@ from pymongo.database import Database
 
 from app import audit
 from app.agents import consistency
-from app.agents.common import Handles, cached_output, keep_output, numbers_in, record_run, stable_id
+from app.agents.common import Handles, cached_output, keep_output, numbers_in, record_run, stable_id, version_digest
 from app.agents.consistency import consistency_flags
 from app.agents.gateway import GatewayResult, ModelGateway
 from app.config import REPO_ROOT
@@ -52,7 +52,10 @@ SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"
 ROLE = "light"  # D53: Claude Haiku 5.5 for curation; every word is checked by the backend
 MAX_TASK_CHARS = 9000
-MAX_OUTPUT_TOKENS = 4000
+# At most this many sources per task, and room for every one of them to be a review: 36 comments in one task cut
+# the answer off at 4,000 tokens in the first live run (14 Oct 2026). A task still cut off is split in two.
+MAX_TASK_SOURCES = 12
+MAX_OUTPUT_TOKENS = 10000
 MAX_REVIEW_CHARS = 1200
 MAX_NOTE_CHARS = 300
 OPEN_STATUSES = ("pending", "changes_requested")
@@ -121,37 +124,66 @@ def offered_sources(db: Database[dict[str, Any]], project_id: str) -> dict[str, 
     return out
 
 
+BUCKETS = 16  # sources are packed within fixed buckets of their ID
+
+
+def _bucket(key: str) -> int:
+    return int(hashlib.sha256(key.encode()).hexdigest()[:8], 16) % BUCKETS
+
+
 def build_tasks(db: Database[dict[str, Any]], project_id: str) -> list[dict[str, Any]]:
-    """Sources packed into tasks of about MAX_TASK_CHARS; a long source is split, never mixed into another's spans."""
+    """Sources packed into tasks of at most MAX_TASK_SOURCES and about MAX_TASK_CHARS; a long source is split, never
+    mixed into another's spans. Sources are packed within fixed buckets of their ID, so a source added or withdrawn
+    changes the tasks of its bucket only and every other task keeps its key and its cached answer (audit, 14 Oct
+    2026: one new source moved every later task, and Continue paid for them again)."""
     tasks: list[dict[str, Any]] = []
-    chunk: list[tuple[dict[str, Any], list[dict[str, Any]]]] = []
-    size = 0
-    for _key, entry in sorted(offered_sources(db, project_id).items()):
-        spans: list[dict[str, Any]] = []
-        for evidence in entry["spans"]:
-            length = len(evidence["excerpt_text"] or "") * (2 if evidence["modality"] == "speech" else 1)
-            if size + length > MAX_TASK_CHARS and (chunk or spans):
-                if spans:
-                    chunk.append((entry["source"], spans))
-                tasks.append(_task(project_id, chunk))
-                chunk, spans, size = [], [], 0
-            spans.append(evidence)
-            size += length
-        if spans:
-            chunk.append((entry["source"], spans))
-    if chunk:
-        tasks.append(_task(project_id, chunk))
+    offered = sorted(offered_sources(db, project_id).items())
+    for bucket in range(BUCKETS):
+        chunk: list[tuple[dict[str, Any], list[dict[str, Any]]]] = []
+        size = 0
+        for _key, entry in (item for item in offered if _bucket(item[0]) == bucket):
+            spans: list[dict[str, Any]] = []
+            for evidence in entry["spans"]:
+                length = len(evidence["excerpt_text"] or "") * (2 if evidence["modality"] == "speech" else 1)
+                if (size + length > MAX_TASK_CHARS or len(chunk) >= MAX_TASK_SOURCES) and (chunk or spans):
+                    if spans:
+                        chunk.append((entry["source"], spans))
+                    tasks.append(_task(project_id, chunk))
+                    chunk, spans, size = [], [], 0
+                spans.append(evidence)
+                size += length
+            if spans:
+                chunk.append((entry["source"], spans))
+        if chunk:
+            tasks.append(_task(project_id, chunk))
     return tasks
 
 
 def _task(project_id: str, chunk: list[tuple[dict[str, Any], list[dict[str, Any]]]]) -> dict[str, Any]:
     refs = sorted(f"{e['id']}@{e['revision']}" for _, spans in chunk for e in spans)
-    digest = hashlib.sha256("|".join([PROMPT_VERSION, SCHEMA_VERSION, project_id, *refs]).encode()).hexdigest()
+    parts = [PROMPT_VERSION, version_digest(PROMPT_PATH, ROLE), SCHEMA_VERSION, project_id, *refs]
+    digest = hashlib.sha256("|".join(parts).encode()).hexdigest()
     return {
         "key": f"a11:{digest[:32]}",
         "project_id": project_id,
         "sources": [{"source": s, "spans": spans} for s, spans in chunk],
     }
+
+
+def split_task(task: dict[str, Any]) -> list[dict[str, Any]]:
+    """A task the model could not answer whole (cut off, invalid or refused), as two tasks: half its sources each, or,
+    for one source, half its spans each. A single span cannot be split (empty list)."""
+    sources = task["sources"]
+    if len(sources) >= 2:
+        half = len(sources) // 2
+        parts = [[(s["source"], s["spans"]) for s in part] for part in (sources[:half], sources[half:])]
+    elif sources and len(sources[0]["spans"]) >= 2:
+        source, spans = sources[0]["source"], sources[0]["spans"]
+        half = len(spans) // 2
+        parts = [[(source, spans[:half])], [(source, spans[half:])]]
+    else:
+        return []
+    return [_task(task["project_id"], part) for part in parts]
 
 
 def _platform(source: dict[str, Any]) -> str:
@@ -464,7 +496,12 @@ def store_reviews(
         }
         latest = db["ai_review_excerpts"].find_one({"id": rid}, sort=[("revision", -1)])
         last_agent = db["ai_review_excerpts"].find_one({"id": rid, "created_by.kind": "agent"}, sort=[("revision", -1)])
-        if latest is not None and last_agent is not None and _same(last_agent, body):
+        if (
+            latest is not None
+            and last_agent is not None
+            and _same(last_agent, body)
+            and latest["review_status"] != "superseded"  # retired by an earlier curation: proposed again, it returns
+        ):
             stored.append({"id": rid, "revision": latest["revision"]})
             continue
         revision = (latest["revision"] + 1) if latest else 1

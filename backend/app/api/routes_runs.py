@@ -96,6 +96,41 @@ def cancel_run_route(
     return cancel_run(db.client, db, contracts, run_id, request["reason"], principal.actor)
 
 
+@router.post(
+    "/runs/{run_id}/analysis",
+    operation_id="continueAnalysis",
+    summary="Continue a stopped analysis from its last checkpoint",
+    status_code=202,
+)
+def continue_analysis_route(
+    run_id: str,
+    principal: Principal = Depends(require("continueAnalysis")),
+    db: Database[dict[str, Any]] = Depends(db_dep),
+    settings: Settings = Depends(settings_dep),
+) -> dict[str, Any]:
+    """After a stop on the model budget or model access: a new analyse job continues the run's graph from its last
+    checkpoint and reuses every finished task, so nothing is paid twice. Refused while the budget has nothing left."""
+    from app.agents.spend import SpendLedger
+    from app.workflows.analysis import analyse_again
+
+    known_id(run_id, "run")
+    if db[RUNS].find_one({"_id": run_id}, {"_id": 1}) is None:
+        raise ApiError(404, "not_found", "No such run")
+    left = SpendLedger(db, settings).state()["left_usd"]
+    if left <= 0.01:
+        raise ApiError(
+            409,
+            "invalid_transition",  # the contract's ErrorCode: continuing needs budget left
+            f"The model budget has ${max(left, 0):.2f} left; raise MODEL_BUDGET_USD in .env and restart the stack "
+            "first",
+        )
+    try:
+        out = analyse_again(db, run_id, principal.actor)
+    except ValueError as exc:
+        raise ApiError(409, "invalid_transition", str(exc)) from exc
+    return {"job_id": out["job_id"], "run_id": run_id, "operation_id": None, "status_path": f"/v1/runs/{run_id}"}
+
+
 def event_view(doc: dict[str, Any]) -> dict[str, Any]:
     view = to_view(doc, id_field="event_id")
     assert view is not None

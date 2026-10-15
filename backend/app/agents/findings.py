@@ -30,7 +30,7 @@ from typing import Any
 from pymongo.database import Database
 
 from app import audit
-from app.agents.common import Handles, cached_output, keep_output, numbers_in, record_run, stable_id
+from app.agents.common import Handles, cached_output, keep_output, numbers_in, record_run, stable_id, version_digest
 from app.agents.gateway import GatewayResult, ModelGateway
 from app.config import REPO_ROOT
 from app.contracts import ContractStore, to_view
@@ -104,7 +104,9 @@ def build_tasks(db: Database[dict[str, Any]], project_id: str, claims: list[dict
 
 def _task(project_id: str, claims: list[dict[str, Any]]) -> dict[str, Any]:
     refs = [_key(c) for c in claims]
-    digest = hashlib.sha256("|".join([PROMPT_VERSION, SCHEMA_VERSION, project_id, *refs]).encode()).hexdigest()
+    digest = hashlib.sha256(
+        "|".join([PROMPT_VERSION, version_digest(PROMPT_PATH, ROLE), SCHEMA_VERSION, project_id, *refs]).encode()
+    ).hexdigest()
     aspects = sorted({c["aspect"] for c in claims})
     return {"key": f"a07:{digest[:32]}", "project_id": project_id, "aspects": aspects, "claims": claims}
 
@@ -317,7 +319,12 @@ def store_findings(
         }
         latest = db["ai_findings"].find_one({"id": fid}, sort=[("revision", -1)])
         last_agent = db["ai_findings"].find_one({"id": fid, "created_by.kind": "agent"}, sort=[("revision", -1)])
-        if latest is not None and last_agent is not None and _same(last_agent, body):
+        if (
+            latest is not None
+            and last_agent is not None
+            and _same(last_agent, body)
+            and latest["review_status"] != "superseded"  # retired by an earlier synthesis: proposed again, it returns
+        ):
             stored.append({"id": fid, "revision": latest["revision"]})
             continue
         revision = (latest["revision"] + 1) if latest else 1

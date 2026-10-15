@@ -25,7 +25,7 @@ from typing import Any
 
 from pymongo.database import Database
 
-from app.agents.common import Handles, cached_output, keep_output, record_run, stable_id
+from app.agents.common import Handles, cached_output, keep_output, record_run, stable_id, version_digest
 from app.agents.gateway import GatewayResult, ModelGateway
 from app.config import REPO_ROOT
 from app.contracts import ContractStore, to_view
@@ -83,7 +83,9 @@ def build_tasks(
                 if _key(evidence) not in own and evidence["policy"]["family"] != "official_records":
                     candidates.setdefault(_key(evidence), evidence)
         refs = sorted([d["key"] for d in chunk] + [f"e:{k}" for k in candidates] + [f"r:{_key(r)}" for r in records])
-        digest = hashlib.sha256("|".join([PROMPT_VERSION, SCHEMA_VERSION, project_id, *refs]).encode()).hexdigest()
+        digest = hashlib.sha256(
+            "|".join([PROMPT_VERSION, version_digest(PROMPT_PATH, ROLE), SCHEMA_VERSION, project_id, *refs]).encode()
+        ).hexdigest()
         tasks.append(
             {
                 "key": f"a06:{digest[:32]}",

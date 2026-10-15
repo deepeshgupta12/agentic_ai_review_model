@@ -113,11 +113,12 @@ def identify_in_context(
     source: dict[str, Any],
     context_link: dict[str, Any] | None,
     gateway: ModelGateway | None = None,
+    run_id: str | None = None,
 ) -> dict[str, Any]:
     """A comment: matched on its own words first. One that names no project inherits its thread's accepted match
     (the video's, or for a reply its top comment's); if that match later leaves an accepted state, the inherited
     one returns to review with it (links.transition)."""
-    report = identify_source(client, db, contracts, source, gateway=gateway)
+    report = identify_source(client, db, contracts, source, gateway=gateway, run_id=run_id)
     if report["links"] or context_link is None or context_link["status"] not in ACTIVE_STATUSES:
         return report
     text = source_text(db, source)

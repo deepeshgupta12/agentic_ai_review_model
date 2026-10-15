@@ -15,8 +15,11 @@ from __future__ import annotations
 
 import json
 import logging
+import re
+import time
 from datetime import timedelta
 from typing import Any
+from urllib.parse import urlsplit
 
 from pymongo import MongoClient
 from pymongo.client_session import ClientSession
@@ -38,8 +41,10 @@ from app.errors import ApiError
 from app.identity.links import ACTIVE_STATUSES
 from app.identity.queries import build_query_plan
 from app.identity.service import identify_in_context, identify_metadata, identify_source
+from app.identity.text import normalise_text
 from app.ids import new_id
 from app.jobs import queue
+from app.jobs.queue import JobCancelled, JobLost
 from app.observability import log_event
 from app.sources import policies, state
 from app.sources.store import Item, Stored, store_item, withdrawn_on_request
@@ -56,6 +61,13 @@ GROUPS = {
 }
 TERMINAL_JOB = {"completed", "failed", "cancelled"}
 HELPER_CONNECTORS = {"firecrawl", "playwright_fetch"}  # used inside the web reader, never run as sources
+# Live coverage while a run collects: a planned source waits as "queued", then shows what it is doing ("in progress:")
+# and its counts so far, at most once every PROGRESS_SECONDS per source; its final entry replaces that.
+QUEUED = "queued"
+IN_PROGRESS = "in progress: "
+PROGRESS_SECONDS = 3.0
+HOST_TIMEOUTS = 2  # a host that timed out this often is not asked again in the same job
+SEARCHES = "ai_run_searches"  # each finished search of a run, so a retried job reuses it instead of paying again
 
 
 def run_view(doc: dict[str, Any]) -> dict[str, Any]:
@@ -133,6 +145,22 @@ def start_run(
             "Connectors are not enabled for this project",
             fields=[{"path": "connectors", "message": ", ".join(unknown)}],
         )
+    working = db[RUNS].find_one(
+        {
+            "project_id": project_id,
+            "$or": [
+                {"stage": "collecting"},
+                {"stage": "analysing", "outcome_note": {"$not": {"$regex": "^Analysis stopped"}}},
+            ],
+        },
+        {"_id": 1},
+    )
+    if working is not None:  # never two paid collections of one project at once (audit, 14 Oct 2026)
+        raise ApiError(
+            409,
+            "invalid_transition",
+            f"Run {working['_id']} of this project is still working; wait for it or cancel it first",
+        )
     window_days = body["window_days"] or config["refresh"]["lookback_days"]
     # Helpers are not sources of their own: Firecrawl renders pages for the web reader (D62), and its pages are counted
     # under web_fetch. Listing them as run sources showed a working Firecrawl key as "access pending".
@@ -153,7 +181,7 @@ def start_run(
         elif connector_id == "web_fetch" and "brave_search" not in runnable:
             coverage.append(_coverage(connector_id, "access_pending", "not run: no discovery source (brave_search)"))
         else:
-            coverage.append(_coverage(connector_id, "partial", "collecting"))
+            coverage.append(_coverage(connector_id, "partial", QUEUED))
     for group, members in GROUPS.items():
         if any(c["connector_id"] in members and c["status"] == "partial" for c in coverage):
             groups.append(group)
@@ -239,6 +267,15 @@ def finish_if_done(
     )
     if open_jobs:
         return False
+    failed = db["ai_jobs"].find_one({"run_id": run_id, "kind": "collect", "status": "failed"}, {"error": 1})
+    finalise_open_coverage(
+        db,
+        run_id,
+        None,
+        f"its job failed ({((failed or {}).get('error') or {}).get('code', 'unknown')})"
+        if failed
+        else "its job ended before it finished",
+    )
     contracts = get_contracts()
     if not contracts.transition_allowed("workflow_stage", "collecting", "analysing", "system"):
         raise RuntimeError("the contract no longer allows collecting -> analysing")
@@ -277,12 +314,15 @@ def cancel_run(
         raise ApiError(404, "not_found", "No such run")
     if not contracts.transition_allowed("workflow_stage", run["stage"], "cancelled", actor["role"]):
         raise ApiError(409, "invalid_transition", f"A run that is {run['stage']} cannot be cancelled")
-    for job in db["ai_jobs"].find({"run_id": run_id, "status": {"$nin": sorted(TERMINAL_JOB)}}):
-        queue.cancel(db, job["_id"])
-    db[RUNS].update_one(
+    moved = db[RUNS].update_one(
         {"_id": run_id, "stage": run["stage"]},
         {"$set": {"stage": "cancelled", "updated_at": utcnow(), "outcome_note": f"Cancelled: {reason}"}},
     )
+    if moved.modified_count != 1:  # the run moved on meanwhile: nothing was cancelled
+        raise ApiError(409, "version_conflict", "The run changed while cancelling; reload it")
+    for job in db["ai_jobs"].find({"run_id": run_id, "status": {"$nin": sorted(TERMINAL_JOB)}}):
+        queue.cancel(db, job["_id"])
+    finalise_open_coverage(db, run_id, None, "the run was cancelled")
     emit(db, run_id, "stage_changed", "cancelled", message=f"cancelled: {reason}")
     audit.record(db, "run.cancelled", "run", run_id, actor, details={"reason": reason[:300]})
     return {"job_id": None, "run_id": run_id, "operation_id": None, "status_path": f"/v1/runs/{run_id}"}
@@ -307,11 +347,26 @@ class Collector:
         self.run_id = job["run_id"]
         self.project_id = job["project_id"]
         run = db[RUNS].find_one({"_id": self.run_id}, {"coverage": 1}) or {"coverage": []}
-        # Only the connectors the run planned (enabled for the project, chosen and runnable at the start).
+        # Only the connectors the run planned (enabled for the project, chosen and runnable at the start). A retried job
+        # still sees its sources as partial: the final coverage of a group is written only when the group is done.
         self.planned = {c["connector_id"] for c in run["coverage"] if c["status"] == "partial"}
         gateway = gateway_for(db, self.settings, self.contracts)
         self._gateway = gateway if gateway.available else None
-        self.a01_left = self.settings.identity_agent_tasks_per_run
+        # Per run, across every job and attempt: the identity agent's tasks already spent for this run are counted.
+        used = db["ai_agent_runs"].count_documents({"run_id": self.run_id, "agent": "A01_project_identity"})
+        self.a01_left = max(0, self.settings.identity_agent_tasks_per_run - used)
+        self._progress_at: dict[str, float] = {}
+        self._check = check
+        self.check = self._checked
+        self.started = time.monotonic()
+
+    def _checked(self) -> str:
+        """Between units of work: cancellation and a lost lease stop the job (the worker's check); a group that has
+        worked longer than COLLECT_JOB_MAX_MINUTES stops where it is, with its coverage saying so."""
+        beat = str(self._check())
+        if time.monotonic() - self.started > self.settings.collect_job_max_minutes * 60:
+            raise TimeLimitReached(f"stopped at the {self.settings.collect_job_max_minutes}-minute limit of a job")
+        return beat
 
     @property
     def gateway(self) -> ModelGateway | None:
@@ -320,6 +375,19 @@ class Collector:
 
     def spent(self, report: dict[str, Any]) -> None:
         self.a01_left -= sum(1 for task in report.get("a01", []) if task.get("outcome") != "skipped")
+
+    def progress(
+        self, cov: dict[str, Any], doing: str, counts: dict[str, int] | None = None, *, now: bool = False
+    ) -> None:
+        """The source's counts so far, written while it works so the console shows them live (status partial, the
+        note says what it is doing). At most once every PROGRESS_SECONDS per source unless `now`."""
+        at = time.monotonic()
+        if not now and at - self._progress_at.get(cov["connector_id"], 0.0) < PROGRESS_SECONDS:
+            return
+        self._progress_at[cov["connector_id"]] = at
+        detail = _note(counts or {}, [])
+        note = f"{IN_PROGRESS}{doing}" + (f"; {detail}" if detail else "")
+        update_coverage(self.db, self.run_id, {**cov, "status": "partial", "note": note[:500]})
 
     def _build(self, connector_id: str) -> Any:
         return build(connector_id, self.db, self.settings) if connector_id in self.planned else None
@@ -361,50 +429,101 @@ class Collector:
         return run_in_transaction(self.client, write)
 
     def _queries(self, connector_id: str) -> list[dict[str, Any]]:
-        plan = build_query_plan(self.db, self.project_id, _registry(self.settings))["plan"]["queries"]
+        reviews_only = self.settings.analysis_mode == "reviews"
+        plan = build_query_plan(self.db, self.project_id, _registry(self.settings), reviews_only)["plan"]["queries"]
         return [q for q in plan if q["connector_id"] == connector_id]
 
     def _read_pages(
-        self, web: WebFetch, urls: list[str], cov: dict[str, Any], outcomes: dict[str, int], limit: int
+        self,
+        web: WebFetch,
+        urls: list[tuple[str, bool]],
+        cov: dict[str, Any],
+        outcomes: dict[str, int],
+        limit: int,
     ) -> None:
-        """Read each distinct page once, within `limit`; store, identify and count it in `cov` and `outcomes`."""
+        """Read each distinct page once, within `limit` real fetches (pages already read or withdrawn do not use it);
+        store, identify and count it in `cov` and `outcomes`. Only a hit that names the project may use the paid
+        fallbacks. A host that timed out twice is not asked again in this job; a page that fails in an unexpected way
+        is counted, never the end of the job (audit, 14 Oct 2026)."""
         seen: set[str] = set()
-        for url in urls:
-            if url in seen or len(seen) >= limit:
+        fetched = 0
+        timeouts: dict[str, int] = {}
+        for url, named in urls:
+            if url in seen:
                 continue
             seen.add(url)
-            self.check()
-            landed = self.db["ai_fetch_log"].find_one(
-                {"url": url, "outcome": "fetched", "final_url": {"$type": "string"}}, sort=[("at", -1)]
-            )
-            known = [url, landed["final_url"]] if landed else [url]  # a redirect is stored where it landed
-            existing = self.db["ai_sources"].find_one(
-                {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "active"}, {"_id": 1}
-            )
-            if existing is not None:
-                outcomes["already_read"] = outcomes.get("already_read", 0) + 1
+            if fetched >= limit:
+                _count(outcomes, "over_page_budget")
                 continue
-            withdrawn = self.db["ai_sources"].distinct(
-                "id", {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "withdrawn"}
-            )
-            if any(withdrawn_on_request(self.db, source_id) for source_id in withdrawn):
-                outcomes["withdrawn_on_request"] = outcomes.get("withdrawn_on_request", 0) + 1
-                continue  # not even requested again
-            outcome = web.fetch(url, run_id=self.run_id)
-            cov["attempted_queries"] += 1
-            key = "error_will_retry" if outcome.status == "error" and outcome.retryable else outcome.status
-            outcomes[key] = outcomes.get(key, 0) + 1
-            more = self._read_one(outcome, cov, outcomes)
-            if more and more not in seen and len(seen) < limit:  # a portal's full review list, read once (D68)
-                seen.add(more)
-                extra = web.fetch(more, run_id=self.run_id)
-                cov["attempted_queries"] += 1
-                outcomes[extra.status] = outcomes.get(extra.status, 0) + 1
-                self._read_one(extra, cov, outcomes)
+            if timeouts.get(urlsplit(url).hostname or "", 0) >= HOST_TIMEOUTS:
+                _count(outcomes, "skipped:host_timed_out")
+                continue
+            self.check()
+            if self._known(url, outcomes):
+                continue
+            fetched += 1
+            more = self._fetch_and_read(web, url, named, cov, outcomes, timeouts)
+            self.progress(cov, f"{fetched} of up to {limit} pages read", outcomes)
+            if more and more not in seen and fetched < limit and not self._known(more, outcomes):
+                seen.add(more)  # a portal's full review list, read once (D68)
+                fetched += 1
+                self._fetch_and_read(web, more, named, cov, outcomes, timeouts)
+
+    def _known(self, url: str, outcomes: dict[str, int]) -> bool:
+        """A page already stored (where it landed after redirects) or withdrawn on request is not read again."""
+        landed = self.db["ai_fetch_log"].find_one(
+            {"url": url, "outcome": "fetched", "final_url": {"$type": "string"}}, sort=[("at", -1)]
+        )
+        known = [url, landed["final_url"]] if landed else [url]
+        existing = self.db["ai_sources"].find_one(
+            {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "active"}, {"_id": 1}
+        )
+        if existing is not None:
+            _count(outcomes, "already_read")
+            return True
+        withdrawn = self.db["ai_sources"].distinct(
+            "id", {"connector_id": "web_fetch", "native_id": {"$in": known}, "lifecycle": "withdrawn"}
+        )
+        if any(withdrawn_on_request(self.db, source_id) for source_id in withdrawn):
+            _count(outcomes, "withdrawn_on_request")
+            return True
+        return False
+
+    def _fetch_and_read(
+        self,
+        web: WebFetch,
+        url: str,
+        named: bool,
+        cov: dict[str, Any],
+        outcomes: dict[str, int],
+        timeouts: dict[str, int],
+    ) -> str | None:
+        try:
+            outcome = web.fetch(url, run_id=self.run_id, paid=named)
+        except (JobCancelled, JobLost, TimeLimitReached):
+            raise
+        except Exception as exc:
+            log_event(logger, "page failed", level=logging.WARNING, url=url, error=type(exc).__name__)
+            _count(outcomes, "error:internal")
+            return None
+        cov["attempted_queries"] += 1
+        _count(outcomes, "error_will_retry" if outcome.status == "error" and outcome.retryable else outcome.status)
+        if outcome.status == "error" and "timed out" in (outcome.reason or ""):
+            host = urlsplit(url).hostname or ""
+            timeouts[host] = timeouts.get(host, 0) + 1
+        try:
+            return self._read_one(outcome, cov, outcomes)
+        except (JobCancelled, JobLost, TimeLimitReached):
+            raise
+        except Exception as exc:
+            log_event(logger, "page not read", level=logging.WARNING, url=url, error=type(exc).__name__)
+            _count(outcomes, "error:internal")
+            return None
 
     def _read_one(self, outcome: FetchOutcome, cov: dict[str, Any], outcomes: dict[str, int]) -> str | None:
-        """Store and identify one fetched page; split a portal or forum page into its reviews. Returns the URL of
-        the portal's full review list when the page shows only part of it."""
+        """Store and identify one fetched page; split a portal or forum page into its reviews, but only a page that
+        is about a project of the catalogue (any match not rejected): another project's reviews are never stored.
+        Returns the URL of the portal's full review list when the page shows only part of it."""
         if outcome.item is None or outcome.policy is None:
             return None
         page_source = self._store_one(outcome.item, outcome.policy)
@@ -418,12 +537,16 @@ class Collector:
             page_source.source,
             focus_project_ids=[self.project_id],
             gateway=self.gateway,
+            run_id=self.run_id,
         )
         self.spent(report)
         mine = [r for r in report["links"] if r["status"] != "rejected" and r["project_id"] == self.project_id]
         if mine:
             cov["matched"] += 1
         if outcome.policy["family"] not in policies.REVIEW_PAGE_FAMILIES or not outcome.html:
+            return None
+        if not any(r["status"] != "rejected" for r in report["links"]):
+            _count(outcomes, "reviews_not_split:page_about_no_catalogue_project")
             return None
         found = page_reviews(page_source.source["canonical_url"], outcome.html, self._project_names())
         for reason, count in found.dropped.items():
@@ -437,7 +560,9 @@ class Collector:
             if stored.source["lifecycle"] == "withdrawn":
                 continue
             outcomes["reviews_stored"] = outcomes.get("reviews_stored", 0) + (1 if stored.created else 0)
-            linked = identify_in_context(self.client, self.db, self.contracts, stored.source, page_link, self.gateway)
+            linked = identify_in_context(
+                self.client, self.db, self.contracts, stored.source, page_link, self.gateway, run_id=self.run_id
+            )
             self.spent(linked)
         return found.more_url
 
@@ -447,7 +572,26 @@ class Collector:
         project = self.db["projects"].find_one({"_id": self.project_id}, {"project_name": 1}) or {}
         config = self.db["ai_project_configs"].find_one({"_id": self.project_id}, {"aliases": 1}) or {}
         standalone = [a["text"] for a in config.get("aliases", []) if a.get("mode") == "standalone"]
-        return [n for n in dict.fromkeys([project.get("project_name") or "", *standalone]) if n]
+        names: list[str] = []
+        for name in dict.fromkeys([project.get("project_name") or "", *standalone]):
+            words = f" {normalise_text(name)} "
+            # "DLF Privana West" repeats "DLF Privana": a search for the shorter name already finds it
+            if name and not any(f" {normalise_text(kept)} " in words for kept in names):
+                names.append(name)
+        return names
+
+    def _name_keys(self) -> list[list[str]]:
+        """For the relevance test of search hits: each name's own words without the developer's ("DLF Privana" ->
+        "privana", "Conscient Parq" -> "parq"), so "Privana by DLF" and "DLF's Privana" count too."""
+        project = self.db["projects"].find_one({"_id": self.project_id}, {"developer": 1}) or {}
+        developer = set(normalise_text(project.get("developer") or "").split())
+        keys = []
+        for name in self._search_names():
+            words = normalise_text(name).split()
+            own = [w for w in words if w not in developer] or words
+            if own not in keys:
+                keys.append(own)
+        return keys
 
     def _project_names(self) -> list[str]:
         project = self.db["projects"].find_one({"_id": self.project_id}) or {}
@@ -464,12 +608,33 @@ class Collector:
         web_cov = _coverage("web_fetch", "complete_for_query", None)
         skipped: dict[str, int] = {}
         outcomes: dict[str, int] = {}
-        to_read: list[str] = []
+        to_read: list[tuple[str, bool]] = []
         errors: list[str] = []
+        # A portal or Quora hit is read only when its title or address names the project, and only a hit that names
+        # the project may use Scrapfly or Firecrawl: the first live run read 80 MagicBricks pages of other DLF
+        # projects for "DLF Privana" (14 Oct 2026).
+        keys = self._name_keys()
         if brave is not None:
-            for query in self._queries("brave_search"):
+            queries = self._queries("brave_search")
+            if web is not None:
+                self.progress(web_cov, "waiting for the search results", now=True)
+            for number, query in enumerate(queries, 1):
                 self.check()
+                self.progress(brave_cov, f"search {number} of {len(queries)}", skipped, now=number == 1)
+                done_before = self.db[SEARCHES].find_one({"_id": f"{self.run_id}|{query['query_text']}"})
+                if done_before is not None:  # a retried job: this search was finished and paid for already
+                    to_read += [(url, named) for url, named in done_before["to_read"]]
+                    for key, count in done_before["skipped"].items():
+                        skipped[key] = skipped.get(key, 0) + count
+                    brave_cov["attempted_queries"] += done_before["attempted"]
+                    brave_cov["fetched"] += done_before["stored"]
+                    brave_cov["metadata_only"] += done_before["stored"]
+                    continue
+                found: list[tuple[str, bool]] = []
+                found_skipped: dict[str, int] = {}
+                attempted = stored_count = 0
                 st, cursor = self._state("brave_search", query["query_text"])
+                finished = False
                 while True:
                     try:
                         page = brave.discover(query, cursor)
@@ -484,44 +649,88 @@ class Collector:
                         )
                         brave_cov["status"] = "unavailable" if exc.code == "access_refused" else "partial"
                         break
-                    brave_cov["attempted_queries"] += page.attempted
+                    attempted += page.attempted
                     keep: list[tuple[Item, dict[str, Any]]] = []
                     for item in page.items:
                         resolution = policies.resolve(self.db, item.canonical_url)
                         if resolution.family in ("youtube", "instagram_public", "reddit"):
                             name = resolution.family.split("_")[0]
-                            key = f"{name}_left_to_{name}_connector"
-                            skipped[key] = skipped.get(key, 0) + 1
+                            _count(found_skipped, f"{name}_left_to_{name}_connector")
                             continue
                         if not resolution.may_collect or resolution.policy is None:
-                            key = f"not_collected:{resolution.family or 'unknown'}"
-                            skipped[key] = skipped.get(key, 0) + 1
+                            _count(found_skipped, f"not_collected:{resolution.family or 'unknown'}")
                             continue
                         keep.append((item, resolution.policy))
-                        if resolution.family in policies.WEB_FETCH_FAMILIES:
-                            to_read.append(item.canonical_url)
+                        if resolution.family not in policies.WEB_FETCH_FAMILIES:
+                            continue
+                        named = names_the_project(item, keys)
+                        if resolution.family in policies.REVIEW_PAGE_FAMILIES and not named:
+                            _count(found_skipped, "not_read:no_project_name_in_title_or_address")
+                            continue
+                        found.append((item.canonical_url, named))
                     done = page.next_cursor is None
                     stored = self._store_page("brave_search", st, page, keep, done)
-                    brave_cov["fetched"] += len(stored)
-                    brave_cov["metadata_only"] += len(stored)
+                    stored_count += len(stored)
                     st = state.get(self.db, "brave_search", self.project_id, query["query_text"])
                     if done:
+                        finished = True
                         break
                     cursor = page.next_cursor
+                to_read += found
+                for key, count in found_skipped.items():
+                    skipped[key] = skipped.get(key, 0) + count
+                brave_cov["attempted_queries"] += attempted
+                brave_cov["fetched"] += stored_count
+                brave_cov["metadata_only"] += stored_count
+                if finished:
+                    self.db[SEARCHES].update_one(
+                        {"_id": f"{self.run_id}|{query['query_text']}"},
+                        {
+                            "$setOnInsert": {
+                                "run_id": self.run_id,
+                                "to_read": [[url, named] for url, named in found],
+                                "skipped": found_skipped,
+                                "attempted": attempted,
+                                "stored": stored_count,
+                                "at": utcnow(),
+                            }
+                        },
+                        upsert=True,
+                    )
             brave_cov["last_success_at"] = utcnow() if brave_cov["attempted_queries"] else None
+            # the searches are done; the coverage stays partial until the pages are read, so a retried job reads them
+            self.progress(brave_cov, "searches done; reading the pages found", skipped, now=True)
         brave_cov["note"] = _note(skipped, errors)
-        # The web reader: each distinct URL once per run, within the page budget.
         if web is not None:
             assert isinstance(web, WebFetch)
-            self._read_pages(web, to_read, web_cov, outcomes, self.settings.web_pages_per_run)
-            web_cov["last_success_at"] = utcnow() if web_cov["fetched"] else None
-            web_cov["note"] = _note(outcomes, [])
-            if outcomes.get("error_will_retry"):  # a page that may read next time; permanent outcomes are decided
-                web_cov["status"] = "partial"
+            # the paid fallbacks' allowances are per run: what earlier attempts of this run used is counted
+            web.unblock_left = max(
+                0, self.settings.unblocked_pages_per_run - self._fetch_log_count("^(fetched_unblocked|unblock_)")
+            )
+            web.render_left = max(
+                0, self.settings.rendered_pages_per_run - self._fetch_log_count("^(fetched_rendered|render_)")
+            )
+            if brave is not None and not brave_cov["attempted_queries"] and errors:
+                web_cov.update(
+                    status="unavailable", note=f"not run: every search failed ({', '.join(sorted(set(errors)))})"
+                )
+            else:
+                self._read_pages(web, to_read, web_cov, outcomes, self.settings.web_pages_per_run)
+                web_cov["last_success_at"] = utcnow() if web_cov["fetched"] else None
+                web_cov["note"] = _note(outcomes, [])
+                if (
+                    outcomes.get("error_will_retry")
+                    or outcomes.get("over_page_budget")
+                    or outcomes.get("error:internal")
+                ):
+                    web_cov["status"] = "partial"  # pages that may be read next time, or were left unread
         if brave is not None:
             update_coverage(self.db, self.run_id, brave_cov)
         if web is not None and brave is not None:
             update_coverage(self.db, self.run_id, web_cov)
+
+    def _fetch_log_count(self, outcomes: str) -> int:
+        return self.db["ai_fetch_log"].count_documents({"run_id": self.run_id, "outcome": {"$regex": outcomes}})
 
     # --- YouTube group: search and metadata, then comments on accepted videos ---
 
@@ -538,8 +747,10 @@ class Collector:
             update_coverage(self.db, self.run_id, cov)
             return
         videos: list[dict[str, Any]] = []
-        for query in self._queries("youtube_data_api")[: self.settings.youtube_searches_per_project]:
+        searches = self._queries("youtube_data_api")[: self.settings.youtube_searches_per_project]
+        for number, query in enumerate(searches, 1):
             self.check()
+            self.progress(cov, f"search {number} of {len(searches)}", counts, now=number == 1)
             st, cursor = self._state("youtube_data_api", query["query_text"])
             try:
                 page = yt.discover(query, cursor)
@@ -579,8 +790,10 @@ class Collector:
                     videos.append({"source": s.source, "link": active})
                 elif mine and mine[0]["status"] == "needs_review":
                     counts["videos_waiting_for_review"] = counts.get("videos_waiting_for_review", 0) + 1
-        for video in videos:
+        videos = list({v["source"]["id"]: v for v in videos}.values())  # a video found by two searches, once
+        for number, video in enumerate(videos, 1):
             self.check()
+            self.progress(cov, f"comments of video {number} of {len(videos)}", counts)
             self._comments(yt, video, policy, cov, counts, errors)
         cov["last_success_at"] = utcnow() if cov["attempted_queries"] else None
         cov["note"] = _note(counts, errors)
@@ -704,8 +917,9 @@ class Collector:
             return
         numbers = [r["id_normalised"] for r in project.get("rera_registrations", [])]
         missing: list[str] = []
-        for number in numbers:
+        for index, number in enumerate(numbers, 1):
             self.check()
+            self.progress(cov, f"registration {index} of {len(numbers)}", now=index == 1)
             cov["attempted_queries"] += 1
             try:
                 item = reader.record(state, number, run_id=self.run_id)
@@ -761,8 +975,9 @@ class Collector:
             a["text"] for a in config.get("aliases", []) if a.get("mode") == "standalone"
         ]
         queries = [{**base, "query_text": f'"{n}"'} for n in dict.fromkeys(n for n in names if n)]
-        for query in queries[: self.settings.instagram_queries_per_project]:
+        for number, query in enumerate(queries[: self.settings.instagram_queries_per_project], 1):
             self.check()
+            self.progress(cov, f"search {number}", counts, now=number == 1)
             try:
                 page = ig.discover(query, None)
             except ProviderError as exc:
@@ -773,7 +988,10 @@ class Collector:
             for key, count in page.skipped.items():
                 counts[key] = counts.get(key, 0) + count
             posts += [item.canonical_url for item in page.items if item.canonical_url not in posts]
-        read = 0
+        # posts this run already paid Scrapfly for, in an earlier attempt of this job, count against the cap
+        read = self.db["ai_fetch_log"].count_documents(
+            {"run_id": self.run_id, "connector_id": "instagram_public", "outcome": {"$nin": ["not_allowed"]}}
+        )
         for url in posts:
             if read >= self.settings.instagram_posts_per_project:
                 counts["over_the_per_run_cap"] = counts.get("over_the_per_run_cap", 0) + 1
@@ -790,6 +1008,9 @@ class Collector:
                 counts[outcome] = counts.get(outcome, 0) + 1
                 continue
             read += 1
+            self.progress(
+                cov, f"post {read} of up to {min(len(posts), self.settings.instagram_posts_per_project)}", counts
+            )
             try:
                 item = ig.fetch_item(url, run_id=self.run_id)
             except QuotaExhausted:
@@ -838,8 +1059,10 @@ class Collector:
         after = _reddit_after(self.db, self.run_id)
         threads: dict[str, dict[str, Any]] = {}
         loose: dict[str, dict[str, Any]] = {}
-        for name in self._search_names()[: s.reddit_names_per_project]:
+        names = self._search_names()[: s.reddit_names_per_project]
+        for number, name in enumerate(names, 1):
             self.check()
+            self.progress(cov, f"searching name {number} of {len(names)}", counts, now=number == 1)
             try:
                 for post in reddit.posts_naming(name, after, s.reddit_posts_per_name):
                     threads.setdefault(post["id"], post)
@@ -850,18 +1073,27 @@ class Collector:
                 cov["status"] = "partial"
                 continue
             cov["attempted_queries"] += 2
+        missing: set[str] = set()
         for comment in loose.values():  # a comment naming the project in a thread whose post does not
             post_id = str(comment.get("link_id") or "").removeprefix("t3_")
-            if post_id and post_id not in threads and len(threads) < s.reddit_threads_per_run:
-                try:
-                    post = reddit.post(post_id)
-                except ProviderError as exc:
-                    errors.append(exc.code)
-                    continue
-                if post is not None:
-                    threads[post_id] = post
-        for post in list(threads.values())[: s.reddit_threads_per_run]:
+            if not post_id or post_id in threads or post_id in missing or len(threads) >= s.reddit_threads_per_run:
+                continue
             self.check()
+            try:
+                post = reddit.post(post_id)
+            except ProviderError as exc:
+                errors.append(exc.code)
+                cov["status"] = "partial"
+                missing.add(post_id)
+                continue
+            if post is None:
+                missing.add(post_id)
+            else:
+                threads[post_id] = post
+        chosen = list(threads.values())[: s.reddit_threads_per_run]
+        for number, post in enumerate(chosen, 1):
+            self.check()
+            self.progress(cov, f"thread {number} of {len(chosen)}", counts)
             try:
                 thread = reddit.thread(post, s.reddit_comments_per_thread)
             except ProviderError as exc:
@@ -918,9 +1150,61 @@ class Collector:
                 cov["matched"] += 1
 
 
+def names_the_project(item: Item, keys: list[list[str]]) -> bool:
+    """Whether a search hit's title or address carries the project's own name words (Collector._name_keys): all words
+    of one key, as words or run together ("dlfprivana"). Portal and Quora addresses are made from the page title
+    (magicbricks.com/dlf-privana-south-sector-77-gurgaon-pdpid-...). A title in Devanagari cannot be judged this way
+    and is read."""
+    title = item.title or ""
+    if any("\u0900" <= ch <= "\u097f" for ch in title):
+        return True
+    text = f"{title} {re.sub(r'[^0-9A-Za-z]+', ' ', item.canonical_url)}"
+    words = set(normalise_text(text).split())
+    compact = re.sub(r"[^0-9a-z]+", "", text.lower())
+    return any(key and (all(w in words for w in key) or "".join(key) in compact) for key in keys)
+
+
 def _reddit_after(db: Database[dict[str, Any]], run_id: str) -> Any:
     run = db[RUNS].find_one({"_id": run_id}, {"window": 1}) or {}
     return (run.get("window") or {}).get("from") or utcnow() - timedelta(days=365)
+
+
+def _count(counts: dict[str, int], key: str, by: int = 1) -> None:
+    counts[key] = counts.get(key, 0) + by
+
+
+class TimeLimitReached(Exception):
+    """A collect job worked longer than COLLECT_JOB_MAX_MINUTES: it stops where it is, keeping what it stored."""
+
+
+def finalise_open_coverage(
+    db: Database[dict[str, Any]],
+    run_id: str,
+    connectors: tuple[str, ...] | None,
+    reason: str,
+    *,
+    final: bool = True,
+) -> None:
+    """Coverage still saying "queued" or "in progress" when its job can no longer finish it (the job failed, ran out
+    of time, or the run was cancelled) says so: a source that started keeps its counts so far as partial, one that
+    never started is unavailable (audit, 14 Oct 2026)."""
+    run = db[RUNS].find_one({"_id": run_id}, {"coverage": 1}) or {"coverage": []}
+    for c in run["coverage"]:
+        note = c.get("note") or ""
+        if connectors is not None and c["connector_id"] not in connectors:
+            continue
+        if c["status"] != "partial" or not (note == QUEUED or note.startswith(IN_PROGRESS)):
+            continue
+        started = note.startswith(IN_PROGRESS)
+        detail = note[len(IN_PROGRESS) :] if started else ""
+        entry = {
+            **c,
+            # a job that will be tried again keeps every source partial (planned): only a final end marks a source
+            # that never started as unavailable
+            "status": "partial" if started or not final else "unavailable",
+            "note": (f"stopped: {reason}" + (f"; {detail}" if detail else ""))[:500],
+        }
+        update_coverage(db, run_id, entry)
 
 
 def _note(counts: dict[str, int], errors: list[str]) -> str | None:
@@ -936,19 +1220,26 @@ def handle_collect(db: Database[dict[str, Any]], job: dict[str, Any], check: Any
     run = db[RUNS].find_one({"_id": job["run_id"]})
     if run is None or run["stage"] != "collecting":
         return None
+    runners = {
+        "web": "run_web",
+        "youtube_data_api": "run_youtube",
+        "registry": "run_registry",
+        "instagram": "run_instagram",
+        "reddit": "run_reddit",
+    }
+    if group not in runners:
+        raise ValueError(f"unknown collect group {group}")
     collector = Collector(db.client, db, job, check)
     log_event(logger, "collect started", run_id=job["run_id"], group=group)
-    if group == "web":
-        collector.run_web()
-    elif group == "youtube_data_api":
-        collector.run_youtube()
-    elif group == "registry":
-        collector.run_registry()
-    elif group == "instagram":
-        collector.run_instagram()
-    elif group == "reddit":
-        collector.run_reddit()
-    else:
-        raise ValueError(f"unknown collect group {group}")
+    try:
+        getattr(collector, runners[group])()
+    except TimeLimitReached as exc:
+        finalise_open_coverage(db, job["run_id"], GROUPS.get(group), str(exc))
+    except (JobCancelled, JobLost):
+        raise
+    except Exception as exc:
+        # a later attempt overwrites this; after the last one it stays, saying why the source is unfinished
+        finalise_open_coverage(db, job["run_id"], GROUPS.get(group), f"error {type(exc).__name__}", final=False)
+        raise
     finish_if_done(db.client, db, job["run_id"], exclude_job=job["_id"])
     return None

@@ -17,7 +17,8 @@ type View = components["schemas"]["ContentRevisionView"];
 type ReviewView = components["schemas"]["ReviewExcerptView"];
 
 function Issues({ issues, block, index }: { issues: Issue[]; block: string; index?: number | null }) {
-  const own = issues.filter((i) => i.block === block && (index === undefined || i.item_index === index || i.item_index === null));
+  // with an index: that item's issues only; without one: the block's issues not tied to an item (audit, 14 Oct 2026)
+  const own = issues.filter((i) => i.block === block && (index === undefined ? i.item_index === null : i.item_index === index));
   if (own.length === 0) return null;
   return (
     <ul className="mt-1 space-y-0.5">
@@ -100,6 +101,8 @@ export function ContentEditor({
   const shownIds = new Set(payload.reviews.map((r) => r.support.review.id));
   const addable = available.filter((v) => !shownIds.has(v.review.id) && v.review.polarity !== "neutral" && v.review.text);
   const full = payload.reviews.length >= limits.page_reviews_max;
+  // QA issue indexes refer to the saved order: after a move or removal each issue stays with its own review
+  const savedIndex = new Map(revision.payload.reviews.map((r, i) => [r.support.review.id, i]));
 
   function update(change: (p: Payload) => void) {
     setPayload((current) => {
@@ -208,11 +211,13 @@ export function ContentEditor({
                   </button>
                 </div>
               ) : null}
-              <Issues issues={issues} block="reviews" index={index} />
+              {savedIndex.has(review.support.review.id) ? (
+                <Issues issues={issues} block="reviews" index={savedIndex.get(review.support.review.id)} />
+              ) : null}
             </li>
           ))}
         </ol>
-        <Issues issues={issues.filter((i) => i.item_index === null)} block="reviews" />
+        <Issues issues={issues} block="reviews" />
         {editable && addable.length ? (
           <details className="mt-4">
             <summary className="cursor-pointer text-accent">Add an approved review ({addable.length} not on the page)</summary>

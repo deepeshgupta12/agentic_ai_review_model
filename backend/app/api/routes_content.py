@@ -100,6 +100,10 @@ def list_content_revisions(
         query["lifecycle"] = lifecycle
     before = decode_cursor(cursor)
     if before:
+        if not before.isdigit():
+            raise ApiError(
+                422, "validation_failed", "Invalid cursor", fields=[{"path": "cursor", "message": "not a valid cursor"}]
+            )
         query["revision"] = {"$lt": int(before)}
     rows = list(db[service.REVISIONS].find(query).sort("revision", -1).limit(limit + 1))
     more = len(rows) > limit

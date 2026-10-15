@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ActionDialog } from "@/components/ActionDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState, ErrorState, Field, Mono, Panel, Table, Td, Th } from "@/components/ui";
-import { apiGet, currentUser, type Schemas } from "@/lib/api-server";
+import { apiGet, apiGetAll, currentUser, type Schemas } from "@/lib/api-server";
 import { formatDay, label } from "@/lib/format";
 import { can } from "@/lib/roles";
 
@@ -15,7 +15,7 @@ export default async function SetupPage({ params }: { params: Promise<{ projectI
   const { projectId } = await params;
   const [detail, proposals, me, health] = await Promise.all([
     apiGet<Schemas["ProjectDetail"]>(`/v1/projects/${projectId}`),
-    apiGet<Schemas["AliasProposalPage"]>(`/v1/projects/${projectId}/alias-proposals`, { limit: 50 }),
+    apiGetAll<Schemas["AliasProposal"]>(`/v1/projects/${projectId}/alias-proposals`),
     currentUser(),
     apiGet<Schemas["ConnectorHealthList"]>("/v1/connectors/health"),
   ]);

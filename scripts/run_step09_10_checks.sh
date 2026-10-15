@@ -262,7 +262,7 @@ echo "node:       $(node --version 2>/dev/null) | pnpm $(pnpm --version 2>/dev/n
 
 expect "Regression: Step 01 validator" 0 python3 scripts/validate_inputs.py
 expect "Regression: Step 01-02 use-case suites" 0 "$PY" -m unittest discover -s scripts/tests -q
-expect "Contracts: checker, fixtures and the JavaScript hash cross-check (api 1.4.0, content 1.2.0, common 1.3.0, evidence 1.1.0, routes 1.1.0)" 0 "$PY" scripts/check_contracts.py
+expect "Contracts: checker, fixtures and the JavaScript hash cross-check (api 1.5.0, content 1.2.0, common 1.3.0, evidence 1.1.0, routes 1.3.0)" 0 "$PY" scripts/check_contracts.py
 
 expect "Backend: ruff lint and format" 0 bash -c "cd backend && $UV run ruff check . && $UV run ruff format --check ."
 expect "Backend: mypy" 0 bash -c "cd backend && $UV run mypy"

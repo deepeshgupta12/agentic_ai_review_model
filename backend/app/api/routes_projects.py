@@ -55,7 +55,15 @@ def project_summary(db: Database[dict[str, Any]], project: dict[str, Any]) -> di
     pending = {"review_status": "pending", "project_id": pid}
     return {
         "project": {k: project[k] for k in ("slug", "project_name", "locality", "city")} | {"id": pid},
-        "latest_run": {"id": run["_id"], "stage": run["stage"], "updated_at": iso(run["updated_at"])} if run else None,
+        "latest_run": {
+            "id": run["_id"],
+            "stage": run["stage"],
+            "updated_at": iso(run["updated_at"]),
+            "outcome_note": run.get("outcome_note"),
+            "content_revision_id": run.get("content_revision_id"),
+        }
+        if run
+        else None,
         "coverage": [to_view(c, id_field=None) for c in (run or {}).get("coverage", [])],
         "pending_review": {
             "findings": db["ai_findings"].count_documents(pending),

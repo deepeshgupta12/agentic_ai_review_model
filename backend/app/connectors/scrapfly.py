@@ -78,6 +78,7 @@ class Scrapfly:
             result = json.loads(response.body)["result"]
         except (json.JSONDecodeError, KeyError, TypeError) as exc:
             raise FetchError("bad_response", "Scrapfly returned an unexpected response", retryable=True) from exc
+        quota.settle(self.db, self.settings, LEDGER, "credits", cost, credits, self.now())
         return ScrapedPage(int(result.get("status_code") or 0), str(result.get("content") or ""), credits)
 
     def credits(self) -> dict[str, Any]:

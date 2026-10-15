@@ -65,6 +65,16 @@ VIDEO_KINDS = ("video", "short")
 WAITING = ("discovered", "metadata_only", "access_pending", "error")
 FRAMES_FROM_POLICY_VERSION = 3  # spoken_video_content v3 (product owner, 1 Oct 2026, Z3) covers frames
 
+# Frame analysis failures that say nothing about the video: the job is retried, the frames are not skipped for good.
+FRAME_RETRY_CODES = {
+    "budget_exhausted",
+    "access_pending",
+    "provider_unavailable",
+    "no_spend_ledger",
+    "price_unknown",
+    "model_not_found",
+}
+
 
 def eligible_videos(db: Database[dict[str, Any]], project_id: str | None = None) -> list[dict[str, Any]]:
     """Active YouTube videos with an accepted project link that have no transcript yet, for projects whose
@@ -375,8 +385,13 @@ def process_video(
                         check()
                         assert gateway is not None and project_id is not None
                         observations, outcome = analyse_frames(db, gateway, frames, source, project_id)
-                        if outcome == "failed":
-                            frames_skipped = skip_frames(db, source, "a03_failed: the frame analysis did not complete")
+                        if outcome.startswith("failed"):
+                            code = outcome.partition(":")[2] or "unknown"
+                            if code in FRAME_RETRY_CODES:  # the model was out of budget or reach: try the video later
+                                raise MediaError(f"frame analysis stopped: {code}")
+                            frames_skipped = skip_frames(
+                                db, source, f"a03_failed: the frame analysis did not complete ({code})"
+                            )
             finally:
                 shutil.rmtree(workdir, ignore_errors=True)  # the audio, the video and the frames are never kept
         if has_captions:

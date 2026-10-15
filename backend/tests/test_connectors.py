@@ -96,7 +96,12 @@ def web_policy(db, contracts, api, make_user):
         basis="test allow-list",
     )
     assert (
-        api.post("/v1/admin/source-policies", json=body, headers=sign_in(api, make_user, ["admin"])).status_code == 201
+        api.post(
+            "/v1/admin/source-policies",
+            json=body,
+            headers={**sign_in(api, make_user, ["admin"]), "Idempotency-Key": "policy-version-0001"},
+        ).status_code
+        == 201
     )
 
 
@@ -324,7 +329,12 @@ def record_only_policy(db, contracts, api, make_user):
         robots_txt="record_only",
     )
     assert (
-        api.post("/v1/admin/source-policies", json=body, headers=sign_in(api, make_user, ["admin"])).status_code == 201
+        api.post(
+            "/v1/admin/source-policies",
+            json=body,
+            headers={**sign_in(api, make_user, ["admin"]), "Idempotency-Key": "policy-version-0002"},
+        ).status_code
+        == 201
     )
 
 

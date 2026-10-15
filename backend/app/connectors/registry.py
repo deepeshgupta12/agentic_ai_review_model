@@ -28,6 +28,18 @@ def safe_client(settings: Settings) -> SafeClient:
     )
 
 
+def paid_client(settings: Settings) -> SafeClient:
+    """For paid providers (Scrapfly, Firecrawl): the same client as every other call (one place to build it, and to
+    replace it in tests), made to wait longer than the provider's own timeout and to try once only, since a request
+    sent again may be billed again (audit, 14 Oct 2026)."""
+    import httpx
+
+    client = safe_client(settings)
+    client.max_attempts = 1
+    client._client.timeout = httpx.Timeout(settings.paid_provider_timeout_seconds)
+    return client
+
+
 def agent_token(settings: Settings) -> str:
     return settings.crawler_user_agent.split("/", 1)[0].strip()
 
@@ -37,7 +49,7 @@ def scrapfly_for(db: Database[dict[str, Any]], settings: Settings) -> Any:
     from app.connectors.scrapfly import Scrapfly
 
     key = settings.scrapfly_api_key
-    return Scrapfly(key.get_secret_value(), safe_client(settings), db, settings) if key else None
+    return Scrapfly(key.get_secret_value(), paid_client(settings), db, settings) if key else None
 
 
 def firecrawl_for(db: Database[dict[str, Any]], settings: Settings) -> Any:
@@ -45,7 +57,7 @@ def firecrawl_for(db: Database[dict[str, Any]], settings: Settings) -> Any:
     from app.connectors.firecrawl import Firecrawl
 
     key = settings.firecrawl_api_key
-    return Firecrawl(key.get_secret_value(), safe_client(settings), db, settings) if key else None
+    return Firecrawl(key.get_secret_value(), paid_client(settings), db, settings) if key else None
 
 
 def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -> Connector | None:

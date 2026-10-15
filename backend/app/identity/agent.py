@@ -82,8 +82,14 @@ def run_identity_agent(
     projects = {p["_id"]: p for p in db["projects"].find({"_id": {"$in": [i.id for i in identities]}})}
     catalogue = [_catalogue_entry(i, projects[i.id]) for i in identities if i.id in projects]
     started = time.monotonic()
+    # its own limit (decisions for at most A01_MAX_SEGMENTS segments), not the 16,000 default (audit, 14 Oct 2026)
     result = gateway.run(
-        "routine", SCHEMA_REF, PROMPT_PATH.read_text(encoding="utf-8"), build_user_content(catalogue, items)
+        "routine",
+        SCHEMA_REF,
+        PROMPT_PATH.read_text(encoding="utf-8"),
+        build_user_content(catalogue, items),
+        max_tokens=4000,
+        purpose="A01_project_identity",
     )
     elapsed_ms = int((time.monotonic() - started) * 1000)
     by_link = {item["link"]["_id"]: item for item in items}

@@ -54,7 +54,7 @@ Read: all roles. Edit: researcher. Data: `op:getProject`, `op:listAliasProposals
 
 ### Runs — `/console/projects/[projectId]/runs` and `/console/runs/[runId]`
 
-Read: all roles. Start and cancel: researcher. Data: `op:listRuns`, `op:getRun`, `op:streamRunEvents` (falls back to polling `op:getRun`). Actions: `op:startRun` (window and connectors within entitlements), `op:cancelRun` (reason required).
+Read: all roles. Start and cancel: researcher. Data: `op:listRuns`, `op:getRun`, `op:streamRunEvents` (falls back to polling `op:getRun`). Actions: `op:startRun` (window and connectors within entitlements), `op:cancelRun` (reason required), `op:continueAnalysis` (after a stop on the model budget or model access; continues from the last checkpoint). Coverage updates live while the run works: each source shows queued, running with what it is doing and its counts, then its final status.
 
 The run page shows the stage timeline and a coverage table per connector: attempted queries, fetched, matched, analysed, metadata-only, last success and a note. `access_pending`, `partial` and `unavailable` are labelled, never shown as zero discussion. An `insufficient_evidence` result says so plainly and shows the coverage behind it.
 

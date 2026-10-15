@@ -9,9 +9,11 @@ import json
 from datetime import UTC, datetime
 from types import SimpleNamespace
 
+import anthropic
 import pytest
 
 from app.agents.reviews import speaker_label
+from app.config import REPO_ROOT
 from app.connectors import portal_reviews as pr
 from app.connectors import registry
 from app.connectors.reddit import RedditPublic, comment_item, flatten_listing, post_item
@@ -372,6 +374,7 @@ def test_the_page_takes_at_most_its_limit_of_reviews_each_30_to_80_words(
     api, db, settings, contracts, fictional, model, make_user
 ):
     settings.analysis_mode = "reviews"
+    settings.review_words_min = 30  # the published limit (the shared fixture lowers it for its short texts)
     q, _ = analysing_run(db, settings, contracts, fictional)
     work(db)
     approve_all(db, q)
@@ -474,3 +477,159 @@ def test_reddit_is_searched_only_with_names_that_stand_alone(db, settings, world
     assert '"Quillon Residences"' in searched and '"Quillon"' not in searched, searched
     standalone = {f'"{text}"' for text, mode in modes.items() if mode == "standalone"}
     assert searched <= standalone | {'"Quillon Residences"'}
+
+
+# --- a cut-off answer is split, and an unfinished reading stops the run (first live run, 14 Oct 2026) -------------
+
+
+def cut_off_above(model, sources_allowed):
+    """The scripted model answers A11 with a cut-off reply (stop_reason max_tokens, as the real model did for 36
+    sources at 4,000 tokens) whenever a task holds more than `sources_allowed` sources."""
+    from .test_gateway import response
+
+    answer = model.create
+
+    def create(**kwargs):
+        system = kwargs["system"] if isinstance(kwargs["system"], str) else kwargs["system"][0]["text"]
+        lines = [x for x in kwargs["messages"][0]["content"].splitlines() if x.startswith("{")]
+        if system.startswith("You are A11") and len(lines) - 1 > model.allowed:
+            model.calls.append("A11")
+            return response({"outcome": "completed", "reviews": []}, stop_reason="max_tokens")
+        return answer(**kwargs)
+
+    model.allowed = sources_allowed
+    model.create = create
+
+
+def test_a_cut_off_review_task_is_split_and_read_again(db, settings, contracts, fictional, model):
+    settings.analysis_mode = "reviews"
+    cut_off_above(model, 1)
+    q, run = analysing_run(db, settings, contracts, fictional)
+    assert work(db) == ["waiting_review"]
+    assert model.calls == ["A11", "A11", "A11"], "the two-source task, then each half"
+    assert db["ai_review_excerpts"].count_documents({"project_id": q}) == 2
+    assert db["ai_runs"].find_one({"_id": run["_id"]})["stage"] == "findings_review"
+
+
+def test_an_unfinished_reading_stops_the_run_and_continue_analysis_finishes_it(
+    api, db, settings, contracts, fictional, model, make_user
+):
+    from .test_audit_fixes import a11_fails_with
+    from .test_gateway import api_error
+
+    settings.analysis_mode = "reviews"
+    a11_fails_with(model, api_error(anthropic.BadRequestError, 400))  # a failure that cannot be split
+    q, run = analysing_run(db, settings, contracts, fictional)
+    work(db)
+    stopped = db["ai_runs"].find_one({"_id": run["_id"]})
+    assert stopped["stage"] == "analysing", "never insufficient_evidence when the reading failed"
+    assert stopped["outcome_note"].startswith("Analysis stopped: reviews_unfinished")
+    path = f"/v1/runs/{run['_id']}/analysis"
+    moderator = sign_in(api, make_user, ["moderator"])
+    assert api.post(path, headers=moderator).status_code == 403
+    researcher = sign_in(api, make_user, ["researcher"])
+    model.failing = False  # the cause is fixed
+    accepted = api.post(path, headers=researcher)
+    assert accepted.status_code == 202, accepted.text
+    assert contracts.errors(accepted.json(), "api.schema.json#/$defs/Accepted") == []
+    again = api.post(path, headers=researcher)
+    assert again.status_code == 409 and again.json()["error"]["code"] == "invalid_transition", "one at a time"
+    assert db["ai_runs"].find_one({"_id": run["_id"]})["outcome_note"].startswith("Analysis continued")
+    assert work(db) == ["waiting_review"]
+    assert db["ai_runs"].find_one({"_id": run["_id"]})["stage"] == "findings_review"
+    assert db["ai_review_excerpts"].count_documents({"project_id": q}) == 2
+    assert db["ai_audit_events"].count_documents({"action": "run.analysis_continued"}) == 1
+
+
+def test_continue_analysis_is_refused_while_the_budget_has_nothing_left(
+    api, db, settings, contracts, fictional, model, make_user
+):
+    from .test_audit_fixes import a11_fails_with
+    from .test_gateway import api_error
+
+    settings.analysis_mode = "reviews"
+    a11_fails_with(model, api_error(anthropic.BadRequestError, 400))
+    _, run = analysing_run(db, settings, contracts, fictional)
+    work(db)
+    settings.model_budget_usd = 0.0
+    researcher = sign_in(api, make_user, ["researcher"])
+    refused = api.post(f"/v1/runs/{run['_id']}/analysis", headers=researcher)
+    assert refused.status_code == 409 and "MODEL_BUDGET_USD" in refused.json()["error"]["message"]
+    assert (
+        refused.json()["error"]["code"]
+        in json.loads((REPO_ROOT / "contracts" / "v1" / "common.schema.json").read_text())["$defs"]["ErrorCode"]["enum"]
+    )
+    assert api.post("/v1/runs/run_01K0000000000000000000000Z/analysis", headers=researcher).status_code == 404
+
+
+# --- live coverage while a run collects ------------------------------------------------------------------------
+
+
+def test_coverage_shows_queued_then_running_then_final(db, settings, world):
+    from app.sources.collection import EVENTS
+
+    run_id = start(db, settings, world["q"])["run_id"]
+    planned = coverage(db, run_id)
+    assert planned["reddit_public"]["note"] == "queued" and planned["web_fetch"]["note"] == "queued"
+    run_all_jobs(db)
+    events = list(db[EVENTS].find({"run_id": run_id, "type": "coverage_updated"}))
+    for source in ("brave_search", "web_fetch", "youtube_data_api", "reddit_public"):
+        notes = [e["coverage"]["note"] or "" for e in events if e["coverage"]["connector_id"] == source]
+        assert any(n.startswith("in progress: ") for n in notes), (source, notes)
+    final = coverage(db, run_id)
+    assert all(
+        not (c["note"] or "").startswith(("in progress", "queued"))
+        for c in final.values()
+        if c["status"] != "access_pending"
+    )
+
+
+# --- portal and Quora hits are read only when they name the project ---------------------------------------------
+
+
+def test_a_portal_page_of_another_project_is_not_read(db, settings, world, monkeypatch):
+    from app.sources.collection import names_the_project
+    from app.sources.store import Item
+
+    def hit(url, title):
+        return Item(
+            connector_id="brave_search",
+            native_id=url,
+            canonical_url=url,
+            source_kind="search_result",
+            capture_level="metadata_only",
+            title=title,
+        )
+
+    names = [["quillon", "residences"]]
+    assert names_the_project(hit("https://www.magicbricks.com/quillon-residences-sector-102-pdpid-1", "Reviews"), names)
+    assert names_the_project(hit("https://www.quora.com/Is-it-good", "Is Quillon Residences worth it?"), names)
+    assert not names_the_project(
+        hit("https://www.magicbricks.com/brightwell-towers-sector-9-pdpid-2", "Brightwell"), names
+    )
+    assert not names_the_project(hit("https://www.magicbricks.com/quillon-residency-pdpid-3", "x"), names), (
+        "whole words"
+    )
+    net = internet()
+    other = "https://www.magicbricks.com/brightwell-towers-sector-9-gurgaon-pdpid-4d42"
+    net.json(
+        "api.search.brave.com",
+        lambda r: (
+            200,
+            {
+                "query": {},
+                "web": {
+                    "results": [
+                        {"url": PROJECT_PAGE, "title": "Quillon"},
+                        {"url": other, "title": "Brightwell Towers reviews"},
+                    ]
+                },
+            },
+        ),
+    )
+    serve(net, magicbricks_page([mb("r1", OWNER)]), magicbricks_page([mb("r1", OWNER)], link=False))
+    monkeypatch.setattr(registry, "safe_client", lambda _s: net.client())
+    run_id = start(db, settings, world["q"], connectors=["brave_search"])["run_id"]
+    run_all_jobs(db)
+    assert "/brightwell-towers-sector-9-gurgaon-pdpid-4d42" not in [r.url.path for r in net.requests]
+    assert "not_read:no_project_name_in_title_or_address: " in coverage(db, run_id)["brave_search"]["note"]

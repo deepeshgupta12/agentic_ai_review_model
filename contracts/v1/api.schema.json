@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "API request and response shapes",
   "description": "Bodies and views used by contracts/v1/openapi.json (docs/03). Actor identity is never accepted from a request body; the backend derives it from the session.",
-  "x-contract-version": "1.4.0",
+  "x-contract-version": "1.5.0",
   "$defs": {
     "LoginRequest": {
       "type": "object",
@@ -92,7 +92,12 @@
               "properties": {
                 "id": { "$ref": "common.schema.json#/$defs/RunId" },
                 "stage": { "$ref": "common.schema.json#/$defs/WorkflowStage" },
-                "updated_at": { "$ref": "common.schema.json#/$defs/Timestamp" }
+                "updated_at": { "$ref": "common.schema.json#/$defs/Timestamp" },
+                "outcome_note": {
+                  "description": "What the run is doing or why it stopped (1.5.0): the console refreshes only while the system works",
+                  "anyOf": [{ "type": "string" }, { "type": "null" }]
+                },
+                "content_revision_id": { "anyOf": [{ "$ref": "common.schema.json#/$defs/ContentRevisionId" }, { "type": "null" }] }
               }
             },
             { "type": "null" }

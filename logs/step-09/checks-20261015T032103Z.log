@@ -1,0 +1,1160 @@
+Steps 09 and 10 checks
+date (UTC): 2026-10-15T03:21:07Z
+commit:     206e4bc (plus uncommitted changes)
+node:       v25.9.0 | pnpm 11.20.0 | docker 29.4.2
+
+=== Regression: Step 01 validator ===
+$ python3 scripts/validate_inputs.py
+Step 01 input validation
+========================
+
+Projects (contracts/five-project-input-template.json)
+  1. DLF Privana
+     slug:         dlf-privana-sector-76-gurgaon
+     search names: dlf privana | dlf privana south | dlf privana west | dlf privana north
+     place:        sector 76, new gurgaon, gurgaon
+     developer:    dlf
+     RERA:         GGM/772/504/2023/116, GGM/819/551/2024/46, GGM/954/686/2025/57
+     Client id:        1170
+     status:       ready_to_move
+  2. Conscient Parq
+     slug:         conscient-parq-sector-80-gurgaon
+     search names: conscient parq | parq
+     place:        sector 80, new gurgaon, gurgaon
+     developer:    conscient
+     RERA:         GGM/818/550/2024/45
+     Client id:        247842
+     status:       under_construction
+  3. Sobha Crescent
+     slug:         sobha-crescent-sector-63a-gurgaon
+     search names: sobha crescent | sobha crescent phase 1
+     place:        sector 63a, golf course extension, gurgaon
+     developer:    sobha
+     RERA:         GGM/1054/786/2026/26
+     Client id:        343921
+     status:       new_launch
+  4. M3M Forestia West
+     slug:         m3m-forestia-west-manesar-sector-9-gurgaon
+     search names: m3m forestia west | m3m forestia west i
+     place:        manesar sector 9, manesar, gurgaon
+     developer:    m3m
+     RERA:         GGM/1030/762/2026/02
+     Client id:        342510
+     status:       new_launch
+  5. M3M Antalya Hills
+     slug:         m3m-antalya-hills-sector-79-gurgaon
+     search names: m3m antalya hills | m3m antalya hills phase 1 | m3m antalya hills phase ii | m3m antalya hills 3 | commercial 01 in m3m antalya hills phase i
+     place:        sector 79, new gurgaon, gurgaon
+     developer:    m3m
+     RERA:         GGM/650/382/2022/125, GGM/833/565/2024/60, GGM/844/576/2024/71, GGM/867/599/2024/94
+     Client id:        201749
+     status:       partially_ready
+
+Connectors + model providers: 14 (7 access_pending, 7 live)
+Source policies: 13 (13 accepted)
+Operating defaults: 14 (12 accepted, 2 open)
+
+Warnings (1):
+  - projects[1] (Conscient Parq): search name 'parq' is a single word; Step 04 should use it only with developer or locality (D17)
+
+Result: PASS (0 errors, 1 warnings)
+--> OK (exit 0, expected 0)
+
+=== Regression: Step 01-02 use-case suites ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python -m unittest discover -s scripts/tests -q
+----------------------------------------------------------------------
+Ran 130 tests in 2.082s
+
+OK
+--> OK (exit 0, expected 0)
+
+=== Contracts: checker, fixtures and the JavaScript hash cross-check (api 1.5.0, content 1.2.0, common 1.3.0, evidence 1.1.0, routes 1.3.0) ===
+$ /Users/deepeshgupta/Projects/agentic_ai_review_model/.venv/bin/python scripts/check_contracts.py
+Step 02 contract checks
+=======================
+9 schema files, 218 definitions, 52 operations, 14 state machines, 19 journeys, 115 fixture cases
+
+  PASS      Schema files are valid and every $ref resolves
+  PASS      Status vocabulary and state machines
+  PASS      Route table and generated OpenAPI
+  PASS      Journeys: actors, operations and state paths
+  PASS      Agent outputs fit Claude structured outputs
+  PASS      Fixtures: valid pass, invalid fail for the stated reason
+  PASS      Canonical hashing (D23)
+  PASS      Text anchors, code points and UTF-16 (D24)
+  PASS      Approval and public-read rules
+  PASS      Construction status and first-person source reviews (D27, D28)
+  PASS      Step 01 seed data uses the contract vocabulary
+  PASS      Docs: journeys doc current, screen references valid
+  PASS      JavaScript cross-check (Node)
+
+Result: PASS (13/13 sections passed)
+--> OK (exit 0, expected 0)
+
+=== Backend: ruff lint and format ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run ruff check . && env -u VIRTUAL_ENV uv run ruff format --check .
+All checks passed!
+168 files already formatted
+--> OK (exit 0, expected 0)
+
+=== Backend: mypy ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run mypy
+Success: no issues found in 130 source files
+--> OK (exit 0, expected 0)
+
+=== UC-17..UC-81: backend tests against the Compose replica set (no real credentials, no model call) ===
+$ bash -c cd backend && env -u VIRTUAL_ENV uv run pytest -q -p no:cacheprovider
+........................................................................ [ 16%]
+........................................................................ [ 32%]
+........................................................................ [ 48%]
+........................................................................ [ 64%]
+........................................................................ [ 80%]
+........................................................................ [ 96%]
+..................                                                       [100%]
+450 passed in 2627.87s (0:43:47)
+--> OK (exit 0, expected 0)
+
+=== Web: eslint, TypeScript, API types, unit tests (role map equals the contract) ===
+$ bash -c cd web && pnpm -s lint && pnpm -s typecheck >/dev/null && pnpm -s check:api && pnpm -s test >/dev/null && echo 'web gates OK'
+$ eslint
+$ next typegen && tsc --noEmit
+$ openapi-typescript ../contracts/v1/openapi.json -o lib/api-schema.d.ts --check
+✨ openapi-typescript 7.13.0
+$ vitest run
+web gates OK
+--> OK (exit 0, expected 0)
+
+=== Images build ===
+$ docker compose build
+ Image agentic_ai_review_model-db-setup Building 
+ Image agentic_ai_review_model-embedder Building 
+ Image agentic_ai_review_model-scheduler Building 
+ Image agentic_ai_review_model-worker Building 
+ Image agentic_ai_review_model-web Building 
+ Image agentic_ai_review_model-media-worker Building 
+ Image agentic_ai_review_model-api Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 3.69kB done
+#1 DONE 0.0s
+
+#2 [worker internal] load build definition from Dockerfile
+#2 DONE 0.1s
+
+#3 [embedder internal] load build definition from Dockerfile.embed
+#3 DONE 0.0s
+
+#4 [web internal] load build definition from Dockerfile
+#4 DONE 0.1s
+
+#5 [media-worker internal] load build definition from Dockerfile.media
+#5 DONE 0.0s
+
+#2 [scheduler internal] load build definition from Dockerfile
+#2 transferring dockerfile: 30B 0.0s
+#2 transferring dockerfile: 938B 0.1s done
+#2 ...
+
+#3 [embedder internal] load build definition from Dockerfile.embed
+#3 transferring dockerfile: 1.13kB 0.4s done
+#3 DONE 1.9s
+
+#5 [media-worker internal] load build definition from Dockerfile.media
+#5 transferring dockerfile: 1.41kB 0.2s done
+#5 DONE 2.0s
+
+#4 [web internal] load build definition from Dockerfile
+#4 transferring dockerfile: 877B 0.1s done
+#4 DONE 2.2s
+
+#2 [api internal] load build definition from Dockerfile
+#2 DONE 2.8s
+
+#6 [media-worker internal] load metadata for ghcr.io/astral-sh/uv:0.10.2
+#6 ...
+
+#7 [scheduler internal] load metadata for docker.io/library/python:3.13-slim
+#7 DONE 2.4s
+
+#8 [web internal] load metadata for docker.io/library/node:24-alpine
+#8 DONE 7.8s
+
+#6 [worker internal] load metadata for ghcr.io/astral-sh/uv:0.10.2
+#6 ...
+
+#9 [web internal] load .dockerignore
+#9 transferring context: 33B 0.1s
+#9 transferring context: 195B 0.1s done
+#9 ...
+
+#6 [worker internal] load metadata for ghcr.io/astral-sh/uv:0.10.2
+#6 DONE 8.5s
+
+#9 [api internal] load .dockerignore
+#9 transferring context: 195B 0.1s done
+#9 transferring context: 195B 0.1s done
+#9 DONE 0.6s
+
+#10 [scheduler internal] load build context
+#10 DONE 0.0s
+
+#10 [db-setup internal] load build context
+#10 DONE 0.0s
+
+#11 [web internal] load build context
+#11 DONE 0.0s
+
+#12 [embedder stage-0  1/13] FROM docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b
+#12 ...
+
+#13 [embedder internal] load build context
+#13 DONE 0.0s
+
+#12 [embedder stage-0  1/13] FROM docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b
+#12 resolve docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b
+#12 ...
+
+#14 [db-setup] FROM ghcr.io/astral-sh/uv:0.10.2@sha256:94a23af2d50e97b87b522d3cea24aaf8a1faedec1344c952767434f69585cbf9
+#14 resolve ghcr.io/astral-sh/uv:0.10.2@sha256:94a23af2d50e97b87b522d3cea24aaf8a1faedec1344c952767434f69585cbf9 0.6s done
+#14 DONE 0.9s
+
+#15 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#15 resolve docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f 0.7s done
+#15 DONE 0.9s
+
+#12 [api stage-0  1/13] FROM docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b
+#12 resolve docker.io/library/python:3.13-slim@sha256:7c61056e61ac89e852de05f3dc6fa51a6dd2181797bceed46aa725dd7cb2cd3b 0.8s done
+#12 DONE 1.1s
+
+#11 [web internal] load build context
+#11 transferring context: 6.49kB 0.9s done
+#11 DONE 3.1s
+
+#15 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#15 DONE 4.2s
+
+#10 [worker internal] load build context
+#10 transferring context: 116.46kB 0.7s done
+#10 transferring context: 116.46kB 0.7s done
+#10 DONE 1.4s
+
+#15 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#15 sha256:96c9e20187652156868199b37841dc9a00b9a0dfe8cd51ea8425764a44a04047 0B / 56.78MB 0.8s
+#15 sha256:9980a296d082ba2e6df2fe57e4e752c11c16f4f6369b8ae36c42be09a3237527 0B / 1.26MB 0.8s
+#15 sha256:633ba0417cc75a37c8c074ff0c47e75b281c63deebdb2f70f3ffa435a87ccc89 0B / 445B 0.8s
+#15 ...
+
+#13 [embedder internal] load build context
+#13 transferring context: 114.59kB 0.7s done
+#13 DONE 1.3s
+
+#15 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#15 sha256:96c9e20187652156868199b37841dc9a00b9a0dfe8cd51ea8425764a44a04047 3.15MB / 56.78MB 1.4s
+#15 sha256:9980a296d082ba2e6df2fe57e4e752c11c16f4f6369b8ae36c42be09a3237527 1.26MB / 1.26MB 1.8s
+#15 sha256:633ba0417cc75a37c8c074ff0c47e75b281c63deebdb2f70f3ffa435a87ccc89 445B / 445B 1.7s
+#15 sha256:96c9e20187652156868199b37841dc9a00b9a0dfe8cd51ea8425764a44a04047 8.39MB / 56.78MB 2.0s
+#15 ...
+
+#16 [api stage-0  3/10] WORKDIR /srv/backend
+#16 CACHED
+
+#17 [api stage-0  4/12] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#17 CACHED
+
+#18 [api stage-0  2/13] COPY --from=ghcr.io/astral-sh/uv:0.10.2 /uv /uvx /bin/
+#18 CACHED
+
+#15 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#15 sha256:96c9e20187652156868199b37841dc9a00b9a0dfe8cd51ea8425764a44a04047 11.51MB / 56.78MB 2.1s
+#15 ...
+
+#16 [scheduler stage-0  3/10] WORKDIR /srv/backend
+#16 CACHED
+
+#17 [scheduler stage-0  4/12] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#17 CACHED
+
+#18 [scheduler stage-0  2/13] COPY --from=ghcr.io/astral-sh/uv:0.10.2 /uv /uvx /bin/
+#18 CACHED
+
+#19 [db-setup stage-0  5/12] RUN uv sync --frozen --no-dev --no-install-project
+#19 CACHED
+
+#15 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#15 sha256:96c9e20187652156868199b37841dc9a00b9a0dfe8cd51ea8425764a44a04047 14.68MB / 56.78MB 2.3s
+#15 ...
+
+#20 [media-worker stage-0  3/13] RUN sed -i "s|http://deb.debian.org|https://deb.debian.org|g" /etc/apt/sources.list.d/debian.sources  && apt-get update  && apt-get install -y --no-install-recommends ffmpeg  && rm -rf /var/lib/apt/lists/*
+#20 CACHED
+
+#21 [media-worker stage-0  4/13] WORKDIR /srv/backend
+#21 CACHED
+
+#22 [media-worker stage-0  5/13] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#22 CACHED
+
+#18 [media-worker stage-0  2/13] COPY --from=ghcr.io/astral-sh/uv:0.10.2 /uv /uvx /bin/
+#18 CACHED
+
+#23 [media-worker stage-0  6/13] RUN uv sync --frozen --no-dev --group media --no-install-project
+#23 CACHED
+
+#16 [embedder stage-0  3/10] WORKDIR /srv/backend
+#16 CACHED
+
+#24 [embedder stage-0  4/10] COPY backend/pyproject.toml backend/uv.lock backend/.python-version ./
+#24 CACHED
+
+#25 [embedder stage-0  5/10] RUN uv sync --frozen --no-dev --group embed --no-install-project
+#25 CACHED
+
+#18 [embedder stage-0  2/13] COPY --from=ghcr.io/astral-sh/uv:0.10.2 /uv /uvx /bin/
+#18 CACHED
+
+#26 [worker stage-0  6/12] COPY backend/app ./app
+#26 ...
+
+#15 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#15 sha256:96c9e20187652156868199b37841dc9a00b9a0dfe8cd51ea8425764a44a04047 56.78MB / 56.78MB 6.3s done
+#15 sha256:9980a296d082ba2e6df2fe57e4e752c11c16f4f6369b8ae36c42be09a3237527 1.26MB / 1.26MB 6.3s done
+#15 sha256:633ba0417cc75a37c8c074ff0c47e75b281c63deebdb2f70f3ffa435a87ccc89 445B / 445B 6.3s done
+#15 DONE 10.8s
+
+#15 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#15 extracting sha256:96c9e20187652156868199b37841dc9a00b9a0dfe8cd51ea8425764a44a04047
+#15 ...
+
+#27 [media-worker stage-0  7/13] COPY backend/app ./app
+#27 DONE 5.0s
+
+#28 [embedder stage-0  6/10] COPY backend/app ./app
+#28 DONE 5.0s
+
+#26 [scheduler stage-0  6/12] COPY backend/app ./app
+#26 DONE 4.9s
+
+#29 [api stage-0  7/12] RUN uv sync --frozen --no-dev
+#29 ...
+
+#15 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#15 extracting sha256:96c9e20187652156868199b37841dc9a00b9a0dfe8cd51ea8425764a44a04047 8.3s done
+#15 extracting sha256:9980a296d082ba2e6df2fe57e4e752c11c16f4f6369b8ae36c42be09a3237527
+#15 extracting sha256:9980a296d082ba2e6df2fe57e4e752c11c16f4f6369b8ae36c42be09a3237527 1.0s done
+#15 DONE 20.1s
+
+#30 [embedder stage-0  7/10] RUN uv sync --frozen --no-dev --group embed
+#30 ...
+
+#15 [web deps 1/5] FROM docker.io/library/node:24-alpine@sha256:44fce696f38ba8c987c4db89954051000bbd05ffd8d8659ba15ed4a8602e937f
+#15 extracting sha256:633ba0417cc75a37c8c074ff0c47e75b281c63deebdb2f70f3ffa435a87ccc89
+#15 extracting sha256:633ba0417cc75a37c8c074ff0c47e75b281c63deebdb2f70f3ffa435a87ccc89 0.3s done
+#15 DONE 20.3s
+
+#31 [media-worker stage-0  8/13] RUN uv sync --frozen --no-dev --group media
+#31 ...
+
+#29 [api stage-0  7/12] RUN uv sync --frozen --no-dev
+#29 8.592    Building sy-poc-backend @ file:///srv/backend
+#29 ...
+
+#32 [web deps 2/5] WORKDIR /srv/web
+#32 DONE 0.5s
+
+#33 [web deps 3/5] RUN corepack enable
+#33 DONE 3.8s
+
+#29 [api stage-0  7/12] RUN uv sync --frozen --no-dev
+#29 12.26       Built sy-poc-backend @ file:///srv/backend
+#29 12.28 Prepared 1 package in 3.67s
+#29 12.35 Installed 1 package in 64ms
+#29 ...
+
+#34 [web deps 4/5] COPY web/package.json web/pnpm-lock.yaml web/pnpm-workspace.yaml ./
+#34 DONE 0.5s
+
+#35 [web deps 5/5] RUN pnpm install --frozen-lockfile
+#35 ...
+
+#30 [embedder stage-0  7/10] RUN uv sync --frozen --no-dev --group embed
+#30 8.509    Building sy-poc-backend @ file:///srv/backend
+#30 12.17       Built sy-poc-backend @ file:///srv/backend
+#30 12.18 Prepared 1 package in 3.66s
+#30 12.29 Installed 1 package in 86ms
+#30 ...
+
+#31 [media-worker stage-0  8/13] RUN uv sync --frozen --no-dev --group media
+#31 8.967    Building sy-poc-backend @ file:///srv/backend
+#31 12.20       Built sy-poc-backend @ file:///srv/backend
+#31 12.22 Prepared 1 package in 3.23s
+#31 12.29 Installed 1 package in 76ms
+#31 ...
+
+#29 [api stage-0  7/12] RUN uv sync --frozen --no-dev
+#29 24.25 Bytecode compiled 5904 files in 11.75s
+#29 24.25  + sy-poc-backend==0.1.0 (from file:///srv/backend)
+#29 ...
+
+#30 [embedder stage-0  7/10] RUN uv sync --frozen --no-dev --group embed
+#30 24.60 Bytecode compiled 6591 files in 12.31s
+#30 24.60  + sy-poc-backend==0.1.0 (from file:///srv/backend)
+#30 DONE 25.7s
+
+#29 [worker stage-0  7/12] RUN uv sync --frozen --no-dev
+#29 DONE 25.8s
+
+#35 [web deps 5/5] RUN pnpm install --frozen-lockfile
+#35 12.14 ! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-11.20.0.tgz
+#35 ...
+
+#36 [embedder stage-0  8/10] COPY contracts /srv/contracts
+#36 DONE 1.8s
+
+#37 [db-setup stage-0  8/12] COPY contracts /srv/contracts
+#37 DONE 1.7s
+
+#38 [api stage-0  9/12] COPY seed /srv/seed
+#38 DONE 0.2s
+
+#39 [embedder stage-0  9/10] COPY seed /srv/seed
+#39 DONE 0.3s
+
+#40 [worker stage-0 10/12] COPY prompts /srv/prompts
+#40 ...
+
+#31 [media-worker stage-0  8/13] RUN uv sync --frozen --no-dev --group media
+#31 27.99 Bytecode compiled 7757 files in 15.67s
+#31 27.99  + sy-poc-backend==0.1.0 (from file:///srv/backend)
+#31 DONE 28.7s
+
+#41 [embedder stage-0 10/10] RUN useradd --system --uid 10001 --create-home app  && mkdir -p /srv/embeddings  && chown app /srv/embeddings
+#41 ...
+
+#40 [scheduler stage-0 10/12] COPY prompts /srv/prompts
+#40 DONE 0.8s
+
+#42 [media-worker stage-0  9/13] COPY contracts /srv/contracts
+#42 DONE 2.2s
+
+#43 [api stage-0 11/12] COPY evals /srv/evals
+#43 DONE 1.6s
+
+#44 [db-setup stage-0 12/12] RUN useradd --system --uid 10001 --no-create-home app
+#44 ...
+
+#45 [media-worker stage-0 10/13] COPY seed /srv/seed
+#45 DONE 0.4s
+
+#46 [media-worker stage-0 11/13] COPY prompts /srv/prompts
+#46 DONE 0.5s
+
+#41 [embedder stage-0 10/10] RUN useradd --system --uid 10001 --create-home app  && mkdir -p /srv/embeddings  && chown app /srv/embeddings
+#41 ...
+
+#47 [media-worker stage-0 12/13] COPY evals /srv/evals
+#47 DONE 0.4s
+
+#48 [media-worker stage-0 13/13] RUN useradd --system --uid 10001 --create-home app  && mkdir -p /srv/models /tmp/media  && chown app /srv/models /tmp/media
+#48 1.941 useradd warning: app's uid 10001 is greater than SYS_UID_MAX 999
+#48 DONE 2.6s
+
+#44 [worker stage-0 12/12] RUN useradd --system --uid 10001 --no-create-home app
+#44 3.321 useradd warning: app's uid 10001 is greater than SYS_UID_MAX 999
+#44 DONE 3.9s
+
+#41 [embedder stage-0 10/10] RUN useradd --system --uid 10001 --create-home app  && mkdir -p /srv/embeddings  && chown app /srv/embeddings
+#41 6.276 useradd warning: app's uid 10001 is greater than SYS_UID_MAX 999
+#41 DONE 7.2s
+
+#49 [embedder] exporting to image
+#49 exporting layers
+#49 ...
+
+#50 [worker] exporting to image
+#50 ...
+
+#51 [scheduler] exporting to image
+#51 ...
+
+#52 [db-setup] exporting to image
+#52 ...
+
+#53 [media-worker] exporting to image
+#53 ...
+
+#54 [api] exporting to image
+#54 ...
+
+#52 [db-setup] exporting to image
+#52 exporting layers 11.7s done
+#52 exporting manifest sha256:15e739ab8e796f02441436ce2dad115237ccba9bd7162a4032ade8d80a4e63f9
+#52 exporting manifest sha256:15e739ab8e796f02441436ce2dad115237ccba9bd7162a4032ade8d80a4e63f9 0.4s done
+#52 exporting config sha256:8d9c820a29f7062991fbf9fd7187f7616e060c4dec08270f3affc5019f0ffee7
+#52 exporting config sha256:8d9c820a29f7062991fbf9fd7187f7616e060c4dec08270f3affc5019f0ffee7 0.2s done
+#52 exporting attestation manifest sha256:9cfe60a7f630ac04a0c3580fd452c47273f7421ca89a688025dbb73d4346fe3a
+#52 exporting attestation manifest sha256:9cfe60a7f630ac04a0c3580fd452c47273f7421ca89a688025dbb73d4346fe3a 1.6s done
+#52 exporting manifest list sha256:f6f4932df04634923cf6d13eb201f40600c97a7f8c4ebffebeba53967c7cb8b0
+#52 exporting manifest list sha256:f6f4932df04634923cf6d13eb201f40600c97a7f8c4ebffebeba53967c7cb8b0 0.2s done
+#52 naming to docker.io/library/agentic_ai_review_model-db-setup:latest
+#52 naming to docker.io/library/agentic_ai_review_model-db-setup:latest 0.1s done
+#52 unpacking to docker.io/library/agentic_ai_review_model-db-setup:latest
+#52 unpacking to docker.io/library/agentic_ai_review_model-db-setup:latest 2.3s done
+#52 ...
+
+#49 [embedder] exporting to image
+#49 exporting layers 11.9s done
+#49 exporting manifest sha256:06793f8a040a103dc7e38bad874f11dda7ea7722cb0ef97a1e33e6b8fcf1079f 0.3s done
+#49 exporting config sha256:14c92b45a3f681bd36f96b6e3c260b3c3d630b7780f0b58d1f60451a9f91fb59 0.3s done
+#49 exporting attestation manifest sha256:dd63afbdc7dd123fc94e6a5b975308c24a1aa9fd357a7b3dd158841e75ef8dd4 1.1s done
+#49 exporting manifest list sha256:4164eeae5d06f472a2a69f096dd7239caa4b01f68c5f2cbaa9012e430e5ca9d5 0.1s done
+#49 naming to docker.io/library/agentic_ai_review_model-embedder:latest 0.0s done
+#49 unpacking to docker.io/library/agentic_ai_review_model-embedder:latest 2.1s done
+#49 DONE 17.1s
+
+#35 [web deps 5/5] RUN pnpm install --frozen-lockfile
+#35 38.80 ? Verifying lockfile against supply-chain policies (509 entries)...
+#35 38.90 Lockfile is up to date, resolution step is skipped
+#35 ...
+
+#54 [api] exporting to image
+#54 exporting layers 11.7s done
+#54 exporting manifest sha256:b4480b3252d95523422672221fea4911cd674d6d4d3e70ea1f6eb1928a6eb64d 0.3s done
+#54 exporting config sha256:4d676b584b616143cc7beb500b52e3f27a88e1fa522fe46e28ca8712b210fbe6 0.3s done
+#54 exporting attestation manifest sha256:a190e3526dd5de9cb444b0d21db5cbb606306530c9dedf556de24c16d866b659 1.6s done
+#54 exporting manifest list sha256:181c02d5aa2a666824985f9fc343d6098bfb3065dabf58f3e6244ca926c7816f 0.2s done
+#54 naming to docker.io/library/agentic_ai_review_model-api:latest 0.1s done
+#54 unpacking to docker.io/library/agentic_ai_review_model-api:latest 2.2s done
+#54 DONE 17.9s
+
+#53 [media-worker] exporting to image
+#53 exporting layers 12.1s done
+#53 exporting manifest sha256:5996d4668613be29b37d95455ecd269f22345b53bb8ed7ea1ed087c91e06be4b 0.3s done
+#53 exporting config sha256:33989d901a6f659bf9026fd685608a4a9ab3c6a52dca87f841287a4a16ddcd9c 0.2s done
+#53 exporting attestation manifest sha256:ba708ca661c102929aa9b625201b1b786f8b65a323bfdd9cfd77f778db1a4b3e 0.9s done
+#53 exporting manifest list sha256:56446cf253edaccd328e3b3a91fab1490c947e3b23f0b8e1877022b361d93534 0.2s done
+#53 naming to docker.io/library/agentic_ai_review_model-media-worker:latest 0.0s done
+#53 unpacking to docker.io/library/agentic_ai_review_model-media-worker:latest 2.3s done
+#53 ...
+
+#52 [db-setup] exporting to image
+#52 DONE 18.0s
+
+#50 [worker] exporting to image
+#50 exporting layers 11.7s done
+#50 exporting manifest sha256:3768b2074c66e983141a2baf031ddf465eeb11e371e26f63a164622a51139af4 0.4s done
+#50 exporting config sha256:3d4b41a3f42ef4dc19943c3955be36d0d004c236bd6a190729555213c939d1e2 0.2s done
+#50 exporting attestation manifest sha256:fb472c555d2f8cf3110a3d7f2ddb14e22ead24180091cdbc527f4b0ed3e9cafb 1.5s done
+#50 exporting manifest list sha256:88b64ebbabb8b180c2acd756f777f864c456ef437596dac32e4ffa5810d5e450 0.2s done
+#50 naming to docker.io/library/agentic_ai_review_model-worker:latest 0.1s done
+#50 unpacking to docker.io/library/agentic_ai_review_model-worker:latest 2.3s done
+#50 DONE 18.4s
+
+#51 [scheduler] exporting to image
+#51 exporting layers 11.7s done
+#51 exporting manifest sha256:4b56158517019b980d254ad96f24dddf730530a4e88b3ab84414b583ab9bfe1c 0.3s done
+#51 exporting config sha256:0f1578d73cb7c182443dbf2e928d3cfc721199a8cfa94a77f3bec3f9ea408946 0.3s done
+#51 exporting attestation manifest sha256:f3a7e3d209da6dcee1694125e3a3c8bff1bbc03480ea4b6d724772eb88f56478 1.6s done
+#51 exporting manifest list sha256:ef1c2690b80968a649929e2dbb5878620a47d2b723768f2502ce0afa1e3744d1 0.2s done
+#51 naming to docker.io/library/agentic_ai_review_model-scheduler:latest 0.1s done
+#51 unpacking to docker.io/library/agentic_ai_review_model-scheduler:latest 2.3s done
+#51 ...
+
+#53 [media-worker] exporting to image
+#53 DONE 18.5s
+
+#35 [web deps 5/5] RUN pnpm install --frozen-lockfile
+#35 ...
+
+#51 [scheduler] exporting to image
+#51 DONE 18.8s
+
+#35 [web deps 5/5] RUN pnpm install --frozen-lockfile
+#35 41.84 Progress: resolved 1, reused 0, downloaded 0, added 0
+#35 ...
+
+#55 [embedder] resolving provenance for metadata file
+#55 DONE 2.4s
+
+#56 [scheduler] resolving provenance for metadata file
+#56 DONE 0.5s
+
+#57 [media-worker] resolving provenance for metadata file
+#57 DONE 1.7s
+
+#58 [worker] resolving provenance for metadata file
+#58 DONE 2.1s
+
+#59 [db-setup] resolving provenance for metadata file
+#59 DONE 2.4s
+
+#60 [api] resolving provenance for metadata file
+#60 DONE 1.4s
+
+#35 [web deps 5/5] RUN pnpm install --frozen-lockfile
+#35 47.87 Packages: +407
+#35 47.87 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+#35 48.20 Progress: resolved 407, reused 0, downloaded 0, added 0
+#35 49.98 [WARN] Request took 10586ms: https://registry.npmjs.org/@img%2Fcolour
+#35 51.55 [WARN] Request took 12244ms: https://registry.npmjs.org/@eslint%2Fobject-schema
+#35 51.60 [WARN] Request took 12279ms: https://registry.npmjs.org/@humanwhocodes%2Fmodule-importer
+#35 51.64 [WARN] Request took 12704ms: https://registry.npmjs.org/@alloc%2Fquick-lru
+#35 53.51 [WARN] Request took 14270ms: https://registry.npmjs.org/@emnapi%2Fwasi-threads
+#35 53.55 [WARN] Request took 14229ms: https://registry.npmjs.org/@humanfs%2Fcore
+#35 53.55 [WARN] Request took 14245ms: https://registry.npmjs.org/@humanfs%2Fnode
+#35 53.56 [WARN] Request took 14481ms: https://registry.npmjs.org/@babel%2Fhelper-globals
+#35 53.56 [WARN] Request took 14258ms: https://registry.npmjs.org/@humanfs%2Ftypes
+#35 54.06 [WARN] Request took 14800ms: https://registry.npmjs.org/@eslint%2Fconfig-array
+#35 54.09 [WARN] Request took 14829ms: https://registry.npmjs.org/@eslint%2Fconfig-helpers
+#35 54.17 [WARN] Request took 14855ms: https://registry.npmjs.org/@humanwhocodes%2Fretry
+#35 55.29 [WARN] Request took 15960ms: https://registry.npmjs.org/@eslint%2Fplugin-kit
+#35 55.45 [WARN] Request took 15975ms: https://registry.npmjs.org/@jridgewell%2Fgen-mapping
+#35 57.20 [WARN] Request took 17878ms: https://registry.npmjs.org/@img%2Fsharp-freebsd-wasm32
+#35 57.28 [WARN] Request took 17815ms: https://registry.npmjs.org/@img%2Fsharp-wasm32
+#35 57.31 [WARN] Request took 17840ms: https://registry.npmjs.org/@img%2Fsharp-win32-x64
+#35 57.34 [WARN] Request took 18070ms: https://registry.npmjs.org/@eslint%2Fcore
+#35 57.38 [WARN] Request took 17929ms: https://registry.npmjs.org/@img%2Fsharp-linux-riscv64
+#35 60.96 [WARN] Request took 21489ms: https://registry.npmjs.org/@img%2Fsharp-win32-ia32
+#35 60.98 [WARN] Request took 21519ms: https://registry.npmjs.org/@img%2Fsharp-webcontainers-wasm32
+#35 60.99 [WARN] Request took 21544ms: https://registry.npmjs.org/@img%2Fsharp-linux-ppc64
+#35 61.49 [WARN] Request took 22041ms: https://registry.npmjs.org/@img%2Fsharp-linux-s390x
+#35 61.71 [WARN] Request took 22350ms: https://registry.npmjs.org/@img%2Fsharp-libvips-linux-ppc64
+#35 61.75 [WARN] Request took 22284ms: https://registry.npmjs.org/@img%2Fsharp-win32-arm64
+#35 61.75 [WARN] Request took 22370ms: https://registry.npmjs.org/@img%2Fsharp-libvips-linux-riscv64
+#35 61.97 [WARN] Request took 22646ms: https://registry.npmjs.org/@img%2Fsharp-libvips-darwin-arm64
+#35 62.20 [WARN] Request took 22816ms: https://registry.npmjs.org/@img%2Fsharp-libvips-linux-x64
+#35 62.22 [WARN] Request took 22883ms: https://registry.npmjs.org/@img%2Fsharp-libvips-linux-arm64
+#35 62.35 [WARN] Request took 23109ms: https://registry.npmjs.org/@eslint-community%2Fregexpp
+#35 62.36 [WARN] Request took 23028ms: https://registry.npmjs.org/@img%2Fsharp-libvips-darwin-x64
+#35 62.36 [WARN] Request took 22941ms: https://registry.npmjs.org/@img%2Fsharp-libvips-linuxmusl-x64
+#35 62.37 [WARN] Request took 22950ms: https://registry.npmjs.org/@img%2Fsharp-libvips-linuxmusl-arm64
+#35 62.38 [WARN] Request took 22995ms: https://registry.npmjs.org/@img%2Fsharp-libvips-linux-s390x
+#35 62.39 [WARN] Request took 23026ms: https://registry.npmjs.org/@img%2Fsharp-libvips-linux-arm
+#35 62.41 [WARN] Request took 22957ms: https://registry.npmjs.org/@img%2Fsharp-linux-x64
+#35 62.54 [WARN] Request took 23430ms: https://registry.npmjs.org/@babel%2Fhelper-string-parser
+#35 62.55 [WARN] Request took 23233ms: https://registry.npmjs.org/@img%2Fsharp-darwin-arm64
+#35 62.70 [WARN] Request took 23468ms: https://registry.npmjs.org/@eslint-community%2Feslint-utils
+#35 62.71 [WARN] Request took 23392ms: https://registry.npmjs.org/@img%2Fsharp-darwin-x64
+#35 62.71 [WARN] Request took 23287ms: https://registry.npmjs.org/@img%2Fsharp-linux-arm64
+#35 62.85 [WARN] Request took 23416ms: https://registry.npmjs.org/@img%2Fsharp-linux-arm
+#35 62.86 [WARN] Request took 23402ms: https://registry.npmjs.org/@img%2Fsharp-linuxmusl-x64
+#35 62.86 [WARN] Request took 23403ms: https://registry.npmjs.org/@img%2Fsharp-linuxmusl-arm64
+#35 62.90 [WARN] Request took 23775ms: https://registry.npmjs.org/@babel%2Fhelper-validator-option
+#35 63.06 [WARN] Request took 23863ms: https://registry.npmjs.org/@emnapi%2Fcore
+#35 63.44 [WARN] Request took 24235ms: https://registry.npmjs.org/@emnapi%2Fruntime
+#35 63.59 [WARN] Request took 24320ms: https://registry.npmjs.org/@eslint%2Fjs
+#35 63.84 [WARN] Request took 24721ms: https://registry.npmjs.org/@babel%2Fhelper-validator-identifier
+#35 64.33 [WARN] Request took 25065ms: https://registry.npmjs.org/@eslint%2Feslintrc
+#35 64.80 [WARN] Request took 25772ms: https://registry.npmjs.org/@babel%2Fcode-frame
+#35 64.86 [WARN] Request took 25777ms: https://registry.npmjs.org/@babel%2Fhelper-module-imports
+#35 65.01 [WARN] Request took 25836ms: https://registry.npmjs.org/@babel%2Ftemplate
+#35 65.07 [WARN] Request took 26005ms: https://registry.npmjs.org/@babel%2Fhelper-compilation-targets
+#35 65.29 [WARN] Request took 26257ms: https://registry.npmjs.org/@babel%2Fcompat-data
+#35 65.45 Progress: resolved 407, reused 0, downloaded 1, added 0
+#35 65.88 [WARN] Request took 26774ms: https://registry.npmjs.org/@babel%2Fhelper-module-transforms
+#35 67.09 Progress: resolved 407, reused 0, downloaded 31, added 0
+#35 67.89 [WARN] Request took 28719ms: https://registry.npmjs.org/@babel%2Fhelpers
+#35 68.25 Progress: resolved 407, reused 0, downloaded 48, added 0
+#35 70.26 Progress: resolved 407, reused 0, downloaded 54, added 0
+#35 71.19 Packages are hard linked from the content-addressable store to the virtual store.
+#35 71.19   Content-addressable store is at: /root/.local/share/pnpm/store/v11
+#35 71.19   Virtual store is at:             node_modules/.pnpm
+#35 71.47 Progress: resolved 407, reused 0, downloaded 60, added 2
+#35 72.17 [WARN] Request took 32982ms: https://registry.npmjs.org/@babel%2Ftypes
+#35 72.61 Progress: resolved 407, reused 0, downloaded 69, added 4
+#35 73.55 [WARN] Request took 34418ms: https://registry.npmjs.org/@babel%2Fgenerator
+#35 73.71 Progress: resolved 407, reused 0, downloaded 88, added 4
+#35 73.75 [WARN] Request took 34573ms: https://registry.npmjs.org/@babel%2Ftraverse
+#35 73.82 [WARN] Request took 11822ms: https://registry.npmjs.org/@rolldown%2Fbinding-darwin-arm64
+#35 74.98 Progress: resolved 407, reused 0, downloaded 104, added 8
+#35 75.66 [WARN] Request took 13272ms: https://registry.npmjs.org/@rolldown%2Fbinding-linux-arm64-musl
+#35 75.99 [WARN] Request took 13290ms: https://registry.npmjs.org/@tailwindcss%2Foxide-android-arm64
+#35 76.21 Progress: resolved 407, reused 0, downloaded 114, added 8
+#35 76.92 [WARN] Request took 37761ms: https://registry.npmjs.org/@babel%2Fparser
+#35 77.52 Progress: resolved 407, reused 0, downloaded 122, added 8
+#35 78.34 [WARN] Request took 39279ms: https://registry.npmjs.org/@babel%2Fcore
+#35 78.87 Progress: resolved 407, reused 0, downloaded 128, added 8
+#35 81.42 Progress: resolved 407, reused 0, downloaded 135, added 8
+#35 99.13 Progress: resolved 407, reused 0, downloaded 141, added 8
+#35 101.5 [WARN] Request took 23809ms: https://registry.npmjs.org/concat-map
+#35 101.5 [WARN] Request took 22859ms: https://registry.npmjs.org/data-view-byte-length
+#35 101.5 [WARN] Request took 22912ms: https://registry.npmjs.org/data-view-buffer
+#35 101.5 [WARN] Request took 22973ms: https://registry.npmjs.org/damerau-levenshtein
+#35 101.5 [WARN] Request took 22903ms: https://registry.npmjs.org/data-view-byte-offset
+#35 102.5 Progress: resolved 407, reused 0, downloaded 146, added 9
+#35 103.4 [WARN] Request took 40706ms: https://registry.npmjs.org/@tailwindcss%2Fnode
+#35 103.6 [WARN] Request took 27573ms: https://registry.npmjs.org/chalk
+#35 103.7 [WARN] Request took 26051ms: https://registry.npmjs.org/convert-source-map
+#35 103.8 [WARN] Request took 24811ms: https://registry.npmjs.org/deep-is
+#35 104.3 Progress: resolved 407, reused 0, downloaded 149, added 12
+#35 105.2 [WARN] Request took 27653ms: https://registry.npmjs.org/colorette
+#35 105.5 [WARN] Request took 27750ms: https://registry.npmjs.org/cross-spawn
+#35 105.7 [WARN] Request took 26181ms: https://registry.npmjs.org/define-data-property
+#35 105.7 [WARN] Request took 23712ms: https://registry.npmjs.org/define-properties
+#35 109.4 Progress: resolved 407, reused 0, downloaded 155, added 12
+#35 110.2 [WARN] Request took 34857ms: https://registry.npmjs.org/chai
+#35 123.7 [WARN] Request took 38631ms: https://registry.npmjs.org/doctrine
+#35 124.7 [WARN] Request took 41627ms: https://registry.npmjs.org/detect-libc
+#35 127.5 Progress: resolved 407, reused 0, downloaded 161, added 12
+#35 127.9 [WARN] GET https://registry.npmjs.org/@next%2Fenv error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.0 [WARN] GET https://registry.npmjs.org/@next%2Feslint-plugin-next error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.0 [WARN] GET https://registry.npmjs.org/@next%2Fswc-darwin-arm64 error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.1 [WARN] GET https://registry.npmjs.org/@next%2Fswc-darwin-x64 error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.1 [WARN] GET https://registry.npmjs.org/@next%2Fswc-linux-arm64-gnu error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.2 [WARN] GET https://registry.npmjs.org/@next%2Fswc-linux-arm64-musl error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.2 [WARN] GET https://registry.npmjs.org/@next%2Fswc-linux-x64-gnu error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.2 [WARN] GET https://registry.npmjs.org/@next%2Fswc-linux-x64-musl error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.2 [WARN] GET https://registry.npmjs.org/@next%2Fswc-win32-arm64-msvc error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.2 [WARN] GET https://registry.npmjs.org/@next%2Fswc-win32-x64-msvc error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.2 [WARN] GET https://registry.npmjs.org/@playwright%2Ftest error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.2 [WARN] GET https://registry.npmjs.org/@redocly%2Fopenapi-core error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-darwin-arm64 error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-freebsd-x64 error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-linux-arm-gnueabihf error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-darwin-x64 error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-linux-arm64-gnu error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-linux-arm64-musl error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-linux-x64-gnu error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-linux-x64-musl error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-wasm32-wasi error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-win32-arm64-msvc error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide-win32-x64-msvc error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Foxide error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@tailwindcss%2Fpostcss error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@types%2Fnode error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.3 [WARN] GET https://registry.npmjs.org/@types%2Freact error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.4 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Feslint-plugin error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.4 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Fparser error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.4 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Fproject-service error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.5 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Fscope-manager error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.5 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Ftsconfig-utils error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.5 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Ftype-utils error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.5 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Ftypes error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.5 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Ftypescript-estree error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.5 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Futils error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.5 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Fvisitor-keys error (23). Will retry in 10 seconds. 2 retries left.
+#35 128.9 [WARN] Request took 58587ms: https://registry.npmjs.org/acorn
+#35 129.5 [WARN] Request took 28072ms: https://registry.npmjs.org/dunder-proto
+#35 129.5 [WARN] Request took 25801ms: https://registry.npmjs.org/es-abstract-get
+#35 129.5 [WARN] Request took 25810ms: https://registry.npmjs.org/es-define-property
+#35 131.8 Progress: resolved 407, reused 0, downloaded 167, added 12
+#35 132.2 [WARN] GET https://registry.npmjs.org/ajv error (23). Will retry in 10 seconds. 2 retries left.
+#35 133.0 [WARN] Request took 54258ms: https://registry.npmjs.org/debug
+#35 137.2 [WARN] Request took 32099ms: https://registry.npmjs.org/es-errors
+#35 180.8 Progress: resolved 407, reused 0, downloaded 173, added 12
+#35 181.0 [WARN] GET https://registry.npmjs.org/axe-core error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.0 [WARN] GET https://registry.npmjs.org/baseline-browser-mapping error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.1 [WARN] GET https://registry.npmjs.org/browserslist error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.1 [WARN] GET https://registry.npmjs.org/caniuse-lite error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.1 [WARN] GET https://registry.npmjs.org/csstype error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.3 [WARN] GET https://registry.npmjs.org/electron-to-chromium error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.4 [WARN] GET https://registry.npmjs.org/emoji-regex error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.4 [WARN] GET https://registry.npmjs.org/enhanced-resolve error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.4 [WARN] GET https://registry.npmjs.org/es-abstract error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.5 [WARN] GET https://registry.npmjs.org/es-iterator-helpers error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.5 [WARN] GET https://registry.npmjs.org/es-module-lexer error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.5 [WARN] GET https://registry.npmjs.org/es-object-atoms error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.5 [WARN] GET https://registry.npmjs.org/es-set-tostringtag error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.5 [WARN] GET https://registry.npmjs.org/es-shim-unscopables error (23). Will retry in 10 seconds. 2 retries left.
+#35 181.5 [WARN] GET https://registry.npmjs.org/es-to-primitive error (23). Will retry in 10 seconds. 2 retries left.
+#35 187.4 Progress: resolved 407, reused 0, downloaded 179, added 12
+#35 187.5 [WARN] Request took 58194ms: https://registry.npmjs.org/escalade
+#35 187.5 [WARN] Request took 58103ms: https://registry.npmjs.org/escape-string-regexp
+#35 188.9 Progress: resolved 407, reused 0, downloaded 185, added 12
+#35 190.0 [WARN] GET https://registry.npmjs.org/eslint-config-next error (23). Will retry in 10 seconds. 2 retries left.
+#35 190.0 Progress: resolved 407, reused 0, downloaded 190, added 12
+#35 190.0 [WARN] Request took 57420ms: https://registry.npmjs.org/eslint-import-resolver-node
+#35 191.0 [WARN] Request took 56101ms: https://registry.npmjs.org/eslint-module-utils
+#35 191.2 Progress: resolved 407, reused 0, downloaded 201, added 13
+#35 192.2 [WARN] Request took 58491ms: https://registry.npmjs.org/eslint-import-resolver-typescript
+#35 192.3 Progress: resolved 407, reused 0, downloaded 235, added 17
+#35 193.0 [WARN] Request took 57007ms: https://registry.npmjs.org/eslint-plugin-import
+#35 193.3 Progress: resolved 407, reused 0, downloaded 273, added 25
+#35 194.1 [WARN] Request took 10998ms: https://registry.npmjs.org/eslint-plugin-jsx-a11y
+#35 194.4 Progress: resolved 407, reused 0, downloaded 311, added 36
+#35 195.2 [WARN] Request took 12945ms: https://registry.npmjs.org/@tailwindcss%2Foxide-wasm32-wasi
+#35 195.5 Progress: resolved 407, reused 0, downloaded 369, added 96
+#35 196.4 [WARN] Request took 13058ms: https://registry.npmjs.org/eslint-plugin-react
+#35 196.5 Progress: resolved 407, reused 0, downloaded 396, added 107
+#35 198.0 Progress: resolved 407, reused 0, downloaded 403, added 125
+#35 199.0 [WARN] Request took 16870ms: https://registry.npmjs.org/@redocly%2Fopenapi-core
+#35 199.1 Progress: resolved 407, reused 0, downloaded 404, added 137
+#35 200.5 Progress: resolved 407, reused 0, downloaded 404, added 148
+#35 201.4 [WARN] Request took 18968ms: https://registry.npmjs.org/ajv
+#35 201.8 Progress: resolved 407, reused 0, downloaded 404, added 171
+#35 203.0 [WARN] Request took 20781ms: https://registry.npmjs.org/@tailwindcss%2Foxide-darwin-x64
+#35 203.3 Progress: resolved 407, reused 0, downloaded 404, added 193
+#35 203.5 [WARN] Request took 21355ms: https://registry.npmjs.org/@tailwindcss%2Foxide-darwin-arm64
+#35 204.4 [WARN] Request took 22023ms: https://registry.npmjs.org/@tailwindcss%2Foxide-linux-arm64-gnu
+#35 212.8 [WARN] Request took 30297ms: https://registry.npmjs.org/@tailwindcss%2Foxide-freebsd-x64
+#35 215.8 [WARN] Request took 33550ms: https://registry.npmjs.org/@tailwindcss%2Foxide-linux-x64-musl
+#35 216.2 [WARN] Request took 34061ms: https://registry.npmjs.org/@tailwindcss%2Foxide-linux-arm-gnueabihf
+#35 216.4 [WARN] Request took 14372ms: https://registry.npmjs.org/lightningcss-linux-x64-gnu
+#35 216.4 [WARN] Request took 14327ms: https://registry.npmjs.org/lightningcss-win32-arm64-msvc
+#35 216.9 Progress: resolved 407, reused 0, downloaded 404, added 197
+#35 217.4 [WARN] Request took 35148ms: https://registry.npmjs.org/@tailwindcss%2Foxide-linux-x64-gnu
+#35 217.5 [WARN] Request took 35321ms: https://registry.npmjs.org/@tailwindcss%2Foxide-linux-arm64-musl
+#35 217.6 [WARN] Request took 15467ms: https://registry.npmjs.org/lightningcss-linux-x64-musl
+#35 217.6 [WARN] Request took 15732ms: https://registry.npmjs.org/lightningcss-linux-arm64-gnu
+#35 217.7 [WARN] Request took 15570ms: https://registry.npmjs.org/lightningcss-win32-x64-msvc
+#35 217.7 [WARN] Request took 15057ms: https://registry.npmjs.org/locate-path
+#35 217.7 [WARN] Request took 15065ms: https://registry.npmjs.org/loose-envify
+#35 217.8 [WARN] Request took 15130ms: https://registry.npmjs.org/lodash.merge
+#35 218.1 Progress: resolved 407, reused 0, downloaded 405, added 208
+#35 218.3 [WARN] Request took 15845ms: https://registry.npmjs.org/lightningcss
+#35 218.3 [WARN] Request took 17588ms: https://registry.npmjs.org/jiti
+#35 218.5 [WARN] Request took 15878ms: https://registry.npmjs.org/magic-string
+#35 218.7 [WARN] Request took 36412ms: https://registry.npmjs.org/@typescript-eslint%2Ftsconfig-utils
+#35 218.7 [WARN] Request took 16081ms: https://registry.npmjs.org/lru-cache
+#35 219.2 Progress: resolved 407, reused 0, downloaded 405, added 269
+#35 219.3 [WARN] Request took 36972ms: https://registry.npmjs.org/@typescript-eslint%2Fproject-service
+#35 219.5 [WARN] Request took 37290ms: https://registry.npmjs.org/@tailwindcss%2Foxide-win32-arm64-msvc
+#35 219.9 [WARN] Request took 37647ms: https://registry.npmjs.org/@types%2Freact
+#35 220.2 Progress: resolved 407, reused 0, downloaded 405, added 285
+#35 220.8 [WARN] Request took 29551ms: https://registry.npmjs.org/caniuse-lite
+#35 221.2 Progress: resolved 407, reused 0, downloaded 405, added 310
+#35 221.9 [WARN] Request took 39649ms: https://registry.npmjs.org/@tailwindcss%2Fpostcss
+#35 222.3 Progress: resolved 407, reused 0, downloaded 405, added 380
+#35 222.5 [WARN] Request took 31226ms: https://registry.npmjs.org/eslint
+#35 223.0 [WARN] Request took 40821ms: https://registry.npmjs.org/@tailwindcss%2Foxide-win32-x64-msvc
+#35 223.3 Progress: resolved 407, reused 0, downloaded 405, added 406
+#35 223.6 [WARN] Request took 41865ms: https://registry.npmjs.org/@next%2Fswc-linux-arm64-gnu
+#35 223.9 [WARN] Request took 42187ms: https://registry.npmjs.org/@next%2Fswc-darwin-arm64
+#35 224.2 [WARN] Request took 42446ms: https://registry.npmjs.org/@next%2Fswc-linux-x64-musl
+#35 224.3 [WARN] Request took 42572ms: https://registry.npmjs.org/@next%2Fswc-darwin-x64
+#35 224.3 Progress: resolved 407, reused 0, downloaded 405, added 407, done
+#35 224.5 [WARN] Request took 42794ms: https://registry.npmjs.org/@next%2Fswc-linux-arm64-musl
+#35 224.9 [WARN] Request took 43151ms: https://registry.npmjs.org/@next%2Fswc-linux-x64-gnu
+#35 225.3 [WARN] Request took 43078ms: https://registry.npmjs.org/@tailwindcss%2Foxide
+#35 225.4 [WARN] Request took 33813ms: https://registry.npmjs.org/electron-to-chromium
+#35 225.5 [WARN] Request took 43862ms: https://registry.npmjs.org/@next%2Fenv
+#35 226.0 [WARN] Request took 43731ms: https://registry.npmjs.org/@types%2Fnode
+#35 226.3 [WARN] Request took 44533ms: https://registry.npmjs.org/@next%2Fswc-win32-arm64-msvc
+#35 226.4 [WARN] Request took 44632ms: https://registry.npmjs.org/@next%2Fswc-win32-x64-msvc
+#35 226.4 [WARN] Request took 44754ms: https://registry.npmjs.org/@next%2Feslint-plugin-next
+#35 231.1 [WARN] Request took 12077ms: https://registry.npmjs.org/scheduler
+#35 231.9 [WARN] Request took 13285ms: https://registry.npmjs.org/react
+#35 232.7 [WARN] Request took 14139ms: https://registry.npmjs.org/react-dom
+#35 233.4 [WARN] Request took 42219ms: https://registry.npmjs.org/axe-core
+#35 233.8 [WARN] Request took 51719ms: https://registry.npmjs.org/@playwright%2Ftest
+#35 234.1 [WARN] Request took 33990ms: https://registry.npmjs.org/eslint-config-next
+#35 234.5 [WARN] Request took 51235ms: https://registry.npmjs.org/eslint-plugin-react-hooks
+#35 234.8 [WARN] Request took 52515ms: https://registry.npmjs.org/@typescript-eslint%2Ftype-utils
+#35 234.9 [WARN] Request took 52594ms: https://registry.npmjs.org/@typescript-eslint%2Futils
+#35 235.2 [WARN] Request took 15022ms: https://registry.npmjs.org/tailwindcss
+#35 235.5 [WARN] Request took 53165ms: https://registry.npmjs.org/@typescript-eslint%2Ftypes
+#35 235.8 [WARN] Request took 53422ms: https://registry.npmjs.org/@typescript-eslint%2Fvisitor-keys
+#35 236.2 [WARN] Request took 53878ms: https://registry.npmjs.org/@typescript-eslint%2Fscope-manager
+#35 239.8 [WARN] Request took 11225ms: https://registry.npmjs.org/react-is
+#35 241.9 [WARN] Request took 59643ms: https://registry.npmjs.org/@typescript-eslint%2Fparser
+#35 242.6 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Feslint-plugin error (23). Will retry in 1 minute. 1 retries left.
+#35 242.7 [WARN] GET https://registry.npmjs.org/@typescript-eslint%2Ftypescript-estree error (23). Will retry in 1 minute. 1 retries left.
+#35 243.9 [WARN] Request took 22777ms: https://registry.npmjs.org/typescript
+#35 244.4 [WARN] Request took 12279ms: https://registry.npmjs.org/scheduler
+#35 244.7 [WARN] Request took 26210ms: https://registry.npmjs.org/playwright-core
+#35 245.0 [WARN] Request took 26534ms: https://registry.npmjs.org/playwright
+#35 245.4 [WARN] Request took 10834ms: https://registry.npmjs.org/eslint-plugin-react-hooks
+#35 246.9 [WARN] Request took 29155ms: https://registry.npmjs.org/next
+#35 310.4 ✓ Lockfile passes supply-chain policies (509 entries in 4m 31.4s)
+#35 312.9 
+#35 312.9 dependencies:
+#35 312.9 + next 16.3.6
+#35 312.9 + openapi-fetch 0.17.0
+#35 312.9 + react 19.2.8
+#35 312.9 + react-dom 19.2.8
+#35 312.9 + server-only 0.0.1
+#35 312.9 
+#35 312.9 devDependencies:
+#35 312.9 + @playwright/test 1.64.0
+#35 312.9 + @tailwindcss/postcss 4.3.3
+#35 312.9 + @types/node 24.19.0
+#35 312.9 + @types/react 19.3.0
+#35 312.9 + @types/react-dom 19.3.0
+#35 312.9 + eslint 9.39.5
+#35 312.9 + eslint-config-next 16.3.6
+#35 312.9 + openapi-typescript 7.13.0
+#35 312.9 + tailwindcss 4.3.3
+#35 312.9 + typescript 5.9.3
+#35 312.9 + vitest 5.0.2
+#35 312.9 
+#35 313.6 Done in 4m 42.8s using pnpm v11.20.0
+#35 DONE 316.7s
+
+#61 [web build 4/6] COPY --from=deps /srv/web/node_modules ./node_modules
+#61 DONE 32.2s
+
+#62 [web build 5/6] COPY web/ ./
+#62 DONE 2.5s
+
+#63 [web build 6/6] RUN pnpm build
+#63 6.850 ! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-11.20.0.tgz
+#63 16.13 $ next build
+#63 22.97 ▲ Next.js 16.3.6 (Turbopack)
+#63 23.29 ✓ Running next.config.ts took 319ms
+#63 23.49 
+#63 23.60   Creating an optimized production build ...
+#63 135.8 ✓ Compiled successfully in 111s
+#63 135.8   Running TypeScript ...
+#63 168.0   Finished TypeScript in 32.1s ...
+#63 168.0   Collecting page data using 7 workers ...
+#63 173.8   Generating static pages using 7 workers (0/10) ...
+#63 174.3   Generating static pages using 7 workers (2/10) 
+#63 174.4   Generating static pages using 7 workers (4/10) 
+#63 174.6   Generating static pages using 7 workers (7/10) 
+#63 174.7 ✓ Generating static pages using 7 workers (10/10) in 830ms
+#63 174.7   Finalizing page optimization ...
+#63 175.9 
+#63 175.9 Route (app)
+#63 175.9 ┌ ○ /
+#63 175.9 ├ ○ /_not-found
+#63 175.9 ├ ƒ /api/revalidate
+#63 175.9 ├ ƒ /console
+#63 175.9 ├ ƒ /console/admin
+#63 175.9 ├ ƒ /console/corrections
+#63 175.9 ├ ƒ /console/login
+#63 175.9 ├ ƒ /console/operations
+#63 175.9 ├ ƒ /console/projects/[projectId]
+#63 175.9 ├ ƒ /console/projects/[projectId]/content
+#63 175.9 ├ ƒ /console/projects/[projectId]/content/[revisionId]
+#63 175.9 ├ ƒ /console/projects/[projectId]/content/[revisionId]/preview
+#63 175.9 ├ ƒ /console/projects/[projectId]/evidence
+#63 175.9 ├ ƒ /console/projects/[projectId]/evidence/[sourceId]/[revision]
+#63 175.9 ├ ƒ /console/projects/[projectId]/findings
+#63 175.9 ├ ƒ /console/projects/[projectId]/publishing
+#63 175.9 ├ ƒ /console/projects/[projectId]/reviews
+#63 175.9 ├ ƒ /console/projects/[projectId]/runs
+#63 175.9 ├ ƒ /console/projects/[projectId]/setup
+#63 175.9 ├ ƒ /console/projects/[projectId]/videos
+#63 175.9 ├ ƒ /console/runs/[runId]
+#63 175.9 └ ƒ /projects/[slug]
+#63 175.9 
+#63 175.9 
+#63 175.9 ƒ Proxy (Middleware)
+#63 175.9 
+#63 175.9 ○  (Static)   prerendered as static content
+#63 175.9 ƒ  (Dynamic)  server-rendered on demand
+#63 175.9 
+#63 DONE 177.1s
+
+#64 [web run 3/5] COPY --from=build /srv/web/.next/standalone ./
+#64 DONE 2.8s
+
+#65 [web run 4/5] COPY --from=build /srv/web/.next/static ./.next/static
+#65 DONE 0.4s
+
+#66 [web run 5/5] COPY --from=build /srv/web/public ./public
+#66 DONE 0.6s
+
+#67 [web] exporting to image
+#67 exporting layers
+#67 exporting layers 5.9s done
+#67 exporting manifest sha256:73db67115d7fdedde78d14f4ae1e40d26a4a46d872a753afc37ec385ab64d327 0.0s done
+#67 exporting config sha256:670c2e961a613e85c4526695fe978c49a52462f68df3e10498ae831d7509c7eb 0.0s done
+#67 exporting attestation manifest sha256:94728ba79e754ea1ee86a4b6ffb22cb69bf15d4caec2bb34ab75401bc590a127
+#67 exporting attestation manifest sha256:94728ba79e754ea1ee86a4b6ffb22cb69bf15d4caec2bb34ab75401bc590a127 0.1s done
+#67 exporting manifest list sha256:753840e4e59eafac95e5fb30cd8023b247d0b55f70d89116840c863f35c88bc4 0.0s done
+#67 naming to docker.io/library/agentic_ai_review_model-web:latest
+#67 naming to docker.io/library/agentic_ai_review_model-web:latest 0.0s done
+#67 unpacking to docker.io/library/agentic_ai_review_model-web:latest
+#67 unpacking to docker.io/library/agentic_ai_review_model-web:latest 2.0s done
+#67 DONE 8.4s
+
+#68 [web] resolving provenance for metadata file
+#68 DONE 1.3s
+ Image agentic_ai_review_model-media-worker Built 
+ Image agentic_ai_review_model-embedder Built 
+ Image agentic_ai_review_model-api Built 
+ Image agentic_ai_review_model-db-setup Built 
+ Image agentic_ai_review_model-worker Built 
+ Image agentic_ai_review_model-scheduler Built 
+ Image agentic_ai_review_model-web Built 
+--> OK (exit 0, expected 0)
+
+=== MongoDB is healthy again after the builds ===
+$ mongodb_healthy
+mongodb healthy after 0 s
+--> OK (exit 0, expected 0)
+
+=== Stack starts and every service is healthy ===
+$ docker compose up -d --wait
+ Container agentic_ai_review_model-mongodb-1 Running 
+ Container agentic_ai_review_model-embedder-1 Recreate 
+ Container agentic_ai_review_model-db-setup-1 Recreate 
+ Container agentic_ai_review_model-db-setup-1 Recreated 
+ Container agentic_ai_review_model-media-worker-1 Recreate 
+ Container agentic_ai_review_model-api-1 Recreate 
+ Container agentic_ai_review_model-worker-1 Recreate 
+ Container agentic_ai_review_model-scheduler-1 Recreate 
+ Container agentic_ai_review_model-api-1 Recreated 
+ Container agentic_ai_review_model-web-1 Recreate 
+ Container agentic_ai_review_model-worker-1 Recreated 
+ Container agentic_ai_review_model-scheduler-1 Recreated 
+ Container agentic_ai_review_model-embedder-1 Recreated 
+ Container agentic_ai_review_model-web-1 Recreated 
+ Container agentic_ai_review_model-media-worker-1 Recreated 
+ Container agentic_ai_review_model-mongo-init-1 Starting 
+ Container agentic_ai_review_model-embedder-1 Starting 
+ Container agentic_ai_review_model-embedder-1 Started 
+ Container agentic_ai_review_model-mongo-init-1 Started 
+ Container agentic_ai_review_model-mongo-init-1 Waiting 
+ Container agentic_ai_review_model-mongodb-1 Waiting 
+ Container agentic_ai_review_model-mongodb-1 Healthy 
+ Container agentic_ai_review_model-mongo-init-1 Exited 
+ Container agentic_ai_review_model-db-setup-1 Starting 
+ Container agentic_ai_review_model-db-setup-1 Started 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-worker-1 Starting 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-media-worker-1 Starting 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-api-1 Starting 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-scheduler-1 Starting 
+ Container agentic_ai_review_model-worker-1 Started 
+ Container agentic_ai_review_model-media-worker-1 Started 
+ Container agentic_ai_review_model-scheduler-1 Started 
+ Container agentic_ai_review_model-api-1 Started 
+ Container agentic_ai_review_model-api-1 Waiting 
+ Container agentic_ai_review_model-api-1 Healthy 
+ Container agentic_ai_review_model-web-1 Starting 
+ Container agentic_ai_review_model-web-1 Started 
+ Container agentic_ai_review_model-mongodb-1 Waiting 
+ Container agentic_ai_review_model-media-worker-1 Waiting 
+ Container agentic_ai_review_model-scheduler-1 Waiting 
+ Container agentic_ai_review_model-embedder-1 Waiting 
+ Container agentic_ai_review_model-worker-1 Waiting 
+ Container agentic_ai_review_model-web-1 Waiting 
+ Container agentic_ai_review_model-mongo-init-1 Waiting 
+ Container agentic_ai_review_model-db-setup-1 Waiting 
+ Container agentic_ai_review_model-api-1 Waiting 
+ Container agentic_ai_review_model-api-1 Healthy 
+ Container agentic_ai_review_model-web-1 Healthy 
+ Container agentic_ai_review_model-mongodb-1 Healthy 
+ Container agentic_ai_review_model-media-worker-1 Healthy 
+ Container agentic_ai_review_model-db-setup-1 Exited 
+ Container agentic_ai_review_model-scheduler-1 Healthy 
+ Container agentic_ai_review_model-worker-1 Healthy 
+ Container agentic_ai_review_model-mongo-init-1 Exited 
+ Container agentic_ai_review_model-embedder-1 Healthy 
+--> OK (exit 0, expected 0)
+
+=== Long-running services up ===
+$ services_running
+mongodb running
+api running
+worker running
+media-worker running
+embedder running
+scheduler running
+web running
+--> OK (exit 0, expected 0)
+model calls, spent USD and provider quota use now: 216 2.721031 [('brave_search:requests:2026-09-01', 100), ('brave_search:requests:2026-10-01', 204), ('firecrawl:credits:2026-10-01', 1), ('instagram_public:credits:2026-10-01', 60), ('scrapfly:credits:2026-10-01', 210), ('youtube_data_api:search:2026-09-29', 24), ('youtube_data_api:search:2026-10-01', 20), ('youtube_data_api:search:2026-10-12', 20), ('youtube_data_api:search:2026-10-14', 4), ('youtube_data_api:units:2026-09-29', 334), ('youtube_data_api:units:2026-09-30', 456), ('youtube_data_api:units:2026-10-01', 238), ('youtube_data_api:units:2026-10-12', 240), ('youtube_data_api:units:2026-10-14', 57)]
+
+=== D64: the stack runs in live mode and the API holds the real credentials (names only) ===
+$ live_with_real_credentials
+API mode: live (expected live)
+credentials present in the API container (names only): ['ANTHROPIC_API_KEY', 'BRAVE_SEARCH_API_KEY', 'FIRECRAWL_API_KEY', 'SCRAPFLY_API_KEY', 'YOUTUBE_API_KEY']
+--> OK (exit 0, expected 0)
+
+=== Database setup has the Step 09-10 collections; a repeat changes nothing ===
+$ setup_has_new_collections
+Step 09-10 collections present: ['ai_corrections', 'ai_content_qa', 'ai_publication_state', 'ai_publication_operations', 'ai_content_revisions']; changed on repeat: none
+--> OK (exit 0, expected 0)
+
+=== Sign in through the web app ===
+$ sign_in
+HTTP 200 (expected 200)
+--> OK (exit 0, expected 0)
+
+=== Step 09: every console screen renders for a real project, without the fixture banner; signed out redirects ===
+$ console_screens_render
+  200 /console
+  200 /console/corrections
+  200 /console/operations
+  200 /console/admin
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/setup
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/runs
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/evidence
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/videos
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/findings
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/reviews
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/content
+  200 /console/projects/prj_01M3KFF198VRWTJF33136A1JGS/publishing
+  signed out, /console answers 307 (a redirect to sign in)
+--> OK (exit 0, expected 0)
+
+=== Step 09-10: portfolio, content, publication, corrections and users through the API match their contracts ===
+$ portfolio_and_content_contracts
+listProjects HTTP 200
+ProjectPage: matches the contract
+listContentRevisions HTTP 200
+ContentRevisionPage: matches the contract
+getPublicationState HTTP 200
+PublicationStateView: matches the contract
+listCorrections HTTP 200
+CorrectionPage: matches the contract
+listUsers HTTP 200
+UserPage: matches the contract
+--> OK (exit 0, expected 0)
+
+=== Step 10: the public page serves only an active revision (empty state otherwise, never a draft) ===
+$ public_page_serves_only_active
+public insights for conscient-parq-sector-80-gurgaon: HTTP 404; serving state unpublished
+data-insights-state="empty"
+--> OK (exit 0, expected 0)
+
+=== D65: prompt caching marks the instructions of the cacheable agents ===
+$ prompt_caching_configured
+  prompt cache True; live 5m, batches 1h; minimums {'claude-haiku-5-5': 512, 'claude-sonnet-5': 1024, 'claude-sonnet-5-5': 512, 'claude-opus-5-5': 512}
+  a05_claim_extractor.1.0        claude-haiku-5-5   breakpoint on the instructions
+  a11_review_curator.1.0         claude-haiku-5-5   breakpoint on the instructions
+  a07_findings_synthesiser.1.2   claude-sonnet-5    breakpoint on the instructions
+  a08_seo_aeo_editor.1.0         claude-sonnet-5    breakpoint on the instructions
+  a09_editorial_qa.1.0           claude-sonnet-5    breakpoint on the instructions
+--> OK (exit 0, expected 0)
+
+=== Step 09.7: browser journeys (journey database, real environment, no run started) ===
+$ browser_journeys
+  seed: {"database": "sy_poc_e2e", "project_id": "prj_01M4YWK4QFNQ89VW8QCNGZ6Z6H", "slug": "quillon-residences-sector-102-gurgaon", "run_stage": "findings_review", "model_calls": ["A05", "A05", "A07", "A11", "A11"]}
+  API mode: live
+    ✓  1 [desktop] › e2e/journeys.spec.ts:35:7 › console to public page › the portfolio lists projects and a researcher adds one; starting a run asks first (7.0s)
+    ✓  2 [desktop] › e2e/journeys.spec.ts:57:7 › console to public page › findings are decided beside their evidence; reviews are approved in the author's words (9.7s)
+    ✓  3 [desktop] › e2e/journeys.spec.ts:79:7 › console to public page › content from approved reviews is generated, approved, published and verified on the public page (18.7s)
+    ✓  4 [desktop] › e2e/journeys.spec.ts:111:7 › console to public page › an edit is a new revision that needs its own approval; the page keeps serving the approved one (7.8s)
+    ✓  5 [desktop] › e2e/journeys.spec.ts:126:7 › console to public page › a reader reports a correction and a moderator resolves it (9.9s)
+    ✓  6 [desktop] › e2e/journeys.spec.ts:141:7 › console to public page › an analyst reads findings but has no decision controls (4.3s)
+    6 passed (1.1m)
+  ALL JOURNEYS PASSED
+--> OK (exit 0, expected 0)
+
+=== These checks spent nothing: model calls and provider quotas unchanged ===
+$ no_spend_during_checks
+before: 216 2.721031 [('brave_search:requests:2026-09-01', 100), ('brave_search:requests:2026-10-01', 204), ('firecrawl:credits:2026-10-01', 1), ('instagram_public:credits:2026-10-01', 60), ('scrapfly:credits:2026-10-01', 210), ('youtube_data_api:search:2026-09-29', 24), ('youtube_data_api:search:2026-10-01', 20), ('youtube_data_api:search:2026-10-12', 20), ('youtube_data_api:search:2026-10-14', 4), ('youtube_data_api:units:2026-09-29', 334), ('youtube_data_api:units:2026-09-30', 456), ('youtube_data_api:units:2026-10-01', 238), ('youtube_data_api:units:2026-10-12', 240), ('youtube_data_api:units:2026-10-14', 57)]
+after:  216 2.721031 [('brave_search:requests:2026-09-01', 100), ('brave_search:requests:2026-10-01', 204), ('firecrawl:credits:2026-10-01', 1), ('instagram_public:credits:2026-10-01', 60), ('scrapfly:credits:2026-10-01', 210), ('youtube_data_api:search:2026-09-29', 24), ('youtube_data_api:search:2026-10-01', 20), ('youtube_data_api:search:2026-10-12', 20), ('youtube_data_api:search:2026-10-14', 4), ('youtube_data_api:units:2026-09-29', 334), ('youtube_data_api:units:2026-09-30', 456), ('youtube_data_api:units:2026-10-01', 238), ('youtube_data_api:units:2026-10-12', 240), ('youtube_data_api:units:2026-10-14', 57)]
+--> OK (exit 0, expected 0)
+
+=== Hygiene: nothing generated, secret or downloaded is tracked ===
+$ no_tracked_secrets_or_env
+no .env, .venv, node_modules, .next, Playwright output or exports tracked
+--> OK (exit 0, expected 0)
+
+=== Hygiene: secret values absent from commits, service logs and logs/ ===
+$ secrets_not_in_repo_or_logs
+SEED_USER_PASSWORD: not in committed files, service logs or logs/
+SESSION_SECRET: not in committed files, service logs or logs/
+REVALIDATION_SECRET: not in committed files, service logs or logs/
+ANTHROPIC_API_KEY: not in committed files, service logs or logs/
+BRAVE_SEARCH_API_KEY: not in committed files, service logs or logs/
+YOUTUBE_API_KEY: not in committed files, service logs or logs/
+SCRAPFLY_API_KEY: not in committed files, service logs or logs/
+FIRECRAWL_API_KEY: not in committed files, service logs or logs/
+--> OK (exit 0, expected 0)
+
+=== Hygiene: latest CI run on main is not failing ===
+$ ci_not_failing
+latest CI run on main: 206e4bc completed success Review-first fixes, Reddit and Quora, the published review list and a…
+--> OK (exit 0, expected 0)
+
+ALL CHECKS OK
+log: logs/step-09/checks-20261015T032103Z.log

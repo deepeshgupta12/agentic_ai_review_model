@@ -645,7 +645,12 @@ def test_a11_reviews_come_from_one_source_in_the_authors_own_words(db, settings,
         "Quillon Residences in Sector 102 is a project by Brightwell Estates.",
         kind="article",
     )
-    [task] = a11.build_tasks(db, q)
+    a11_buckets = a11.BUCKETS
+    a11.BUCKETS = 1  # both comments in one task, as this test reads one task
+    try:
+        [task] = a11.build_tasks(db, q)
+    finally:
+        a11.BUCKETS = a11_buckets
     assert [s["source"]["source_kind"] for s in task["sources"]] == ["comment", "comment"], "articles are not reviews"
     content, handles = a11.render(db, project, task)
     assert "evd_" not in content and "src_" not in content and content.index("untrusted") < content.index("Booked")

@@ -54,7 +54,10 @@ class Response:
         for part in self.headers.get("content-type", "").split(";")[1:]:
             if part.strip().lower().startswith("charset="):
                 charset = part.split("=", 1)[1].strip().strip('"') or "utf-8"
-        return self.body.decode(charset, errors="replace")
+        try:
+            return self.body.decode(charset, errors="replace")
+        except LookupError:  # a charset Python does not know ("utf8mb4", "none"): read as UTF-8, never crash the job
+            return self.body.decode("utf-8", errors="replace")
 
 
 def system_resolver(host: str) -> list[str]:
@@ -200,6 +203,9 @@ class SafeClient:
         content: bytes | None = None,
     ) -> Response:
         last: FetchError | None = None
+        # A POST to a paid provider (Firecrawl) is never sent again after a timeout or a dropped connection: the first
+        # may have been done and billed. Only "too many requests" (not processed) is retried.
+        unsafe = method != "GET"
         for attempt in range(1, self.max_attempts + 1):
             self.pacer.wait(host)
             try:
@@ -212,7 +218,7 @@ class SafeClient:
                 ) as raw:
                     status = raw.status_code
                     response_headers = {k.lower(): v for k, v in raw.headers.items()}
-                    if status in RETRY_STATUS:
+                    if status in RETRY_STATUS and not (unsafe and status != 429):
                         wait = retry_after_seconds(response_headers.get("retry-after"))
                         last = FetchError(
                             "provider_busy" if status == 429 else "server_error",
@@ -247,15 +253,17 @@ class SafeClient:
                     return Response(url, status, response_headers, bytes(body))
             except httpx.TimeoutException as exc:
                 last = FetchError("timeout", "the request timed out", retryable=True)
-                if attempt < self.max_attempts:
+                if attempt < self.max_attempts and not unsafe:
                     self.sleep(random.uniform(0, 2.0 * 2 ** (attempt - 1)))  # noqa: S311
                     continue
                 raise last from exc
             except httpx.TransportError as exc:
                 last = FetchError("connection_failed", "the connection failed", retryable=True)
-                if attempt < self.max_attempts:
+                if attempt < self.max_attempts and not unsafe:
                     self.sleep(random.uniform(0, 2.0 * 2 ** (attempt - 1)))  # noqa: S311
                     continue
                 raise last from exc
+            except httpx.HTTPError as exc:  # a corrupt body (DecodingError) and the like: this page fails, not the job
+                raise FetchError("bad_response", f"the response could not be read: {type(exc).__name__}") from exc
         assert last is not None
         raise last

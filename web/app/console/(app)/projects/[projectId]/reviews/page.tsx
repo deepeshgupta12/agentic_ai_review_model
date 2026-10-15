@@ -13,6 +13,15 @@ import { ReviewEditor } from "./ReviewEditor";
 
 export const metadata: Metadata = { title: "Reviews" };
 
+/** The site of a source address; an address the URL parser refuses does not break the page (audit, 14 Oct 2026). */
+function hostOf(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "the web";
+  }
+}
+
 const KIND: Record<string, string> = { comment: "comment", video: "video", short: "video", user_review: "review" };
 
 export default async function ReviewsPage({
@@ -64,7 +73,7 @@ export default async function ReviewsPage({
           const blocked = flagged ? `construction-status flag: ${r.consistency_flags.map(label).join(", ")}` : view.rendering_check === "mismatch" ? "the shown words do not match the original" : "";
           const credit = {
             speaker_label: r.speaker_label,
-            platform: new URL(view.source_url).hostname.replace(/^www\./, ""),
+            platform: hostOf(view.source_url),
             kind: KIND[r.source_kind] ?? "post",
             published: r.published,
             timestamp_ms: r.timestamp_ms,

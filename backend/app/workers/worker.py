@@ -37,8 +37,8 @@ Handler = Callable[[Database[dict[str, Any]], dict[str, Any], Callable[[], str]]
 HANDLERS: dict[str, Handler] = {}
 
 
-class JobCancelled(Exception):
-    pass
+JobCancelled = queue.JobCancelled
+JobLost = queue.JobLost
 
 
 def register(kind: str) -> Callable[[Handler], Handler]:
@@ -94,14 +94,30 @@ def run_one(db: Database[dict[str, Any]], owner: str, lease_seconds: int, kinds:
     stop = threading.Event()
 
     def beat_loop() -> None:
+        # A database stall does not stop the beating (it is tried again at the next beat); the lease counts as lost
+        # only once it has really passed, or the queue says another worker owns the job. A cancel request keeps the
+        # beat going, so the lease does not expire before the handler reaches its next check (audit, 14 Oct 2026).
+        lease_until = time.monotonic() + lease_seconds
         while not stop.wait(lease_seconds / 3):
-            state["beat"] = queue.heartbeat(db, claimed.id, claimed.token, lease_seconds)
-            if state["beat"] != "ok":
+            try:
+                beat = queue.heartbeat(db, claimed.id, claimed.token, lease_seconds)
+            except Exception:
+                logger.warning("heartbeat failed; trying again", extra={"job_id": claimed.id})
+                if time.monotonic() > lease_until:
+                    state["beat"] = "lost"
+                    return
+                continue
+            lease_until = time.monotonic() + lease_seconds
+            state["beat"] = beat
+            if beat == "lost":
                 return
 
     def check() -> str:
+        """Between units of work: stop at once when the run was cancelled or another worker owns the job now."""
         if state["beat"] == "cancel_requested":
             raise JobCancelled
+        if state["beat"] == "lost":
+            raise JobLost
         return state["beat"]
 
     beater = threading.Thread(target=beat_loop, daemon=True)
@@ -112,6 +128,9 @@ def run_one(db: Database[dict[str, Any]], owner: str, lease_seconds: int, kinds:
     except JobCancelled:
         queue.acknowledge_cancel(db, claimed.id, claimed.token)
         return "cancelled"
+    except JobLost:
+        log_event(logger, "job lease lost; stopped", level=logging.WARNING, job_id=claimed.id, kind=job["kind"])
+        return "lost"
     except queue.Deferred as exc:
         log_event(logger, "job deferred", job_id=claimed.id, kind=job["kind"], reason=exc.reason)
         return queue.defer(db, claimed.id, claimed.token, exc.reason, exc.seconds)

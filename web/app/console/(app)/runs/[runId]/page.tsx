@@ -6,14 +6,22 @@ import { ActionDialog } from "@/components/ActionDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ErrorState, Mono, Panel, Table, Td, Th } from "@/components/ui";
 import { apiGet, currentUser, type Schemas } from "@/lib/api-server";
-import { connectorName, formatTime, stageLabel } from "@/lib/format";
+import { connectorName, coverageState, formatTime, STOPPED, stageLabel } from "@/lib/format";
 import { can } from "@/lib/roles";
 
 import { RunProgress } from "./RunProgress";
 
 export const metadata: Metadata = { title: "Run" };
 
-const TERMINAL = ["published", "insufficient_evidence", "cancelled"];
+// The stages a researcher may cancel from (contracts/v1/state_machines.json workflow_stage).
+const CANCELLABLE = ["collecting", "analysing", "findings_review", "formatting", "final_review"];
+
+/** What to change before continuing a stopped run, read from the reason the backend wrote. */
+function budgetAdvice(note: string): string | null {
+  if (note.includes("RUN_BUDGET_USD")) return "Raise RUN_BUDGET_USD in .env and restart the stack (docker compose up -d), then continue.";
+  if (/model budget/i.test(note)) return "Raise MODEL_BUDGET_USD in .env and restart the stack (docker compose up -d), then continue.";
+  return null;
+}
 
 /** What the run's stage asks of people next, with the place to do it. */
 function nextAction(run: Schemas["WorkflowRun"], slug: string | undefined): { text: string; href: string; action: string } | null {
@@ -41,6 +49,10 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
   const r = run.data;
   const project = await apiGet<Schemas["ProjectDetail"]>(`/v1/projects/${r.project_id}`);
   const next = nextAction(r, project.data?.project.slug);
+  // An analysis or page building that stopped (budget, model access, a failure) waits until someone continues it.
+  const note = r.outcome_note ?? "";
+  const stopped = ["analysing", "formatting"].includes(r.stage) && STOPPED.test(note);
+  const advice = stopped ? budgetAdvice(note) : null;
 
   return (
     <div className="space-y-6">
@@ -51,10 +63,29 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
         <Link href={`/console/projects/${r.project_id}/runs`} className="text-accent underline">
           all runs of this project
         </Link>
-        {can(me?.roles, "cancelRun") && !TERMINAL.includes(r.stage) ? (
+        {can(me?.roles, "cancelRun") && CANCELLABLE.includes(r.stage) ? (
           <ActionDialog label="Cancel run" title="Cancel this run" path={`/v1/runs/${r.id}/cancel`} body={{}} reason="required" tone="danger" />
         ) : null}
       </div>
+      {stopped ? (
+        <div data-testid="analysis-stopped" className="flex flex-wrap items-center gap-3 rounded-lg border-l-4 border-warn bg-surface p-3">
+          <p className="flex-1">
+            {note}
+            {advice ? ` ${advice}` : ""}
+          </p>
+          {can(me?.roles, "continueAnalysis") ? (
+            <ActionDialog
+              label={r.stage === "formatting" ? "Continue building the page" : "Continue analysis"}
+              title="Continue from where it stopped"
+              path={`/v1/runs/${r.id}/analysis`}
+              body={{}}
+              tone="primary"
+              testId="continue-analysis"
+              description="It continues from its last checkpoint: the work already done is reused and not paid for again. The model budget must have money left."
+            />
+          ) : null}
+        </div>
+      ) : null}
       {next ? (
         <div data-testid="run-next" className="flex flex-wrap items-center gap-3 rounded-lg border-l-4 border-accent bg-surface p-3">
           <p className="flex-1">{next.text}</p>
@@ -70,7 +101,7 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
         </p>
       ) : null}
       <Panel title="Progress">
-        <RunProgress runId={r.id} initialStage={r.stage} terminal={TERMINAL} />
+        <RunProgress run={r} />
         <p className="mt-3 text-ink-muted">{r.outcome_note}</p>
         <p className="mt-1 text-ink-muted">
           Window {formatTime(r.window.from)} to {formatTime(r.window.to)} · model spend ${r.budget.spent_usd.toFixed(3)} of ${r.budget.max_usd.toFixed(2)}
@@ -105,7 +136,7 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
                   <div className="font-mono text-[11px] text-ink-muted">{c.connector_id}</div>
                 </Td>
                 <Td>
-                  <StatusBadge status={c.status} />
+                  <StatusBadge status={coverageState(c, r.stage).status} text={coverageState(c, r.stage).text} />
                 </Td>
                 <Td>{c.attempted_queries}</Td>
                 <Td>{c.fetched}</Td>
@@ -113,7 +144,7 @@ export default async function RunPage({ params }: { params: Promise<{ runId: str
                 <Td>{c.analysed}</Td>
                 <Td>{c.metadata_only}</Td>
                 <Td>{formatTime(c.last_success_at)}</Td>
-                <Td className="max-w-xs break-words text-ink-muted">{c.note}</Td>
+                <Td className="max-w-xs break-words text-ink-muted">{coverageState(c, r.stage).detail}</Td>
               </tr>
             ))}
           </tbody>

@@ -212,19 +212,31 @@ def _activate(
 
 
 def _move_run(
-    db: Database[dict[str, Any]], contracts: ContractStore, project_id: str, to: str, role: str, note: str
+    db: Database[dict[str, Any]],
+    contracts: ContractStore,
+    project_id: str,
+    to: str,
+    role: str,
+    note: str,
+    actor: dict[str, Any] | None = None,
 ) -> None:
     from app.workflows.analysis import move_stage
 
     run = db["ai_runs"].find_one(
-        {"project_id": project_id, "content_revision_id": {"$ne": None}}, sort=[("created_at", -1)]
+        # the run that holds the page now: never a cancelled or published one (audit, 14 Oct 2026)
+        {
+            "project_id": project_id,
+            "content_revision_id": {"$ne": None},
+            "stage": {"$nin": ["published", "insufficient_evidence", "cancelled"]},
+        },
+        sort=[("created_at", -1)],
     )
     if (
         run is not None
         and run["stage"] != to
         and contracts.transition_allowed("workflow_stage", run["stage"], to, role)
     ):
-        move_stage(contracts, db, run["_id"], run["stage"], to, role, note, None)
+        move_stage(contracts, db, run["_id"], run["stage"], to, role, note, None, actor)
 
 
 def publish(
@@ -275,7 +287,7 @@ def publish(
         return operation
 
     operation = run_in_transaction(db.client, write)
-    _move_run(db, contracts, body["project_id"], "publishing", "publisher", "Publication requested")
+    _move_run(db, contracts, body["project_id"], "publishing", "publisher", "Publication requested", actor)
     return operation_view(operation)
 
 

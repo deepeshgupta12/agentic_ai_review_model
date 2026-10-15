@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ActionDialog } from "@/components/ActionDialog";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState, ErrorState, MoreLink, PageTitle, Table, Td, Th } from "@/components/ui";
-import { apiGet, type Schemas } from "@/lib/api-server";
+import { apiGet, apiGetAll, type Schemas } from "@/lib/api-server";
 import { formatTime } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Corrections" };
@@ -13,7 +13,7 @@ export default async function CorrectionsPage({ searchParams }: { searchParams: 
   const search = await searchParams;
   const [page, projects] = await Promise.all([
     apiGet<Schemas["CorrectionPage"]>("/v1/corrections", { ...search, limit: 50 }),
-    apiGet<Schemas["ProjectPage"]>("/v1/projects", { limit: 100 }),
+    apiGetAll<Schemas["ProjectSummary"]>("/v1/projects"),
   ]);
   if (!page.data) return <ErrorState status={page.status} error={page.error} requestId={page.requestId} />;
   const names = Object.fromEntries((projects.data?.items ?? []).map((p) => [p.project.id, p.project.project_name]));

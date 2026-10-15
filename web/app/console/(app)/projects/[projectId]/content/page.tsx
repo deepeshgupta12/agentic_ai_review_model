@@ -15,23 +15,33 @@ export default async function ContentPage({ params }: { params: Promise<{ projec
   const { projectId } = await params;
   const me = await currentUser();
   const [revisions, findings, reviews, runs, info] = await Promise.all([
-    apiGet<Schemas["ContentRevisionPage"]>(`/v1/projects/${projectId}/content-revisions`, { limit: 50 }),
+    apiGetAll<Schemas["ContentRevisionView"]>(`/v1/projects/${projectId}/content-revisions`),
     apiGetAll<Schemas["FindingView"]>(`/v1/projects/${projectId}/findings`, { review_status: "approved" }),
     apiGetAll<Schemas["ReviewExcerptView"]>(`/v1/projects/${projectId}/review-excerpts`, { review_status: "approved" }),
-    apiGet<Schemas["RunPage"]>(`/v1/projects/${projectId}/runs`, { limit: 1 }),
+    apiGet<Schemas["RunPage"]>(`/v1/projects/${projectId}/runs`, { limit: 20 }),
     backendInfo(),
   ]);
   if (!revisions.data) return <ErrorState status={revisions.status} error={revisions.error} requestId={revisions.requestId} />;
   const latestRun = runs.data?.items[0];
+  // the backend continues the newest run that waits for decisions, whatever came after it (audit, 14 Oct 2026)
+  const waitingRun = runs.data?.items.find((run) => run.stage === "findings_review");
   const latestRevision = revisions.data.items[0]?.revision;
   const mayGenerate = can(me?.roles, "createContentRevision");
   // Generation continues a run that waits for decisions (the backend's rule); afterwards the page changes by editing
   // its latest revision, which can add any approved review (D69) and needs a new final approval.
-  const waiting = latestRun?.stage === "findings_review";
+  const waiting = waitingRun !== undefined;
+  const loadFailed = !reviews.data || !findings.data;
 
   return (
     <div className="space-y-6">
-      {mayGenerate && waiting ? (
+      {mayGenerate && waiting && loadFailed ? (
+        <ErrorState
+          status={reviews.status === 200 ? findings.status : reviews.status}
+          error={reviews.error ?? findings.error}
+          requestId={reviews.requestId ?? findings.requestId}
+        />
+      ) : null}
+      {mayGenerate && waiting && !loadFailed ? (
         <GenerateForm
           projectId={projectId}
           findings={(findings.data?.items ?? []).map((v) => v.finding)}

@@ -13,6 +13,7 @@ export const OPERATION_ROLES = {
   getRun: ["admin", "researcher", "moderator", "publisher", "analyst"],
   streamRunEvents: ["admin", "researcher", "moderator", "publisher", "analyst"],
   cancelRun: ["researcher"],
+  continueAnalysis: ["researcher"],
   listSources: ["admin", "researcher", "moderator", "publisher", "analyst"],
   getSourceRevision: ["admin", "researcher", "moderator", "publisher", "analyst"],
   listMedia: ["admin", "researcher", "moderator", "publisher", "analyst"],

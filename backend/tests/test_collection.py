@@ -207,6 +207,15 @@ def start(db, settings, project_id, connectors=None):
     return start_run(db.client, db, settings, project_id, {"window_days": 90, "connectors": connectors}, RESEARCHER)
 
 
+def start_again(db, settings, project_id, connectors=None):
+    """A later run of the same project: the earlier one, still analysing here (no model in these tests), is cancelled
+    first, as a person would (a second run waits for the first, D70)."""
+    db["ai_runs"].update_many(
+        {"project_id": project_id, "stage": {"$in": ["collecting", "analysing"]}}, {"$set": {"stage": "cancelled"}}
+    )
+    return start(db, settings, project_id, connectors)
+
+
 def coverage(db, run_id):
     return {c["connector_id"]: c for c in db["ai_runs"].find_one({"_id": run_id})["coverage"]}
 
@@ -366,7 +375,7 @@ def test_a_redirected_page_is_not_read_again_on_the_next_run(db, settings, world
     monkeypatch.setattr(registry, "safe_client", lambda _s: net.client())
     start(db, settings, world["q"], connectors=["brave_search"])
     run_all_jobs(db)
-    second = start(db, settings, world["q"], connectors=["brave_search"])["run_id"]
+    second = start_again(db, settings, world["q"], connectors=["brave_search"])["run_id"]
     run_all_jobs(db)
     assert "already_read: 1" in coverage(db, second)["web_fetch"]["note"]
     assert [r.url.path for r in net.requests].count("/old") == 1, "read once, where it landed"
@@ -382,7 +391,7 @@ def test_without_credentials_only_the_keyless_reader_runs_and_coverage_says_so(
     assert {k: c["status"] for k, c in cov.items() if c["status"] != "access_pending"} == {"reddit_public": "partial"}
     assert cov["web_fetch"]["note"].startswith("not run: no discovery source")
     assert db["ai_jobs"].count_documents({"run_id": run_id, "kind": "collect"}) == 1, "PullPush needs no key (D67)"
-    keyed = start(db, settings, fictional["Quillon Residences"], connectors=["brave_search", "youtube_data_api"])
+    keyed = start_again(db, settings, fictional["Quillon Residences"], connectors=["brave_search", "youtube_data_api"])
     cov = coverage(db, keyed["run_id"])
     assert {c["status"] for c in cov.values()} == {"access_pending"}
     assert db["ai_jobs"].count_documents({"run_id": keyed["run_id"], "kind": "collect"}) == 0
@@ -413,7 +422,7 @@ def test_a_connector_the_run_did_not_plan_is_never_called(db, settings, world):
     assert db["ai_sources"].count_documents({"connector_id": "web_fetch"}) == 0
     assert "forum.example.test" not in world["net"].hosts_requested(), "no page was read"
     assert db["ai_sources"].count_documents({"connector_id": "brave_search", "capture_level": "metadata_only"}) > 0
-    only_youtube = start(db, settings, q, connectors=["youtube_data_api"])["run_id"]
+    only_youtube = start_again(db, settings, q, connectors=["youtube_data_api"])["run_id"]
     before = world["net"].hosts_requested().count("api.search.brave.com")
     run_all_jobs(db)
     assert world["net"].hosts_requested().count("api.search.brave.com") == before, "Brave was not asked"

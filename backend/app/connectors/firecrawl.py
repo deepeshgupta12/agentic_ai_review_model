@@ -86,6 +86,10 @@ class Firecrawl:
         if not payload.get("success", True):
             raise FetchError("render_failed", "Firecrawl reported a failed scrape", retryable=True)
         used = payload.get("creditsUsed")
+        reserved = self.settings.firecrawl_credits_per_page
+        quota.settle(
+            self.db, self.settings, LEDGER, "credits", reserved, used if isinstance(used, int) else None, self.now()
+        )
         status = int(((data.get("metadata") or {}).get("statusCode")) or 0)
         return RenderedPage(
             status, str(data.get("rawHtml") or data.get("html") or ""), used if isinstance(used, int) else None

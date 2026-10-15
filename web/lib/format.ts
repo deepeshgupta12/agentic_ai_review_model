@@ -62,6 +62,48 @@ export function stageLabel(stage: string | null | undefined): string {
   return STAGE_LABELS[stage ?? ""] ?? label(stage);
 }
 
+type RunLike = { stage: string; outcome_note?: string | null; content_revision_id?: string | null; updated_at?: string };
+
+/** Whether the system is working on a run right now, so a page showing it refreshes itself (audit, 14 Oct 2026):
+ * collecting; analysing unless it stopped; building the page until its draft exists; publishing only for a few
+ * minutes (a failed delivery leaves the run publishing). Stages that wait for a person never refresh by themselves. */
+export function runIsWorking(run: RunLike | null | undefined): boolean {
+  if (!run) return false;
+  if (STOPPED.test(run.outcome_note ?? "")) return false;
+  switch (run.stage) {
+    case "collecting":
+    case "analysing":
+      return true;
+    case "formatting":
+      return !run.content_revision_id;
+    case "publishing":
+      return !!run.updated_at && Date.now() - Date.parse(run.updated_at) < 10 * 60_000;
+    default:
+      return false;
+  }
+}
+
+/** A run whose analysis or page building stopped and waits for someone to continue it. */
+export const STOPPED = /^(Analysis|Page building) stopped/;
+
+type Coverage = { status: string; note: string | null };
+
+/** A coverage entry as people read it: "queued" before its source starts, "running" while it works (the backend
+ * writes "in progress: ..." with its counts so far), then its final status. Once the run has left collecting, an
+ * entry still queued or running did not finish: it says so, never "running" (audit, 14 Oct 2026). */
+export function coverageState(c: Coverage, stage?: string): { status: string; text: string; detail: string | null } {
+  const note = c.note ?? "";
+  const open = c.status === "partial" && (note === "queued" || note.startsWith("in progress: "));
+  if (open && stage && stage !== "collecting") {
+    return { status: "partial", text: "not finished", detail: note.startsWith("in progress: ") ? note.slice(13) : null };
+  }
+  if (c.status === "partial" && note === "queued") return { status: "pending", text: "queued", detail: null };
+  if (c.status === "partial" && note.startsWith("in progress: ")) {
+    return { status: "running", text: "running", detail: note.slice("in progress: ".length) };
+  }
+  return { status: c.status, text: label(c.status), detail: c.note };
+}
+
 /** What each connector is, for people who did not build it. */
 export const CONNECTOR_NAMES: Record<string, string> = {
   brave_search: "Brave web search",

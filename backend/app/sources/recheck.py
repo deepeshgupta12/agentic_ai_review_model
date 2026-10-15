@@ -73,7 +73,13 @@ def _linked_projects(db: Database[dict[str, Any]], source: dict[str, Any]) -> li
     )
 
 
-def _check_review(db: Database[dict[str, Any]], web: Any, source: dict[str, Any], key: str) -> Availability:
+def _check_review(
+    db: Database[dict[str, Any]],
+    web: Any,
+    source: dict[str, Any],
+    key: str,
+    pages: dict[str, Any] | None = None,
+) -> Availability:
     """A person's review split from a portal or forum page (D68): its page is read again and split the same way, and
     the review is looked for by its key (on the portal's full review list too, since a project page shows only some).
     Same words: present; other words: changed (a new revision of the review alone); not shown any more: gone."""
@@ -84,7 +90,10 @@ def _check_review(db: Database[dict[str, Any]], web: Any, source: dict[str, Any]
     url, tried = source["canonical_url"], 0
     while url and tried < 2:
         tried += 1
-        outcome = web.fetch(url)
+        # one fetch per page per job: twenty reviews of one page read it once (audit, 14 Oct 2026)
+        outcome = pages[url] if pages is not None and url in pages else web.fetch(url)
+        if pages is not None:
+            pages[url] = outcome
         if outcome.status == "gone" and tried == 1:
             return Availability("gone", outcome.reason)
         if outcome.status != "fetched" or not outcome.html:
@@ -175,6 +184,7 @@ def handle_recheck(db: Database[dict[str, Any]], job: dict[str, Any], check: Any
     connectors = {c: build(c, db, settings) for c in RECHECKABLE}
     counts: Counter[str] = Counter()
     candidates = _candidates(db, job.get("project_id"))
+    pages: dict[str, Any] = {}
     for source in candidates[: settings.recheck_per_job]:
         check()
         connector = connectors.get(source["connector_id"])
@@ -184,7 +194,7 @@ def handle_recheck(db: Database[dict[str, Any]], job: dict[str, Any], check: Any
         key = review_key(str(source.get("native_id") or ""))
         try:
             result: Availability = (
-                _check_review(db, connector, source, key) if key else connector.check_availability(source)
+                _check_review(db, connector, source, key, pages) if key else connector.check_availability(source)
             )
         except QuotaExhausted:
             counts["stopped_at_quota"] += 1

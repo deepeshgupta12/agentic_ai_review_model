@@ -17,12 +17,14 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import timedelta
 from typing import Any
 
 import trafilatura
 from pymongo.database import Database
 
 from app.connectors.base import Availability, Connector, ProviderError, QuotaExhausted
+from app.db import utcnow
 from app.sources import policies
 from app.sources.http import FetchError, SafeClient
 from app.sources.robots import RobotsCache
@@ -103,6 +105,7 @@ class WebFetch(Connector):
         self.client, self.robots, self.db = client, robots, db
         self.unblocker, self.unblock_left = unblocker, unblock_limit  # D60, D61: Scrapfly for refused pages
         self.renderer, self.render_left = renderer, render_limit  # D62: Firecrawl for pages built by JavaScript
+        self._paid_now = True  # set by each fetch: whether this page may use the paid fallbacks
 
     def _allowed(self, url: str) -> tuple[policies.Resolution, str | None]:
         resolution = policies.resolve(self.db, url)
@@ -112,7 +115,10 @@ class WebFetch(Connector):
             return resolution, resolution.reason
         return resolution, None
 
-    def fetch(self, url: str, run_id: str | None = None) -> FetchOutcome:
+    def fetch(self, url: str, run_id: str | None = None, paid: bool = True) -> FetchOutcome:
+        """Read one page. `paid` False never uses the paid fallbacks (Scrapfly, Firecrawl): for a hit that does not
+        name the project, which is read only if it costs nothing (audit, 14 Oct 2026)."""
+        self._paid_now = paid
         url = normalise_url(url)
         resolution, refusal = self._allowed(url)
         entry: dict[str, Any] = {
@@ -152,7 +158,13 @@ class WebFetch(Connector):
         if response.status in GONE:
             log_fetch(self.db, {**entry, "outcome": "gone"})
             return FetchOutcome("gone", url, f"HTTP {response.status}")
-        if response.status in REFUSED and resolution.family in policies.UNBLOCK_FAMILIES and self.unblocker:
+        if (
+            response.status in REFUSED
+            and resolution.family in policies.UNBLOCK_FAMILIES
+            and self.unblocker
+            and self._paid_now
+            and not self._failed_through_scrapfly(url)
+        ):
             log_fetch(self.db, {**entry, "outcome": "refused"})
             return self._unblocked(url, entry, resolution)
         if response.status in REFUSED or response.status >= 400:
@@ -164,6 +176,17 @@ class WebFetch(Connector):
             entry["final_url"] = final_url
             resolution = self._allowed(final_url)[0]
         return self._page(response.text(), url, final_url, entry, resolution, "fetched")
+
+    def _failed_through_scrapfly(self, url: str) -> bool:
+        """A page Scrapfly could not read in the last week is not paid for again."""
+        since = utcnow() - timedelta(days=7)
+        return (
+            self.db["ai_fetch_log"].find_one(
+                {"url": url, "at": {"$gte": since}, "outcome": {"$regex": "^(unblock_refused|unblock_error)"}},
+                {"_id": 1},
+            )
+            is not None
+        )
 
     def _unblocked(self, url: str, entry: dict[str, Any], resolution: policies.Resolution) -> FetchOutcome:
         """The refused competitor page once more through Scrapfly (D60), while this job's allowance lasts."""
@@ -234,7 +257,12 @@ class WebFetch(Connector):
         text = (data or {}).get("text") or ""
         if len(text) < MIN_TEXT_CHARS:
             log_fetch(self.db, {**entry, "outcome": "thin"})
-            if outcome != "fetched_rendered" and resolution.family in policies.UNBLOCK_FAMILIES and self.renderer:
+            if (
+                outcome != "fetched_rendered"
+                and resolution.family in policies.UNBLOCK_FAMILIES
+                and self.renderer
+                and self._paid_now
+            ):
                 return self._rendered(url, final_url, entry, resolution)
             return FetchOutcome("thin", url, f"only {len(text)} characters of main text (possibly script-rendered)")
         assert data is not None

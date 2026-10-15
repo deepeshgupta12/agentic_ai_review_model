@@ -5,6 +5,15 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Failures handled honestly, live progress, and fixes from four audits — 14 October 2026 (after the first live run)
+
+- **The first live run's failure:** a review task with 36 sources was cut off at its output limit and the run ended as "insufficient evidence". Now a task the model cannot answer whole is split down to single passages; what still fails is skipped and reported; anything else stops the run so it can be continued (D70). Review tasks hold at most 12 sources.
+- **Continue analysis** in the console for a run that stopped (budget, model access, a failure), including a stopped page building.
+- **Live progress:** every source shows queued, running (with its counts as it goes), not finished or its final status; pages refresh only while the system works.
+- **Spending protected:** paid page readers are never resent after a timeout; per-run caps hold across retries; finished searches are reused; budget holds are given back when a call fails or a worker stops; only pages that name the project are read on the portals and Quora.
+- **Robustness:** a bad page never ends a collect job; a database stall never stops a job's heartbeat; jobs have a time limit; a second run of a project waits for the first; a server error never signs anyone out of the console.
+- Contracts: api 1.5.0, routes 1.3.0.
+
 ## Real people's reviews, Reddit and Quora, and a simpler console — 14 October 2026 (Steps 09 and 10, continued)
 
 - **Reviews, not facts** (D68). Portal and forum pages are split into one record per person's review from the review data each site publishes: MagicBricks project reviews (agents' and sponsored reviews left out; the full review list read once when the project page shows only some), 99acres reviews (without the locality reviews the page labels as the project's), NoBroker forum answers, Quora answers, and any other page's schema.org reviews of the project. Reviewer names are never kept; the platform's badge (owner, resident) is. A review shown on two pages is stored once. The first web searches look for the project's review pages on the portals and Quora.

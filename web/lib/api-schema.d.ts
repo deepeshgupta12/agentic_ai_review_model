@@ -160,6 +160,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/runs/{run_id}/analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Continue an analysis that stopped (model budget or model access) from its last checkpoint; finished tasks are reused, nothing is paid twice */
+        post: operations["continueAnalysis"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/runs/{run_id}/cancel": {
         parameters: {
             query?: never;
@@ -1435,6 +1452,7 @@ export interface components {
         RunId: string;
         /** @enum {unknown} */
         WorkflowStage: "collecting" | "analysing" | "findings_review" | "formatting" | "final_review" | "approved" | "publishing" | "published" | "insufficient_evidence" | "cancelled";
+        ContentRevisionId: string;
         ConnectorId: string;
         /** @enum {unknown} */
         CoverageStatus: "complete_for_query" | "partial" | "unavailable" | "access_pending";
@@ -1467,6 +1485,9 @@ export interface components {
                 id: components["schemas"]["RunId"];
                 stage: components["schemas"]["WorkflowStage"];
                 updated_at: components["schemas"]["Timestamp"];
+                /** @description What the run is doing or why it stopped (1.5.0): the console refreshes only while the system works */
+                outcome_note?: string | null;
+                content_revision_id?: components["schemas"]["ContentRevisionId"] | null;
             } | null;
             coverage: components["schemas"]["RunCoverage"][];
             pending_review: {
@@ -1567,7 +1588,6 @@ export interface components {
         }[];
         /** @description Seeded from the export status at import; phase-level records added by researchers (D27). */
         construction_status: components["schemas"]["StatusRecord"][];
-        ContentRevisionId: string;
         JobId: string;
         /** @enum {unknown} */
         SourceKind: "search_result" | "forum_thread" | "forum_post" | "article" | "blog_post" | "news_article" | "video" | "short" | "comment" | "registration_record" | "user_review";
@@ -2418,6 +2438,7 @@ export interface operations {
             };
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+            422: components["responses"]["Error422"];
         };
     };
     createProject: {
@@ -2533,6 +2554,7 @@ export interface operations {
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
+            422: components["responses"]["Error422"];
         };
     };
     startRun: {
@@ -2622,6 +2644,32 @@ export interface operations {
             404: components["responses"]["Error404"];
         };
     };
+    continueAnalysis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: components["schemas"]["RunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Accepted */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Accepted"];
+                };
+            };
+            401: components["responses"]["Error401"];
+            403: components["responses"]["Error403"];
+            404: components["responses"]["Error404"];
+            409: components["responses"]["Error409"];
+        };
+    };
     cancelRun: {
         parameters: {
             query?: never;
@@ -2650,6 +2698,7 @@ export interface operations {
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
             409: components["responses"]["Error409"];
+            422: components["responses"]["Error422"];
         };
     };
     listSources: {
@@ -2684,6 +2733,7 @@ export interface operations {
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
+            422: components["responses"]["Error422"];
         };
     };
     getSourceRevision: {
@@ -2740,6 +2790,7 @@ export interface operations {
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
+            422: components["responses"]["Error422"];
         };
     };
     withdrawSource: {
@@ -2834,6 +2885,7 @@ export interface operations {
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
+            422: components["responses"]["Error422"];
         };
     };
     decideAliasProposal: {
@@ -2896,6 +2948,7 @@ export interface operations {
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
+            422: components["responses"]["Error422"];
         };
     };
     reviseFinding: {
@@ -2987,6 +3040,7 @@ export interface operations {
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
+            422: components["responses"]["Error422"];
         };
     };
     reviseReviewExcerpt: {
@@ -3078,6 +3132,7 @@ export interface operations {
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
             404: components["responses"]["Error404"];
+            422: components["responses"]["Error422"];
         };
     };
     createContentRevision: {
@@ -3438,6 +3493,7 @@ export interface operations {
             };
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+            422: components["responses"]["Error422"];
         };
     };
     decideCorrection: {
@@ -3547,6 +3603,7 @@ export interface operations {
             };
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+            422: components["responses"]["Error422"];
         };
     };
     getOpsSummary: {
@@ -3594,6 +3651,7 @@ export interface operations {
             };
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+            422: components["responses"]["Error422"];
         };
     };
     listUsers: {
@@ -3619,6 +3677,7 @@ export interface operations {
             };
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+            422: components["responses"]["Error422"];
         };
     };
     createUser: {
@@ -3702,6 +3761,7 @@ export interface operations {
             };
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+            422: components["responses"]["Error422"];
         };
     };
     createSourcePolicyVersion: {
@@ -3762,6 +3822,7 @@ export interface operations {
             };
             401: components["responses"]["Error401"];
             403: components["responses"]["Error403"];
+            422: components["responses"]["Error422"];
         };
     };
 }

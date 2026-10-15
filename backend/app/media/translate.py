@@ -92,9 +92,20 @@ def translate_segments(
             items, ensure_ascii=False
         )
         started = time.monotonic()
-        result = gateway.run("routine", SCHEMA_REF, PROMPT_PATH.read_text(encoding="utf-8"), user)
+        # its own limit (about 600 tokens an item), not the 16,000 default: a smaller budget hold (audit, 14 Oct 2026)
+        result = gateway.run(
+            "routine",
+            SCHEMA_REF,
+            PROMPT_PATH.read_text(encoding="utf-8"),
+            user,
+            max_tokens=1000 + 600 * len(batch),
+            purpose="A04_language_context",
+        )
         elapsed_ms = int((time.monotonic() - started) * 1000)
         report["calls"] += 1
+        if result.outcome != "completed":  # counted, and the windows stay untranslated for a later pass
+            code = (result.error or {}).get("code", "failed")
+            report.setdefault("failed", {})[code] = report.setdefault("failed", {}).get(code, 0) + 1
         by_id = {s["_id"]: s for s in batch}
 
         def write(

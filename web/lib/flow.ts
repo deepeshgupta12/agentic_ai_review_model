@@ -30,6 +30,9 @@ export function nextStep(summary: FlowSummary, projectId: string, slug: string, 
   const reviews = summary.pending_review.review_excerpts;
   const findings = summary.pending_review.findings;
   const start = { step: 1 as const, href: `${base}/runs`, action: "Start a run" };
+  const { approved_revision: approved, active_revision: active } = summary.publication;
+  // a newer revision approved after the page went live (an edit) waits for a publisher (audit, 14 Oct 2026)
+  const newerApproved = approved !== null && approved !== active;
   if (!run) {
     return { ...start, title: "Start the first run", detail: "It collects people's reviews from the portals, Reddit, Quora and YouTube, then reads them.", tone: "todo" };
   }
@@ -99,6 +102,16 @@ export function nextStep(summary: FlowSummary, projectId: string, slug: string, 
     case "publishing":
       return { step: 4, title: "Publishing", detail: "Activating and checking the public page.", href: `${base}/publishing`, action: "Follow it", tone: "wait" };
     case "published":
+      if (newerApproved) {
+        return {
+          step: 4,
+          title: `Publish revision ${approved}`,
+          detail: `Revision ${active ?? "none"} is live; revision ${approved} is approved and waits for a publisher.`,
+          href: `${base}/publishing`,
+          action: "Publish",
+          tone: "todo",
+        };
+      }
       return {
         step: 4,
         title: summary.publication.active_revision ? `Revision ${summary.publication.active_revision} is live` : "Published",

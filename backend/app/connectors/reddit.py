@@ -39,14 +39,27 @@ class Thread:
 
 
 def _skip(entry: dict[str, Any]) -> bool:
+    """A comment by nobody (deleted), a bot or a moderator, or with no words left, is not a person's review."""
     author = str(entry.get("author") or "").lower()
-    text = str(entry.get("body") if "body" in entry else entry.get("selftext") or entry.get("title") or "").strip()
+    text = str(entry.get("body") or "").strip()
     return (
         author in SKIPPED_AUTHORS
         or author.endswith("bot")
         or entry.get("distinguished") == "moderator"
         or text.lower() in SKIPPED_TEXTS
-        or bool(entry.get("removed_by_category"))
+    )
+
+
+def _skip_post(post: dict[str, Any]) -> bool:
+    """A post is read for its thread even when its author deleted the account or its text was removed (the title
+    and the comments stay); only a moderator's or a bot's post, or one removed whole with no title, is left out."""
+    author = str(post.get("author") or "").lower()
+    title = str(post.get("title") or "").strip()
+    return (
+        author == "automoderator"
+        or (author.endswith("bot") and author != "[deleted]")
+        or post.get("distinguished") == "moderator"
+        or not title
     )
 
 
@@ -154,7 +167,7 @@ class RedditPublic(Connector):
     def posts_naming(self, name: str, after: datetime, size: int) -> list[dict[str, Any]]:
         """Posts whose title or text contains the quoted name, newest first, since `after`."""
         params = {"q": f'"{name}"', "after": int(after.timestamp()), "size": size, "sort": "desc"}
-        return [p for p in self._search("submission", params) if not _skip(p)]
+        return [p for p in self._search("submission", params) if not _skip_post(p)]
 
     def comments_naming(self, name: str, after: datetime, size: int) -> list[dict[str, Any]]:
         params = {"q": f'"{name}"', "after": int(after.timestamp()), "size": size, "sort": "desc"}

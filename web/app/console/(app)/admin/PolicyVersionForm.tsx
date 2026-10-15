@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
-import { send } from "@/lib/api-browser";
+import { newKey, send } from "@/lib/api-browser";
 import type { components } from "@/lib/api-schema";
 
 type Policy = components["schemas"]["SourcePolicy"];
@@ -22,6 +22,8 @@ export function PolicyVersionForm({ policies }: { policies: Policy[] }) {
   const [rights, setRights] = useState(() => pick(latest.get(families[0] ?? "")));
   const [basis, setBasis] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const key = useRef(newKey("policy"));
 
   function pick(p: Policy | undefined) {
     return {
@@ -50,9 +52,13 @@ export function PolicyVersionForm({ policies }: { policies: Policy[] }) {
       effective_from: new Date().toISOString().replace(/\.\d{3}Z$/, "Z"),
       expires_at: base.expires_at,
     };
-    const result = await send("POST", "/v1/admin/source-policies", body);
+    setBusy(true);
+    // one key per intended version: a double submit or a retry stores one version, not two (audit, 14 Oct 2026)
+    const result = await send("POST", "/v1/admin/source-policies", body, { idempotencyKey: key.current });
+    setBusy(false);
     setMessage(result.ok ? "New version stored." : result.message);
     if (result.ok) {
+      key.current = newKey("policy");
       setBasis("");
       router.refresh();
     }
@@ -86,8 +92,8 @@ export function PolicyVersionForm({ policies }: { policies: Policy[] }) {
       </div>
       <input aria-label="Basis" required value={basis} onChange={(e) => setBasis(e.target.value)} placeholder="basis: who decided, when, why" className="w-full rounded border border-line px-2 py-1" />
       {message ? <p role="status">{message}</p> : null}
-      <button type="submit" className="rounded bg-accent px-3 py-1 text-white">
-        Store version
+      <button type="submit" disabled={busy} className="rounded bg-accent px-3 py-1 text-white disabled:opacity-60">
+        {busy ? "Storing…" : "Store version"}
       </button>
     </form>
   );

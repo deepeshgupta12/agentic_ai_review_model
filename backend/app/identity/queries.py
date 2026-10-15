@@ -38,8 +38,12 @@ def _script_language(text: str) -> str:
     return "hi" if any("ऀ" <= ch <= "ॿ" for ch in text) else "en"
 
 
-def query_texts(identity: ProjectIdentity, project: dict[str, Any]) -> list[tuple[str, str]]:
-    """(purpose, query text) pairs before connector fan-out, in priority order."""
+def query_texts(
+    identity: ProjectIdentity, project: dict[str, Any], reviews_only: bool = False
+) -> list[tuple[str, str]]:
+    """(purpose, query text) pairs before connector fan-out, in priority order. For a reviews-only analysis (D68) the
+    identifier searches (RERA numbers; developer with locality) are left out: they find registry pages and other
+    projects of the developer, not people's reviews, and each page read costs (rules 1.2)."""
     city = project["city"]
     locality = project["locality"]
     developer = project.get("developer")
@@ -49,9 +53,9 @@ def query_texts(identity: ProjectIdentity, project: dict[str, Any]) -> list[tupl
         ("project_name", f"{identity.name} {locality}", 0),
         ("project_name", f"{identity.name} review", 0),
     ]
-    for phase in identity.phases:
+    for phase in [] if reviews_only else identity.phases:
         pairs.append(("identifier", phase.rera_id, 0))
-    if developer:
+    if developer and not reviews_only:
         pairs.append(("identifier", f"{developer} {locality} {city}", 0))
     for alias in identity.aliases:
         if alias.normalised == identity.name_norm:
@@ -68,7 +72,7 @@ def query_texts(identity: ProjectIdentity, project: dict[str, Any]) -> list[tupl
 
 
 def build_query_plan(
-    db: Database[dict[str, Any]], project_id: str, connectors: dict[str, dict[str, Any]]
+    db: Database[dict[str, Any]], project_id: str, connectors: dict[str, dict[str, Any]], reviews_only: bool = False
 ) -> dict[str, Any]:
     """{"project_id", "rules_version", "plan": DiscoveryPlan} for one project's enabled, search-capable connectors."""
     project = db["projects"].find_one({"_id": project_id})
@@ -88,7 +92,7 @@ def build_query_plan(
         and s["connector_id"] not in NAME_SEARCH_CONNECTORS
         and connectors.get(s["connector_id"], {}).get("expected_capabilities", {}).get("search") is True
     ]
-    pairs = query_texts(identity, project)
+    pairs = query_texts(identity, project, reviews_only)
     queries: list[dict[str, Any]] = []
     for connector_id in enabled:
         seen: set[str] = set()

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState, ErrorState, Mono, MoreLink, PageTitle, Panel, Table, Td, Th } from "@/components/ui";
-import { apiGet, currentUser, type Schemas } from "@/lib/api-server";
+import { apiGet, apiGetAll, currentUser, type Schemas } from "@/lib/api-server";
 import { formatTime } from "@/lib/format";
 import { can } from "@/lib/roles";
 
@@ -17,8 +17,8 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
   const search = await searchParams;
   const me = await currentUser();
   const [users, policies, audit] = await Promise.all([
-    can(me?.roles, "listUsers") ? apiGet<Schemas["UserPage"]>("/v1/admin/users", { limit: 100 }) : null,
-    apiGet<Schemas["PolicyPage"]>("/v1/admin/source-policies", { limit: 100 }),
+    can(me?.roles, "listUsers") ? apiGetAll<Schemas["UserView"]>("/v1/admin/users") : null,
+    apiGetAll<Schemas["SourcePolicy"]>("/v1/admin/source-policies"),
     can(me?.roles, "listAuditEvents") ? apiGet<Schemas["AuditEventPage"]>("/v1/admin/audit-events", { ...search, limit: 50 }) : null,
   ]);
 

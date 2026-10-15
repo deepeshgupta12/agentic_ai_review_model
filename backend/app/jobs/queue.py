@@ -184,6 +184,14 @@ def backoff_seconds(attempt: int, base: float = 5.0, cap: float = 600.0) -> floa
     return random.uniform(0, min(cap, base * (2 ** max(attempt - 1, 0))))  # noqa: S311 - not security sensitive
 
 
+class JobCancelled(Exception):
+    """The run was cancelled: the handler stops at its next check."""
+
+
+class JobLost(Exception):
+    """Another worker owns the job now (its lease passed): this one stops without writing anything more."""
+
+
 class Deferred(Exception):
     """A handler cannot run yet (for example, another heavy job holds the memory it needs). The job waits about
     `seconds` and runs again without using up an attempt."""
@@ -259,8 +267,26 @@ def recover_expired(db: Database[dict[str, Any]]) -> int:
             {
                 "$set": {
                     "fencing": {"$add": [{"$ifNull": ["$fencing", 0]}, 1]},
-                    "status": {"$cond": [{"$lt": ["$attempts", "$max_attempts"]}, "retry_wait", "failed"]},
-                    "next_attempt_at": {"$cond": [{"$lt": ["$attempts", "$max_attempts"]}, now, None]},
+                    # a job asked to cancel is cancelled, never left waiting for a retry no worker will claim
+                    "status": {
+                        "$cond": [
+                            {"$eq": [{"$ifNull": ["$cancel_requested", False]}, True]},
+                            "cancelled",
+                            {"$cond": [{"$lt": ["$attempts", "$max_attempts"]}, "retry_wait", "failed"]},
+                        ]
+                    },
+                    "next_attempt_at": {
+                        "$cond": [
+                            {
+                                "$and": [
+                                    {"$lt": ["$attempts", "$max_attempts"]},
+                                    {"$ne": [{"$ifNull": ["$cancel_requested", False]}, True]},
+                                ]
+                            },
+                            now,
+                            None,
+                        ]
+                    },
                     "lease": None,
                     "error": {
                         "code": "lease_expired",

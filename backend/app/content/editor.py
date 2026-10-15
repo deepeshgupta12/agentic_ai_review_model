@@ -32,7 +32,7 @@ A08_ID, A09_ID = "A08_seo_aeo_editor", "A09_editorial_qa"
 A08_PROMPT, A09_PROMPT = "a08_seo_aeo_editor.1.0", "a09_editorial_qa.1.0"
 A08_SCHEMA, A09_SCHEMA = "agents.schema.json#/$defs/EditorialDraft", "agents.schema.json#/$defs/QaReport"
 SCHEMA_VERSION = "1.1.0"
-MAX_OUTPUT_TOKENS = 6000
+MAX_OUTPUT_TOKENS = 6000  # the floor; each call's limit grows with what it covers (audit, 14 Oct 2026)
 MAX_QUESTIONS = 4
 
 
@@ -182,9 +182,9 @@ def write_draft(
     data = cached_output(db, key)
     result: GatewayResult | None = None
     if data is None:
-        result = gateway.run(
-            ROLE, A08_SCHEMA, _prompt(A08_PROMPT), content, max_tokens=MAX_OUTPUT_TOKENS, purpose=A08_ID
-        )
+        # about 400 tokens per finding (its block with claim handles, its share of the overview), within the SDK's bound
+        limit = min(16000, max(MAX_OUTPUT_TOKENS, 2500 + 400 * len(findings)))
+        result = gateway.run(ROLE, A08_SCHEMA, _prompt(A08_PROMPT), content, max_tokens=limit, purpose=A08_ID)
         if result.outcome == "completed" and result.data is not None:
             data = result.data
             keep_output(db, key, A08_ID, data)
@@ -304,7 +304,7 @@ def check_draft(
             A09_SCHEMA,
             _prompt(A09_PROMPT),
             render_a09(payload, findings, claims, reviews),
-            max_tokens=MAX_OUTPUT_TOKENS,
+            max_tokens=min(12000, max(MAX_OUTPUT_TOKENS, 2000 + 150 * (len(findings) + len(reviews)))),
             purpose=A09_ID,
         )
         if result.outcome == "completed" and result.data is not None:

@@ -26,7 +26,7 @@ def decode_cursor(cursor: str | None) -> str | None:
         return None
     try:
         return str(json.loads(base64.urlsafe_b64decode(cursor.encode()).decode())["before"])
-    except (ValueError, KeyError) as exc:
+    except (ValueError, KeyError, TypeError) as exc:  # any malformed cursor is a 422, never a 500
         raise ApiError(
             422, "validation_failed", "Invalid cursor", fields=[{"path": "cursor", "message": "not a valid cursor"}]
         ) from exc

@@ -49,7 +49,10 @@ class RobotsCache:
         if response.status >= 500:
             return None, "robots_unreachable"
         parser = urllib.robotparser.RobotFileParser()
-        parser.parse(response.text().splitlines())
+        try:
+            parser.parse(response.text().splitlines())
+        except Exception:
+            return None, "robots_unreadable"
         return parser, "parsed"
 
     def decide(self, url: str) -> RobotsDecision:

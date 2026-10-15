@@ -23,7 +23,7 @@ from typing import Any
 
 from pymongo.database import Database
 
-from app.agents.common import Handles, cached_output, keep_output, numbers_in, record_run, stable_id
+from app.agents.common import Handles, cached_output, keep_output, numbers_in, record_run, stable_id, version_digest
 from app.agents.consistency import consistency_flags
 from app.agents.gateway import GatewayResult, ModelGateway
 from app.config import REPO_ROOT
@@ -85,9 +85,20 @@ def build_tasks(db: Database[dict[str, Any]], project_id: str) -> list[dict[str,
     return tasks
 
 
+def split_task(task: dict[str, Any]) -> list[dict[str, Any]]:
+    """A task whose answer was cut off, as two tasks of half its evidence each (one span alone: empty list)."""
+    evidence = task["evidence"]
+    if len(evidence) < 2:
+        return []
+    half = len(evidence) // 2
+    return [_task(task["project_id"], evidence[:half]), _task(task["project_id"], evidence[half:])]
+
+
 def _task(project_id: str, evidence: list[dict[str, Any]]) -> dict[str, Any]:
     refs = sorted(f"{e['id']}@{e['revision']}" for e in evidence)
-    digest = hashlib.sha256("|".join([PROMPT_VERSION, SCHEMA_VERSION, project_id, *refs]).encode()).hexdigest()
+    digest = hashlib.sha256(
+        "|".join([PROMPT_VERSION, version_digest(PROMPT_PATH, ROLE), SCHEMA_VERSION, project_id, *refs]).encode()
+    ).hexdigest()
     return {"key": f"a05:{digest[:32]}", "project_id": project_id, "evidence": evidence}
 
 

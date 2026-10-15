@@ -18,7 +18,7 @@ from app.sources.http import FetchError
 from app.sources.robots import RobotsCache
 
 from .fakenet import FakeNet
-from .test_collection import run_all_jobs, start
+from .test_collection import run_all_jobs, start, start_again
 
 CAPTION = "Site visit at Quillon Residences, Sector 102 Gurugram: tower 3 slab work done, lifts not yet installed."
 
@@ -186,7 +186,7 @@ def test_a_run_reads_the_projects_public_posts(db, settings, contracts, fictiona
         "instagram_public"
     }
     assert db["ai_evidence"].count_documents({"source.id": {"$in": [p["id"] for p in posts]}}) == 2
-    again = start(db, settings, q, connectors=["brave_search", "instagram_public"])
+    again = start_again(db, settings, q, connectors=["brave_search", "instagram_public"])
     run_all_jobs(db)
     cov = {c["connector_id"]: c for c in db["ai_runs"].find_one({"_id": again["run_id"]})["coverage"]}
     assert "already_read: 2" in cov["instagram_public"]["note"] and len(scrapfly.requests) == 2, "each post read once"

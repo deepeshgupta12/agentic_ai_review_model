@@ -31,31 +31,51 @@ export function GenerateForm({
   const router = useRouter();
   const key = useRef(newKey("generate"));
   const publishable = reviews.filter((r) => fitsPage(r.text, limits));
-  const [chosenFindings, setFindings] = useState<string[]>(findings.map((f) => f.id));
+  // No finding is ticked by default: with findings the page writer and checker are paid model calls (audit, 14 Oct)
+  const [chosenFindings, setFindings] = useState<string[]>([]);
   const [chosenReviews, setReviews] = useState<string[]>(() => balancedPick(publishable, limits.page_reviews_max).map((r) => r.id));
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [waitingFor, setWaitingFor] = useState<string | null>(null);
 
-  // Follow the run until the draft exists, then open it.
+  // Follow the run until the draft exists, then open it; stop, and say why, when the run reports a problem after the
+  // request, or after three minutes (audit, 14 Oct 2026: the form could wait forever).
   useEffect(() => {
     if (!waitingFor) return;
-    const timer = setInterval(async () => {
+    const started = Date.now();
+    let stopped = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const poll = async () => {
       const response = await fetch(`/v1/runs/${waitingFor}`, { credentials: "same-origin", cache: "no-store" }).catch(() => null);
-      if (!response?.ok) return;
-      const run = (await response.json()) as { stage: string; content_revision_id: string | null; outcome_note: string | null };
-      if (run.content_revision_id) {
-        clearInterval(timer);
-        router.push(`/console/projects/${projectId}/content/${run.content_revision_id}`);
-        router.refresh();
-      } else if (!["findings_review", "formatting"].includes(run.stage)) {
-        clearInterval(timer);
-        setWaitingFor(null);
-        setMessage({ tone: "error", text: run.outcome_note ?? `The run is now ${run.stage.replaceAll("_", " ")}.` });
-        router.refresh();
+      if (stopped) return;
+      if (response?.ok) {
+        const run = (await response.json()) as { stage: string; content_revision_id: string | null; outcome_note: string | null; updated_at: string };
+        const changedSince = Date.parse(run.updated_at) >= started - 1000;
+        const problem = /^(Selection refused|Page building stopped|Analysis stopped)/.test(run.outcome_note ?? "");
+        if (run.content_revision_id) {
+          router.push(`/console/projects/${projectId}/content/${run.content_revision_id}`);
+          router.refresh();
+          return;
+        }
+        if ((changedSince && problem) || !["findings_review", "formatting"].includes(run.stage)) {
+          setWaitingFor(null);
+          setMessage({ tone: "error", text: run.outcome_note ?? `The run is now ${run.stage.replaceAll("_", " ")}.` });
+          router.refresh();
+          return;
+        }
       }
-    }, 3000);
-    return () => clearInterval(timer);
+      if (Date.now() - started > 3 * 60_000) {
+        setWaitingFor(null);
+        setMessage({ tone: "error", text: "Still not ready after three minutes. Follow the run page; the draft appears here when it is built." });
+        return;
+      }
+      timer = setTimeout(poll, 3000);
+    };
+    timer = setTimeout(poll, 3000);
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [waitingFor, projectId, router]);
 
   async function generate() {

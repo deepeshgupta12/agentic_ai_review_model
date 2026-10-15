@@ -33,6 +33,7 @@ export function ApprovePanel({
   const [andPublish, setAndPublish] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [approvedOnly, setApprovedOnly] = useState(false);
   if (!mayApprove) {
     return (
       <Panel title="Final approval">
@@ -70,9 +71,11 @@ export function ApprovePanel({
         { idempotencyKey: publishKey.current },
       );
       if (!published.ok) {
+        // the approval stands; the error stays on screen (refreshing would close this panel with it), and the
+        // Publishing tab can publish it (audit, 14 Oct 2026)
         setBusy(false);
+        setApprovedOnly(true);
         setError(`Approved, but not published: ${published.message}`);
-        router.refresh();
         return;
       }
     }
@@ -112,6 +115,11 @@ export function ApprovePanel({
           {error ? (
             <p role="alert" className="text-danger">
               {error}
+              {approvedOnly ? (
+                <a href={`/console/projects/${projectId}/publishing`} className="ml-2 underline">
+                  Open Publishing
+                </a>
+              ) : null}
             </p>
           ) : null}
           <div className="flex justify-end gap-2">

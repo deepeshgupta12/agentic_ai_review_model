@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { AutoRefresh } from "@/components/AutoRefresh";
+import { CoverageList } from "@/components/CoverageList";
 import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState, ErrorState, MoreLink, Table, Td, Th } from "@/components/ui";
 import { apiGet, backendInfo, currentUser, type Schemas } from "@/lib/api-server";
-import { connectorName, formatTime, stageLabel } from "@/lib/format";
+import { formatTime, runIsWorking, stageLabel } from "@/lib/format";
 import { can } from "@/lib/roles";
 
 import { StartRunForm } from "./StartRunForm";
@@ -32,9 +34,25 @@ export default async function RunsPage({
   const enabled = (detail.data?.config.sources ?? []).filter((s) => s.enabled).map((s) => s.connector_id);
   const status = Object.fromEntries((health?.data?.connectors ?? []).map((c) => [c.connector_id, c.status]));
 
+  const working = runs.data.items.find((run) => runIsWorking(run));
+  const running = working !== undefined;
+
   return (
     <div className="space-y-6">
-      {mayStart ? <StartRunForm projectId={projectId} enabled={enabled} status={status} analysisMode={info.analysis_mode} /> : null}
+      {running ? (
+        <p className="flex items-center gap-2 text-ink-muted">
+          A run is working; its numbers below update as it goes. <AutoRefresh active />
+        </p>
+      ) : null}
+      {mayStart ? (
+        <StartRunForm
+          projectId={projectId}
+          enabled={enabled}
+          status={status}
+          analysisMode={info.analysis_mode}
+          busyRunId={working?.id ?? null}
+        />
+      ) : null}
       {runs.data.items.length === 0 ? (
         <EmptyState>No run yet. A researcher starts it here: it collects people&apos;s reviews, reads them and queues them for a moderator.</EmptyState>
       ) : (
@@ -65,12 +83,7 @@ export default async function RunsPage({
                   {formatTime(run.window.from)} to {formatTime(run.window.to)}
                 </Td>
                 <Td>
-                  {run.coverage.map((c) => (
-                    <div key={c.connector_id} className="flex items-center gap-1">
-                      <span className="text-xs">{connectorName(c.connector_id)}</span> <StatusBadge status={c.status} />
-                      <span className="text-xs text-ink-muted">{c.fetched} read</span>
-                    </div>
-                  ))}
+                  <CoverageList rows={run.coverage} stage={run.stage} empty="no source" />
                 </Td>
                 <Td>
                   ${run.budget.spent_usd.toFixed(3)}

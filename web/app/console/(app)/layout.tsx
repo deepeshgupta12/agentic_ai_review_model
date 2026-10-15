@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { ErrorState } from "@/components/ui";
 import { apiGet, backendMode, type Schemas } from "@/lib/api-server";
 import { can } from "@/lib/roles";
 
@@ -8,8 +9,19 @@ import { LogoutButton } from "./LogoutButton";
 
 export default async function ConsoleLayout({ children }: { children: React.ReactNode }) {
   const me = await apiGet<Schemas["UserView"]>("/v1/auth/me");
-  if (me.status === 401 || !me.data) {
+  if (me.status === 401) {
     redirect("/console/login");
+  }
+  if (!me.data) {
+    // the server did not answer (busy or restarting): say so, never sign the person out (audit, 14 Oct 2026)
+    return (
+      <main className="mx-auto max-w-3xl space-y-3 px-4 py-10">
+        <ErrorState status={me.status} error={me.error} requestId={me.requestId} />
+        <a href="" className="inline-block rounded border border-line bg-surface px-3 py-1">
+          Try again
+        </a>
+      </main>
+    );
   }
   const mode = await backendMode();
   const user = me.data;

@@ -5,7 +5,7 @@ import { NextStepBanner } from "@/components/NextStep";
 import { ProjectTabs } from "@/components/ProjectTabs";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ErrorState } from "@/components/ui";
-import { apiGet, backendInfo, type Schemas } from "@/lib/api-server";
+import { apiGet, apiGetAll, backendInfo, type Schemas } from "@/lib/api-server";
 import { nextStep } from "@/lib/flow";
 import { stageLabel } from "@/lib/format";
 
@@ -13,7 +13,7 @@ export default async function ProjectLayout({ children, params }: { children: Re
   const { projectId } = await params;
   const [detail, page, info] = await Promise.all([
     apiGet<Schemas["ProjectDetail"]>(`/v1/projects/${projectId}`),
-    apiGet<Schemas["ProjectPage"]>("/v1/projects", { limit: 100 }),
+    apiGetAll<Schemas["ProjectSummary"]>("/v1/projects"),
     backendInfo(),
   ]);
   if (detail.status === 404) notFound();

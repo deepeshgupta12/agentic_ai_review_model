@@ -100,6 +100,23 @@ def reserve(
     return updated is not None
 
 
+def settle(
+    db: Database[dict[str, Any]],
+    settings: Settings,
+    connector_id: str,
+    name: str,
+    reserved: int,
+    actual: int | None,
+    now: datetime,
+) -> None:
+    """Correct a reservation to what the provider reported it billed (Scrapfly's cost header, Firecrawl's
+    creditsUsed), so the ledger follows real use; unknown actual cost keeps the reservation."""
+    if actual is None or actual == reserved or actual < 0:
+        return
+    b = bucket(settings, connector_id, name, now)
+    db[COLLECTION].update_one({"_id": b.key}, {"$inc": {"used": actual - reserved}})
+
+
 def usage(
     db: Database[dict[str, Any]], settings: Settings, connector_id: str, name: str, now: datetime
 ) -> dict[str, Any]:

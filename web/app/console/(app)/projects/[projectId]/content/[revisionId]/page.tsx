@@ -54,11 +54,18 @@ export default async function RevisionPage({ params }: { params: Promise<{ proje
           .
         </p>
       ) : null}
+      {revision.lifecycle === "withdrawn" && isLatest ? (
+        <p className="rounded border border-danger bg-surface px-3 py-2 text-danger">
+          Evidence behind this revision was withdrawn, so it can no longer be approved or served. Remove the reviews it
+          affects (or add others that are approved) and save: the new revision needs its own final approval.
+        </p>
+      ) : null}
       <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">
         <ContentEditor
           revision={revision}
           issues={issues}
-          editable={isLatest && can(me?.roles, "createContentRevision") && !["superseded", "withdrawn"].includes(revision.lifecycle)}
+          // a withdrawn latest revision is edited to rebuild the page from what is approved now (audit, 14 Oct 2026)
+          editable={isLatest && can(me?.roles, "createContentRevision") && revision.lifecycle !== "superseded"}
           available={approved.data?.items ?? []}
           limits={info}
         />

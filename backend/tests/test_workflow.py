@@ -10,6 +10,7 @@ import re
 import pytest
 
 from app.agents import findings as a07
+from app.agents import reviews as a11_module
 from app.agents.gateway import ModelGateway
 from app.agents.spend import SpendLedger
 from app.evidence.clusters import cluster_origins
@@ -144,8 +145,12 @@ class ScriptedModel:
 
 @pytest.fixture
 def model(monkeypatch, settings):
-    """The full analysis (claims, findings and reviews); the reviews-only default (D68) is tested on its own."""
+    """The full analysis (claims, findings and reviews); the reviews-only default (D68) is tested on its own. The
+    fixture's texts are shorter than a published review (D69), and its two sources form one A11 task (the tests count
+    model calls; the bucket packing of D70 is tested in test_audit_fixes)."""
     settings.analysis_mode = "full"
+    settings.review_words_min = 1
+    monkeypatch.setattr(a11_module, "BUCKETS", 1)
     client = ScriptedModel()
     monkeypatch.setattr(analysis, "get_settings", lambda: settings)
     monkeypatch.setattr(analysis, "default_embedder", lambda _s: None)
@@ -405,7 +410,8 @@ def test_a_crash_while_resuming_moves_the_run_once(db, settings, contracts, fict
     db["ai_jobs"].update_many({"status": "retry_wait"}, {"$currentDate": {"next_attempt_at": True}})
     assert work(db) == ["completed"]
     assert db["ai_runs"].find_one({"_id": run["_id"]})["stage"] == "final_review"
-    assert db["ai_run_events"].count_documents({"run_id": run["_id"], "stage": "formatting"}) == 1
+    moved = {"run_id": run["_id"], "stage": "formatting", "type": "stage_changed"}
+    assert db["ai_run_events"].count_documents(moved) == 1, "moved once (a crash also says it is retried, D70)"
     assert db["ai_content_revisions"].count_documents({"project_id": q}) == 1, "one revision however often it resumes"
 
 

@@ -101,7 +101,9 @@ def test_the_generic_web_is_open_until_a_version_returns_to_the_allow_list(api, 
         basis="Test: allow-list one fictional forum",
         retention_days=90,
     )
-    response = api.post("/v1/admin/source-policies", json=body, headers=headers)
+    response = api.post(
+        "/v1/admin/source-policies", json=body, headers={**headers, "Idempotency-Key": "policy-version-0003"}
+    )
     assert response.status_code == 201, response.text
     assert response.json()["policy_version"] == web["policy_version"] + 1 and response.json()["status"] == "accepted"
     assert resolve(db, "https://forum.example.test/t/1").may_collect
@@ -134,7 +136,12 @@ def test_narrowing_a_policy_applies_at_once_and_is_rechecked(api, db, contracts,
         hosts=current(db, "competitor_portals")["hosts"],
         basis="Test: AI use withdrawn",
     )
-    assert api.post("/v1/admin/source-policies", json=body, headers=headers).status_code == 201
+    assert (
+        api.post(
+            "/v1/admin/source-policies", json=body, headers={**headers, "Idempotency-Key": "policy-version-0004"}
+        ).status_code
+        == 201
+    )
     assert not usable_for_identity(db, evidence), "the current version governs stored evidence"
     job = db["ai_jobs"].find_one({"kind": "invalidate_dependencies"})
     assert job is not None and job["logical_key"] == "invalidate_dependencies:policy:competitor_portals:v4"
@@ -149,13 +156,22 @@ def test_policy_api_roles_and_the_rights_chain(api, db, make_user, contracts):
     page = api.get("/v1/admin/source-policies?limit=50", headers=researcher)
     assert page.status_code == 200 and contracts.errors(page.json(), "api.schema.json#/$defs/PolicyPage") == []
     assert len(page.json()["items"]) == 13, "one seeded version per family: 11, then instagram_public and google_alerts"
-    assert api.post("/v1/admin/source-policies", json=version_request("youtube"), headers=researcher).status_code == 403
+    assert (
+        api.post(
+            "/v1/admin/source-policies",
+            json=version_request("youtube"),
+            headers={**researcher, "Idempotency-Key": "policy-version-0005"},
+        ).status_code
+        == 403
+    )
     analyst = sign_in(api, make_user, ["analyst"])
     assert api.get("/v1/admin/source-policies", headers=analyst).status_code == 403
     admin = sign_in(api, make_user, ["admin"])
     before = current(db, "youtube")["policy_version"]
     broken = version_request("youtube", derived_publication_allowed=False)  # quotation needs derived publication
-    response = api.post("/v1/admin/source-policies", json=broken, headers=admin)
+    response = api.post(
+        "/v1/admin/source-policies", json=broken, headers={**admin, "Idempotency-Key": "policy-version-0006"}
+    )
     assert response.status_code == 422 and response.json()["error"]["code"] == "validation_failed"
     assert current(db, "youtube")["policy_version"] == before, "a refused version is not stored"
 
@@ -176,5 +192,9 @@ def test_robots_txt_handling_is_part_of_each_version(api, db, make_user, contrac
         if p["family"] == "reddit"
     )
     assert old["robots_txt"] == "obey" and contracts.errors(old, "sources.schema.json#/$defs/SourcePolicy") == []
-    made = api.post("/v1/admin/source-policies", json=version_request("quora"), headers=admin)
+    made = api.post(
+        "/v1/admin/source-policies",
+        json=version_request("quora"),
+        headers={**admin, "Idempotency-Key": "policy-version-0007"},
+    )
     assert made.status_code == 201 and made.json()["robots_txt"] == "obey", "omitted means obey"

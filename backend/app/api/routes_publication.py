@@ -108,5 +108,8 @@ def unpublish_project(
 def get_public_insights(slug: str, db: Database[dict[str, Any]] = Depends(db_dep)) -> dict[str, Any]:
     insights = service.public_insights(db, slug)
     if insights is None:
+        # the public page tells an unknown address (its own 404) from a project with nothing published yet
+        if db["projects"].find_one({"slug": slug}, {"_id": 1}) is None:
+            raise ApiError(404, "not_found", "No such project")
         raise ApiError(404, "not_found", "Nothing is published for this project")
     return insights
