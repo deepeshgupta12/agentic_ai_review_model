@@ -44,7 +44,7 @@ def test_seeded_policies_are_current_and_match_the_contract(db, contracts):
         and {"competitor_portals", "web_public_pages", "instagram_public", "google_alerts"} <= families
     )
     web = current(db, "web_public_pages")
-    assert web["policy_version"] == 6 and {"dlf.in", "republicworld.com"} <= set(web["hosts"])
+    assert web["policy_version"] == 7 and {"dlf.in", "republicworld.com"} <= set(web["hosts"])  # v7: D78
     assert web["host_scope"] == "any_public_host" and "client-site.example" in web["excluded_hosts"], "D61"
     assert web["robots_txt"] == "record_only", "D46"
     assert "client-site.example" not in web["hosts"], "own content is not independent evidence"
