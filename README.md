@@ -221,3 +221,7 @@ Operational notes: a database restore must be followed by `docker compose exec a
 | Using the console | [docs/11](docs/11-moderator-guide.md) |
 
 Original planning material is preserved unchanged under `reference/`.
+
+## License
+
+Proprietary. Copyright (c) 2026 deepeshgupta12, all rights reserved; see [LICENSE](LICENSE).
