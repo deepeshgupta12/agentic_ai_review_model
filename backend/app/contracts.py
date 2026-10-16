@@ -20,6 +20,8 @@ from referencing.jsonschema import DRAFT202012
 from app.config import get_settings
 from app.db import iso
 
+# Hashed JSON subtrees whose timestamps stay strings in the database (content revisions, D76 fix).
+FROZEN_REFS = {"content.schema.json#/$defs/ContentPayload", "content.schema.json#/$defs/DependencyManifest"}
 TIMESTAMP_REF = "common.schema.json#/$defs/Timestamp"
 BSON_TYPES: dict[str, list[str]] = {
     "string": ["string"],
@@ -152,17 +154,21 @@ class ContractStore:
             properties[name] = spec
         return {"$jsonSchema": schema}
 
-    def _to_mongo(self, node: Any, current_file: str, stack: tuple[str, ...]) -> dict[str, Any]:
+    def _to_mongo(self, node: Any, current_file: str, stack: tuple[str, ...], frozen: bool = False) -> dict[str, Any]:
+        """`frozen` inside a content revision's payload and manifest (FROZEN_REFS): they are JSON as hashed, so a
+        timestamp there stays the contract's string (16 Oct 2026: the validator asked for a BSON date and refused
+        every page whose reviews had a known date)."""
         if not isinstance(node, dict):
             return {}
         if "$ref" in node:
             target_file, _, pointer = node["$ref"].partition("#")
             target = f"{target_file or current_file}#{pointer}"
-            if target == TIMESTAMP_REF:
+            if target == TIMESTAMP_REF and not frozen:
                 return {"bsonType": "date"}
             if target in stack:
                 return {}
-            return self._to_mongo(self.resolve(target), target_file or current_file, (*stack, target))
+            frozen = frozen or target in FROZEN_REFS
+            return self._to_mongo(self.resolve(target), target_file or current_file, (*stack, target), frozen)
         out: dict[str, Any] = {}
         for key, value in node.items():
             if key == "type":
@@ -172,13 +178,13 @@ class ContractStore:
                     mapped.extend(BSON_TYPES[t])
                 out["bsonType"] = mapped[0] if len(mapped) == 1 else mapped
             elif key == "properties":
-                out["properties"] = {k: self._to_mongo(v, current_file, stack) for k, v in value.items()}
+                out["properties"] = {k: self._to_mongo(v, current_file, stack, frozen) for k, v in value.items()}
             elif key in ("items", "not"):
-                out[key] = self._to_mongo(value, current_file, stack)
+                out[key] = self._to_mongo(value, current_file, stack, frozen)
             elif key == "additionalProperties":
-                out[key] = value if isinstance(value, bool) else self._to_mongo(value, current_file, stack)
+                out[key] = value if isinstance(value, bool) else self._to_mongo(value, current_file, stack, frozen)
             elif key in ("anyOf", "allOf", "oneOf"):
-                converted = [self._to_mongo(v, current_file, stack) for v in value]
+                converted = [self._to_mongo(v, current_file, stack, frozen) for v in value]
                 converted = [c for c in converted if c]
                 if converted:
                     out[key] = converted

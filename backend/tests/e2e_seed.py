@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from datetime import UTC, datetime
 from typing import Any
 
 from pymongo import MongoClient
@@ -80,6 +81,21 @@ def main() -> int:
     analysis.gateway_for = gateway  # type: ignore[assignment]
     analysis.default_embedder = lambda _s: None  # type: ignore[assignment]
     project, run = analysing_run(db, settings, contracts, fictional)
+    # one source with a known date, so the page built from its review carries a dated credit line: the database
+    # validator refused such pages until 16 Oct 2026 (D76) and the journeys never met one
+    db["ai_sources"].update_one(
+        {"source_kind": "forum_post", "connector_id": "web_fetch"},  # the post is long enough for the page
+        {
+            "$set": {
+                "publication_date": {
+                    "status": "known",
+                    "value": datetime(2026, 8, 24, 7, 25, 36, tzinfo=UTC),
+                    "precision": "instant",
+                    "basis": "platform_metadata",
+                }
+            }
+        },
+    )
     while worker.run_one(db, "e2e-seed", 60) is not None:
         pass
     stage = db["ai_runs"].find_one({"_id": run["_id"]})["stage"]

@@ -411,12 +411,24 @@ def review_item(page: dict[str, Any], review: PageReview) -> Item:
     )
 
 
-# Portal pages of one flat for sale: a seller's description, never anyone's review (D72). 99acres listings carry
-# "-spid-" (15 Oct 2026: Brave's 99acres results for Conscient Parq were all listings), MagicBricks "propertyDetails".
-LISTING_PAGES = re.compile(r"99acres\.com/[^?#]*-spid-|magicbricks\.com/propertydetails/", re.IGNORECASE)
+# Portal pages that never hold anyone's review (D72, D75): one flat for sale or rent (99acres "-spid-", MagicBricks
+# "propertyDetails", Housing.com resale and rent listings) and a project's sub-pages (amenities, floor plans, location,
+# photos, brochure, price trends, directions). On 15 Oct 2026, 34 of the 80 pages read for DLF Privana were such
+# sub-pages while 14 pages naming the project went unread.
+LISTING_PAGES = re.compile(
+    r"99acres\.com/[^?#]*-spid-"
+    r"|magicbricks\.com/propertydetails/"
+    r"|magicbricks\.com/[^?#]*-(amenities|floor-plan|location|photo-videos|video-review|price-trends)-"
+    r"|magicbricks\.com/[^?#]*-in-gurgaon-overview"
+    r"|housing\.com/in/(buy|rent)/(resale|rent)/"
+    r"|housing\.com/in/buy/projects/page/[^?#]*/(brochure|floor-plan|directions|amenities|price-trends)"
+    r"|nobroker\.in/[^?#]*-prjt-[^?#]*/(amenities|location|floor-plan|price-trends|specifications)",
+    re.IGNORECASE,
+)
 
 
 def listing_page(url: str) -> bool:
+    """A portal page with no review on it: not worth one of the run's reads."""
     return bool(LISTING_PAGES.search(url))
 
 

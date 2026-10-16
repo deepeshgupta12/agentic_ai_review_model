@@ -86,6 +86,21 @@ def test_a_long_pages_evidence_is_where_it_names_the_project():
 def test_listing_pages_are_recognised():
     assert listing_page("https://www.99acres.com/4-bhk-flat-for-sale-in-quillon-residences-sector-102-spid-P92796052")
     assert listing_page("https://www.magicbricks.com/propertyDetails/3-BHK-Flat-FOR-Sale-Sector-102&id=4d42")
+    for sub in (
+        "https://www.magicbricks.com/quillon-residences-amenities-sector-102-gurgaon-pdpid-4d42",
+        "https://www.magicbricks.com/quillon-residences-floor-plan-sector-102-gurgaon-pdpid-4d42",
+        "https://www.magicbricks.com/Sector-102-in-Gurgaon-Overview",
+        "https://housing.com/in/buy/projects/page/35502-quillon-residences-in-sector-102/brochure",
+        "https://housing.com/in/buy/resale/page/20169118-4-bhk-apartment-in-sector-102-for-rs-69700000",
+        "https://www.nobroker.in/quillon-residences-sector-102_gurgaon-prjt-8aa9af/amenities",
+    ):
+        assert listing_page(sub), sub
+    for page in (
+        "https://www.magicbricks.com/quillon-residences-reviews-sector-102-gurgaon-pdpid-4d42",
+        "https://housing.com/in/buy/projects/page/35502-quillon-residences-in-sector-102/reviews",
+        "https://www.nobroker.in/quillon-residences-sector-102_gurgaon-prjt-8aa9af",
+    ):
+        assert not listing_page(page), page
     assert not listing_page("https://www.99acres.com/quillon-residences-sector-102-gurgaon-npxid-r412345")
     assert not listing_page("https://www.magicbricks.com/quillon-residences-sector-102-gurgaon-pdpid-4d42")
 
@@ -290,3 +305,56 @@ def test_instagram_posts_are_found_through_both_search_engines_each_once(db, set
         InstagramPublic(None, None, db, settings, Engine([], fail=True), None).discover(  # type: ignore[arg-type]
             {"query_text": "q", "window_days": 120, "exclusions": []}, None
         )
+
+
+def test_review_pages_are_read_before_the_rest_within_the_page_budget(db, settings, world, monkeypatch):  # noqa: F811
+    """D75: the budget goes to the portals, Quora and forums before dealers' and the developer's pages."""
+    net = world["net"]
+    results = [
+        {"url": "https://forum.example.test/t/2", "title": "Quillon Residences owners"},  # generic web, read second
+        {"url": "https://www.quora.com/Is-Quillon-Residences-good", "title": "Is Quillon Residences good?"},
+        {"url": "https://forum.example.test/t/1", "title": "Quillon Residences review thread"},
+    ]
+    net.json(
+        "api.search.brave.com",
+        lambda r: (200, {"query": {"more_results_available": False}, "web": {"results": results}}),
+    )
+    net.html(
+        "www.quora.com", {"/Is-Quillon-Residences-good": (200, article("Is Quillon Residences good?", PAGE_TEXT * 4))}
+    )
+    settings.web_pages_per_run = 1
+    accepted = start(db, settings, world["q"], ["brave_search", "web_fetch"])
+    run_all_jobs(db)
+    reads = [
+        str(r.url)
+        for r in net.requests
+        if r.url.host in ("www.quora.com", "forum.example.test") and r.url.path != "/robots.txt"
+    ]
+    assert reads == ["https://www.quora.com/Is-Quillon-Residences-good"], reads
+    assert "over_page_budget: 2" in coverage(db, accepted["run_id"])["web_fetch"]["note"]
+
+
+def test_a_rate_limited_firecrawl_search_is_retried_after_the_pause(db, settings):
+    """D75: a 429 is not billed; the search waits as Firecrawl asks and tries again."""
+    import httpx
+
+    from app.connectors import registry
+
+    net, log, calls = FakeNet(), [], []
+    ok = firecrawl_answer([{"url": "https://forum.example.test/t/1", "title": "Quillon Residences"}], log)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        if len(calls) == 1:
+            return httpx.Response(429, headers={"content-type": "application/json", "retry-after": "0"}, content=b"{}")
+        status, body = ok(request)
+        return httpx.Response(status, headers={"content-type": "application/json"}, content=json.dumps(body).encode())
+
+    net.route("api.firecrawl.dev", handler)
+    client = net.client()
+    client.max_attempts = 3
+    search = FirecrawlSearch("test-only-firecrawl-key", client, db, settings)
+    page = search.discover({"query_text": "q", "window_days": 120, "exclusions": []}, None)
+    assert [i.canonical_url for i in page.items] == ["https://forum.example.test/t/1"] and len(calls) == 2
+    settings.firecrawl_api_key = SecretStr("test-only-firecrawl-key")
+    assert registry.build("firecrawl_search", db, settings).client.max_attempts == 3

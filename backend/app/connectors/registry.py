@@ -71,7 +71,13 @@ def build(connector_id: str, db: Database[dict[str, Any]], settings: Settings) -
         from app.connectors.firecrawl_search import FirecrawlSearch
 
         key = settings.firecrawl_api_key
-        return FirecrawlSearch(key.get_secret_value(), paid_client(settings), db, settings) if key else None
+        if key is None:
+            return None
+        # a search is billed only when it answers: a 429 (the rate limit; four of ten searches on 15 Oct 2026) is
+        # retried after Retry-After, which the shared client does for POST on 429 alone (D75)
+        client = paid_client(settings)
+        client.max_attempts = 3
+        return FirecrawlSearch(key.get_secret_value(), client, db, settings)
     if connector_id == "youtube_data_api":
         from app.connectors.youtube import YouTubeDataApi
 

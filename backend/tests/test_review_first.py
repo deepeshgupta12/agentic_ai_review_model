@@ -405,7 +405,7 @@ def test_the_page_takes_at_most_its_limit_of_reviews_each_30_to_80_words(
     api, db, settings, contracts, fictional, model, make_user
 ):
     settings.analysis_mode = "reviews"
-    settings.review_words_min = 30  # the published limit (the shared fixture lowers it for its short texts)
+    settings.review_words_min = 20  # the published limit (the shared fixture lowers it for its short texts)
     q, _ = analysing_run(db, settings, contracts, fictional)
     work(db)
     approve_all(db, q)
@@ -425,12 +425,12 @@ def test_the_page_takes_at_most_its_limit_of_reviews_each_30_to_80_words(
         return api.post(f"/v1/projects/{q}/content-revisions", json=body, headers={**moderator, "Idempotency-Key": key})
 
     refused = generate([short, fit], "gen-words-0001")
-    assert refused.status_code == 422 and "30 to 80 words" in refused.json()["error"]["message"]
+    assert refused.status_code == 422 and "20 to 80 words" in refused.json()["error"]["message"]
     assert short["id"] in json.dumps(refused.json()["error"]["fields"])
     settings.review_words_min, settings.page_reviews_max = 1, 1
     too_many = generate([short, fit], "gen-many-0001")
     assert too_many.status_code == 422 and "at most 1 reviews" in too_many.json()["error"]["message"]
-    settings.review_words_min, settings.page_reviews_max = 30, 20
+    settings.review_words_min, settings.page_reviews_max = 20, 20
     accepted = generate([fit], "gen-fits-0001")
     assert accepted.status_code == 202, accepted.text
     assert work(db) == ["completed"]

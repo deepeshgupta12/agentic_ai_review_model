@@ -23,7 +23,7 @@ Every project follows four steps, and a banner above its tabs (and the **Next st
 
 ## 3. Build the page (moderator)
 
-1. **Page → Build the page.** Up to 20 approved reviews of 30 to 80 words are ticked for you, positive, negative and mixed in proportion; change the selection if you like, then **Generate draft**. No model is called; the draft opens when it is ready. The public page shows the reviews as Person 1, Person 2 and so on, in the authors' own words, with no other line of ours.
+1. **Page → Build the page.** Up to 20 approved reviews of 20 to 80 words are ticked for you, positive, negative and mixed in proportion; change the selection if you like, then **Generate draft**. No model is called; the draft opens when it is ready. The public page shows the reviews as Person 1, Person 2 and so on, in the authors' own words, with no other line of ours.
 2. In the draft, the heading, search title and description can be edited, and reviews reordered, removed or added from the approved ones (any approved review of the project, within the limits). Give a reason and **Save and run QA**: every save is a new revision, and an earlier approval never carries over. A review's words cannot be changed here; fix a review on the Reviews tab. QA issues sit on the block they concern; a blocking issue keeps the revision a draft.
 3. After the first draft, the page changes only by editing its latest revision; **Build the page** returns when a new run reaches its review.
 4. **Preview** shows the revision in the real public template, privately.

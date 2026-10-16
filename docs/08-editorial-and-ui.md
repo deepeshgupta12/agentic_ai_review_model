@@ -36,7 +36,7 @@ Show empty, loading, access-pending, partial, error, stale and forbidden states 
 - Every substantive output block carries exact finding/claim references. Preserve caveats through shortening, translation and manual editing.
 - Wording follows construction status (D27): before possession write "prospective buyers" or "owners awaiting possession", never "residents" or "living here"; in a partly ready project name the phase.
 - First-person reviews (D28) are one real author's words. Show positive and negative ones; do not choose only one side. No dashes or hyphens in displayed review text; no merged, invented or model-paraphrased reviews, and no deliberately added mistakes (D69).
-- The published review list (D69): at most 20 reviews of 30 to 80 words, positive, negative and mixed spread through the list in proportion, each labelled Person 1, Person 2… with the author's words only (verbatim, shortened to whole sentences, dashes replaced by punctuation, or translated into English). No credit, intro, disclosure or attribution line of ours and no site name; the source line and link stay in the console for moderators.
+- The published review list (D69): at most 20 reviews of 20 to 80 words, positive, negative and mixed spread through the list in proportion, each labelled Person 1, Person 2… with the author's words only (verbatim, shortened to whole sentences, dashes replaced by punctuation, or translated into English). No credit, intro, disclosure or attribution line of ours and no site name; the source line and link stay in the console for moderators.
 - Q&A questions may be generated from supported topics; answers cannot add new facts. Do not claim these are actual searched user questions without search-query evidence.
 
 ## SEO/AEO implementation

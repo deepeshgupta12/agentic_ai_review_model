@@ -123,7 +123,9 @@ class Settings(BaseSettings):
     firecrawl_credits_per_page: int = Field(default=1, ge=1)
     # Firecrawl search (D72): results per query, 2 credits per 10, from the same monthly Firecrawl credits.
     firecrawl_search_results: int = Field(default=20, ge=1, le=100)
-    web_pages_per_run: int = Field(default=80, ge=0)
+    # pages the web reader reads per run; local fetches, paid only when refused or script-built (D75: 80 left 14
+    # pages naming the project unread on 15 Oct 2026)
+    web_pages_per_run: int = Field(default=120, ge=0)
     # A collect job (one source group) stops where it is after this long, keeping what it stored (audit, 14 Oct 2026).
     collect_job_max_minutes: int = Field(default=30, ge=1)  # 40 until D61 opened the generic web route
     # Reddit through PullPush (D67, D68): names searched per project, posts and comment hits per name, threads read.
@@ -136,9 +138,10 @@ class Settings(BaseSettings):
     reddit_threads_via_scrapfly_per_run: int = Field(default=0, ge=0)
     # The analysis (D68): "reviews" curates first-person reviews only (A11); "full" also extracts claims and findings.
     analysis_mode: str = Field(default="reviews", pattern="^(reviews|full)$")
-    # The published page (D69): at most this many reviews, each 30 to 80 words (A11 keeps only reviews in the range).
+    # The published page (D69, D76): at most this many reviews, each 20 to 80 words (the product owner lowered the
+    # minimum from 30 on 16 Oct 2026: reviews of 20 to 29 words that make sense were kept off the page).
     page_reviews_max: int = Field(default=20, ge=1, le=100)
-    review_words_min: int = Field(default=30, ge=1)
+    review_words_min: int = Field(default=20, ge=1)
     review_words_max: int = Field(default=80, ge=1)
     identity_agent_tasks_per_run: int = Field(default=10, ge=0)
     recheck_per_job: int = Field(default=200, ge=0)

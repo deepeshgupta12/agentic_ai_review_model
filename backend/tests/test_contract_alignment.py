@@ -38,6 +38,21 @@ def test_mongo_validators_store_timestamps_as_dates(contracts):
     assert "_id" in validator["required"] and "id" not in validator["required"]
 
 
+def test_a_content_revisions_frozen_payload_keeps_its_timestamps_as_strings(contracts):
+    """16 Oct 2026: the validator asked for BSON dates inside the hashed payload and refused every page whose
+    reviews had a known date; the payload and manifest are JSON as hashed, so their timestamps are strings."""
+    schema = contracts.mongo_validator("content.schema.json#/$defs/ContentRevision")["$jsonSchema"]
+    assert schema["properties"]["created_at"] == {"bsonType": "date"}, "records keep BSON dates"
+    reviews = schema["properties"]["payload"]["properties"]["reviews"]["items"]["properties"]
+    value = reviews["credit"]["properties"]["published"]["properties"]["value"]
+    assert all(v.get("bsonType") != "date" for v in value["anyOf"]), value
+    assert any(v.get("bsonType") == "string" for v in value["anyOf"]), value
+    window = schema["properties"]["payload"]["properties"]["evidence_window"]
+    assert "date" not in str(window), window
+    manifest = schema["properties"]["manifest"]
+    assert "date" not in str(manifest), "the manifest is hashed JSON too"
+
+
 def test_naming_matches_the_step_01_validator():
     data = validate_inputs.json.loads((REPO_ROOT / "contracts" / "five-project-input-template.json").read_text())
     _, _, registrations = validate_inputs.validate_projects(data)

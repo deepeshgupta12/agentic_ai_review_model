@@ -445,6 +445,9 @@ class Collector:
             days = max(1, round((window["to"] - window["from"]).total_seconds() / 86400))
         return [{**q, "window_days": days or q["window_days"]} for q in plan if q["connector_id"] == connector_id]
 
+    def _review_page(self, url: str) -> bool:
+        return policies.resolve(self.db, url).family in policies.REVIEW_PAGE_FAMILIES
+
     def _read_pages(
         self,
         web: WebFetch,
@@ -672,6 +675,9 @@ class Collector:
                     status="unavailable", note=f"not run: every search failed ({', '.join(sorted(set(errors)))})"
                 )
             else:
+                # the pages that hold people's reviews first (portals, Quora, forums), so the run's page budget goes
+                # to them before the dealers' and the developer's own pages (D75: 15 Oct 2026, 14 pages left unread)
+                to_read.sort(key=lambda entry: 0 if self._review_page(entry[0]) else 1)
                 self._read_pages(web, to_read, web_cov, outcomes, self.settings.web_pages_per_run)
                 web_cov["last_success_at"] = utcnow() if web_cov["fetched"] else None
                 web_cov["note"] = _note(outcomes, [])

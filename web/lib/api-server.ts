@@ -114,7 +114,7 @@ export type BackendInfo = {
 
 /** The backend's mode and the page's review limits (D69), read from /healthz so the console never copies them. */
 export async function backendInfo(): Promise<BackendInfo> {
-  const fallback = { analysis_mode: "reviews", page_reviews_max: 20, review_words_min: 30, review_words_max: 80 };
+  const fallback = { analysis_mode: "reviews", page_reviews_max: 20, review_words_min: 20, review_words_max: 80 };
   const result = (await getOnce(`${API}/healthz`, "")) as ApiResult<Partial<BackendInfo>>;
   if (!result.data) return { ...fallback, mode: "unreachable" };
   return { ...fallback, ...result.data, mode: result.data.mode ?? "unknown" };

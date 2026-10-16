@@ -5,6 +5,16 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Shorter reviews on the page, and the page build fixed — 16 October 2026
+
+- **A published review has 20 to 80 words** (was 30): reviews of 20 to 29 words that make sense now fit the page (D76).
+- **Page building no longer fails on reviews with a known date:** the database validator wanted a date where the frozen page payload holds the contract's string; fixed and applied to the live database (D76).
+
+## The page budget goes to review pages — 16 October 2026 (after the fourth DLF Privana run)
+
+- **Portal sub-pages with no reviews** (amenities, floor plans, location, photos, brochure, listings) are no longer read; **review pages are read first**; the cap is 120 pages a run (D75). Last run 34 of 80 reads went to such pages and 14 pages naming the project were left unread.
+- **Firecrawl search retries its rate limit** (four of ten searches were lost to a 429).
+
 ## Agents' reviews for the moderator, refused pages read, Instagram searched twice — 15 October 2026 (after the DLF Privana run)
 
 - **Reviews that were dropped now reach the moderator** (D73): agents' and dealers' reviews, sales talk and locality reviews are kept and marked ("agent, dealer or sales talk"; the aspect location), positive and negative alike; the moderator accepts or rejects each. Before, 15 MagicBricks reviews and 2 99acres locality reviews of DLF Privana were left out, and the model left out sales talk and views of the locality.
