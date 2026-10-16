@@ -60,7 +60,12 @@ class FirecrawlSearch(Connector):
     def discover(self, query: dict[str, Any], cursor: str | None) -> Page:
         """One page of results per query (no cursor). Raises QuotaExhausted before any request when the month's
         credits are spent, ProviderError when Firecrawl refuses or fails."""
-        results = self.settings.firecrawl_search_results
+        # a category search is narrow (D77): ten results cost 2 credits where a full search of 30 costs 6
+        results = (
+            min(self.settings.firecrawl_search_results, 10)
+            if query.get("purpose") == "category"
+            else self.settings.firecrawl_search_results
+        )
         reserved = credits_for(results)
         if not quota.reserve(self.db, self.settings, LEDGER, "credits", reserved, self.now()):
             raise QuotaExhausted(LEDGER, "credits")

@@ -20,7 +20,7 @@
         "binding": {
           "project_id": "prj_01JB0000000000000000000001",
           "locale": "en-IN",
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "eligibility_epoch": 3,
           "expected_state_version": 7
@@ -98,8 +98,8 @@
               "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
               "polarity": "mixed",
               "aspects": [
-                "layout",
-                "possession"
+                "unit_layouts_livability",
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "an_owner_awaiting_possession",
@@ -136,7 +136,7 @@
               "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
               "polarity": "negative",
               "aspects": [
-                "construction_progress"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_site_visitor",
@@ -173,7 +173,7 @@
               "text": "Possession has been delayed a little.",
               "polarity": "negative",
               "aspects": [
-                "possession"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_video_creator",
@@ -297,7 +297,7 @@
             }
           }
         },
-        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+        "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
         "manifest": {
           "findings": [
             {
@@ -414,14 +414,14 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
@@ -454,7 +454,7 @@
         "binding": {
           "project_id": "prj_01JB0000000000000000000001",
           "locale": "en-IN",
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "eligibility_epoch": 3,
           "expected_state_version": 7
@@ -532,8 +532,8 @@
               "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
               "polarity": "mixed",
               "aspects": [
-                "layout",
-                "possession"
+                "unit_layouts_livability",
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "an_owner_awaiting_possession",
@@ -570,7 +570,7 @@
               "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
               "polarity": "negative",
               "aspects": [
-                "construction_progress"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_site_visitor",
@@ -607,7 +607,7 @@
               "text": "Possession has been delayed a little.",
               "polarity": "negative",
               "aspects": [
-                "possession"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_video_creator",
@@ -731,7 +731,7 @@
             }
           }
         },
-        "payload_sha256": "sha256:33033a39e525757bb9dc7fbd35bd75a4cebe78b6adee44680c8b3be3fb3dbc5f",
+        "payload_sha256": "sha256:8ef9cdeec07d6a25aaf11a85a10367263da0b4eec2a8c1c436097e316f682485",
         "manifest": {
           "findings": [
             {
@@ -855,14 +855,14 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
@@ -898,7 +898,7 @@
         "binding": {
           "project_id": "prj_01JB0000000000000000000001",
           "locale": "en-IN",
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "eligibility_epoch": 3,
           "expected_state_version": 7
@@ -976,8 +976,8 @@
               "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
               "polarity": "mixed",
               "aspects": [
-                "layout",
-                "possession"
+                "unit_layouts_livability",
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "an_owner_awaiting_possession",
@@ -1014,7 +1014,7 @@
               "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
               "polarity": "negative",
               "aspects": [
-                "construction_progress"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_site_visitor",
@@ -1051,7 +1051,7 @@
               "text": "Possession has been delayed a little.",
               "polarity": "negative",
               "aspects": [
-                "possession"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_video_creator",
@@ -1175,7 +1175,7 @@
             }
           }
         },
-        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+        "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
         "manifest": {
           "findings": [
             {
@@ -1292,14 +1292,14 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
@@ -1334,7 +1334,7 @@
         "binding": {
           "project_id": "prj_01JB0000000000000000000001",
           "locale": "en-IN",
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "eligibility_epoch": 3,
           "expected_state_version": 7
@@ -1412,8 +1412,8 @@
               "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
               "polarity": "mixed",
               "aspects": [
-                "layout",
-                "possession"
+                "unit_layouts_livability",
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "an_owner_awaiting_possession",
@@ -1450,7 +1450,7 @@
               "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
               "polarity": "negative",
               "aspects": [
-                "construction_progress"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_site_visitor",
@@ -1487,7 +1487,7 @@
               "text": "Possession has been delayed a little.",
               "polarity": "negative",
               "aspects": [
-                "possession"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_video_creator",
@@ -1611,7 +1611,7 @@
             }
           }
         },
-        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+        "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
         "manifest": {
           "findings": [
             {
@@ -1728,14 +1728,14 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
@@ -1770,7 +1770,7 @@
         "binding": {
           "project_id": "prj_01JB0000000000000000000001",
           "locale": "en-IN",
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "eligibility_epoch": 3,
           "expected_state_version": 7
@@ -1848,8 +1848,8 @@
               "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
               "polarity": "mixed",
               "aspects": [
-                "layout",
-                "possession"
+                "unit_layouts_livability",
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "an_owner_awaiting_possession",
@@ -1886,7 +1886,7 @@
               "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
               "polarity": "negative",
               "aspects": [
-                "construction_progress"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_site_visitor",
@@ -1923,7 +1923,7 @@
               "text": "Possession has been delayed a little.",
               "polarity": "negative",
               "aspects": [
-                "possession"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_video_creator",
@@ -2047,7 +2047,7 @@
             }
           }
         },
-        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+        "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
         "manifest": {
           "findings": [
             {
@@ -2164,14 +2164,14 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
@@ -2198,14 +2198,14 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
@@ -2286,8 +2286,8 @@
                 "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
                 "polarity": "mixed",
                 "aspects": [
-                  "layout",
-                  "possession"
+                  "unit_layouts_livability",
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "an_owner_awaiting_possession",
@@ -2324,7 +2324,7 @@
                 "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
                 "polarity": "negative",
                 "aspects": [
-                  "construction_progress"
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "a_site_visitor",
@@ -2361,7 +2361,7 @@
                 "text": "Possession has been delayed a little.",
                 "polarity": "negative",
                 "aspects": [
-                  "possession"
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "a_video_creator",
@@ -2485,7 +2485,7 @@
               }
             }
           },
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest": {
             "findings": [
               {
@@ -2664,8 +2664,8 @@
                 "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
                 "polarity": "mixed",
                 "aspects": [
-                  "layout",
-                  "possession"
+                  "unit_layouts_livability",
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "an_owner_awaiting_possession",
@@ -2702,7 +2702,7 @@
                 "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
                 "polarity": "negative",
                 "aspects": [
-                  "construction_progress"
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "a_site_visitor",
@@ -2739,7 +2739,7 @@
                 "text": "Possession has been delayed a little.",
                 "polarity": "negative",
                 "aspects": [
-                  "possession"
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "a_video_creator",
@@ -2863,7 +2863,7 @@
               }
             }
           },
-          "payload_sha256": "sha256:33033a39e525757bb9dc7fbd35bd75a4cebe78b6adee44680c8b3be3fb3dbc5f",
+          "payload_sha256": "sha256:8ef9cdeec07d6a25aaf11a85a10367263da0b4eec2a8c1c436097e316f682485",
           "manifest": {
             "findings": [
               {
@@ -2992,14 +2992,14 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
@@ -3084,8 +3084,8 @@
                 "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
                 "polarity": "mixed",
                 "aspects": [
-                  "layout",
-                  "possession"
+                  "unit_layouts_livability",
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "an_owner_awaiting_possession",
@@ -3122,7 +3122,7 @@
                 "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
                 "polarity": "negative",
                 "aspects": [
-                  "construction_progress"
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "a_site_visitor",
@@ -3159,7 +3159,7 @@
                 "text": "Possession has been delayed a little.",
                 "polarity": "negative",
                 "aspects": [
-                  "possession"
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "a_video_creator",
@@ -3283,7 +3283,7 @@
               }
             }
           },
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest": {
             "findings": [
               {
@@ -3480,8 +3480,8 @@
                 "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
                 "polarity": "mixed",
                 "aspects": [
-                  "layout",
-                  "possession"
+                  "unit_layouts_livability",
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "an_owner_awaiting_possession",
@@ -3518,7 +3518,7 @@
                 "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
                 "polarity": "negative",
                 "aspects": [
-                  "construction_progress"
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "a_site_visitor",
@@ -3555,7 +3555,7 @@
                 "text": "Possession has been delayed a little.",
                 "polarity": "negative",
                 "aspects": [
-                  "possession"
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "a_video_creator",
@@ -3679,7 +3679,7 @@
               }
             }
           },
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest": {
             "findings": [
               {
@@ -3801,14 +3801,14 @@
         "approved": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "decision_id": "dec_01JB0000000000000000000001"
         },
         "active": {
           "revision_id": "rev_01JB0000000000000000000001",
           "revision": 1,
-          "payload_sha256": "sha256:33033a39e525757bb9dc7fbd35bd75a4cebe78b6adee44680c8b3be3fb3dbc5f",
+          "payload_sha256": "sha256:8ef9cdeec07d6a25aaf11a85a10367263da0b4eec2a8c1c436097e316f682485",
           "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
           "operation_id": "pub_01JB0000000000000000000001",
           "activated_at": "2026-09-24T13:00:00Z"
@@ -3889,8 +3889,8 @@
                 "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
                 "polarity": "mixed",
                 "aspects": [
-                  "layout",
-                  "possession"
+                  "unit_layouts_livability",
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "an_owner_awaiting_possession",
@@ -3927,7 +3927,7 @@
                 "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
                 "polarity": "negative",
                 "aspects": [
-                  "construction_progress"
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "a_site_visitor",
@@ -3964,7 +3964,7 @@
                 "text": "Possession has been delayed a little.",
                 "polarity": "negative",
                 "aspects": [
-                  "possession"
+                  "builder_reputation"
                 ],
                 "credit": {
                   "speaker_label": "a_video_creator",
@@ -4088,7 +4088,7 @@
               }
             }
           },
-          "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+          "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
           "manifest": {
             "findings": [
               {

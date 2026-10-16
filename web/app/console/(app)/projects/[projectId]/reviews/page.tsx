@@ -6,7 +6,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { EmptyState, ErrorState, MoreLink } from "@/components/ui";
 import { apiGet, backendInfo, currentUser, type Schemas } from "@/lib/api-server";
 import { fitsPage, wordCount } from "@/lib/flow";
-import { creditLine, label } from "@/lib/format";
+import { CATEGORIES, categoryLabel, creditLine, label } from "@/lib/format";
 import { can } from "@/lib/roles";
 
 import { ReviewEditor } from "./ReviewEditor";
@@ -29,7 +29,7 @@ export default async function ReviewsPage({
   searchParams,
 }: {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ review_status?: string; cursor?: string }>;
+  searchParams: Promise<{ review_status?: string; aspect?: string; cursor?: string }>;
 }) {
   const { projectId } = await params;
   const search = await searchParams;
@@ -56,6 +56,17 @@ export default async function ReviewsPage({
             {["pending", "approved", "changes_requested", "rejected", "superseded"].map((s) => (
               <option key={s} value={s}>
                 {label(s)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-ink-muted">Category</span>
+          <select name="aspect" defaultValue={search.aspect ?? ""} className="rounded border border-line px-2 py-1">
+            <option value="">all categories</option>
+            {Object.entries(CATEGORIES).map(([key, name]) => (
+              <option key={key} value={key}>
+                {name}
               </option>
             ))}
           </select>
@@ -93,8 +104,13 @@ export default async function ReviewsPage({
                   <StatusBadge status={r.review_status} />
                   <StatusBadge status={view.rendering_check} />
                   <span className="text-xs text-ink-muted">
-                    {label(r.rendering)} · revision {r.revision} · {r.aspects.map(label).join(", ")} · {wordCount(r.text)} words
+                    {label(r.rendering)} · revision {r.revision} · {wordCount(r.text)} words
                   </span>
+                  {r.aspects.map((a) => (
+                    <span key={a} className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent ring-1 ring-inset ring-accent/20">
+                      {categoryLabel(a)}
+                    </span>
+                  ))}
                   {r.text && !fitsPage(r.text, info) ? (
                     <span className="text-xs text-warn">
                       outside {info.review_words_min} to {info.review_words_max} words: can be approved, not shown on the page

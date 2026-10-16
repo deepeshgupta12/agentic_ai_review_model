@@ -215,11 +215,17 @@ GENERIC_TERMS = {
 }
 
 # Query builder (04.3): bounded and deduplicated.
-QUERY_RULES_VERSION = "query-rules.1.3"  # 1.1: portal and Quora review searches first (D68)
-MAX_QUERIES_PER_CONNECTOR = 12
+QUERY_RULES_VERSION = "query-rules.1.4"  # 1.1: portal and Quora review searches first (D68)
+MAX_QUERIES_PER_CONNECTOR = 40  # D77: name queries plus one per category per standalone name
 # Within a priority, names approved from proposals come first: finding them is the point of discovery (D17).
 ALIAS_ORIGIN_ORDER = {"approved_proposal": 0, "input_file": 1, "configuration": 2, "rera_registered_name": 3}
-QUERY_PRIORITY = {"identifier": "high", "project_name": "high", "phase_name": "normal", "approved_alias": "normal"}
+QUERY_PRIORITY = {
+    "identifier": "high",
+    "project_name": "high",
+    "phase_name": "normal",
+    "approved_alias": "normal",
+    "category": "normal",
+}
 
 # A01 identity agent (04.4): bounded input per task.
 A01_MAX_SEGMENTS = 10

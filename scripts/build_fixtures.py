@@ -357,7 +357,7 @@ CLAIM_OPINION = {
     "id": C_OPINION,
     "revision": 1,
     "project_id": P,
-    "aspect": "possession",
+    "aspect": "builder_reputation",
     "aspect_label": None,
     "claim_type": "opinion",
     "polarity": "negative",
@@ -399,7 +399,7 @@ FINDING_DELAY = {
     "revision": 1,
     "project_id": P,
     "kind": "con",
-    "aspect": "possession",
+    "aspect": "builder_reputation",
     "wording": "Several buyers report that possession was delayed",
     "attribution": "reported_opinion",
     "claims": [ref(C_OPINION)],
@@ -461,7 +461,7 @@ EVIDENCE_COMMENT = {
 CLAIM_RESIDENT_FLAGGED = {
     **CLAIM_OPINION,
     "id": uid("clm", 3),
-    "aspect": "maintenance",
+    "aspect": "maintenance_facility_mgmt",
     "polarity": "positive",
     "perspective": "resident_experience",
     "consistency_flags": ["status_unknown"],
@@ -530,22 +530,22 @@ YT2 = {"family": "youtube", "policy_version": 2}
 
 REVIEW_POST = review(
     REX_POST_ID, 1, S_FORUM, L_FORUM, [E_FORUM], "forum_thread", "owner_awaiting_possession", "an_owner_awaiting_possession",
-    "mixed", ["layout", "possession"], FORUM_TEXT, "en", "punctuation_normalised", FORUM_REVIEW_TEXT, UNKNOWN_DATE, None, [],
+    "mixed", ["unit_layouts_livability", "builder_reputation"], FORUM_TEXT, "en", "punctuation_normalised", FORUM_REVIEW_TEXT, UNKNOWN_DATE, None, [],
     "approved", None, BY_AGENT, WEB2,
 )
 REVIEW_COMMENT = review(
     REX_COMMENT_ID, 2, S_COMMENT, L_COMMENT, [E_COMMENT], "comment", "site_visit", "a_site_visitor", "negative",
-    ["construction_progress"], COMMENT_TEXT, "hi-Latn", "translated", COMMENT_REVIEW_TEXT, SOURCE_COMMENT["publication_date"], None, [],
+    ["builder_reputation"], COMMENT_TEXT, "hi-Latn", "translated", COMMENT_REVIEW_TEXT, SOURCE_COMMENT["publication_date"], None, [],
     "approved", ref(REX_COMMENT_ID, 1), BY_MODERATOR, YT2,
 )
 REVIEW_VIDEO = review(
     REX_VIDEO_ID, 1, S_VIDEO, L_VIDEO_P, [E_SPEECH], "video", "third_party_report", "a_video_creator", "negative",
-    ["possession"], "possession mein thoda delay hua", "hi-Latn", "translated", "Possession has been delayed a little.",
+    ["builder_reputation"], "possession mein thoda delay hua", "hi-Latn", "translated", "Possession has been delayed a little.",
     SOURCE_VIDEO["publication_date"], 12000, [], "approved", None, BY_AGENT, YT2,
 )
 REVIEW_FLAGGED = review(
     REX_FLAGGED_ID, 1, S_OTHER_POST, L_OTHER_POST, [E_OTHER_POST], "forum_post", "resident_experience", "a_resident", "positive",
-    ["maintenance"], OTHER_POST_TEXT, "en", "verbatim", OTHER_POST_TEXT, UNKNOWN_DATE, None, ["status_unknown"],
+    ["maintenance_facility_mgmt"], OTHER_POST_TEXT, "en", "verbatim", OTHER_POST_TEXT, UNKNOWN_DATE, None, ["status_unknown"],
     "pending", None, BY_AGENT, WEB2,
 )
 
@@ -866,7 +866,7 @@ CLAIMS_OUT = {
     "outcome": "completed",
     "claims": [
         {
-            "aspect": "possession",
+            "aspect": "builder_reputation",
             "aspect_label": None,
             "claim_type": "opinion",
             "polarity": "negative",
@@ -1473,8 +1473,8 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
                 {
                     "outcome": "completed",
                     "queries": [
-                        {"connector_id": "brave_search", "query_text": "\"Fixture Towers\" Sector 0 possession", "window_days": 90, "language": "en", "exclusions": ["Otherville"], "priority": "high", "purpose": "project_name"},
-                        {"connector_id": "brave_search", "query_text": RERA, "window_days": 90, "language": "en", "exclusions": [], "priority": "normal", "purpose": "identifier"},
+                        {"connector_id": "brave_search", "query_text": "\"Fixture Towers\" Sector 0 possession", "window_days": 90, "language": "en", "exclusions": ["Otherville"], "priority": "high", "purpose": "project_name", "category": None},
+                        {"connector_id": "brave_search", "query_text": RERA, "window_days": 90, "language": "en", "exclusions": [], "priority": "normal", "purpose": "identifier", "category": None},
                     ],
                 },
                 "Name and identifier queries",
@@ -1490,7 +1490,7 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
                             "evidence_ids": [E_FORUM],
                             "perspective": "owner_awaiting_possession",
                             "polarity": "mixed",
-                            "aspects": ["layout", "possession"],
+                            "aspects": ["unit_layouts_livability", "builder_reputation"],
                             "rendering": "punctuation_normalised",
                             "text": FORUM_REVIEW_TEXT,
                             "translation_note": None,
@@ -1500,7 +1500,7 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
                             "evidence_ids": [E_COMMENT],
                             "perspective": "site_visit",
                             "polarity": "negative",
-                            "aspects": ["construction_progress"],
+                            "aspects": ["builder_reputation"],
                             "rendering": "translated",
                             "text": COMMENT_REVIEW_TEXT,
                             "translation_note": "Translated from Hinglish",
@@ -1521,7 +1521,7 @@ def fixture_cases() -> dict[str, list[dict[str, Any]]]:
                             "evidence_ids": [E_FORUM],
                             "perspective": "owner_awaiting_possession",
                             "polarity": "mixed",
-                            "aspects": ["possession"],
+                            "aspects": ["builder_reputation"],
                             "rendering": "paraphrase",
                             "text": "Great project overall.",
                             "translation_note": None,

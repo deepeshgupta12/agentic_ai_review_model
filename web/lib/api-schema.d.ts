@@ -1592,10 +1592,10 @@ export interface components {
         /** @enum {unknown} */
         SourceKind: "search_result" | "forum_thread" | "forum_post" | "article" | "blog_post" | "news_article" | "video" | "short" | "comment" | "registration_record" | "user_review";
         /**
-         * @description Aspect taxonomy v1 (docs/04). 'other' needs a proposed label for review.
+         * @description Review categories v2 (D77, 16 Oct 2026: the product's project categories; v1 topics mapped onto them). 'other' needs a proposed label for review.
          * @enum {unknown}
          */
-        Aspect: "connectivity" | "location" | "layout" | "construction_quality" | "construction_progress" | "possession" | "amenities" | "maintenance" | "density" | "parking" | "water" | "power" | "service_management" | "value_perception" | "other";
+        Aspect: "builder_reputation" | "construction_specs" | "unit_layouts_livability" | "amenities_common_areas" | "maintenance_facility_mgmt" | "safety_security" | "location_connectivity" | "value_for_money" | "investment_potential" | "pricing" | "other";
         SourceId: string;
         SourceRevisionRef: {
             id: components["schemas"]["SourceId"];
@@ -3017,6 +3017,7 @@ export interface operations {
         parameters: {
             query?: {
                 review_status?: components["schemas"]["FindingReviewStatus"];
+                aspect?: components["schemas"]["Aspect"];
                 cursor?: string;
                 limit?: number;
             };

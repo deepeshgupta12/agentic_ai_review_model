@@ -31,7 +31,7 @@ from app.evidence.eligibility import eligibility, eligible_filter
 from app.evidence.retrieval import _translation_of
 
 AGENT_ID = "A05_claim_extractor"
-PROMPT_VERSION = "a05_claim_extractor.1.0"
+PROMPT_VERSION = "a05_claim_extractor.1.1"  # 1.1: the v2 categories (D77)
 SCHEMA_REF = "agents.schema.json#/$defs/ClaimExtraction"
 SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"

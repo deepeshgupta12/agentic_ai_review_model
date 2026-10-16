@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { activity, coverageState, duration, runBadge, runIsWorking } from "./format";
+import { activity, CATEGORIES, categoryLabel, coverageState, duration, runBadge, runIsWorking } from "./format";
 
 describe("runIsWorking (pages refresh only while the system works)", () => {
   it("is true while collecting and analysing, false once the analysis stopped", () => {
@@ -77,5 +77,13 @@ describe("runBadge and duration", () => {
     expect(duration(7 * 60_000)).toBe("7 min");
     expect(duration(125 * 60_000)).toBe("2 h 5 min");
     expect(duration(3 * 86_400_000)).toBe("3 days");
+  });
+});
+
+describe("categories (D77)", () => {
+  it("names every category in words and falls back for an unknown key", () => {
+    expect(Object.keys(CATEGORIES)).toHaveLength(11);
+    expect(categoryLabel("maintenance_facility_mgmt")).toBe("Maintenance and facility management");
+    expect(categoryLabel("something_new")).toBe("something new");
   });
 });

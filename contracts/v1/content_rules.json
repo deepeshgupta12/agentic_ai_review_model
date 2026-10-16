@@ -125,16 +125,14 @@
   ]
  },
  "status_checks": {
-  "note": "D63: further checks of a claim or review against the status in force on its date. Each applies only when occupancy was possible then (ready, or the claim's ready phase).",
+  "note": "D63: further checks of a claim or review against the status in force on its date. construction_after_completion has no category since D77 (the v2 categories carry no construction-progress topic) and is off. Each applies only when occupancy was possible then (ready, or the claim's ready phase).",
   "awaiting_after_handover": {
    "perspectives": [
     "owner_awaiting_possession"
    ]
   },
   "construction_after_completion": {
-   "aspects": [
-    "construction_progress"
-   ],
+   "aspects": [],
    "polarities": [
     "negative"
    ]

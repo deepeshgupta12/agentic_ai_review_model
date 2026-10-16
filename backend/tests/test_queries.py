@@ -78,3 +78,26 @@ def test_negative_keywords_become_exclusions(db, real):
     db["ai_project_configs"].update_one({"_id": project["_id"]}, {"$set": {"negative_keywords": ["crescent bay"]}})
     queries = build_query_plan(db, project["_id"], real)["plan"]["queries"]
     assert queries and all(q["exclusions"] == ["crescent bay"] for q in queries)
+
+
+def test_category_searches_are_planned_for_the_name_and_every_alternate_name(db, real):
+    """D77: one query per review category for the project's name and each standalone alternate name, for the search
+    engines and YouTube; the category rides on the query, never on the reviews found."""
+    from app.identity.queries import CATEGORY_PHRASES
+
+    queries = plan_for(db, "m3m-antalya-hills-sector-79-gurgaon", real)["plan"]["queries"]
+    for connector in ("brave_search", "firecrawl_search", "youtube_data_api"):
+        mine = [q for q in queries if q["connector_id"] == connector and q["purpose"] == "category"]
+        assert {q["category"] for q in mine} == set(CATEGORY_PHRASES), connector
+        assert all(q["priority"] == "normal" for q in mine)
+        texts = [q["query_text"] for q in mine]
+        assert "M3M Antalya Hills builder delay complaints" in texts, texts
+        assert all(" " in t for t in texts) and len(texts) == len(set(texts))
+    named = [
+        q
+        for q in queries
+        if q["connector_id"] == "brave_search" and q["purpose"] == "project_name" and "site:" not in q["query_text"]
+    ]
+    first_category = next(i for i, q in enumerate(queries) if q["purpose"] == "category")
+    assert all(queries.index(q) < first_category for q in named), "the name searches come first"
+    assert next(q for q in queries if q["purpose"] != "category")["category"] is None

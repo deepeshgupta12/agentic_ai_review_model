@@ -166,6 +166,7 @@ def test_a_run_reads_the_projects_public_posts(db, settings, contracts, fictiona
     settings.scrapfly_api_key = SecretStr("test-only-scrapfly-key-0000")
     settings.brave_search_api_key = SecretStr("test-only-brave-key-0000")
     settings.crawler_min_seconds_per_host = 0
+    settings.instagram_queries_per_project = 2  # the fake search answers every query alike; the counts below assume two
     monkeypatch.setattr(registry, "safe_client", lambda _s: net.client())
     monkeypatch.setattr(collection, "get_settings", lambda: settings)
     q = fictional["Quillon Residences"]

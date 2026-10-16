@@ -11,7 +11,7 @@
       "why": "Approval names exactly what the moderator saw",
       "instance": {
         "revision": 1,
-        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+        "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
         "manifest_sha256": "sha256:1cab55cd52a81fd5a19b36f1c975fc326593c4e107af2b06fb980fb82fd654dd",
         "eligibility_epoch": 3,
         "expected_state_version": 7
@@ -28,7 +28,7 @@
       "error_contains": "'manifest_sha256' is a required property",
       "instance": {
         "revision": 1,
-        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+        "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
         "eligibility_epoch": 3,
         "expected_state_version": 7
       }
@@ -146,7 +146,7 @@
       "instance": {
         "revision_id": "rev_01JB0000000000000000000001",
         "revision": 1,
-        "payload_sha256": "sha256:a2e5c7bfdbc0b10b820bbe6ce9c370dfd878c693c8afa9ead036210293487c2b",
+        "payload_sha256": "sha256:49c8779f8b1cb1034d51f545051f994c22e73e3fdc91f7e54375eefb9ad77dac",
         "payload": {
           "payload_schema": "content-payload/1",
           "project": {
@@ -211,8 +211,8 @@
               "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
               "polarity": "mixed",
               "aspects": [
-                "layout",
-                "possession"
+                "unit_layouts_livability",
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "an_owner_awaiting_possession",
@@ -249,7 +249,7 @@
               "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
               "polarity": "negative",
               "aspects": [
-                "construction_progress"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_site_visitor",
@@ -286,7 +286,7 @@
               "text": "Possession has been delayed a little.",
               "polarity": "negative",
               "aspects": [
-                "possession"
+                "builder_reputation"
               ],
               "credit": {
                 "speaker_label": "a_video_creator",

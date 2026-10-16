@@ -50,7 +50,7 @@ from app.sources import policies
 AGENT_ID = "A11_review_curator"
 # 1.1: portal reviews, platform and badge, sales pitches (D68); 1.2: agents' reviews kept, marked (D73);
 # 1.3: a published review has 20 to 80 words (D76)
-PROMPT_VERSION = "a11_review_curator.1.3"
+PROMPT_VERSION = "a11_review_curator.1.4"  # 1.4: the v2 categories (D77)
 SCHEMA_REF = "agents.schema.json#/$defs/ReviewCandidates"
 SCHEMA_VERSION = "1.1.0"
 PROMPT_PATH = REPO_ROOT / "prompts" / f"{PROMPT_VERSION}.md"

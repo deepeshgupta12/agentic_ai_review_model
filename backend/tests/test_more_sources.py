@@ -109,7 +109,7 @@ def test_firecrawl_takes_the_portal_project_page_queries_and_brave_does_not(db, 
     from app.sources.collection import _registry
 
     plan = build_query_plan(db, world["q"], _registry(settings), reviews_only=True)
-    assert plan["rules_version"] == QUERY_RULES_VERSION == "query-rules.1.3"
+    assert plan["rules_version"] == QUERY_RULES_VERSION == "query-rules.1.4"
     texts = {
         cid: [q["query_text"] for q in plan["plan"]["queries"] if q["connector_id"] == cid]
         for cid in ("brave_search", "firecrawl_search")
@@ -158,6 +158,16 @@ def test_a_firecrawl_search_sends_the_window_and_country_and_reads_the_results(d
     assert body["query"] == '"Quillon Residences" review -"rent"'
     assert body["tbs"] == date_range(365, now) and f"cd_min:{now - timedelta(days=365):%m/%d/%Y}" in body["tbs"]
     assert search.health()["quota"]["used"] == 4, "2 credits per 10 results"
+    search.discover(
+        {
+            "query_text": '"Quillon Residences" maintenance society',
+            "window_days": 365,
+            "exclusions": [],
+            "purpose": "category",
+        },
+        None,
+    )
+    assert log[-1]["limit"] == 10 and search.health()["quota"]["used"] == 6, "a category search asks ten results (D77)"
     assert "test-only-firecrawl-key" not in json.dumps(body)
 
 

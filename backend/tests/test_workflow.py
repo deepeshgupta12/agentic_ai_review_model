@@ -61,7 +61,7 @@ class ScriptedModel:
             sentence = item["text"].split(". ")[0].rstrip(".") + "."
             claims.append(
                 {
-                    "aspect": "connectivity",
+                    "aspect": "location_connectivity",
                     "aspect_label": None,
                     "claim_type": "opinion",
                     "polarity": "negative",
@@ -84,7 +84,7 @@ class ScriptedModel:
         wording = "Site visitors are unhappy with what they saw."
         finding = {
             "kind": "con",
-            "aspect": "connectivity",
+            "aspect": "location_connectivity",
             "wording": wording,
             "attribution": "reported_opinion",
             "claim_ids": handles,
@@ -103,7 +103,7 @@ class ScriptedModel:
                     "evidence_ids": [span["id"]],
                     "perspective": "owner_awaiting_possession",
                     "polarity": "positive",
-                    "aspects": ["service_management"],
+                    "aspects": ["maintenance_facility_mgmt"],
                     "rendering": "verbatim",
                     "text": span["text"],
                     "translation_note": None,
@@ -226,10 +226,10 @@ def test_decisions_name_the_exact_revision_and_come_from_a_moderator_session(
     moderator = sign_in(api, make_user, ["moderator"])
     stale = api.post(f"/v1/findings/{finding['id']}/decisions", json={**body, "revision": 2}, headers=moderator)
     assert stale.status_code == 409 and stale.json()["error"]["code"] == "version_conflict"
-    by_aspect = api.get(f"/v1/projects/{q}/sources?aspect=connectivity", headers=moderator).json()["items"]
+    by_aspect = api.get(f"/v1/projects/{q}/sources?aspect=location_connectivity", headers=moderator).json()["items"]
     assert {i["source_kind"] for i in by_aspect} == {"forum_post", "comment"}, "aspects come from the claims"
-    assert all(i["aspects"] == ["connectivity"] for i in by_aspect)
-    assert api.get(f"/v1/projects/{q}/sources?aspect=parking", headers=moderator).json()["items"] == []
+    assert all(i["aspects"] == ["location_connectivity"] for i in by_aspect)
+    assert api.get(f"/v1/projects/{q}/sources?aspect=safety_security", headers=moderator).json()["items"] == []
     listed = api.get(f"/v1/projects/{q}/findings", headers=moderator).json()["items"]
     assert listed[0]["eligible"] and listed[0]["claims"] and listed[0]["evidence"]
     assert contracts.errors(listed[0], "api.schema.json#/$defs/FindingView") == []

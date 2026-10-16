@@ -252,3 +252,22 @@ export function creditLine(credit: Credit): string {
   const translated = credit.translated_from ? ` (translated from ${LANGUAGES[credit.translated_from] ?? credit.translated_from})` : "";
   return `From ${who}${where}${at}, ${formatDated(credit.published)}${translated}`;
 }
+
+/** The review categories (D77): the product's own, as the model tags each review from its words. */
+export const CATEGORIES: Record<string, string> = {
+  builder_reputation: "Builder reputation",
+  construction_specs: "Construction and specifications",
+  unit_layouts_livability: "Unit layouts and livability",
+  amenities_common_areas: "Amenities and common areas",
+  maintenance_facility_mgmt: "Maintenance and facility management",
+  safety_security: "Safety and security",
+  location_connectivity: "Location and connectivity",
+  value_for_money: "Value for money",
+  investment_potential: "Investment potential",
+  pricing: "Pricing",
+  other: "Other",
+};
+
+export function categoryLabel(key: string): string {
+  return CATEGORIES[key] ?? label(key);
+}

@@ -26,10 +26,10 @@
    "label": "plain site visit, one negative and one positive point",
    "text": "Visited Quillon Residences in Sector 102 last Sunday. The approach road from the expressway is still a dirt track and floods after rain. The sample flat had good cross ventilation.",
    "expect_claims": [
-    {"aspect": ["connectivity"], "polarity": ["negative"]},
-    {"aspect": ["layout"], "polarity": ["positive"]}
+    {"aspect": ["location_connectivity"], "polarity": ["negative"]},
+    {"aspect": ["unit_layouts_livability"], "polarity": ["positive"]}
    ],
-   "forbid_claims": [{"aspect": ["connectivity"], "polarity": ["positive"]}],
+   "forbid_claims": [{"aspect": ["location_connectivity"], "polarity": ["positive"]}],
    "expect_review": {"present": true, "polarity": ["mixed", "negative"]}
   },
   {
@@ -40,8 +40,8 @@
    "language": "hi-Latn",
    "label": "Hinglish complaint about a moved possession date",
    "text": "Quillon Residences Sector 102 mein possession March 2027 bola tha, ab builder 2028 bol raha hai. Bahut delay ho gaya.",
-   "expect_claims": [{"aspect": ["possession"], "polarity": ["negative"]}],
-   "forbid_claims": [{"aspect": ["possession"], "polarity": ["positive"]}],
+   "expect_claims": [{"aspect": ["builder_reputation"], "polarity": ["negative"]}],
+   "forbid_claims": [{"aspect": ["builder_reputation"], "polarity": ["positive"]}],
    "expect_review": {"present": true, "polarity": ["negative"]}
   },
   {
@@ -51,8 +51,8 @@
    "family": "youtube",
    "label": "sarcasm: praise that means the opposite",
    "text": "Wow, Quillon Residences Sector 102 has such amazing construction quality, the wall in the sample flat cracked within a week. Great job Brightwell!",
-   "expect_claims": [{"aspect": ["construction_quality"], "polarity": ["negative"]}],
-   "forbid_claims": [{"aspect": ["construction_quality"], "polarity": ["positive"]}],
+   "expect_claims": [{"aspect": ["construction_specs"], "polarity": ["negative"]}],
+   "forbid_claims": [{"aspect": ["construction_specs"], "polarity": ["positive"]}],
    "expect_review": {"present": true, "polarity": ["negative"]}
   },
   {
@@ -62,8 +62,8 @@
    "family": "web_public_pages",
    "label": "negation: denies a problem",
    "text": "Quillon Residences Sector 102: contrary to the rumours, there is no water logging in the basement and the sewage plant is not shut.",
-   "expect_claims": [{"aspect": ["water", "construction_quality", "maintenance"], "polarity": ["positive", "neutral"]}],
-   "forbid_claims": [{"aspect": ["water", "construction_quality", "maintenance"], "polarity": ["negative"]}],
+   "expect_claims": [{"aspect": ["maintenance_facility_mgmt", "construction_specs"], "polarity": ["positive", "neutral"]}],
+   "forbid_claims": [{"aspect": ["maintenance_facility_mgmt", "construction_specs"], "polarity": ["negative"]}],
    "expect_review": {"present": null}
   },
   {
@@ -101,7 +101,7 @@
    "family": "youtube",
    "label": "claims residence in a project not yet handed over (D27)",
    "text": "I have been living in Quillon Residences Sector 102 for two years and the maintenance staff are very responsive.",
-   "expect_claims": [{"aspect": ["maintenance", "service_management"], "polarity": ["positive"]}],
+   "expect_claims": [{"aspect": ["maintenance_facility_mgmt"], "polarity": ["positive"]}],
    "forbid_claims": [],
    "expect_flags": ["occupancy_before_possession"],
    "expect_review": {"present": null, "flagged": true}
@@ -124,7 +124,7 @@
    "family": "web_public_pages",
    "label": "possession date from the sales office (one side of a dispute)",
    "text": "Brightwell's sales office says Quillon Residences Sector 102 Phase 1 possession is December 2026.",
-   "expect_claims": [{"aspect": ["possession"], "polarity": ["neutral", "positive", "mixed"]}],
+   "expect_claims": [{"aspect": ["builder_reputation"], "polarity": ["neutral", "positive", "mixed"]}],
    "forbid_claims": [],
    "forbid_verification": ["verified"],
    "expect_review": {"present": null}
@@ -136,7 +136,7 @@
    "family": "web_public_pages",
    "label": "possession date from buyers (the other side of the dispute)",
    "text": "The Quillon Residences Sector 102 Phase 1 buyers' group was told last month that possession has moved to June 2028.",
-   "expect_claims": [{"aspect": ["possession"], "polarity": ["negative", "neutral"]}],
+   "expect_claims": [{"aspect": ["builder_reputation"], "polarity": ["negative", "neutral"]}],
    "forbid_claims": [],
    "forbid_verification": ["verified"],
    "expect_review": {"present": null}
@@ -148,7 +148,7 @@
    "family": "web_public_pages",
    "label": "a registry fact a primary record can verify",
    "text": "Quillon Residences in Sector 102 Phase 1 is registered with HRERA under TST/901/801/2023/11, dated 18 December 2023.",
-   "expect_claims": [{"aspect": ["other", "possession", "construction_progress"], "claim_type": ["fact"]}],
+   "expect_claims": [{"aspect": ["other", "builder_reputation"], "claim_type": ["fact"]}],
    "forbid_claims": [],
    "expect_verification": ["verified"],
    "expect_review": {"present": false}
@@ -172,8 +172,8 @@
    "language": "hi",
    "label": "Hindi complaint about parking",
    "text": "Tavira Vista Sector 88 में पार्किंग की बहुत समस्या है, गाड़ियाँ सड़क पर खड़ी होती हैं।",
-   "expect_claims": [{"aspect": ["parking"], "polarity": ["negative"]}],
-   "forbid_claims": [{"aspect": ["parking"], "polarity": ["positive"]}],
+   "expect_claims": [{"aspect": ["amenities_common_areas"], "polarity": ["negative"]}],
+   "forbid_claims": [{"aspect": ["amenities_common_areas"], "polarity": ["positive"]}],
    "expect_review": {"present": true, "polarity": ["negative"]}
   },
   {
@@ -183,7 +183,7 @@
    "family": "web_public_pages",
    "label": "buyer's positive site visit",
    "text": "Tavira Vista Sector 88 site visit today: the tower finishing looks solid and the lobby is complete. Happy with my booking.",
-   "expect_claims": [{"aspect": ["construction_quality", "construction_progress"], "polarity": ["positive"]}],
+   "expect_claims": [{"aspect": ["construction_specs", "builder_reputation"], "polarity": ["positive"]}],
    "forbid_claims": [{"perspective": ["resident_experience"]}],
    "expect_review": {"present": true, "polarity": ["positive"]}
   },
@@ -194,7 +194,7 @@
    "family": "web_public_pages",
    "label": "resident of the ready phase (allowed when the phase is known)",
    "text": "Zephyrine Crest East, Sector 65: we moved in last year and the clubhouse is finally open, though the gym equipment is still in boxes.",
-   "expect_claims": [{"aspect": ["amenities"], "polarity": ["positive", "mixed", "negative"]}],
+   "expect_claims": [{"aspect": ["amenities_common_areas"], "polarity": ["positive", "mixed", "negative"]}],
    "forbid_claims": [],
    "expect_review": {"present": true, "polarity": ["mixed", "positive"]}
   }

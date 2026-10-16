@@ -54,7 +54,7 @@ def scripted(settings, contracts, *payloads):
 
 
 def claim(
-    statement, handles, *, aspect="construction_progress", kind="opinion", perspective="site_visit", polarity="negative"
+    statement, handles, *, aspect="builder_reputation", kind="opinion", perspective="site_visit", polarity="negative"
 ):
     return {
         "aspect": aspect,
@@ -123,15 +123,16 @@ def test_more_status_checks_once_the_project_was_ready():
     after = date(2026, 6, 1)
     assert consistency_flags("owner_awaiting_possession", ready, None, after) == ["awaiting_after_handover"]
     assert consistency_flags("owner_awaiting_possession", building, None, after) == []
-    flagged = consistency_flags(
-        "site_visit", ready, None, after, aspects=["construction_progress"], polarity="negative"
-    )
-    assert flagged == ["construction_after_completion"]
+    flagged = consistency_flags("site_visit", ready, None, after, aspects=["builder_reputation"], polarity="negative")
+    assert flagged == [], "the construction-after-completion check is off since D77 (no such category)"
     assert (
-        consistency_flags("site_visit", building, None, after, aspects=["construction_progress"], polarity="negative")
+        consistency_flags("site_visit", building, None, after, aspects=["builder_reputation"], polarity="negative")
         == []
     )
-    assert consistency_flags("site_visit", ready, None, after, aspects=["amenities"], polarity="negative") == []
+    assert (
+        consistency_flags("site_visit", ready, None, after, aspects=["amenities_common_areas"], polarity="negative")
+        == []
+    )
     assert consistency_flags("resident_experience", ready, None, after) == [], "living there after handover is fine"
 
 
@@ -149,21 +150,21 @@ def test_a05_sees_handles_not_ids_and_the_backend_drops_invented_or_unsupported_
     answer = {
         "outcome": "completed",
         "claims": [
-            claim("The approach road is still broken.", ["e1"], aspect="connectivity"),
+            claim("The approach road is still broken.", ["e1"], aspect="location_connectivity"),
             claim(
                 "Possession is promised for March 2027.",
                 ["e1"],
-                aspect="possession",
+                aspect="builder_reputation",
                 kind="fact",
                 perspective="site_visit",
                 polarity="neutral",
             ),
-            claim("Prices rose 40 percent in 2025.", ["e1"], aspect="value_perception"),  # a number not in the evidence
-            claim("The clubhouse has a pool.", ["e7"], aspect="amenities"),  # an invented handle
+            claim("Prices rose 40 percent in 2025.", ["e1"], aspect="value_for_money"),  # a number not in the evidence
+            claim("The clubhouse has a pool.", ["e7"], aspect="amenities_common_areas"),  # an invented handle
             claim(
                 "I live here and the lifts work well.",
                 ["e1"],
-                aspect="maintenance",
+                aspect="maintenance_facility_mgmt",
                 perspective="resident_experience",
                 polarity="positive",
             ),
@@ -182,7 +183,7 @@ def test_a05_sees_handles_not_ids_and_the_backend_drops_invented_or_unsupported_
     assert statements["Possession is promised for March 2027."]["verification_status"] == "unverified"
     assert statements["The approach road is still broken."]["verification_status"] == "not_applicable"
     run = db["ai_agent_runs"].find_one({"agent": "A05_claim_extractor"})
-    assert run["prompt_version"] == "a05_claim_extractor.1.0" and len(run["output_refs"]) == 3
+    assert run["prompt_version"] == "a05_claim_extractor.1.1" and len(run["output_refs"]) == 3
     again = a05.extract(db, gateway, project, config, task, run_id="run_01K00000000000000000000001")
     assert len(client.calls) == 1 and [d["key"] for d in again["drafts"]] == [d["key"] for d in out["drafts"]], (
         "a restarted node reuses the cached output and makes the same drafts"
@@ -228,9 +229,13 @@ def verified_setup(db, settings, contracts, fictional):
         "outcome": "completed",
         "claims": [
             claim(
-                "Possession is promised for March 2027.", ["e1"], aspect="possession", kind="fact", polarity="neutral"
+                "Possession is promised for March 2027.",
+                ["e1"],
+                aspect="builder_reputation",
+                kind="fact",
+                polarity="neutral",
             ),
-            claim("The approach road is still broken.", ["e1"], aspect="connectivity", kind="fact"),
+            claim("The approach road is still broken.", ["e1"], aspect="location_connectivity", kind="fact"),
         ],
     }
     _, gateway = scripted(settings, contracts, answer)
@@ -243,7 +248,7 @@ def test_a06_accepts_verified_only_with_a_supplied_primary_record_and_posts_neve
 ):
     q, project, drafts, _ = verified_setup(db, settings, contracts, fictional)
     tasks = a06.build_tasks(db, q, drafts, None)
-    assert {d["aspect"] for t in tasks for d in t["claims"]} == {"possession", "connectivity"}
+    assert {d["aspect"] for t in tasks for d in t["claims"]} == {"builder_reputation", "location_connectivity"}
     [possession] = tasks  # facts of every aspect in one task, ordered by aspect: c1 connectivity, c2 possession
     content, _ = a06.render(db, project, possession)
     assert '"id": "r1"' in content and "valid up to" in content.lower() and "evd_" not in content
@@ -340,7 +345,7 @@ def test_untrusted_text_cannot_change_the_task(db, settings, contracts, fictiona
     obeyed = {
         "outcome": "completed",
         "claims": [
-            claim("Possession happened in 2019.", ["e1"], aspect="possession", kind="fact", polarity="positive")
+            claim("Possession happened in 2019.", ["e1"], aspect="builder_reputation", kind="fact", polarity="positive")
         ],
     }
     _, gateway = scripted(settings, contracts, obeyed)
@@ -363,14 +368,20 @@ def stored_claims(db, settings, contracts, fictional):
         "outcome": "completed",
         "claims": [
             claim(
-                "Possession is promised for March 2027.", ["e1"], aspect="possession", kind="fact", polarity="neutral"
+                "Possession is promised for March 2027.",
+                ["e1"],
+                aspect="builder_reputation",
+                kind="fact",
+                polarity="neutral",
             ),
-            claim("The approach road is still broken.", ["e1"], aspect="connectivity", kind="fact"),
-            claim("The sample flat was bright and airy.", ["e1"], aspect="layout", polarity="positive"),
+            claim("The approach road is still broken.", ["e1"], aspect="location_connectivity", kind="fact"),
+            claim(
+                "The sample flat was bright and airy.", ["e1"], aspect="unit_layouts_livability", polarity="positive"
+            ),
             claim(
                 "I live here and it is lovely.",
                 ["e1"],
-                aspect="layout",
+                aspect="unit_layouts_livability",
                 perspective="resident_experience",
                 polarity="positive",
             ),
@@ -378,7 +389,7 @@ def stored_claims(db, settings, contracts, fictional):
     }
     _, gateway = scripted(settings, contracts, answer)
     drafts = a05.extract(db, gateway, project, config, task, run_id=None)["drafts"]
-    possession = next(d for d in drafts if d["aspect"] == "possession")
+    possession = next(d for d in drafts if d["aspect"] == "builder_reputation")
     verdicts = {
         possession["key"]: {
             "status": "verified",
@@ -391,7 +402,7 @@ def stored_claims(db, settings, contracts, fictional):
     return q, project, refs
 
 
-def finding(kind, wording, handles, attribution="reported_opinion", aspect="layout", caveats=()):
+def finding(kind, wording, handles, attribution="reported_opinion", aspect="unit_layouts_livability", caveats=()):
     return {
         "kind": kind,
         "aspect": aspect,
@@ -413,13 +424,16 @@ def test_a07_gets_only_usable_claims_with_whole_aspects_packed(db, settings, con
     claims, left_out = a07.usable_claims(db, q, refs)
     assert len(claims) == 3 and left_out == {"consistency_flagged": 1}, "a flagged claim never reaches a finding (D27)"
     [task] = a07.build_tasks(db, q, claims)
-    assert task["aspects"] == ["connectivity", "layout", "possession"], "a few calls per project, not one per aspect"
+    assert task["aspects"] == ["builder_reputation", "location_connectivity", "unit_layouts_livability"], (
+        "a few calls per project, not one per aspect"
+    )
     content, _ = a07.render(project, task)
     assert "clm_" not in content and '"id": "k1"' in content and "untrusted" in content
     monkeypatch.setattr(a07, "CLAIMS_PER_TASK", 2)
-    assert [t["aspects"] for t in a07.build_tasks(db, q, claims)] == [["connectivity", "layout"], ["possession"]], (
-        "aspects are packed whole"
-    )
+    assert [t["aspects"] for t in a07.build_tasks(db, q, claims)] == [
+        ["builder_reputation", "location_connectivity"],
+        ["unit_layouts_livability"],
+    ], "aspects are packed whole"
     db["ai_sources"].update_many({"source_kind": "forum_post"}, {"$set": {"lifecycle": "withdrawn"}})
     claims, left_out = a07.usable_claims(db, q, refs)
     assert claims == [] and left_out == {"consistency_flagged": 1, "evidence_not_eligible": 3}, (
@@ -441,9 +455,11 @@ def test_a07_backend_rules_hold_whatever_the_model_writes(db, settings, contract
             finding("pro", "Visitors found 3 bright flats.", [flat]),  # a number no claim states
             finding("pro", "The clubhouse is ready.", ["k9"]),  # an invented handle
             finding(
-                "pro", "Possession is promised for March 2027.", [possession], aspect="possession"
+                "pro", "Possession is promised for March 2027.", [possession], aspect="builder_reputation"
             ),  # neutral claim
-            finding("con", "The road is broken and the flat is bright.", [road, flat], aspect="connectivity"),  # mixed
+            finding(
+                "con", "The road is broken and the flat is bright.", [road, flat], aspect="location_connectivity"
+            ),  # mixed
         ],
         "insufficiency_note": None,
     }
@@ -458,13 +474,18 @@ def test_a07_backend_rules_hold_whatever_the_model_writes(db, settings, contract
         "no_valid_claims": 1,
         "mixed_aspects": 1,
     }, "a pro needs a positive claim; a finding never mixes aspects"
-    assert draft["aspect"] == "layout", "the aspect comes from the claims"
+    assert draft["aspect"] == "unit_layouts_livability", "the aspect comes from the claims"
     assert draft["attribution"] == "reported_opinion", "an opinion is never presented as a verified fact"
     assert a07.SINGLE_SOURCE in draft["caveats"], "a single source is always said"
     verified = {
         "outcome": "completed",
         "findings": [
-            finding("neutral", "The registry record backs possession in March 2027.", [possession], aspect="possession")
+            finding(
+                "neutral",
+                "The registry record backs possession in March 2027.",
+                [possession],
+                aspect="builder_reputation",
+            )
         ],
         "insufficiency_note": None,
     }
@@ -485,7 +506,14 @@ def test_conflicting_claims_stay_visible_and_no_balance_is_forced(db, settings, 
         statement = "The lifts are fast and reliable." if positive else "The lifts break down every week."
         answer = {
             "outcome": "completed",
-            "claims": [claim(statement, ["e1"], aspect="maintenance", polarity="positive" if positive else "negative")],
+            "claims": [
+                claim(
+                    statement,
+                    ["e1"],
+                    aspect="maintenance_facility_mgmt",
+                    polarity="positive" if positive else "negative",
+                )
+            ],
         }
         _, gateway = scripted(settings, contracts, answer)
         drafts += a05.extract(db, gateway, project, config, task, run_id=None)["drafts"]
@@ -494,7 +522,12 @@ def test_conflicting_claims_stay_visible_and_no_balance_is_forced(db, settings, 
     answer = {
         "outcome": "completed",
         "findings": [
-            finding("pro", "Sources disagree on whether the lifts are reliable.", ["k1", "k2"], aspect="maintenance")
+            finding(
+                "pro",
+                "Sources disagree on whether the lifts are reliable.",
+                ["k1", "k2"],
+                aspect="maintenance_facility_mgmt",
+            )
         ],
         "insufficiency_note": None,
     }
@@ -537,7 +570,7 @@ def test_findings_are_stored_once_revised_on_change_and_superseded_when_dropped(
     run("One site visitor found the sample flat bright and airy.", "run_01K00000000000000000000004")
     assert db["ai_findings"].count_documents({"id": first["id"]}) == 2, "a rejected finding is not proposed again"
     other = run("The sample flat is bright.", "run_01K00000000000000000000005")
-    assert a07.retire_unproduced(db, q, ["layout"], []) == 1
+    assert a07.retire_unproduced(db, q, ["unit_layouts_livability"], []) == 1
     assert db["ai_findings"].find_one({"id": other[0]["id"]})["review_status"] == "superseded"
     assert db["ai_findings"].find_one({"id": first["id"], "revision": 2})["review_status"] == "rejected"
     assert db["ai_audit_events"].count_documents({"action": "findings.superseded"}) == 1
@@ -559,7 +592,7 @@ def review(
         "evidence_ids": spans,
         "perspective": perspective,
         "polarity": polarity,
-        "aspects": ["service_management"],
+        "aspects": ["maintenance_facility_mgmt"],
         "rendering": rendering,
         "text": text,
         "translation_note": None,

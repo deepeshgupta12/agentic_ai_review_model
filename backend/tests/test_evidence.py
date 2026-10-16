@@ -204,7 +204,9 @@ def lineage_for(db, evidence, *, lifecycle="approved"):
         created_by={"kind": "agent", "task_id": new_id("tsk"), "actor": None},
     )
     finding["_id"] = f"{finding['id']}@1"
-    content = stored(fixture("content.json", "content_revision_approved"))
+    raw = fixture("content.json", "content_revision_approved")
+    content = stored(raw)
+    content["payload"] = raw["payload"]  # the payload is frozen JSON: its timestamps stay strings (D76)
     content.pop("id")
     content["_id"] = new_id("rev")
     content["project_id"] = evidence["project_id"]

@@ -191,11 +191,14 @@ def list_review_excerpts(
     _: Principal = Depends(require("listReviewExcerpts")),
     db: Database[dict[str, Any]] = Depends(db_dep),
     review_status: str | None = Query(default=None),
+    aspect: str | None = Query(default=None),
     cursor: str | None = Query(default=None),
     limit: int = Query(default=25, ge=1, le=100),
 ) -> dict[str, Any]:
     _project(db, project_id)
     query: dict[str, Any] = {"project_id": project_id, **_status_filter(review_status)}
+    if aspect:  # a category (D77)
+        query["aspects"] = aspect
     rows, next_cursor = _page(db, "ai_review_excerpts", query, cursor, limit)
     return {"items": [review_view(db, r) for r in rows], "next_cursor": next_cursor}
 

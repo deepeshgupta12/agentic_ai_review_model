@@ -216,3 +216,16 @@ def test_a_researcher_adds_one_project_from_the_console(api, db, make_user, cont
     assert page.status_code == 200 and contracts.errors(page.json(), "api.schema.json#/$defs/ProjectPage") == []
     listed = next(p for p in page.json()["items"] if p["project"]["id"] == row["project_id"])
     assert listed["latest_run"] is None and listed["publication"]["serving_state"] == "unpublished"
+
+
+def test_reviews_can_be_listed_by_category(db, settings, contracts, fictional, api, make_user, model):
+    """D77: the review list takes a category filter."""
+    q, _, review = findings_and_reviews(db, settings, contracts, fictional)
+    moderator = sign_in(api, make_user, ["moderator"])
+    db["ai_review_excerpts"].update_one({"_id": review["_id"]}, {"$set": {"aspects": ["pricing"]}})
+    total = len(api.get(f"/v1/projects/{q}/review-excerpts", headers=moderator).json()["items"])
+    assert total >= 1
+    only = api.get(f"/v1/projects/{q}/review-excerpts", params={"aspect": "pricing"}, headers=moderator).json()["items"]
+    assert [r["review"]["id"] for r in only] == [review["id"]] and only[0]["review"]["aspects"] == ["pricing"]
+    none = api.get(f"/v1/projects/{q}/review-excerpts", params={"aspect": "safety_security"}, headers=moderator)
+    assert none.status_code == 200 and none.json()["items"] == []

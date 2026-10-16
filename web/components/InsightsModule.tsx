@@ -1,5 +1,5 @@
 import type { components } from "@/lib/api-schema";
-import { formatDated, formatDay, moment } from "@/lib/format";
+import { categoryLabel, formatDated, formatDay, moment } from "@/lib/format";
 
 type Payload = components["schemas"]["ContentPayload"];
 
@@ -92,6 +92,11 @@ export function InsightsModule({ payload, revisionId, payloadHash, mode = "activ
                 <blockquote className="border-l-2 border-ink-muted pl-3">
                   <p>{review.text}</p>
                 </blockquote>
+                {review.aspects?.length ? (
+                  <p className="mt-1 text-xs text-ink-muted" data-review-categories={review.aspects.join(",")}>
+                    {review.aspects.map(categoryLabel).join(" · ")}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ol>

@@ -91,7 +91,7 @@ class Settings(BaseSettings):
     job_lease_seconds: int = Field(default=60, ge=5)
     job_max_attempts: int = Field(default=5, ge=1)
     job_poll_seconds: float = Field(default=2.0, gt=0)
-    run_budget_usd: float = Field(default=5.0, ge=0)
+    run_budget_usd: float = Field(default=10.0, ge=0)  # D77: more pages and searches per run
     # Step 08: how long an analysis waits for transcripts and origin grouping before going ahead with what is there.
     analysis_input_wait_minutes: int = Field(default=240, ge=0)
 
@@ -102,37 +102,37 @@ class Settings(BaseSettings):
     crawler_max_redirects: int = Field(default=5, ge=0, le=10)
     crawler_timeout_seconds: float = Field(default=20.0, gt=0)
     brave_monthly_queries: int = Field(default=2000, ge=0)
-    brave_pages_per_query: int = Field(default=2, ge=1, le=10)
+    brave_pages_per_query: int = Field(default=3, ge=1, le=10)
     youtube_daily_searches: int = Field(default=100, ge=0)
     youtube_daily_units: int = Field(default=10_000, ge=0)
-    youtube_searches_per_project: int = Field(default=4, ge=0)
-    youtube_comment_pages_per_video: int = Field(default=3, ge=0)
+    youtube_searches_per_project: int = Field(default=12, ge=0)
+    youtube_comment_pages_per_video: int = Field(default=5, ge=0)
     # Step 08 (D54): Instagram public posts through Scrapfly. Credits are reserved before each request.
     scrapfly_monthly_credits: int = Field(default=1000, ge=0)
     scrapfly_credits_per_post: int = Field(default=30, ge=1)
-    instagram_posts_per_project: int = Field(default=5, ge=0)
-    instagram_queries_per_project: int = Field(default=2, ge=0)
+    instagram_posts_per_project: int = Field(default=15, ge=0)
+    instagram_queries_per_project: int = Field(default=4, ge=0)
     # Step 08 (D60): competitor-portal pages that refuse the web reader, read through Scrapfly, per collection job.
-    unblocked_pages_per_run: int = Field(default=5, ge=0)
+    unblocked_pages_per_run: int = Field(default=15, ge=0)
     # Paid providers (Scrapfly, Firecrawl): longer than their own timeouts; one attempt (a resend may be billed).
     paid_provider_timeout_seconds: float = Field(default=180.0, ge=10)
     # Step 08 (D62): pages built by JavaScript rendered through Firecrawl, per collection job, from a monthly ledger.
     # pages read through Firecrawl per run: script-built ones (D62) and refused ones Scrapfly could not read (D74)
-    rendered_pages_per_run: int = Field(default=20, ge=0)
+    rendered_pages_per_run: int = Field(default=40, ge=0)
     firecrawl_monthly_credits: int = Field(default=500, ge=0)
     firecrawl_credits_per_page: int = Field(default=1, ge=1)
     # Firecrawl search (D72): results per query, 2 credits per 10, from the same monthly Firecrawl credits.
-    firecrawl_search_results: int = Field(default=20, ge=1, le=100)
+    firecrawl_search_results: int = Field(default=30, ge=1, le=100)
     # pages the web reader reads per run; local fetches, paid only when refused or script-built (D75: 80 left 14
     # pages naming the project unread on 15 Oct 2026)
-    web_pages_per_run: int = Field(default=120, ge=0)
+    web_pages_per_run: int = Field(default=200, ge=0)
     # A collect job (one source group) stops where it is after this long, keeping what it stored (audit, 14 Oct 2026).
-    collect_job_max_minutes: int = Field(default=30, ge=1)  # 40 until D61 opened the generic web route
+    collect_job_max_minutes: int = Field(default=60, ge=1)  # 40 until D61 opened the generic web route
     # Reddit through PullPush (D67, D68): names searched per project, posts and comment hits per name, threads read.
-    reddit_names_per_project: int = Field(default=4, ge=0)
-    reddit_posts_per_name: int = Field(default=25, ge=0, le=100)
+    reddit_names_per_project: int = Field(default=8, ge=0)
+    reddit_posts_per_name: int = Field(default=50, ge=0, le=100)
     reddit_comment_hits_per_name: int = Field(default=50, ge=0, le=100)
-    reddit_threads_per_run: int = Field(default=30, ge=0)
+    reddit_threads_per_run: int = Field(default=60, ge=0)
     reddit_comments_per_thread: int = Field(default=100, ge=1, le=100)
     # Threads PullPush has no comments for, read from Reddit's JSON through Scrapfly: spends credits, off by default.
     reddit_threads_via_scrapfly_per_run: int = Field(default=0, ge=0)
@@ -143,7 +143,7 @@ class Settings(BaseSettings):
     page_reviews_max: int = Field(default=20, ge=1, le=100)
     review_words_min: int = Field(default=20, ge=1)
     review_words_max: int = Field(default=80, ge=1)
-    identity_agent_tasks_per_run: int = Field(default=10, ge=0)
+    identity_agent_tasks_per_run: int = Field(default=25, ge=0)
     recheck_per_job: int = Field(default=200, ge=0)
 
     # Media (Step 06, D47). Only project-linked public videos; audio is deleted after transcription.

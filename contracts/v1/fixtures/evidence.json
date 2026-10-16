@@ -269,7 +269,7 @@
         "id": "clm_01JB0000000000000000000001",
         "revision": 1,
         "project_id": "prj_01JB0000000000000000000001",
-        "aspect": "possession",
+        "aspect": "builder_reputation",
         "aspect_label": null,
         "claim_type": "opinion",
         "polarity": "negative",
@@ -325,7 +325,7 @@
         "id": "clm_01JB0000000000000000000002",
         "revision": 1,
         "project_id": "prj_01JB0000000000000000000001",
-        "aspect": "possession",
+        "aspect": "builder_reputation",
         "aspect_label": null,
         "claim_type": "fact",
         "polarity": "neutral",
@@ -381,7 +381,7 @@
         "id": "clm_01JB0000000000000000000002",
         "revision": 1,
         "project_id": "prj_01JB0000000000000000000001",
-        "aspect": "possession",
+        "aspect": "builder_reputation",
         "aspect_label": null,
         "claim_type": "fact",
         "polarity": "neutral",
@@ -432,7 +432,7 @@
         "id": "clm_01JB0000000000000000000001",
         "revision": 1,
         "project_id": "prj_01JB0000000000000000000001",
-        "aspect": "possession",
+        "aspect": "builder_reputation",
         "aspect_label": null,
         "claim_type": "opinion",
         "polarity": "negative",
@@ -496,7 +496,7 @@
         "id": "clm_01JB0000000000000000000001",
         "revision": 1,
         "project_id": "prj_01JB0000000000000000000001",
-        "aspect": "possession",
+        "aspect": "builder_reputation",
         "aspect_label": null,
         "claim_type": "opinion",
         "polarity": "negative",
@@ -553,7 +553,7 @@
         "revision": 1,
         "project_id": "prj_01JB0000000000000000000001",
         "kind": "con",
-        "aspect": "possession",
+        "aspect": "builder_reputation",
         "wording": "Several buyers report that possession was delayed",
         "attribution": "reported_opinion",
         "claims": [
@@ -594,7 +594,7 @@
         "revision": 2,
         "project_id": "prj_01JB0000000000000000000001",
         "kind": "neutral",
-        "aspect": "possession",
+        "aspect": "builder_reputation",
         "wording": "The registered completion date is 31 December 2027",
         "attribution": "verified_fact",
         "claims": [
@@ -637,7 +637,7 @@
         "revision": 2,
         "project_id": "prj_01JB0000000000000000000001",
         "kind": "neutral",
-        "aspect": "possession",
+        "aspect": "builder_reputation",
         "wording": "The registered completion date is 31 December 2027",
         "attribution": "verified_fact",
         "claims": [
@@ -677,7 +677,7 @@
         "id": "clm_01JB0000000000000000000003",
         "revision": 1,
         "project_id": "prj_01JB0000000000000000000001",
-        "aspect": "maintenance",
+        "aspect": "maintenance_facility_mgmt",
         "aspect_label": null,
         "claim_type": "opinion",
         "polarity": "positive",
@@ -834,8 +834,8 @@
         "speaker_label": "an_owner_awaiting_possession",
         "polarity": "mixed",
         "aspects": [
-          "layout",
-          "possession"
+          "unit_layouts_livability",
+          "builder_reputation"
         ],
         "original_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
         "original_language": "en",
@@ -893,7 +893,7 @@
         "speaker_label": "a_site_visitor",
         "polarity": "negative",
         "aspects": [
-          "construction_progress"
+          "builder_reputation"
         ],
         "original_text": "Site visit kiya tha pichle mahine. Construction bahut slow hai, do saal mein kuch nahi badla.",
         "original_language": "hi-Latn",
@@ -958,7 +958,7 @@
         "speaker_label": "a_video_creator",
         "polarity": "negative",
         "aspects": [
-          "possession"
+          "builder_reputation"
         ],
         "original_text": "possession mein thoda delay hua",
         "original_language": "hi-Latn",
@@ -1016,7 +1016,7 @@
         "speaker_label": "a_resident",
         "polarity": "positive",
         "aspects": [
-          "maintenance"
+          "maintenance_facility_mgmt"
         ],
         "original_text": "I have been living here for a year and the maintenance is excellent.",
         "original_language": "en",
@@ -1076,7 +1076,7 @@
         "speaker_label": "a_resident",
         "polarity": "positive",
         "aspects": [
-          "maintenance"
+          "maintenance_facility_mgmt"
         ],
         "original_text": "I have been living here for a year and the maintenance is excellent.",
         "original_language": "en",
@@ -1136,8 +1136,8 @@
         "speaker_label": "an_owner_awaiting_possession",
         "polarity": "mixed",
         "aspects": [
-          "layout",
-          "possession"
+          "unit_layouts_livability",
+          "builder_reputation"
         ],
         "original_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
         "original_language": "en",
@@ -1195,8 +1195,8 @@
         "speaker_label": "an_owner_awaiting_possession",
         "polarity": "mixed",
         "aspects": [
-          "layout",
-          "possession"
+          "unit_layouts_livability",
+          "builder_reputation"
         ],
         "original_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
         "original_language": "en",
@@ -1254,8 +1254,8 @@
         "speaker_label": "an_owner_awaiting_possession",
         "polarity": "neutral",
         "aspects": [
-          "layout",
-          "possession"
+          "unit_layouts_livability",
+          "builder_reputation"
         ],
         "original_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
         "original_language": "en",
@@ -1313,8 +1313,8 @@
         "speaker_label": "an_owner_awaiting_possession",
         "polarity": "mixed",
         "aspects": [
-          "layout",
-          "possession"
+          "unit_layouts_livability",
+          "builder_reputation"
         ],
         "original_text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure — but possession was delayed by six months.",
         "original_language": "en",
@@ -1372,7 +1372,7 @@
         "speaker_label": "a_video_creator",
         "polarity": "negative",
         "aspects": [
-          "possession"
+          "builder_reputation"
         ],
         "original_text": "possession mein thoda delay hua",
         "original_language": "hi-Latn",

@@ -42,6 +42,22 @@ PROJECT_PAGE_SITES = (
 # Connectors that take `site:` queries, and those that also take `inurl:`.
 SITE_CONNECTORS = {"brave_search", "firecrawl_search"}
 INURL_CONNECTORS = {"firecrawl_search"}
+# Category-driven searches (D77, rules 1.4): for the project's name and each standalone alternate name, one query
+# per review category in the words people use, so pages, videos and threads about that side of the project
+# surface where a bare name search ranks them low. The category key is recorded on the query (purpose
+# "category"); the reviews found are tagged by the model from their words, never from the query.
+CATEGORY_PHRASES = {
+    "builder_reputation": "builder delay complaints",
+    "construction_specs": "construction quality",
+    "unit_layouts_livability": "flat layout carpet area",
+    "amenities_common_areas": "amenities clubhouse",
+    "maintenance_facility_mgmt": "maintenance society",
+    "safety_security": "security safety",
+    "location_connectivity": "connectivity commute",
+    "value_for_money": "worth it price",
+    "investment_potential": "investment appreciation",
+    "pricing": "price payment plan",
+}
 # Search-capable connectors that search the project's names themselves and take no planned query.
 NAME_SEARCH_CONNECTORS = {"reddit_public"}
 
@@ -70,6 +86,12 @@ def query_texts(
         pairs.append(("identifier", phase.rera_id, 0))
     if developer and not reviews_only:
         pairs.append(("identifier", f"{developer} {locality} {city}", 0))
+    standalone = [identity.name] + [
+        a.text for a in identity.aliases if a.mode == "standalone" and a.normalised != identity.name_norm
+    ]
+    for name in standalone:
+        for category, phrase in CATEGORY_PHRASES.items():
+            pairs.append((f"category:{category}", f"{name} {phrase}", 1))
     for alias in identity.aliases:
         if alias.normalised == identity.name_norm:
             continue
@@ -80,8 +102,13 @@ def query_texts(
         else:
             context = developer if developer and normalise_text(developer) not in alias.normalised else locality
             pairs.append((purpose, f"{alias.text} {context}", rank))
-    ordered = sorted(pairs, key=lambda p: (PRIORITY_ORDER[QUERY_PRIORITY[p[0]]], p[2]))
+    ordered = sorted(pairs, key=lambda p: (PRIORITY_ORDER[QUERY_PRIORITY[_purpose(p[0])]], p[2]))
     return [(purpose, text) for purpose, text, _ in ordered]
+
+
+def _purpose(tag: str) -> str:
+    """A pair's purpose; a category query is tagged "category:<key>"."""
+    return "category" if tag.startswith("category:") else tag
 
 
 def build_query_plan(
@@ -127,8 +154,9 @@ def build_query_plan(
                     "window_days": config["refresh"]["lookback_days"],
                     "language": _script_language(text),
                     "exclusions": exclusions,
-                    "priority": QUERY_PRIORITY[purpose],
-                    "purpose": purpose,
+                    "priority": QUERY_PRIORITY[_purpose(purpose)],
+                    "purpose": _purpose(purpose),
+                    "category": purpose.split(":", 1)[1] if purpose.startswith("category:") else None,
                 }
             )
             if len(seen) >= MAX_QUERIES_PER_CONNECTOR:

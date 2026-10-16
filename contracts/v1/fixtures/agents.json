@@ -69,7 +69,7 @@
         "outcome": "completed",
         "claims": [
           {
-            "aspect": "possession",
+            "aspect": "builder_reputation",
             "aspect_label": null,
             "claim_type": "opinion",
             "polarity": "negative",
@@ -97,7 +97,7 @@
         "outcome": "completed",
         "claims": [
           {
-            "aspect": "possession",
+            "aspect": "builder_reputation",
             "aspect_label": null,
             "claim_type": "opinion",
             "polarity": "negative",
@@ -126,7 +126,7 @@
         "outcome": "failed",
         "claims": [
           {
-            "aspect": "possession",
+            "aspect": "builder_reputation",
             "aspect_label": null,
             "claim_type": "opinion",
             "polarity": "negative",
@@ -318,7 +318,8 @@
               "Otherville"
             ],
             "priority": "high",
-            "purpose": "project_name"
+            "purpose": "project_name",
+            "category": null
           },
           {
             "connector_id": "brave_search",
@@ -327,7 +328,8 @@
             "language": "en",
             "exclusions": [],
             "priority": "normal",
-            "purpose": "identifier"
+            "purpose": "identifier",
+            "category": null
           }
         ]
       }
@@ -351,8 +353,8 @@
             "perspective": "owner_awaiting_possession",
             "polarity": "mixed",
             "aspects": [
-              "layout",
-              "possession"
+              "unit_layouts_livability",
+              "builder_reputation"
             ],
             "rendering": "punctuation_normalised",
             "text": "I booked a 3 BHK here in 2024. The sample flat matched the brochure, but possession was delayed by six months.",
@@ -366,7 +368,7 @@
             "perspective": "site_visit",
             "polarity": "negative",
             "aspects": [
-              "construction_progress"
+              "builder_reputation"
             ],
             "rendering": "translated",
             "text": "I visited the site last month. Construction is very slow, nothing has changed in two years.",
@@ -395,7 +397,7 @@
             "perspective": "owner_awaiting_possession",
             "polarity": "mixed",
             "aspects": [
-              "possession"
+              "builder_reputation"
             ],
             "rendering": "paraphrase",
             "text": "Great project overall.",

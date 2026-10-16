@@ -5,6 +5,12 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## The product's review categories, category-driven searches, and higher caps — 16 October 2026
+
+- **Reviews are tagged with the product's categories** (builder reputation, construction and specifications, unit layouts and livability, amenities and common areas, maintenance and facility management, safety and security, location and connectivity, value for money, investment potential, pricing); the console filters by category and the public page prints a review's categories (D77).
+- **Category-driven searches:** one search per category for the project's name and each alternate name, on Brave, Firecrawl and YouTube (D77).
+- **Caps raised across every source** (pages, searches, results, posts, threads, identity checks, job time, a run's model budget) (D77).
+
 ## Shorter reviews on the page, and the page build fixed — 16 October 2026
 
 - **A published review has 20 to 80 words** (was 30): reviews of 20 to 29 words that make sense now fit the page (D76).

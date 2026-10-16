@@ -420,20 +420,16 @@ def format_node(ctx: Context, state: AnalysisState) -> dict[str, Any]:
 
 
 ALL_ASPECTS = (
-    "connectivity",
-    "location",
-    "layout",
-    "construction_quality",
-    "construction_progress",
-    "possession",
-    "amenities",
-    "maintenance",
-    "density",
-    "parking",
-    "water",
-    "power",
-    "service_management",
-    "value_perception",
+    "builder_reputation",
+    "construction_specs",
+    "unit_layouts_livability",
+    "amenities_common_areas",
+    "maintenance_facility_mgmt",
+    "safety_security",
+    "location_connectivity",
+    "value_for_money",
+    "investment_potential",
+    "pricing",
     "other",
 )
 
