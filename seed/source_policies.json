@@ -5,7 +5,7 @@
  "policies": [
   {
    "family": "web_public_pages",
-   "policy_version": 6,
+   "policy_version": 7,
    "collection_allowed": true,
    "ai_processing_allowed": true,
    "quotation_allowed": true,
@@ -121,13 +121,14 @@
     "robots.txt is asked for every page and its verdict recorded; it does not block the fetch (D46)",
     "Any public host that no other family owns is read (D61); the hosts list stays as the reviewed core"
    ],
-   "basis": "docs/06 scraping policy. Version 2 (product owner, 28 Sep 2026, D28): reviews may quote the author's words with a credit line naming the platform and date; no link required. Each host's terms are still reviewed when it is added to the allow-list. Version 3 (28 Sep 2026, D34): competitor property portals are governed by their own family, competitor_portals, so their hosts are excluded here; rights are unchanged. Version 4 (product owner, 29 Sep 2026): first allow-list, chosen from a live Brave discovery for the five projects. Allowed: developer official sites (dlf.in, conscient.in, sobha.com, m3mindia.com), news sites (republicworld.com, thehindubusinessline.com, smestreet.in, constrofacilitator.com, nenow.in, propesatatenews.com) and 52 broker and marketing microsites. Left out: client-site.example (own content, not independent evidence), press-release wires (openpr.com, pninews.com) and unrelated sites. Developer and broker pages are marketing claims, not independent reviews. Version 5 (product owner, 1 Oct 2026, D46): robots.txt is recorded, not enforced. Pages that refuse our crawler are still not worked around (D33). Version 6 (product owner, 13 Oct 2026, D61: \"robots.txt need to be overruled, I need every data\"): any public host Brave finds is read, not only the allow-list, except hosts another family owns and the excluded hosts; refused pages are asked for once more through Scrapfly within the per-run allowance.",
+   "basis": "docs/06 scraping policy. Version 2 (product owner, 28 Sep 2026, D28): reviews may quote the author's words with a credit line naming the platform and date; no link required. Each host's terms are still reviewed when it is added to the allow-list. Version 3 (28 Sep 2026, D34): competitor property portals are governed by their own family, competitor_portals, so their hosts are excluded here; rights are unchanged. Version 4 (product owner, 29 Sep 2026): first allow-list, chosen from a live Brave discovery for the five projects. Allowed: developer official sites (dlf.in, conscient.in, sobha.com, m3mindia.com), news sites (republicworld.com, thehindubusinessline.com, smestreet.in, constrofacilitator.com, nenow.in, propesatatenews.com) and 52 broker and marketing microsites. Left out: client-site.example (own content, not independent evidence), press-release wires (openpr.com, pninews.com) and unrelated sites. Developer and broker pages are marketing claims, not independent reviews. Version 5 (product owner, 1 Oct 2026, D46): robots.txt is recorded, not enforced. Pages that refuse our crawler are still not worked around (D33). Version 6 (product owner, 13 Oct 2026, D61: \"robots.txt need to be overruled, I need every data\"): any public host Brave finds is read, not only the allow-list, except hosts another family owns and the excluded hosts; refused pages are asked for once more through Scrapfly within the per-run allowance. v7 (16 Oct 2026, D78): the client's own sites are listed as client-site.example; v6 named them.",
    "status": "accepted",
    "review_owner": "Product owner",
    "accepted_on": "2026-10-13",
    "accepted_by": "Product owner (D61, 13 Oct 2026)",
    "robots_txt": "record_only",
-   "host_scope": "any_public_host"
+   "host_scope": "any_public_host",
+   "effective_from": null
   },
   {
    "family": "competitor_portals",
