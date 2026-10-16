@@ -5,6 +5,10 @@
 - Five project inputs registered from the the client export, with developers and RERA registrations (D15, D16).
 - New requirement 4.7: the A01 Project identity agent proposes alternate project and phase names from evidence; each needs console approval before it is used (D17).
 
+## Public repository, no client name — 16 October 2026
+
+- The client's name is removed from every file, file name and commit (history rewritten), the console title, the page metadata, the crawler's user agent and all identifiers; a proprietary LICENSE; the repository is public (D78).
+
 ## The product's review categories, category-driven searches, and higher caps — 16 October 2026
 
 - **Reviews are tagged with the product's categories** (builder reputation, construction and specifications, unit layouts and livability, amenities and common areas, maintenance and facility management, safety and security, location and connectivity, value for money, investment potential, pricing); the console filters by category and the public page prints a review's categories (D77).

@@ -239,7 +239,9 @@ def test_a_run_collects_every_live_source_and_reports_coverage(db, settings, con
         "reddit_left_to_reddit_connector" in cov["brave_search"]["note"]
         and "youtube_left_to_youtube_connector" in cov["brave_search"]["note"]
     )
-    assert "not_collected:web_public_pages" in cov["brave_search"]["note"], "client-site.example is not on the allow-list"
+    assert "not_collected:web_public_pages" in cov["brave_search"]["note"], (
+        "client-site.example is not on the allow-list"
+    )
     assert cov["web_fetch"]["fetched"] == 1 and cov["web_fetch"]["matched"] == 1
     assert cov["youtube_data_api"]["matched"] >= 1 and cov["youtube_data_api"]["metadata_only"] >= 1
     assert not {"firecrawl", "playwright_fetch"} & set(cov), "helpers of the web reader are not run sources"
